@@ -1,61 +1,100 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.utils.translation import gettext_lazy as _
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
-import secrets
-import string
+import uuid
 
 User = get_user_model()
 
-# ======= Random Code Generator ======= #
-def generate_referral_code(length=7):
-    characters = string.ascii_uppercase + string.digits
-    while True:
-        code = ''.join(secrets.choice(characters) for i in range(length))
-        if not Profile.objects.filter(referral_code=code).exists():
-            return code
+# ========== Auth Status Choices ========== #
+class AuthStatusChoices(models.TextChoices):
+    """ وضعیت احراز هویت کاربران """
+    PENDING = "PENDING", _("در انتظار تایید")
+    APPROVED = "APPROVED", _("تایید شده")
+    REJECTED = "REJECTED", _("رد شده")
 
-# ======= Profile Model ======= #
+# ========== Profile Model ========== #
 class Profile(models.Model):
     """
-    این مدل بدون تغییر باقی می‌ماند و برای احراز هویت استفاده می‌شود.
-    """
-    class VerificationStatus(models.TextChoices):
-        PENDING = 'PENDING', 'در انتظار تایید'
-        VERIFIED = 'VERIFIED', 'تایید شده'
-        REJECTED = 'REJECTED', 'رد شده'
+    مدل پروفایل برای نگهداری اطلاعات تکمیلی و وضعیت احراز هویت کاربران.
+    """ 
 
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
-        related_name='profile',
-        verbose_name="کاربر"
+        related_name="profile",
+        verbose_name=_("کاربر")
     )
-    image = models.ImageField(verbose_name="تصویر پروفایل", upload_to="profile_images/")
-    medical_id_code = models.CharField(max_length=20, blank=True, null=True, verbose_name="کد نظام پزشکی")
-    student_id_code = models.CharField(max_length=20, blank=True, null=True, verbose_name="کد دانشجویی")
-    verification_document = models.ImageField(upload_to='verifications/', verbose_name="مدرک احراز هویت")
-    medical_profile_link = models.URLField(blank=True, null=True, verbose_name="لینک پروفایل نظام پزشکی")
-    verification_status = models.CharField(
+    profile_image = models.ImageField(
+        upload_to="profiles/images/",
+        null=True,
+        blank=True,
+        verbose_name=_("تصویر پروفایل")
+    )
+    medical_code = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name=_("کد نظام پزشکی / دانشجویی")
+    )
+    auth_image = models.ImageField(
+        upload_to="auth/images/",
+        null=True,
+        blank=True,
+        verbose_name=_("تصویر مدرک هویتی")
+    )
+    auth_link = models.URLField(
+        max_length=200,
+        blank=True,
+        null=True,
+        verbose_name=_("لینک پروفایل نظام پزشکی")
+    )
+    auth_status = models.CharField(
         max_length=10,
-        choices=VerificationStatus.choices,
-        default=VerificationStatus.PENDING,
-        verbose_name="وضعیت تایید"
+        choices=AuthStatusChoices.choices,
+        default=AuthStatusChoices.PENDING.value,
+        verbose_name=_("وضعیت احراز هویت")
+    ) 
+    rejection_reason = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_("دلیل رد هویت")
     )
-
-    referral_code = models.CharField(max_length=10, unique=True, blank=True, null=True, verbose_name="کد معرف")
+    referral_code = models.CharField(
+        max_length=10,
+        unique=True,
+        blank=True,
+        null=True,
+        verbose_name=_("کد معرف")
+    ) 
     referred_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='referrals',
-        verbose_name="معرف"
+        related_name="referred_users",
+        verbose_name=_("معرفی شده توسط")
     )
 
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("تاریخ ایجاد"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("تاریخ بروزرسانی"))
+
     def __str__(self):
-        return f"پروفایل کاربری {self.user.username}"
+        return f"پروفایل کاربری {self.user.get_full_name()}"
 
     def save(self, *args, **kwargs):
-        if not self.pk and not self.referral_code:
-            self.referral_code = generate_referral_code()
-        return super().save(*args, **kwargs)
+        if not self.referral_code:
+            self.referral_code = str(uuid.uuid4().hex[:8].upper()) 
+        super().save(*args, **kwargs)
+
+# ========== User Profile Creation Signal ========== #
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    """
+    با ایجاد هر کاربر جدید، یک پروفایل خالی برای او به صورت خودکار ساخته می‌شود.
+    """
+    if created:
+        Profile.objects.create(user=instance)
+

@@ -52,6 +52,15 @@ INSTALLED_APPS = [
     "django_filters",
     "django_ckeditor_5",
 
+    "apps.accounts.apps.AccountsConfig",
+    # "apps.home.apps.HomeConfig",
+    # "apps.dashboard.apps.DashboardConfig",
+    # "apps.markets.apps.MarketsConfig",
+    # "apps.notifications.apps.NotificationsConfig",
+    # "apps.payment.apps.PaymentConfig",
+    # "apps.prescriptions.apps.PrescriptionsConfig",
+    # "apps.questions.apps.QuestionsConfig",
+    # "apps.subscriptions.apps.SubscriptionsConfig",
 ]
 
 MIDDLEWARE = [
@@ -83,7 +92,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "core.wsgi.application"
 
-
+SITE_ID = 1
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
@@ -128,3 +137,11 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+AUTH_USER_MODEL = "accounts.User"
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}

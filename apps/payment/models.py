@@ -1,7 +1,7 @@
 # payments/models.py
 from django.db import models
 from django.conf import settings
-from subscriptions.models import Subscription
+from apps.subscriptions.models import Subscription
 
 # ======== Payment Status ======== #
 class PaymentStatus(models.TextChoices):

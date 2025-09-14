@@ -15,7 +15,7 @@ class Category(models.Model):
     )
 
     class Meta:
-        ordering = ['name']
+        ordering = ['title']
         
     def save(self, *args, **kwargs):
         if not self.slug:
