@@ -1,0 +1,9 @@
+Django
+djangorestframework
+djangorestframework_simplejwt
+django_ckeditor_5
+django_filter
+pillow
+django_environ
+markdown
+django_debug_toolbar
