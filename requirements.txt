@@ -3,6 +3,7 @@ djangorestframework
 djangorestframework_simplejwt
 django_ckeditor_5
 django_filter
+drf-spectacular
 pillow
 django_environ
 markdown

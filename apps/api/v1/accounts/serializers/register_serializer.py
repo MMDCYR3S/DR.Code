@@ -1,65 +1,164 @@
 from rest_framework import serializers
-
+from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import RegexValidator
+from apps.accounts.models import Profile, AuthStatusChoices
+import re
 
-from apps.accounts.models import User, Profile
+User = get_user_model()
 
-# ========== User Registration Serializer ========== #
-class UserRegisterSerializer(serializers.ModelSerializer):
-    """
-    سریالایزر برای مرحله اول ثبت‌نام.
-    اطلاعات پایه کاربر را دریافت کرده و یک کاربر غیرفعال ایجاد می‌کند.
-    """
+# ======== Register Serializer ======== #
+class RegisterSerializer(serializers.ModelSerializer):
+    """سریالایزر ثبت‌نام کاربر"""
     
-    password2 = serializers.CharField(style={"input_type": "password"}, write_only=True)
-
+    password = serializers.CharField(
+        write_only=True,
+        style={'input_type': 'password'},
+        help_text='رمز عبور باید حداقل ۸ کاراکتر باشد'
+    )
+    password_confirm = serializers.CharField(
+        write_only=True,
+        style={'input_type': 'password'},
+        help_text='تکرار رمز عبور'
+    )
+    
     class Meta:
         model = User
-        fields = ["first_name", "last_name", "email", "phone_number", "password", "password2"]
+        fields = (
+            'first_name', 'last_name', 'phone_number', 
+            'email', 'password', 'password_confirm'
+        )
         extra_kwargs = {
-            "password": {"write_only": True, "validators": [validate_password]},
+            'first_name': {'required': True},
+            'last_name': {'required': True},
+            'phone_number': {'required': True},
+            'email': {'required': False},
         }
+
+    def validate_phone_number(self, value):
+        """اعتبارسنجی شماره تلفن"""
+        if not re.match(r'^09\d{9}$', value):
+            raise serializers.ValidationError(
+                "شماره تلفن باید با 09 شروع شده و 11 رقم باشد."
+            )
         
+        if User.objects.filter(phone_number=value).exists():
+            raise serializers.ValidationError(
+                "کاربری با این شماره تلفن قبلاً ثبت‌نام کرده است."
+            )
+        return value
+
+    def validate_email(self, value):
+        """اعتبارسنجی ایمیل"""
+        if value and User.objects.filter(email=value).exists():
+            raise serializers.ValidationError(
+                "کاربری با این ایمیل قبلاً ثبت‌نام کرده است."
+            )
+        return value
+
+    def validate_password(self, value):
+        """اعتبارسنجی رمز عبور"""
+        try:
+            validate_password(value)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(list(e.messages))
+        return value
+
     def validate(self, attrs):
-        """ تطابق رمز عبور و تکرار آن """
-        if attrs["password"] != attrs["password2"]:
-            raise serializers.ValidationError({"password": "رمزهای عبور وارد شده با یکدیگر تطابق ندارند."})
+        """اعتبارسنجی کلی"""
+        if attrs['password'] != attrs['password_confirm']:
+            raise serializers.ValidationError({
+                'password_confirm': 'رمزهای عبور مطابقت ندارند.'
+            })
+        
+        # بررسی نام و نام خانوادگی
+        if len(attrs['first_name'].strip()) < 2:
+            raise serializers.ValidationError({
+                'first_name': 'نام باید حداقل ۲ کاراکتر باشد.'
+            })
+        
+        if len(attrs['last_name'].strip()) < 2:
+            raise serializers.ValidationError({
+                'last_name': 'نام خانوادگی باید حداقل ۲ کاراکتر باشد.'
+            })
+        
         return attrs
-    
+
     def create(self, validated_data):
-        """ حذف تکرار رمز عبور و ایجاد کاربر """
-        validated_data.pop("password2")
-        user = User.objects.create_user(**validated_data)
+        """ایجاد کاربر جدید"""
+        validated_data.pop('password_confirm')
+        password = validated_data.pop('password')
+        
+        user = User.objects.create_user(
+            username=validated_data['phone_number'],
+            password=password,
+            **validated_data
+        )
         return user
 
-# ============== User Profile Verification Serializer ============== #
-class UserProfileVerificationSerializer(serializers.ModelSerializer):
-    """
-    سریالایزر برای مرحله دوم ثبت‌نام (احراز هویت).
-    مدارک کاربر را دریافت کرده و پروفایل او را به‌روزرسانی می‌کند.
-    """
+
+class AuthenticationSerializer(serializers.Serializer):
+    """سریالایزر احراز هویت پزشکی"""
     
-    class Meta:
-        model = Profile
-        fields = ["medical_code", "auth_image", "auth_link"]
-        
+    medical_code = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=50,
+        help_text='کد نظام پزشکی یا کد دانشجویی'
+    )
+    auth_image = serializers.ImageField(
+        required=False,
+        allow_empty_file=False,
+        help_text='تصویر کارت نظام پزشکی یا کارت دانشجویی'
+    )
+    auth_link = serializers.URLField(
+        required=False,
+        allow_blank=True,
+        help_text='لینک پروفایل نظام پزشکی'
+    )
+    referral_code = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=10,
+        help_text='کد معرف (اختیاری)'
+    )
+
     def validate(self, attrs):
-        """ بر اساس مستند، کاربر باید حداقل یکی از این فیلدها را پر کند. """
-        if not any(attrs.values()):
+        """اعتبارسنجی کلی - حداقل یکی از فیلدها باید پر باشد"""
+        medical_code = attrs.get('medical_code', '').strip()
+        auth_image = attrs.get('auth_image')
+        auth_link = attrs.get('auth_link', '').strip()
+        
+        if not any([medical_code, auth_image, auth_link]):
             raise serializers.ValidationError(
-                "برای احراز هویت، لطفاً حداقل یکی از فیلدهای کد نظام پزشکی، تصویر مدرک یا لینک پروفایل را ارسال کنید."
+                'حداقل یکی از موارد زیر را وارد کنید: کد پزشکی، تصویر مدرک یا لینک پروفایل'
             )
+        
         return attrs
-    
-    def update(self, instance, validated_data):
-        """
-        مستند اشاره می‌کند که کاربر در این مرحله هنوز "در انتظار تایید" است.
-        وضعیت auth_status به صورت پیش‌فرض PENDING است و نیازی به تغییر ندارد.
-        """
-        instance.medical_code = validated_data.get('medical_code', instance.medical_code)
-        instance.auth_image = validated_data.get('auth_image', instance.auth_image)
-        instance.auth_link = validated_data.get('auth_link', instance.auth_link)
-        instance.save()
-        return instance
-    
+
+    def validate_referral_code(self, value):
+        """اعتبارسنجی کد معرف"""
+        if value:
+            value = value.strip().upper()
+            if not Profile.objects.filter(referral_code=value).exists():
+                raise serializers.ValidationError('کد معرف وارد شده معتبر نیست.')
+        return value
+
+    def validate_auth_image(self, value):
+        """اعتبارسنجی تصویر احراز هویت"""
+        if value:
+            # بررسی حجم فایل (حداکثر 5 مگابایت)
+            if value.size > 5 * 1024 * 1024:
+                raise serializers.ValidationError(
+                    'حجم تصویر نباید بیش از ۵ مگابایت باشد.'
+                )
+            
+            # بررسی نوع فایل
+            allowed_types = ['image/jpeg', 'image/jpg', 'image/png']
+            if value.content_type not in allowed_types:
+                raise serializers.ValidationError(
+                    'فقط فایل‌های JPG، JPEG و PNG مجاز هستند.'
+                )
+        
+        return value

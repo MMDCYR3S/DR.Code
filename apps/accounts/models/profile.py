@@ -21,16 +21,29 @@ class Profile(models.Model):
     مدل پروفایل برای نگهداری اطلاعات تکمیلی و وضعیت احراز هویت کاربران.
     """ 
 
+    ROLE_CHOICES = [
+        ('visitor', 'بازدیدکننده'),
+        ('regular', 'کاربر عادی'),
+        ('premium', 'کاربر ویژه'),
+        ('admin', 'ادمین'),
+    ]
+
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
         related_name="profile",
         verbose_name=_("کاربر")
     )
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default='visitor'
+    )
     profile_image = models.ImageField(
         upload_to="profiles/images/",
         null=True,
         blank=True,
+        help_text='عکس پروفایل کاربر',
         verbose_name=_("تصویر پروفایل")
     )
     medical_code = models.CharField(
@@ -77,6 +90,7 @@ class Profile(models.Model):
         related_name="referred_users",
         verbose_name=_("معرفی شده توسط")
     )
+    subscription_end_date = models.DateTimeField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("تاریخ ایجاد"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("تاریخ بروزرسانی"))
@@ -88,6 +102,11 @@ class Profile(models.Model):
         if not self.referral_code:
             self.referral_code = str(uuid.uuid4().hex[:8].upper()) 
         super().save(*args, **kwargs)
+        
+    def delete_profile_image(self):
+        """حذف عکس پروفایل"""
+        if self.profile_image:
+            self.profile_image.delete(save=False)
 
 # ========== User Profile Creation Signal ========== #
 @receiver(post_save, sender=User)

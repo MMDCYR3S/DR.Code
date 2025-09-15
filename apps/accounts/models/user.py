@@ -1,8 +1,9 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
+from django.db import models
 from django.core.validators import RegexValidator
 from django.utils import timezone
+import uuid
 
 class CustomUserManager(BaseUserManager):
     """
@@ -40,28 +41,54 @@ class CustomUserManager(BaseUserManager):
             
         return self.create_user(phone_number, password, **extra_fields)
 
-# ----------------- Custom User Model -----------------
+# ============= User Model ============= #
 class User(AbstractUser):
-    """
-    مدل کاربر سفارشی که با شماره تماس به جای نام کاربری احراز هویت می‌شود.
-    """
-    username = None
-
-    email = models.EmailField(_("email address"), unique=True)
-    phone_number = models.CharField(
-        _("phone number"),
-        max_length=11,
-        validators=[RegexValidator(regex=r'^\d{11}$', message=_("شماره تماس باید ۱۱ رقم باشد."))],
-        unique=True,
-        help_text=_("شماره تماس برای ورود به سیستم استفاده می‌شود."),
+    """مدل کاربر سفارشی"""
+    
+    # فیلدهای اصلی
+    first_name = models.CharField('نام', max_length=30)
+    last_name = models.CharField('نام خانوادگی', max_length=30)
+    email = models.EmailField('ایمیل', blank=True, null=True, unique=True)
+    
+    # اضافه کردن validator برای شماره تلفن
+    phone_regex = RegexValidator(
+        regex=r'^09\d{9}$',
+        message="شماره تلفن باید با 09 شروع شده و 11 رقم باشد."
     )
-
-    is_premium = models.BooleanField(default=False, verbose_name=_("کاربر ویژه"))
-
-    USERNAME_FIELD = "phone_number"
-    REQUIRED_FIELDS = ["email", "first_name", "last_name"]
-
+    phone_number = models.CharField(
+        'شماره تلفن همراه',
+        validators=[phone_regex],
+        max_length=11,
+        unique=True
+    )
+    
+    # تاریخ ثبت‌نام
+    date_joined = models.DateTimeField('تاریخ ثبت‌نام', default=timezone.now)
+    
+    # وضعیت فعال/غیرفعال
+    is_active = models.BooleanField('فعال', default=True)
+    
+    # آخرین ورود
+    last_login_ip = models.GenericIPAddressField('آی پی آخرین ورود', blank=True, null=True)
+    last_login_device = models.CharField('دستگاه آخرین ورود', max_length=255, blank=True, null=True)
+    
+    # session key برای کنترل ورود همزمان
+    current_session_key = models.CharField('کلید نشست فعال', max_length=40, blank=True, null=True)
+    
+    # استفاده از phone_number به عنوان username
+    USERNAME_FIELD = 'phone_number'
+    REQUIRED_FIELDS = ['first_name', 'last_name']
+    
     objects = CustomUserManager()
-
+    
+    class Meta:
+        verbose_name = 'کاربر'
+        verbose_name_plural = 'کاربران'
+        db_table = 'accounts_user'
+    
     def __str__(self):
-        return self.get_full_name() or self.phone_number
+        return f"{self.first_name} {self.last_name} - {self.phone_number}"
+    
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"

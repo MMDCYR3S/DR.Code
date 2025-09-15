@@ -1,61 +1,269 @@
-from rest_framework import generics, status
+from rest_framework import status, permissions
+from rest_framework.views import APIView
+from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework_simplejwt.tokens import RefreshToken
-from ..serializers import UserRegisterSerializer, UserProfileVerificationSerializer
+from django.contrib.auth import get_user_model
+from django.db import transaction
+from django.utils import timezone
 
-# ============ User Registration View ============ #
-class UserRegisterView(generics.CreateAPIView):
+from apps.accounts.models import Profile, AuthStatusChoices
+from ..serializers import RegisterSerializer, AuthenticationSerializer, ProfileSerializer
+
+import logging
+
+from .base_view import BaseAPIView
+
+User = get_user_model()
+logger = logging.getLogger(__name__)
+
+# ============ REGISTER VIEW ============ #
+class RegisterView(CreateAPIView, BaseAPIView):
     """
-    این ویو اطلاعات اولیه کاربر را دریافت کرده، یک حساب کاربری ایجاد می‌کند
-    و یک توکن JWT برای دسترسی به مرحله بعد (ارسال مدارک) برمی‌گرداند.
+    ثبت‌نام کاربر جدید
+    
+    مرحله اول: دریافت اطلاعات پایه کاربر
     """
-    serializer_class = UserRegisterSerializer
-    
-    throttle_classes = [AnonRateThrottle]
-    
+    serializer_class = RegisterSerializer
+    permission_classes = [permissions.AllowAny]
+
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
+        try:
+            with transaction.atomic():
+                serializer = self.get_serializer(data=request.data)
+                
+                if serializer.is_valid():
+                    # ایجاد کاربر جدید
+                    user = serializer.save()
+                    
+                    # ثبت اطلاعات ورود
+                    user.last_login_ip = self.get_client_ip(request)
+                    user.last_login_device = self.get_user_agent(request)
+                    user.save(update_fields=['last_login_ip', 'last_login_device'])
+                    
+                    # ایجاد JWT توکن
+                    refresh = RefreshToken.for_user(user)
+                    access_token = refresh.access_token
+                    
+                    # ثبت session key برای کنترل ورود همزمان
+                    if hasattr(request, 'session'):
+                        user.current_session_key = request.session.session_key
+                        user.save(update_fields=['current_session_key'])
+                    
+                    logger.info(f"کاربر جدید ثبت‌نام شد: {user.phone_number}")
+                    
+                    return Response({
+                        'success': True,
+                        'message': 'ثبت‌نام با موفقیت انجام شد. لطفاً مرحله احراز هویت را تکمیل کنید.',
+                        'data': {
+                            'user_id': user.id,
+                            'full_name': user.full_name,
+                            'phone_number': user.phone_number,
+                            'access_token': str(access_token),
+                            'refresh_token': str(refresh),
+                            'next_step': 'authentication'
+                        }
+                    }, status=status.HTTP_201_CREATED)
+                
+                return Response({
+                    'success': False,
+                    'message': 'خطا در اطلاعات ورودی',
+                    'errors': serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Exception as e:
+            return self.handle_exception(e)
 
-        refresh = RefreshToken.for_user(user)
-        tokens = {
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-        }
 
-        response_data = {
-            "message": "ثبت‌نام اولیه با موفقیت انجام شد. لطفاً برای تکمیل فرآیند، مدارک خود را ارسال کنید.",
-            "tokens": tokens
-        }
-        
-        headers = self.get_success_headers(serializer.data)
-        return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
-
-# ============ User Profile Verification View ============ #
-class UserProfileVerificationView(generics.UpdateAPIView):
+class AuthenticationView(BaseAPIView):
     """
-    این ویو مدارک هویتی کاربر احراز هویت شده را دریافت و پروفایل او را به‌روزرسانی می‌کند.
-    دسترسی به این ویو فقط با توکن معتبر امکان‌پذیر است.
+    احراز هویت پزشکی
+    
+    مرحله دوم: ارسال مدارک احراز هویت
     """
-    serializer_class = UserProfileVerificationSerializer
-    permission_classes = [IsAuthenticated]
-    throttle_classes = [UserRateThrottle]
-    
-    def get_object(self):
-        return self.request.user.profile
-    
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = AuthenticationSerializer
 
-        response_data = {
-            "message": "مدارک شما با موفقیت دریافت شد. حساب شما پس از بررسی توسط ادمین فعال خواهد شد. نتیجه از طریق ایمیل به شما اطلاع داده می‌شود."
-        }
+    def post(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                user = request.user
+                profile = user.profile
+                
+                # بررسی اینکه کاربر قبلاً احراز هویت نکرده باشد
+                if profile.auth_status == AuthStatusChoices.APPROVED:
+                    return Response({
+                        'success': False,
+                        'message': 'شما قبلاً احراز هویت شده‌اید.'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                serializer = self.serializer_class(data=request.data)
+                
+                if serializer.is_valid():
+                    # بروزرسانی اطلاعات احراز هویت
+                    validated_data = serializer.validated_data
+                    
+                    profile.medical_code = validated_data.get('medical_code', profile.medical_code)
+                    profile.auth_link = validated_data.get('auth_link', profile.auth_link)
+                    
+                    if validated_data.get('auth_image'):
+                        profile.auth_image = validated_data['auth_image']
+                    
+                    # تنظیم معرف در صورت وجود
+                    referral_code = validated_data.get('referral_code')
+                    if referral_code and not profile.referred_by:
+                        try:
+                            referrer_profile = Profile.objects.get(referral_code=referral_code.upper())
+                            profile.referred_by = referrer_profile.user
+                        except Profile.DoesNotExist:
+                            pass  # کد معرف نادرست - قبلاً در serializer بررسی شده
+                    
+                    # تغییر وضعیت به در انتظار تایید
+                    profile.auth_status = AuthStatusChoices.PENDING
+                    profile.rejection_reason = None  # پاک کردن دلیل رد قبلی
+                    profile.save()
+                    
+                    logger.info(f"مدارک احراز هویت ارسال شد: {user.phone_number}")
+                    
+                    return Response({
+                        'success': True,
+                        'message': 'مدارک احراز هویت با موفقیت ارسال شد. در کوتاه‌ترین زمان ممکن بررسی و نتیجه اطلاع‌رسانی خواهد شد.',
+                        'data': {
+                            'auth_status': profile.auth_status,
+                            'auth_status_display': profile.get_auth_status_display()
+                        }
+                    }, status=status.HTTP_200_OK)
+                
+                return Response({
+                    'success': False,
+                    'message': 'خطا در اطلاعات ارسالی',
+                    'errors': serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Exception as e:
+            return self.handle_exception(e)
 
-        return Response(response_data, status=status.HTTP_200_OK)
+# ========== LOGOUT VIEW ========== #
+class LogoutView(BaseAPIView):
+    """
+    خروج کاربر از سیستم
+    
+    پاک کردن session key برای امنیت بیشتر
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            
+            # پاک کردن session key
+            user.current_session_key = None
+            user.save(update_fields=['current_session_key'])
+            
+            # Blacklist کردن refresh token در صورت ارسال
+            refresh_token = request.data.get('refresh_token')
+            if refresh_token:
+                try:
+                    token = RefreshToken(refresh_token)
+                    token.blacklist()
+                except Exception:
+                    pass  # اگر token معتبر نبود، مهم نیست
+            
+            logger.info(f"کاربر خروج کرد: {user.phone_number}")
+            
+            return Response({
+                'success': True,
+                'message': 'خروج با موفقیت انجام شد.'
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return self.handle_exception(e)
+
+
+class CheckAuthStatusView(BaseAPIView):
+    """
+    بررسی وضعیت احراز هویت کاربر
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            profile = request.user.profile
+            
+            return Response({
+                'success': True,
+                'data': {
+                    'auth_status': profile.auth_status,
+                    'auth_status_display': profile.get_auth_status_display(),
+                    'role': profile.role,
+                    'rejection_reason': profile.rejection_reason if profile.auth_status == AuthStatusChoices.REJECTED else None,
+                    'has_subscription': bool(profile.subscription_end_date and profile.subscription_end_date > timezone.now()),
+                    'subscription_end_date': profile.subscription_end_date
+                }
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return self.handle_exception(e)
+
+
+class ResendAuthenticationView(BaseAPIView):
+    """
+    ارسال مجدد مدارک احراز هویت
+    
+    برای کاربرانی که مدارکشان رد شده است
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = AuthenticationSerializer
+
+    def post(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                user = request.user
+                profile = user.profile
+                
+                # بررسی اینکه کاربر مجاز به ارسال مجدد باشد
+                if profile.auth_status not in [AuthStatusChoices.REJECTED, AuthStatusChoices.PENDING]:
+                    return Response({
+                        'success': False,
+                        'message': 'شما مجاز به ارسال مجدد مدارک نیستید.'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                serializer = self.serializer_class(data=request.data)
+                
+                if serializer.is_valid():
+                    # بروزرسانی اطلاعات احراز هویت
+                    validated_data = serializer.validated_data
+                    
+                    profile.medical_code = validated_data.get('medical_code', profile.medical_code)
+                    profile.auth_link = validated_data.get('auth_link', profile.auth_link)
+                    
+                    if validated_data.get('auth_image'):
+                        profile.auth_image = validated_data['auth_image']
+                    
+                    # تغییر وضعیت به در انتظار تایید
+                    profile.auth_status = AuthStatusChoices.PENDING
+                    profile.rejection_reason = None
+                    profile.save()
+                    
+                    logger.info(f"مدارک احراز هویت مجدداً ارسال شد: {user.phone_number}")
+                    
+                    return Response({
+                        'success': True,
+                        'message': 'مدارک احراز هویت مجدداً با موفقیت ارسال شد. در کوتاه‌ترین زمان ممکن بررسی خواهد شد.',
+                        'data': {
+                            'auth_status': profile.auth_status,
+                            'auth_status_display': profile.get_auth_status_display()
+                        }
+                    }, status=status.HTTP_200_OK)
+                
+                return Response({
+                    'success': False,
+                    'message': 'خطا در اطلاعات ارسالی',
+                    'errors': serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Exception as e:
+            return self.handle_exception(e)
+
+
+
