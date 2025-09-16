@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class MarketsConfig(AppConfig):
+class OrderConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "apps.markets"
+    name = "apps.order"

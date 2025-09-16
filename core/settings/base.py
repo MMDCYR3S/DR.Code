@@ -59,7 +59,7 @@ INSTALLED_APPS = [
     "apps.home.apps.HomeConfig",
     "apps.prescriptions.apps.PrescriptionsConfig",
     # "apps.dashboard.apps.DashboardConfig",
-    # "apps.markets.apps.MarketsConfig",
+    "apps.order.apps.OrderConfig",
     # "apps.notifications.apps.NotificationsConfig",
     # "apps.payment.apps.PaymentConfig",
     # "apps.questions.apps.QuestionsConfig",
