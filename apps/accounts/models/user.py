@@ -5,6 +5,8 @@ from django.core.validators import RegexValidator
 from django.utils import timezone
 import uuid
 
+from apps.subscriptions.models import SubscriptionStatusChoicesModel
+
 class CustomUserManager(BaseUserManager):
     """
     Custom user model manager where phone number is the unique identifier
@@ -95,3 +97,20 @@ class User(AbstractUser):
             # تولید username یکتا بر اساس phone_number
             self.username = self.phone_number
         super().save(*args, **kwargs)
+        
+    def has_active_membership(self):
+        """
+        بررسی اینکه کاربر اشتراک فعال دارد یا نه
+        """
+        # اگر ادمین یا استاف است، همیشه دسترسی دارد
+        if self.is_staff or self.is_superuser:
+            return True
+        
+        active_membership = self.subscriptions.filter(
+            status=SubscriptionStatusChoicesModel.active.value,
+            start_date__lte=timezone.now(),
+            end_date__gte=timezone.now()
+        ).first()
+        
+        return active_membership is not None
+        

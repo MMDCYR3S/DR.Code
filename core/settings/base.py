@@ -62,7 +62,7 @@ INSTALLED_APPS = [
     "apps.order.apps.OrderConfig",
     # "apps.notifications.apps.NotificationsConfig",
     # "apps.payment.apps.PaymentConfig",
-    # "apps.questions.apps.QuestionsConfig",
+    "apps.questions.apps.QuestionsConfig",
     "apps.subscriptions.apps.SubscriptionsConfig",
 ]
 
