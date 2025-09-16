@@ -16,10 +16,8 @@ class PrescriptionImage(models.Model):
     )
     image = models.ImageField(upload_to='prescriptions/images/', verbose_name="فایل تصویر")
     caption = models.CharField(max_length=255, blank=True, verbose_name="کپشن تصویر")
-    order = models.PositiveIntegerField(default=0, verbose_name="ترتیب نمایش")
-
-    class Meta:
-        ordering = ['order']
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='زمان ساخت')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='زمان بروزرسانی')
 
     def __str__(self):
         return f"تصویر برای نسخه «{self.prescription.title}»"

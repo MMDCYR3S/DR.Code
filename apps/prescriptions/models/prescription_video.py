@@ -16,10 +16,9 @@ class PrescriptionVideo(models.Model):
     )
     video_url = models.URLField(verbose_name="لینک ویدیو (آپارات)")
     title = models.CharField(max_length=255, blank=True, verbose_name="عنوان ویدیو")
-    order = models.PositiveIntegerField(default=0, verbose_name="ترتیب نمایش")
-
-    class Meta:
-        ordering = ['order']
+    description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='زمان ساخت')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='زمان بروزرسانی')
 
     def __str__(self):
         return f"ویدیو برای نسخه «{self.prescription.title}»"

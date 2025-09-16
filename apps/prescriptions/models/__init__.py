@@ -1,3 +1,5 @@
-from .category import Category
-from .prescription import Prescription
+from .category import PrescriptionCategory
+from .prescription import Prescription, PrescriptionAlias, AccessChoices
 from .drug import PrescriptionDrug
+from .prescription_image import PrescriptionImage
+from .prescription_video import PrescriptionVideo

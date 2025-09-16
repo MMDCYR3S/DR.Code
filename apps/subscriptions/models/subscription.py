@@ -1,8 +1,16 @@
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from django.conf import settings
         
 from .plan import Plan
+
+# ========= Subscription Status Choices Model ========= # 
+class SubscriptionStatusChoicesModel(models.TextChoices):
+    """ وضعیت اشتراک کاربر """
+    active = "ACTIVE", _("فعال")
+    expired = "EXPIRED", _("منقضی‌شده")
+    canceled = "CANCELED", _("لغو شده")
 
 # ========= Subscription Model ========= #
 class Subscription(models.Model):
@@ -21,6 +29,19 @@ class Subscription(models.Model):
         related_name='subscriptions',
         verbose_name="پلن"
     )
+    payment_amount = models.DecimalField(
+        max_digits=12, 
+        decimal_places=0, 
+        verbose_name="مبلغ پرداختی (تومان)",
+        help_text="مبلغ واقعی که کاربر پرداخت کرده (بعد از تخفیف)"
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=SubscriptionStatusChoicesModel.choices,
+        default=SubscriptionStatusChoicesModel.active.value,
+        verbose_name="وضعیت اشتراک"
+    )
+    
     start_date = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ شروع")
     end_date = models.DateTimeField(verbose_name="تاریخ انقضا")
 
@@ -28,13 +49,31 @@ class Subscription(models.Model):
         verbose_name = "اشتراک کاربر"
         verbose_name_plural = "اشتراک‌های کاربران"
         ordering = ['-end_date']
+        indexes = [ 
+            models.Index(fields=['user', '-end_date']),
+            models.Index(fields=['end_date', 'status']),
+        ]
 
     @property
     def is_active(self):
         """
         به صورت دینامیک وضعیت فعال بودن اشتراک را برمی‌گرداند.
         """
-        return self.end_date > timezone.now()
+        return self.end_date > timezone.now() and self.status == SubscriptionStatusChoicesModel.active
+
+    @property
+    def days_remaining(self):
+        """محاسبه روزهای باقی‌مانده تا انقضا"""
+        if self.is_active:
+            delta = self.end_date - timezone.now()
+            return max(0, delta.days)
+        return 0
+    
+    def save(self, *args, **kwargs):
+        """بروزرسانی خودکار status بر اساس تاریخ انقضا"""
+        if self.end_date <= timezone.now() and self.status == SubscriptionStatusChoicesModel.active:
+            self.status = SubscriptionStatusChoicesModel.expired
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"اشتراک {self.user.username} برای پلن {self.plan.name}"

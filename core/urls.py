@@ -33,10 +33,13 @@ urlpatterns = [
     path('', include('apps.home.urls')),
     path('accounts/', include('apps.accounts.urls')),
     
-    # === Schema  === #
+    # === SWAGGERS  === #
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    
+    # === CK-EDITOR === #
+    path("ckeditor5/", include('django_ckeditor_5.urls')),
 ]
 
 if settings.DEBUG:

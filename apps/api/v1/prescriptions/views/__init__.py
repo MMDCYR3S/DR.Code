@@ -1,0 +1,3 @@
+from .pres_list_views import PrescriptionListView
+from .pres_detail_views import PrescriptionDetailView
+from .pres_detail_desc_views import PrescriptionDescriptionView

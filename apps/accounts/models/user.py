@@ -16,10 +16,6 @@ class CustomUserManager(BaseUserManager):
         """
         if not phone_number:
             raise ValueError(_('The Phone Number must be set'))
-        
-        # Normalize email if it exists
-        if 'email' in extra_fields and extra_fields['email']:
-            extra_fields['email'] = self.normalize_email(extra_fields['email'])
             
         user = self.model(phone_number=phone_number, **extra_fields)
         user.set_password(password)
@@ -92,3 +88,10 @@ class User(AbstractUser):
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
+    
+    def save(self, *args, **kwargs):
+        """Override save method to generate unique username"""
+        if not self.username:
+            # تولید username یکتا بر اساس phone_number
+            self.username = self.phone_number
+        super().save(*args, **kwargs)

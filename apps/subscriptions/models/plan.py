@@ -15,13 +15,19 @@ class Plan(models.Model):
     )
     name = models.CharField(max_length=100, verbose_name="نام بسته")
     duration_days = models.PositiveIntegerField(verbose_name="مدت زمان (به روز)")
-    price = models.DecimalField(max_digits=10, decimal_places=0, verbose_name="قیمت (تومان)")
+    price = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="قیمت (ریال)")
     is_active = models.BooleanField(default=True, verbose_name="بسته فعال است؟")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد") 
 
     class Meta:
         # جلوگیری از تعریف دو بسته با مدت زمان یکسان برای یک نوع اشتراک
         unique_together = ('membership', 'duration_days') 
         ordering = ['duration_days']
+        
+    @property
+    def duration_months(self):
+        """محاسبه تعداد ماه بر اساس روزها"""
+        return round(self.duration_days / 30)
 
     def __str__(self):
-        return f"{self.membership.name} - {self.name}"
+        return f"{self.membership.title} - {self.name}"

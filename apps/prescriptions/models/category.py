@@ -1,18 +1,20 @@
 from django.db import models
 from slugify import slugify
 
-class Category(models.Model):
+class PrescriptionCategory(models.Model):
     """
     مدل دسته‌بندی نسخه‌های پزشکی.
     هر نسخه به یک دسته‌بندی تعلق دارد.
     """
     title = models.CharField(max_length=100, unique=True, verbose_name="نام دسته‌بندی")
-    slug = models.SlugField(unique=True, allow_unicode=True, verbose_name="اسلاگ (آدرس)")
+    slug = models.SlugField(unique=True, allow_unicode=True, blank=True, verbose_name="اسلاگ (آدرس)")
     color_code = models.CharField(
-        max_length=7,
+        max_length=20,
         help_text="کد هگزادسیمال رنگ، مانند #FF5733",
         verbose_name="کد رنگ"
     )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='زمان ساخت')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='زمان بروزرسانی')
 
     class Meta:
         ordering = ['title']
@@ -23,4 +25,4 @@ class Category(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.name
+        return self.title
