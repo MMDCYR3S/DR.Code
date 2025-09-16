@@ -62,3 +62,11 @@ class TutorialListView(TemplateView):
         context['total_tutorials'] = tutorials.count()
         
         return context
+    
+# =========== PLAN LIST VIEW =========== #
+@method_decorator(cache_page(60 * 1), name='dispatch')
+class PlanListView(TemplateView):
+    """
+    صفحه ارتباط با ما
+    """
+    template_name = 'home/plan.html'
