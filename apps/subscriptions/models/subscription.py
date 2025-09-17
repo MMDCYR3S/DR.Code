@@ -8,6 +8,7 @@ from .plan import Plan
 # ========= Subscription Status Choices Model ========= # 
 class SubscriptionStatusChoicesModel(models.TextChoices):
     """ وضعیت اشتراک کاربر """
+    pending = "PENDING", _("در انتظار پرداخت")
     active = "ACTIVE", _("فعال")
     expired = "EXPIRED", _("منقضی‌شده")
     canceled = "CANCELED", _("لغو شده")
@@ -38,7 +39,7 @@ class Subscription(models.Model):
     status = models.CharField(
         max_length=20,
         choices=SubscriptionStatusChoicesModel.choices,
-        default=SubscriptionStatusChoicesModel.active.value,
+        default=SubscriptionStatusChoicesModel.pending.value,
         verbose_name="وضعیت اشتراک"
     )
     

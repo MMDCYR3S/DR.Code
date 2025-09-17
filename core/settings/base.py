@@ -61,7 +61,7 @@ INSTALLED_APPS = [
     # "apps.dashboard.apps.DashboardConfig",
     "apps.order.apps.OrderConfig",
     # "apps.notifications.apps.NotificationsConfig",
-    # "apps.payment.apps.PaymentConfig",
+    "apps.payment.apps.PaymentConfig",
     "apps.questions.apps.QuestionsConfig",
     "apps.subscriptions.apps.SubscriptionsConfig",
 ]
@@ -311,4 +311,22 @@ CKEDITOR_5_CONFIGS = {
             'reversed': 'true',
         }
     }
+}
+
+# ========= Logging  And Debug ========= #
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'apps.payments': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
 }

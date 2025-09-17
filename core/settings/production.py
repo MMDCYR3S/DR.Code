@@ -29,3 +29,6 @@ LOGGING = {
         },
     },
 }
+
+# ======== ZarinPal Merchant Id ======== #
+ZARINPAL_MERCHANT_ID = 'YOUR_MERCHANT_ID'

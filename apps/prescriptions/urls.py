@@ -7,7 +7,7 @@ from .views import (
     PrescriptionListView
 )
 
-app_name = 'home'
+app_name = 'prescriptions'
 
 urlpatterns = [
     path('', PrescriptionListView.as_view(), name='contact'),

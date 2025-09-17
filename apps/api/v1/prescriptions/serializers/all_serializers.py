@@ -24,8 +24,8 @@ class PrescriptionDrugSerializer(serializers.ModelSerializer):
         model = PrescriptionDrug
         fields = [
             'title', 'code', 'dosage', 'amount', 
-            'instructions', 'truncated_instructions',
-            'is_combination', 'combination_group', 'order'
+            'instructions', 'is_combination',
+            'combination_group', 'order'
         ]
 
 # ======= PRESCRIPTION IMAGE SERIALIZER ======== #

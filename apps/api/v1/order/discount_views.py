@@ -19,8 +19,8 @@ class PurchaseDetailView(generics.RetrieveUpdateAPIView):
     GET: دریافت اطلاعات اولیه پلن
     POST: محاسبه قیمت با اعمال کدهای تخفیف
     """
-    permission_classes = []
-    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle]
     serializer_class = PurchaseDetailSerializer
     lookup_field = 'id'
     lookup_url_kwarg = 'plan_id'
@@ -69,10 +69,7 @@ class PurchaseDetailView(generics.RetrieveUpdateAPIView):
         محاسبه قیمت نهایی با اعمال کدهای تخفیف
         """
         # بررسی وجود پلن
-        plan = get_object_or_404(
-            self.get_queryset(),
-            id=plan_id
-        )
+        plan = self.get_object()
         
         # آماده‌سازی داده‌ها
         data = request.data.copy()
@@ -84,20 +81,14 @@ class PurchaseDetailView(generics.RetrieveUpdateAPIView):
             context={'request': request}
         )
         
-        if not serializer.is_valid():
-            return Response({
-                'success': False,
-                'errors': serializer.errors,
-                'message': 'اطلاعات وارد شده معتبر نیست.'
-            }, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
         
         # آماده‌سازی داده‌ها برای پاسخ
         validated_data = serializer.validated_data
         summary_serializer = PurchaseSummarySerializer(validated_data)
         
-        # ذخیره موقت در کش برای مرحله پرداخت
-        cache_key = f"purchase_detail_{request.user.id}_{plan_id}"
-        cache.set(cache_key, validated_data, timeout=60 * 15)  # 15 دقیقه
+        cache_key = f"purchase_summary:{request.user.id}:{plan_id}"
+        cache.set(cache_key, validated_data, timeout=60 * 15)
         
         return Response({
             'success': True,

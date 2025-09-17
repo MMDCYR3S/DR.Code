@@ -9,3 +9,7 @@ class AdminMem(admin.ModelAdmin):
 @admin.register(Plan)
 class AdminPlan(admin.ModelAdmin):
     pass
+
+@admin.register(Subscription)
+class AdminSubscription(admin.ModelAdmin):
+    pass

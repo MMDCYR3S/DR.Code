@@ -12,6 +12,12 @@ class PlanPublicSerializer(serializers.ModelSerializer):
     duration_months = serializers.ReadOnlyField()
     formatted_price = serializers.SerializerMethodField()
     
+    purchase_url = serializers.HyperlinkedIdentityField(
+        view_name='api:v1:order:purchase-detail',
+        lookup_field='id',
+        lookup_url_kwarg='plan_id'
+    )
+    
     class Meta:
         model = Plan
         fields = [
@@ -20,10 +26,10 @@ class PlanPublicSerializer(serializers.ModelSerializer):
             'membership_name',
             'duration_days',
             'duration_months',
-
+            'purchase_url',
             'formatted_price',
         ]
     
     def get_formatted_price(self, obj):
         """قیمت را به صورت فرمت شده برگردان (با جداکننده هزارگان)"""
-        return f"{obj.price:,}"
+        return f"{obj.price:,} ریال"

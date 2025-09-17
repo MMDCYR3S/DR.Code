@@ -36,3 +36,7 @@ class AdminCat(admin.ModelAdmin):
 @admin.register(PrescriptionImage)
 class AdminImage(admin.ModelAdmin):
     pass
+
+@admin.register(PrescriptionDrug)
+class PrescriptionDrugAdmin(admin.ModelAdmin):
+    pass
