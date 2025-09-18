@@ -1,6 +1,7 @@
 from rest_framework import status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import serializers
 
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken, UntypedToken
@@ -16,6 +17,7 @@ from datetime import timedelta
 from ..serializers import LoginSerializer, RefreshTokenSerializer
 
 import logging
+import uuid
 
 from .base_view import BaseAPIView
 
@@ -37,111 +39,75 @@ class LoginView(BaseAPIView):
     serializer_class = LoginSerializer
 
     def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data, context={'request': request})
+        
+        try:
+            serializer.is_valid(raise_exception=True)
+        except serializers.ValidationError as e:
+            logger.warning(f"تلاش ورود ناموفق از IP: {self.get_client_ip(request)}")
+            return Response({
+                'success': False,
+                'message': 'اطلاعات ورودی نامعتبر است.',
+                'errors': e.detail 
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        user = serializer.user
+
         try:
             with transaction.atomic():
-                serializer = self.serializer_class(data=request.data)
+                refresh = RefreshToken.for_user(user)
+                access_token = refresh.access_token
                 
-                if serializer.is_valid():
-                    user = serializer.get_user()
-                    current_session_key = request.session.session_key
-                    
-                    # بررسی ورود همزمان - اگر کاربر در جای دیگری لاگین است
-                    if (user.current_session_key and 
-                        user.current_session_key != current_session_key):
-                        
-                        logger.warning(f"تلاش ورود همزمان: {user.phone_number} از IP: {self.get_client_ip(request)}")
-                        
-                        return Response({
-                            'success': False,
-                            'message': 'شما در دستگاه دیگری وارد سیستم هستید. لطفاً ابتدا از آن خارج شوید.',
-                            'error_code': 'MULTIPLE_LOGIN_DETECTED'
-                        }, status=status.HTTP_409_CONFLICT)
-                    
-                    # ایجاد JWT توکن‌ها
-                    refresh = RefreshToken.for_user(user)
-                    access_token = refresh.access_token
-                    
-                    # بروزرسانی اطلاعات ورود کاربر
-                    user_updates = {
-                        'last_login': timezone.now(),
-                        'last_login_ip': self.get_client_ip(request),
-                        'last_login_device': self.get_user_agent(request),
-                        'current_session_key': current_session_key
-                    }
-                    
-                    for field, value in user_updates.items():
-                        setattr(user, field, value)
-                    
-                    user.save(update_fields=list(user_updates.keys()))
-                    
-                    # Django login برای session management
-                    login(request, user)
-                    
-                    # آماده‌سازی اطلاعات پاسخ
-                    profile = user.profile
-                    response_data = {
-                        'success': True,
-                        'message': 'ورود با موفقیت انجام شد.',
-                        'data': {
-                            'user': {
-                                'id': user.id,
-                                'full_name': user.full_name,
-                                'phone_number': user.phone_number,
-                                'email': user.email,
-                                'is_active': user.is_active,
-                            },
-                            'profile': {
-                                'auth_status': profile.auth_status,
-                                'auth_status_display': profile.get_auth_status_display(),
-                                'role': profile.role,
-                                'role_display': profile.get_role_display(),
-                                'has_subscription': bool(
-                                    profile.subscription_end_date and 
-                                    profile.subscription_end_date > timezone.now()
-                                ),
-                                'subscription_end_date': profile.subscription_end_date,
-                                'referral_code': profile.referral_code,
-                            },
-                            'tokens': {
-                                'access_token': str(access_token),
-                                'refresh_token': str(refresh),
-                                'access_token_expires_at': (
-                                    timezone.now() + 
-                                    timedelta(seconds=access_token.get('exp', 3600))
-                                ).isoformat(),
-                            },
-                            'session_info': {
-                                'login_time': user.last_login.isoformat(),
-                                'ip_address': user.last_login_ip,
-                                'session_expires_in_days': 30  # مطابق تنظیمات Django
-                            }
+                new_jti = uuid.uuid4().hex
+                
+                refresh.payload['jti'] = new_jti
+                refresh.access_token.payload['jti'] = new_jti
+                
+                access_token = str(refresh.access_token)
+                
+                user.last_login = timezone.now()
+                user.last_login_ip = self.get_client_ip(request)
+                user.last_login_device = self.get_user_agent(request)
+
+                user.active_jti = new_jti
+                user.save(update_fields=['last_login', 'last_login_ip', 'last_login_device', 'active_jti'])
+
+                login(request, user)
+                
+                logger.info(f"کاربر وارد شد: {user.phone_number} | JTI: {new_jti}")
+
+                profile = user.profile
+                response_data = {
+                    'success': True,
+                    'message': 'ورود با موفقیت انجام شد.',
+                    'data': {
+                        'user': {
+                            'id': user.id,
+                            'full_name': user.full_name,
+                            'phone_number': user.phone_number,
+                        },
+                        'profile': {
+                            'role': profile.role,
+                            'role_display': profile.get_role_display(),
+                        },
+                        'tokens': {
+                            'access_token': str(access_token),
+                            'refresh_token': str(refresh),
+                            "jti": str(new_jti)
                         }
                     }
-                    
-                    logger.info(f"کاربر وارد شد: {user.phone_number} از IP: {user.last_login_ip}")
-                    
-                    return Response(response_data, status=status.HTTP_200_OK)
+                }
                 
-                # خطاهای اعتبارسنجی
-                error_messages = []
-                for field, errors in serializer.errors.items():
-                    if isinstance(errors, list):
-                        error_messages.extend(errors)
-                    else:
-                        error_messages.append(str(errors))
-                
-                logger.warning(f"تلاش ورود ناموفق از IP: {self.get_client_ip(request)}")
-                
-                return Response({
-                    'success': False,
-                    'message': error_messages[0] if error_messages else 'اطلاعات ورودی نامعتبر است.',
-                    'errors': serializer.errors
-                }, status=status.HTTP_400_BAD_REQUEST)
-                
+                return Response(response_data, status=status.HTTP_200_OK)
+                                
         except Exception as e:
-            return self.handle_exception(e)
+            logger.error(f"خطای داخلی هنگام ورود کاربر {user.phone_number}: {str(e)}", exc_info=True)
+            return Response({
+                "success": False,
+                "message": "یک خطای داخلی در سرور رخ داد. لطفاً بعداً تلاش کنید."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+# ============ LOGOUT VIEW ============ # 
 class LogoutView(BaseAPIView):
     """
     خروج کاربر از سیستم
@@ -158,42 +124,31 @@ class LogoutView(BaseAPIView):
             with transaction.atomic():
                 user = request.user
                 
-                # پاک کردن session key برای امنیت
-                user.current_session_key = None
-                user.save(update_fields=['current_session_key'])
+                if user.active_jti:
+                    user.active_jti = None
+                    user.save(update_fields=['active_jti'])
                 
-                # Blacklist کردن refresh token در صورت ارسال
-                refresh_token = request.data.get('refresh_token')
-                blacklisted_token = False
-                
-                if refresh_token:
+                refresh_token_str = request.data.get('refresh_token')
+                if refresh_token_str:
                     try:
-                        token = RefreshToken(refresh_token)
+                        token = RefreshToken(refresh_token_str)
                         token.blacklist()
-                        blacklisted_token = True
-                        logger.info(f"Refresh token blacklist شد برای: {user.phone_number}")
-                    except (InvalidToken, TokenError) as e:
-                        logger.warning(f"خطا در blacklist کردن token: {str(e)}")
-                        # ادامه می‌دهیم چون خروج همچنان معتبر است
-                
-                # Django logout
+                    except Exception as e:
+                        logger.warning(f"خطا در blacklist کردن token هنگام خروج: {str(e)}")
+                        
                 logout(request)
                 
-                logger.info(f"کاربر خارج شد: {user.phone_number} از IP: {self.get_client_ip(request)}")
+                logger.info(f"کاربر خارج شد: {user.phone_number}")
                 
                 return Response({
                     'success': True,
-                    'message': 'خروج با موفقیت انجام شد.',
-                    'data': {
-                        'logout_time': timezone.now().isoformat(),
-                        'token_blacklisted': blacklisted_token
-                    }
+                    'message': 'خروج با موفقیت انجام شد.'
                 }, status=status.HTTP_200_OK)
                 
         except Exception as e:
             return self.handle_exception(e)
-
-
+        
+# ============ REFRESH ACCESS TOKEN VIEW ============ #
 class RefreshAccessTokenView(TokenRefreshView, BaseAPIView):
     """
     بازسازی Access Token با استفاده از Refresh Token
@@ -240,7 +195,7 @@ class RefreshAccessTokenView(TokenRefreshView, BaseAPIView):
                 'error_code': 'TOKEN_REFRESH_FAILED'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-
+# ============ FORCE LOGOUT VIEW ============ #
 class ForceLogoutView(BaseAPIView):
     """
     خروج اجباری از تمام دستگاه‌ها
@@ -278,7 +233,7 @@ class ForceLogoutView(BaseAPIView):
         except Exception as e:
             return self.handle_exception(e)
 
-
+# ============ LOGIN STATUS VIEW ============ #
 class LoginStatusView(BaseAPIView):
     """
     بررسی وضعیت ورود کاربر

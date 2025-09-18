@@ -66,12 +66,10 @@ class User(AbstractUser):
     # وضعیت فعال/غیرفعال
     is_active = models.BooleanField('فعال', default=True)
     
+    active_jti = models.CharField(max_length=255, null=True, blank=True, unique=True, db_index=True)
     # آخرین ورود
     last_login_ip = models.GenericIPAddressField('آی پی آخرین ورود', blank=True, null=True)
     last_login_device = models.CharField('دستگاه آخرین ورود', max_length=255, blank=True, null=True)
-    
-    # session key برای کنترل ورود همزمان
-    current_session_key = models.CharField('کلید نشست فعال', max_length=40, blank=True, null=True)
     
     # استفاده از phone_number به عنوان username
     USERNAME_FIELD = 'phone_number'

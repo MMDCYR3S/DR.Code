@@ -58,7 +58,7 @@ INSTALLED_APPS = [
     "apps.accounts.apps.AccountsConfig",
     "apps.home.apps.HomeConfig",
     "apps.prescriptions.apps.PrescriptionsConfig",
-    # "apps.dashboard.apps.DashboardConfig",
+    "apps.dashboard.apps.DashboardConfig",
     "apps.order.apps.OrderConfig",
     # "apps.notifications.apps.NotificationsConfig",
     "apps.payment.apps.PaymentConfig",
@@ -74,7 +74,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "apps.accounts.middleware.SingleSessionMiddleware"
+    'apps.accounts.middleware.SingleDeviceLoginMiddleware',
 ]
 
 ROOT_URLCONF = "core.urls"
@@ -148,18 +148,13 @@ AUTH_USER_MODEL = "accounts.User"
 # =========== REST FRAMEWORK SETTINGS =========== #
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',  
-        'rest_framework.authentication.TokenAuthentication', 
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
-    ],
-    
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    
-    'DEFAULT_AUTHENTICATION_CLASSES': (
+        # 'rest_framework.authentication.SessionAuthentication',  
+        # 'rest_framework.authentication.TokenAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
+    ],
+
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
@@ -206,7 +201,7 @@ SIMPLE_JWT = {
     'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
 
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
-    'TOKEN_TYPE_CLAIM': 'token_type',
+    "TOKEN_TYPE_CLAIM": "token_type",
     'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',
 
     'JTI_CLAIM': 'jti',

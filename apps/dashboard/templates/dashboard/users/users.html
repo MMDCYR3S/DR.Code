@@ -1,0 +1,418 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}مدیریت کاربران{% endblock %}
+
+{% block content %}
+<div class="container mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-slate-700">لیست کاربران</h1>
+        <div class="flex space-x-2 space-x-reverse">
+            <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                کل: {{ stats.total_users }}
+            </span>
+            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                ویژه: {{ stats.premium_users }}
+            </span>
+            <span class="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
+                انتظار: {{ stats.pending_verification }}
+            </span>
+        </div>
+    </div>
+
+    <!-- فرم جستجو و فیلتر -->
+    <div x-data="{ filterOpen: false }" class="bg-white p-4 rounded-xl shadow-sm mb-6">
+        <form method="GET" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="relative lg:col-span-2">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                        <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none">
+                            <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                    </span>
+                    {{ search_form.search }}
+                </div>
+
+                <div class="hidden lg:flex lg:col-span-2 gap-4">
+                    {{ search_form.role }}
+                    {{ search_form.auth_status }}
+                    {{ search_form.sort_by }}
+                </div>
+                
+                <div class="lg:hidden md:col-span-2">
+                    <button type="button" @click="filterOpen = !filterOpen" class="w-full flex justify-center items-center py-2 px-4 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 transition-colors">
+                        <svg class="w-5 h-5 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.572a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
+                        </svg>
+                        <span class="mr-2">فیلترها و مرتب‌سازی</span>
+                    </button>
+                </div>
+            </div>
+
+            <div x-show="filterOpen" x-cloak x-transition class="lg:hidden bg-white p-4 rounded-xl shadow-sm">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {{ search_form.role }}
+                    {{ search_form.auth_status }}
+                    <div class="sm:col-span-2">
+                        {{ search_form.sort_by }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    اعمال فیلتر
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- جدول کاربران - دسکتاپ -->
+    <div class="hidden lg:block bg-white rounded-xl shadow-sm overflow-hidden">
+        <table class="min-w-full text-sm">
+            <thead class="bg-slate-50 text-slate-600">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-right font-medium">کاربر</th>
+                    <th scope="col" class="px-6 py-3 text-right font-medium">نقش</th>
+                    <th scope="col" class="px-6 py-3 text-right font-medium">وضعیت احراز هویت</th>
+                    <th scope="col" class="px-6 py-3 text-right font-medium">تاریخ ثبت نام</th>
+                    <th scope="col" class="px-6 py-3 text-center font-medium">عملیات</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+                {% for user in users %}
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="font-semibold">{{ user.full_name }}</div>
+                        <div class="text-xs text-slate-500">
+                            {% if user.email %}{{ user.email }}{% else %}{{ user.phone_number }}{% endif %}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if user.profile.role == 'premium' %}
+                            <span class="px-2.5 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">کاربر ویژه</span>
+                        {% elif user.profile.role == 'regular' %}
+                            <span class="px-2.5 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full">کاربر عادی</span>
+                        {% elif user.profile.role == 'visitor' %}
+                            <span class="px-2.5 py-1 text-xs font-semibold text-gray-800 bg-gray-100 rounded-full">بازدیدکننده</span>
+                        {% else %}
+                            <span class="px-2.5 py-1 text-xs font-semibold text-orange-800 bg-orange-100 rounded-full">{{ user.profile.get_role_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if user.profile.auth_status == 'APPROVED' %}
+                            <div class="flex items-center text-green-600">
+                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.06 0l4.001-5.492z" clip-rule="evenodd" />
+                                </svg>
+                                <span class="mr-1.5">تایید شده</span>
+                            </div>
+                        {% elif user.profile.auth_status == 'REJECTED' %}
+                            <div class="flex items-center text-red-600">
+                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                                </svg>
+                                <span class="mr-1.5">رد شده</span>
+                            </div>
+                        {% else %}
+                            <div class="flex items-center text-slate-500">
+                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span class="mr-1.5">در انتظار تایید</span>
+                            </div>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-slate-500">{{ user.jalali_date }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        <div class="flex justify-center items-center space-x-2 space-x-reverse">
+                            <button onclick="viewUser({{ user.id }})" class="p-1.5 text-slate-500 hover:text-blue-600 rounded-md hover:bg-slate-200 transition-colors">
+                                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C5.412 7.051 8.574 4.5 12 4.5c3.426 0 6.588 2.551 9.964 7.178.15.207.15.431 0 .639C18.588 16.949 15.426 19.5 12 19.5c-3.426 0-6.588-2.551-9.964-7.178z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                            </button>
+                            <button onclick="editUser({{ user.id }})" class="p-1.5 text-slate-500 hover:text-yellow-600 rounded-md hover:bg-slate-200 transition-colors">
+                                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                                </svg>
+                            </button>
+                            <button onclick="deleteUser({{ user.id }}, '{{ user.full_name }}')" class="p-1.5 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-200 transition-colors">
+                                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-4 text-center text-slate-500">
+                        هیچ کاربری یافت نشد
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- کارت‌های موبایل -->
+    <div class="grid grid-cols-1 gap-4 lg:hidden">
+        {% for user in users %}
+        <div x-data="{ expanded: false }" class="bg-white rounded-xl shadow-sm p-4">
+            <div class="flex justify-between items-center">
+                <div>
+                    <div class="font-semibold">{{ user.full_name }}</div>
+                    {% if user.profile.role == 'premium' %}
+                        <span class="mt-1 px-2.5 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">کاربر ویژه</span>
+                    {% elif user.profile.role == 'regular' %}
+                        <span class="mt-1 px-2.5 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full">کاربر عادی</span>
+                    {% else %}
+                        <span class="mt-1 px-2.5 py-1 text-xs font-semibold text-orange-800 bg-orange-100 rounded-full">{{ user.profile.get_role_display }}</span>
+                    {% endif %}
+                </div>
+                <button @click="expanded = !expanded" class="p-2 text-slate-500 rounded-md hover:bg-slate-100">
+                    <svg class="h-5 w-5 transition-transform" :class="{'rotate-180': expanded}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 011.06 0L10 11.94l3.72-3.72a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 9.28a.75.75 0 010-1.06z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+            <div x-show="expanded" x-cloak x-collapse class="mt-4 pt-4 border-t border-slate-200">
+                <dl class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <dt class="text-slate-500">تماس:</dt>
+                        <dd>{% if user.email %}{{ user.email }}{% else %}{{ user.phone_number }}{% endif %}</dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-slate-500">وضعیت احراز:</dt>
+                        <dd>
+                            {% if user.profile.auth_status == 'APPROVED' %}
+                                <span class="text-green-600">تایید شده</span>
+                            {% elif user.profile.auth_status == 'REJECTED' %}
+                                <span class="text-red-600">رد شده</span>
+                            {% else %}
+                                <span class="text-slate-500">در انتظار تایید</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-slate-500">تاریخ ثبت نام:</dt>
+                        <dd>{{ user.jalali_date }}</dd>
+                    </div>
+                </dl>
+                <div class="mt-4 pt-4 border-t border-slate-200 flex justify-end space-x-2 space-x-reverse">
+                    <button onclick="viewUser({{ user.id }})" class="p-1.5 text-slate-500 hover:text-blue-600 rounded-md hover:bg-slate-100 transition-colors">
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C5.412 7.051 8.574 4.5 12 4.5c3.426 0 6.588 2.551 9.964 7.178.15.207.15.431 0 .639C18.588 16.949 15.426 19.5 12 19.5c-3.426 0-6.588-2.551-9.964-7.178z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                    </button>
+                    <button onclick="editUser({{ user.id }})" class="p-1.5 text-slate-500 hover:text-yellow-600 rounded-md hover:bg-slate-100 transition-colors">
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                        </svg>
+                    </button>
+                    <button onclick="deleteUser({{ user.id }}, '{{ user.full_name }}')" class="p-1.5 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100 transition-colors">
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="bg-white rounded-xl shadow-sm p-8 text-center">
+            <p class="text-slate-500">هیچ کاربری یافت نشد</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="mt-6 flex justify-center">
+        <nav class="flex items-center space-x-2 space-x-reverse">
+            {% if page_obj.has_previous %}
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}" class="px-3 py-2 text-slate-500 bg-white rounded-md hover:bg-slate-100">قبلی</a>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <span class="px-3 py-2 text-white bg-blue-500 rounded-md">{{ num }}</span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}" class="px-3 py-2 text-slate-600 bg-white rounded-md hover:bg-slate-100">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}" class="px-3 py-2 text-slate-500 bg-white rounded-md hover:bg-slate-100">بعدی</a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- مودال ویرایش -->
+<div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium text-gray-900">ویرایش کاربر</h3>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <form id="editForm" method="POST">
+                {% csrf_token %}
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">نام</label>
+                        <input type="text" name="first_name" id="edit_first_name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">نام خانوادگی</label>
+                        <input type="text" name="last_name" id="edit_last_name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">ایمیل</label>
+                        <input type="email" name="email" id="edit_email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">نقش</label>
+                        <select name="role" id="edit_role" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="visitor">بازدیدکننده</option>
+                            <option value="regular">کاربر عادی</option>
+                            <option value="premium">کاربر ویژه</option>
+                            <option value="admin">ادمین</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">وضعیت احراز هویت</label>
+                        <select name="auth_status" id="edit_auth_status" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="PENDING">در انتظار تایید</option>
+                            <option value="APPROVED">تایید شده</option>
+                            <option value="REJECTED">رد شده</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="is_active" id="edit_is_active" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                            <span class="mr-2 text-sm text-gray-700">کاربر فعال</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2 space-x-reverse mt-6">
+                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">انصراف</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">ذخیره</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- مودال حذف -->
+<div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">حذف کاربر</h3>
+            <p class="text-sm text-gray-500 mb-4">آیا مطمئن هستید که می‌خواهید <span id="deleteUserName" class="font-semibold"></span> را حذف کنید؟</p>
+            <div class="flex justify-center space-x-2 space-x-reverse">
+                <button onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">انصراف</button>
+                <button onclick="confirmDelete()" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">حذف</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentEditUserId = null;
+let currentDeleteUserId = null;
+
+function viewUser(userId) {
+    // پیاده‌سازی مشاهده جزئیات کاربر
+    window.location.href = `/admin/users/${userId}/`;
+}
+
+function editUser(userId) {
+    currentEditUserId = userId;
+    // دریافت اطلاعات کاربر با AJAX
+    fetch(`/admin/users/${userId}/edit/`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('edit_first_name').value = data.first_name || '';
+            document.getElementById('edit_last_name').value = data.last_name || '';
+            document.getElementById('edit_email').value = data.email || '';
+            document.getElementById('edit_role').value = data.role || '';
+            document.getElementById('edit_auth_status').value = data.auth_status || '';
+            document.getElementById('edit_is_active').checked = data.is_active || false;
+            
+            document.getElementById('editForm').action = `/admin/users/${userId}/edit/`;
+            document.getElementById('editModal').classList.remove('hidden');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('خطا در دریافت اطلاعات کاربر');
+        });
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').classList.add('hidden');
+    currentEditUserId = null;
+}
+
+function deleteUser(userId, userName) {
+    currentDeleteUserId = userId;
+    document.getElementById('deleteUserName').textContent = userName;
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+    currentDeleteUserId = null;
+}
+
+function confirmDelete() {
+    if (currentDeleteUserId) {
+        fetch(`/admin/users/${currentDeleteUserId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('خطا در حذف کاربر');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('خطا در حذف کاربر');
+        });
+    }
+    closeDeleteModal();
+}
+
+// بستن مودال‌ها با کلیک خارج از آن‌ها
+window.onclick = function(event) {
+    const editModal = document.getElementById('editModal');
+    const deleteModal = document.getElementById('deleteModal');
+    
+    if (event.target == editModal) {
+        closeEditModal();
+    }
+    if (event.target == deleteModal) {
+        closeDeleteModal();
+    }
+}
+</script>
+{% endblock %}
