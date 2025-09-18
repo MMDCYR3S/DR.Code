@@ -5,3 +5,18 @@ from .users_views import (
     UserVerificationDetailView,
     PendingVerificationListView
 )
+
+from .categories_views import (
+    CategoryCreateView,
+    CategoryListView,
+    CategoryDeleteView,
+    CategoryUpdateView
+)
+
+from .prescriptions_views import(
+    PrescriptionListView,
+    PrescriptionCreateView,
+    PrescriptionUpdateView,
+    PrescriptionDeleteView,
+    PrescriptionDetailView
+)

@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% endblock %} - دکتر کد</title>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
-
-    <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -21,7 +22,6 @@
         }
         [x-cloak] { display: none !important; }
         
-        /* استایل برای هم‌اندازه کردن آیکون‌های Font Awesome در سایدبار */
         .sidebar-icon {
             width: 1.5rem; /* 24px */
             text-align: center;
@@ -31,44 +31,78 @@
 </head>
 <body class="bg-slate-100 text-slate-800">
 
+    <div x-data="notificationManager" 
+         @notify.window="add($event.detail)"
+         class="fixed top-5 left-5 z-[100] w-full max-w-xs space-y-3">
+        <template x-for="notification in notifications" :key="notification.id">
+            <div x-show="notification.visible" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="transform -translate-x-full opacity-0"
+                 x-transition:enter-end="transform translate-x-0 opacity-100"
+                 x-transition:leave="transition ease-in duration-300"
+                 x-transition:leave-start="transform opacity-100"
+                 x-transition:leave-end="transform -translate-x-full opacity-0"
+                 class="relative w-full rounded-lg shadow-lg pointer-events-auto"
+                 :class="{ 'bg-green-500': notification.type === 'success', 'bg-red-500': notification.type === 'error' }">
+                <div class="p-4 flex items-start">
+                    <div class="flex-shrink-0">
+                        <i class="fa-solid text-white" :class="{ 'fa-check-circle': notification.type === 'success', 'fa-times-circle': notification.type === 'error' }"></i>
+                    </div>
+                    <div class="mr-3 flex-1">
+                        <p class="text-sm font-semibold text-white" x-text="notification.message"></p>
+                    </div>
+                    <div class="flex-shrink-0 flex">
+                        <button @click="remove(notification.id)" class="inline-flex text-white opacity-70 hover:opacity-100">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+
     <div x-data="{ sidebarOpen: false }" class="flex h-screen bg-slate-100">
         <aside
             :class="sidebarOpen ? 'translate-x-0' : 'translate-x-full'"
-            class="fixed inset-y-0 right-0 z-30 w-64 bg-slate-800 text-white shadow-lg transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0">
+            class="fixed inset-y-0 right-0 z-30 w-64 bg-slate-800 text-white shadow-lg transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 flex flex-col">
             
-            <div class="flex items-center justify-center px-6 py-4 border-b border-slate-700">
+            <div class="flex-shrink-0 flex items-center justify-center px-6 py-4 border-b border-slate-700">
                 <svg class="h-8 w-8 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 18.75V16.5M16.5 3.75V16.5M12 12.75H5.25A2.25 2.25 0 013 10.5V8.25A2.25 2.25 0 015.25 6H12M12 12.75V18M12 12.75A3 3 0 0115 9.75V4.5A3 3 0 0112 1.5h-1.5a3 3 0 00-3 3v1.5" />
                 </svg>
                 <span class="ml-4 mr-2 text-xl font-bold">دکتر کد</span>
             </div>
 
-            <nav class="mt-6">
-                <a href="" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 {% if request.resolver_match.url_name == 'dashboard' %}bg-slate-700 text-blue-300{% endif %}">
+            <nav class="flex-1 overflow-y-auto py-6">
+                <a href="" class="flex items-center px-6 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 {% if request.resolver_match.url_name == 'dashboard' %}bg-slate-700 text-blue-300{% endif %}">
                     <i class="fa-solid fa-house sidebar-icon"></i>
                     <span class="mx-3">داشبورد</span>
                 </a>
-                <a href="{% url 'dashboard:users:users_list' %}" class="flex items-center px-6 py-3 mt-4 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 {% if request.resolver_match.url_name == 'users' %}bg-slate-700 text-blue-300{% endif %}">
+                <a href="{% url 'dashboard:users:users_list' %}" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 {% if request.resolver_match.url_name == 'users_list' %}bg-slate-700 text-blue-300{% endif %}">
                     <i class="fa-solid fa-users sidebar-icon"></i>
                     <span class="mx-3">مدیریت کاربران</span>
                 </a>
-                <a href="{% url 'dashboard:users:admin_verification_queue' %}" class="flex items-center px-6 py-3 mt-4 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 {% if 'admin_verification_queue' in request.resolver_match.view_name %}bg-slate-700 text-blue-300{% endif %}">
+                <a href="{% url 'dashboard:users:admin_verification_queue' %}" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 {% if request.resolver_match.url_name == 'admin_verification_queue' %}bg-slate-700 text-blue-300{% endif %}">
                     <i class="fa-solid fa-user-check sidebar-icon"></i>
-                    <span class="mx-3">مدیریت احراز هویت</span>
+                    <span class="mx-3">احراز هویت</span>
                 </a>
-                <a href="#" class="flex items-center px-6 py-3 mt-4 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200">
+                <a href="{% url 'dashboard:prescriptions:prescription_list' %}" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 {% if request.resolver_match.url_name == 'prescription_list' %}bg-slate-700 text-blue-300{% endif %}">
                     <i class="fa-solid fa-file-prescription sidebar-icon"></i>
                     <span class="mx-3">مدیریت نسخه‌ها</span>
                 </a>
-                <a href="#" class="flex items-center px-6 py-3 mt-4 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200">
+                <a href="{% url 'dashboard:categories:category_list' %}" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 {% if request.resolver_match.url_name == 'category_list' %}bg-slate-700 text-blue-300{% endif %}">
+                    <i class="fa-solid fa-sitemap sidebar-icon"></i>
+                    <span class="mx-3">دسته‌بندی‌ها</span>
+                </a>
+                <a href="#" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white">
                     <i class="fa-solid fa-comments sidebar-icon"></i>
                     <span class="mx-3">سوالات کاربران</span>
                 </a>
-                <a href="#" class="flex items-center px-6 py-3 mt-4 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200">
+                <a href="#" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white">
                     <i class="fa-solid fa-envelope sidebar-icon"></i>
                     <span class="mx-3">پیام‌های تماس</span>
                 </a>
-                <a href="#" class="flex items-center px-6 py-3 mt-4 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200">
+                <a href="#" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white">
                     <i class="fa-solid fa-tags sidebar-icon"></i>
                     <span class="mx-3">کدهای تخفیف</span>
                 </a>
@@ -94,6 +128,32 @@
         </div>
     </div>
 
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('notificationManager', () => ({
+                notifications: [],
+                counter: 0,
+                add(notification) {
+                    notification.id = this.counter++;
+                    notification.visible = true;
+                    this.notifications.push(notification);
+                    setTimeout(() => {
+                        this.remove(notification.id);
+                    }, 5000);
+                },
+                remove(id) {
+                    const notification = this.notifications.find(n => n.id === id);
+                    if (notification) {
+                        notification.visible = false;
+                        setTimeout(() => {
+                           const index = this.notifications.findIndex(n => n.id === id);
+                           if(index > -1) this.notifications.splice(index, 1);
+                        }, 300);
+                    }
+                }
+            }));
+        });
+    </script>
     {% block extra_js %}{% endblock %}
     {% include 'dashboard/messages.html' %}
 </body>

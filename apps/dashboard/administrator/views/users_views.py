@@ -106,6 +106,7 @@ class UserUpdateView(LoginRequiredMixin, HasAdminAccessPermission, View):
             'email': user.email,
             'is_active': user.is_active,
             'role': user.profile.role,
+            'auth_status': user.profile.auth_status,
         }
         return JsonResponse(data)
 
