@@ -1,2 +1,2 @@
 from .user import User
-from .profile import Profile, AuthStatusChoices
+from .profile import Profile, AuthStatusChoices, AuthenticationDocument

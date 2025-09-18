@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.db.models.signals import post_save
+from django.core.validators import FileExtensionValidator
 from django.dispatch import receiver
 
 import uuid
@@ -14,6 +15,34 @@ class AuthStatusChoices(models.TextChoices):
     PENDING = "PENDING", _("در انتظار تایید")
     APPROVED = "APPROVED", _("تایید شده")
     REJECTED = "REJECTED", _("رد شده")
+
+# ========== Get Auth Document Path  ========== #
+def get_auth_document_path(instance, filename):
+    """ تابعی برای تولید مسیر آپلود مدارک به صورت اختصاصی برای هر کاربر """
+    return f'auth/documents/user_{instance.profile.user.id}/{filename}'
+
+# ========== Authentication Document ========== #
+class AuthenticationDocument(models.Model):
+    """ مدلی برای نگهداری مدارک ارسالی جهت احراز هویت """
+    profile = models.ForeignKey(
+        'Profile', 
+        on_delete=models.CASCADE, 
+        related_name='documents',
+        verbose_name=_("پروفایل")
+    )
+    file = models.FileField(
+        upload_to=get_auth_document_path,
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'pdf'])],
+        verbose_name=_("فایل مدرک")
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True, verbose_name=_("زمان بارگذاری"))
+
+    def __str__(self):
+        return f"مدرک برای {self.profile.user.full_name}"
+
+    class Meta:
+        verbose_name = _("مدرک هویتی")
+        verbose_name_plural = _("مدارک هویتی")
 
 # ========== Profile Model ========== #
 class Profile(models.Model):
@@ -52,12 +81,7 @@ class Profile(models.Model):
         null=True,
         verbose_name=_("کد نظام پزشکی / دانشجویی")
     )
-    auth_image = models.ImageField(
-        upload_to="auth/images/",
-        null=True,
-        blank=True,
-        verbose_name=_("تصویر مدرک هویتی")
-    )
+    
     auth_link = models.URLField(
         max_length=200,
         blank=True,

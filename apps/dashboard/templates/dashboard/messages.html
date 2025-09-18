@@ -1,0 +1,25 @@
+{% load static %}
+{% if messages %}
+    <ul class="messages">
+        <link rel="stylesheet" href="{% static 'toastify/toastify.css' %}" />
+        <script src="{% static 'toastify/toastify.js' %}"></script>
+        <script src="{% static 'toastify/toastify-es.js' %}"></script>
+        {% for message in messages %}
+        <li {% if message.tags %} class="{{ message.tags }}"{% endif %}>
+            {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
+            {% endif %}
+            <script>
+                Toastify({
+                    text: "{{ message }}",
+                    className: "{{message.level}}",
+                    duration: 3000,
+                    close: true,
+                    style: {
+                        background: "{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %} linear-gradient(to right,rgb(176, 56, 0),rgb(194, 3, 3)) {% elif message.level == DEFAULT_MESSAGE_LEVELS.SUCCESS %} linear-gradient(to right,rgb(15, 176, 0),rgb(3, 194, 114)) {% else %} linear-gradient(to right,rgb(0, 56, 176),rgb(3, 134, 194)) {% endif %}",
+                    }
+                    }).showToast();
+            </script>
+        </li>
+        {% endfor %}
+    </ul>
+{% endif %}

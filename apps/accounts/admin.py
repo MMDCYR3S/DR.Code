@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.sessions.models import Session
 
-from .models import Profile, User
+from .models import Profile, User, AuthenticationDocument
 
 # Register your models here.
 @admin.register(Profile)
@@ -10,4 +10,9 @@ class ProfileAdmin(admin.ModelAdmin):
     
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
+    pass
+    
+    
+@admin.register(AuthenticationDocument)
+class AuthenticationDocumentAdmin(admin.ModelAdmin):
     pass

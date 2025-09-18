@@ -53,6 +53,13 @@ class LoginView(BaseAPIView):
             
         user = serializer.user
 
+        if user.active_jti:
+            logger.warning(f"کاربر {user.phone_number} تلاش کرد با یک نشست فعال وارد شود.")
+            return Response({
+                'success': False,
+                'message': 'شما در حال حاضر در یک دستگاه دیگر وارد شده‌اید. لطفا ابتدا از آن دستگاه خارج شوید.'
+            }, status=status.HTTP_409_CONFLICT)
+
         try:
             with transaction.atomic():
                 refresh = RefreshToken.for_user(user)

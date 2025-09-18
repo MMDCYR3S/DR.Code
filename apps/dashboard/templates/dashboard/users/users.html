@@ -20,45 +20,39 @@
     </div>
 
     <!-- فرم جستجو و فیلتر -->
-    <div x-data="{ filterOpen: false }" class="bg-white p-4 rounded-xl shadow-sm mb-6">
-        <form method="GET" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="relative lg:col-span-2">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
-                        <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none">
-                            <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                        </svg>
-                    </span>
-                    {{ search_form.search }}
-                </div>
+   <div x-data="{ filterOpen: window.innerWidth >= 1024 }" @resize.window="filterOpen = window.innerWidth >= 1024" class="bg-white p-4 rounded-xl shadow-sm mb-6">
+    <form method="GET" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+            
+            <div class="relative lg:col-span-2">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                    <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none">
+                        <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                </span>
+                {{ search_form.search }}
+            </div>
 
-                <div class="hidden lg:flex lg:col-span-2 gap-4">
-                    {{ search_form.role }}
-                    {{ search_form.auth_status }}
-                    {{ search_form.sort_by }}
-                </div>
-                
-                <div class="lg:hidden md:col-span-2">
-                    <button type="button" @click="filterOpen = !filterOpen" class="w-full flex justify-center items-center py-2 px-4 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 transition-colors">
-                        <svg class="w-5 h-5 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.572a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
-                        </svg>
-                        <span class="mr-2">فیلترها و مرتب‌سازی</span>
-                    </button>
+            <div class="lg:hidden md:col-span-2">
+                <button type="button" @click="filterOpen = !filterOpen" class="w-full flex justify-center items-center py-2 px-4 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 transition-colors">
+                    <svg class="w-5 h-5 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.572a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
+                    </svg>
+                    <span class="mr-2">فیلترها و مرتب‌سازی</span>
+                </button>
+            </div>
+            
+            <div x-show="filterOpen" x-cloak class="lg:col-span-2 w-full" x-transition>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+                    <div class="sm:col-span-1">{{ search_form.role }}</div>
+                    <div class="sm:col-span-1">{{ search_form.auth_status }}</div>
+                    <div class="sm:col-span-2 lg:col-span-1">{{ search_form.sort_by }}</div>
                 </div>
             </div>
 
-            <div x-show="filterOpen" x-cloak x-transition class="lg:hidden bg-white p-4 rounded-xl shadow-sm">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {{ search_form.role }}
-                    {{ search_form.auth_status }}
-                    <div class="sm:col-span-2">
-                        {{ search_form.sort_by }}
-                    </div>
-                </div>
-            </div>
+        </div>
 
-            <div class="flex justify-end">
+            <div class="flex justify-end pt-2">
                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                     اعمال فیلتر
                 </button>
@@ -337,13 +331,13 @@ let currentDeleteUserId = null;
 
 function viewUser(userId) {
     // پیاده‌سازی مشاهده جزئیات کاربر
-    window.location.href = `/admin/users/${userId}/`;
+    window.location.href = `/dashboard/admin/users/${userId}/`;
 }
 
 function editUser(userId) {
     currentEditUserId = userId;
     // دریافت اطلاعات کاربر با AJAX
-    fetch(`/admin/users/${userId}/edit/`)
+    fetch(`/dashboard/admin/users/${userId}/edit/`)
         .then(response => response.json())
         .then(data => {
             document.getElementById('edit_first_name').value = data.first_name || '';
@@ -353,7 +347,7 @@ function editUser(userId) {
             document.getElementById('edit_auth_status').value = data.auth_status || '';
             document.getElementById('edit_is_active').checked = data.is_active || false;
             
-            document.getElementById('editForm').action = `/admin/users/${userId}/edit/`;
+            document.getElementById('editForm').action = `/dashboard/admin/users/${userId}/edit/`;
             document.getElementById('editModal').classList.remove('hidden');
         })
         .catch(error => {
@@ -380,7 +374,7 @@ function closeDeleteModal() {
 
 function confirmDelete() {
     if (currentDeleteUserId) {
-        fetch(`/admin/users/${currentDeleteUserId}/delete/`, {
+        fetch(`/dashboard/admin/users/${currentDeleteUserId}/delete/`, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,

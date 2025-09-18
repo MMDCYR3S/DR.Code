@@ -1,0 +1,56 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}کاربران در صف احراز هویت{% endblock %}
+
+{% block content %}
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-4 sm:p-6">
+    <div class="container mx-auto">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+            <h1 class="text-2xl font-bold text-slate-700">کاربران در صف احراز هویت</h1>
+            <p class="text-sm text-slate-500 mt-2 sm:mt-0">
+                برای بررسی مدارک، روی کارت هر کاربر کلیک کنید. ({{ pending_users.count }} کاربر در انتظار)
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            
+            {% for user in pending_users %}
+            <a href="{% url 'dashboard:users:admin_user_detail' pk=user.pk %}" class="block group">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-transparent group-hover:shadow-lg group-hover:border-blue-400 transition-all duration-300 h-full flex flex-col">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800">{{ user.full_name }}</h2>
+                            <p class="text-sm text-slate-500 mt-1">{{ user.phone_number }}</p>
+                        </div>
+                        <!-- Optional: You can add a "new" tag based on how recent the user is -->
+                        {% comment %}
+                        <span class="text-xs font-semibold text-orange-800 bg-orange-100 py-1 px-2.5 rounded-full">
+                            جدید
+                        </span>
+                        {% endcomment %}
+                    </div>
+                    <div class="mt-4 border-t border-dashed pt-4 text-xs text-slate-400 flex-grow">
+                        تاریخ ثبت‌نام: {{ user.date_joined|date:"Y/m/d" }}
+                    </div>
+                    <div class="mt-4 text-center text-sm font-semibold text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        مشاهده و بررسی مدارک
+                    </div>
+                </div>
+            </a>
+            {% empty %}
+                <div class="col-span-full bg-white text-center p-10 rounded-xl shadow-sm">
+                    <p class="text-slate-500">در حال حاضر هیچ کاربری در صف احراز هویت وجود ندارد.</p>
+                </div>
+            {% endfor %}
+            
+        </div>
+        
+        <!-- Pagination (اگر نیاز بود) -->
+        {% if is_paginated %}
+        <div class="mt-8 flex justify-center">
+            <!-- کد Pagination را اینجا قرار دهید -->
+        </div>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}

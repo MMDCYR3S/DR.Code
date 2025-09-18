@@ -1,189 +1,224 @@
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>جزئیات کاربر - دکتر کد</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Vazirmatn', sans-serif;
-        }
-        [x-cloak] { display: none !important; }
-        .modal-backdrop {
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-        .modal-body {
-            max-width: 500px;
-        }
-    </style>
-</head>
-<body class="bg-slate-100 text-slate-800">
+{% extends 'dashboard/base.html' %}
+{% load file_filters %}
 
-    <div x-data="{ sidebarOpen: false }" class="flex h-screen bg-slate-100">
-        
-        <aside :class="sidebarOpen ? 'translate-x-0' : 'translate-x-full'" class="fixed inset-y-0 right-0 z-30 w-64 bg-slate-800 text-white shadow-lg transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0">
-            <div class="flex items-center justify-center px-6 py-4 border-b border-slate-700">
-                <span class="ml-4 mr-2 text-xl font-bold">دکتر کد</span>
-            </div>
-            <nav class="mt-6">
-                <a href="#" class="flex items-center px-6 py-3 text-slate-300 hover:bg-slate-700">
-                    <span class="mx-3">بازگشت به لیست</span>
-                </a>
-            </nav>
-        </aside>
+{% block title %}جزئیات کاربر: {{ target_user.full_name }}{% endblock %}
 
-        <div class="flex-1 flex flex-col overflow-hidden">
-            <header class="flex items-center justify-between p-4 bg-white border-b lg:hidden">
-                 <span class="text-lg font-bold">دکتر کد</span>
-                <button @click="sidebarOpen = !sidebarOpen" class="text-slate-500 focus:outline-none">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
-                </button>
-            </header>
+{% block content %}
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-4 sm:p-6" 
+      x-data="userDetailComponent({{ target_user.id }}, '{{ target_user.full_name|escapejs }}')">
+    <div class="container mx-auto">
+        <div class="flex items-center space-x-2 space-x-reverse mb-6">
+            <h1 class="text-2xl font-bold text-slate-700">{{ target_user.full_name }}</h1>
+            
+            {% if profile.auth_status == 'PENDING' %}
+                <span class="px-3 py-1 text-xs font-semibold text-orange-800 bg-orange-200 rounded-full">در انتظار تایید</span>
+            {% elif profile.auth_status == 'APPROVED' %}
+                <span class="px-3 py-1 text-xs font-semibold text-green-800 bg-green-200 rounded-full">تایید شده</span>
+            {% elif profile.auth_status == 'REJECTED' %}
+                <span class="px-3 py-1 text-xs font-semibold text-red-800 bg-red-200 rounded-full">رد شده</span>
+            {% endif %}
+        </div>
 
-            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-4 sm:p-6" x-data="{ 
-                userStatus: 'pending', // 'pending', 'verified', 'rejected'
-                rejectModalOpen: false, 
-                imageViewerOpen: false,
-                imageUrl: '' 
-            }">
-                <div class="container mx-auto">
-                    <div class="flex items-center space-x-2 space-x-reverse mb-6">
-                        <h1 class="text-2xl font-bold text-slate-700">سارا احمدی</h1>
-                        
-                        <template x-if="userStatus === 'pending'">
-                            <span class="px-3 py-1 text-xs font-semibold text-orange-800 bg-orange-200 rounded-full">در انتظار تایید</span>
-                        </template>
-                        <template x-if="userStatus === 'verified'">
-                            <span class="px-3 py-1 text-xs font-semibold text-green-800 bg-green-200 rounded-full">تایید شده</span>
-                        </template>
-                         <template x-if="userStatus === 'rejected'">
-                            <span class="px-3 py-1 text-xs font-semibold text-red-800 bg-red-200 rounded-full">رد شده</span>
-                        </template>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-3 lg:gap-8">
-                        
-                        <div class="lg:col-span-1 space-y-6">
-                            <div class="bg-white p-6 rounded-xl shadow-sm">
-                                <h3 class="text-lg font-semibold text-slate-700 mb-4">مدارک ارسالی جهت احراز هویت</h3>
-                                <div class="space-y-4">
-                                    <p class="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">
-                                       کاربر متنی را به همراه مدارک ارسال کرده است که در این بخش نمایش داده میشود.
-                                    </p>
-                                    <div class="grid grid-cols-2 gap-3">
-                                        <button @click="imageUrl = 'https://picsum.photos/id/10/800/600'; imageViewerOpen = true" class="focus:outline-none">
-                                            <img src="https://picsum.photos/id/10/200/150" alt="مدرک ۱" class="rounded-lg w-full h-auto object-cover border-2 border-slate-200 hover:border-blue-400 transition">
-                                        </button>
-                                        <button @click="imageUrl = 'https://picsum.photos/id/11/800/600'; imageViewerOpen = true" class="focus:outline-none">
-                                            <img src="https://picsum.photos/id/11/200/150" alt="مدرک ۲" class="rounded-lg w-full h-auto object-cover border-2 border-slate-200 hover:border-blue-400 transition">
-                                        </button>
-                                    </div>
-                                    <div>
-                                        <a href="#" class="inline-flex items-center text-sm text-blue-600 hover:underline">
-                                            <span>لینک صفحه نظام پزشکی</span>
-                                            <svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+        <div class="grid grid-cols-1 lg:grid-cols-3 lg:gap-8">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="text-lg font-semibold text-slate-700 mb-4">مدارک ارسالی</h3>
+                    <div class="space-y-4">
+                        {% if documents %}
+                            <div class="grid grid-cols-2 gap-3">
+                                {% for doc in documents %}
+                                    {% if doc.file.url|file_filter == 'pdf' %}
+                                        <a href="{{ doc.file.url }}" target="_blank" download class="col-span-2 flex items-center justify-center text-center p-4 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-lg transition-colors border border-blue-200">
+                                            <i class="fa-solid fa-file-pdf text-xl ml-3"></i>
+                                            <span>دانلود فایل PDF</span>
                                         </a>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="bg-white p-6 rounded-xl shadow-sm" x-data="{ activeAccordion: '' }">
-                                <h3 class="text-lg font-semibold text-slate-700 mb-4">تاریخچه پرسش و پاسخ‌ها</h3>
-                                <div class="space-y-2">
-                                    <div>
-                                        <button @click="activeAccordion = (activeAccordion === 'q1' ? '' : 'q1')" class="w-full flex justify-between items-center text-right p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition">
-                                            <span class="font-medium text-sm">سوال در نسخه: درمان سرماخوردگی</span>
-                                            <svg class="h-5 w-5 transform transition-transform" :class="{'rotate-180': activeAccordion === 'q1'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 011.06 0L10 11.94l3.72-3.72a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 9.28a.75.75 0 010-1.06z" clip-rule="evenodd" /></svg>
+                                    {% else %}
+                                        <button @click="imageUrl = '{{ doc.file.url }}'; imageViewerOpen = true" class="focus:outline-none">
+                                            <img src="{{ doc.file.url }}" alt="مدرک" class="rounded-lg w-full h-auto object-cover border-2 border-slate-200 hover:border-blue-400 transition">
                                         </button>
-                                        <div x-show="activeAccordion === 'q1'" x-collapse class="p-3 text-sm text-slate-600">
-                                            <p class="font-semibold text-slate-800">سوال کاربر:</p>
-                                            <p class="mb-3">در مورد داروی جایگزین برای آزیترومایسین در این نسخه، آیا سفیکسیم انتخاب مناسبی است؟</p>
-                                            <p class="font-semibold text-slate-800 border-t pt-2 mt-2">پاسخ ادمین:</p>
-                                            <p>بله، سفیکسیم می‌تواند به عنوان جایگزین در نظر گرفته شود، اما دوز مصرف متفاوت خواهد بود. لطفاً به گایدلاین‌های جدید مراجعه کنید.</p>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <button @click="activeAccordion = (activeAccordion === 'q2' ? '' : 'q2')" class="w-full flex justify-between items-center text-right p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition">
-                                            <span class="font-medium text-sm">سوال در نسخه: درمان آکنه ولگاریس</span>
-                                             <svg class="h-5 w-5 transform transition-transform" :class="{'rotate-180': activeAccordion === 'q2'}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 011.06 0L10 11.94l3.72-3.72a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 9.28a.75.75 0 010-1.06z" clip-rule="evenodd" /></svg>
-                                        </button>
-                                        <div x-show="activeAccordion === 'q2'" x-collapse class="p-3 text-sm text-slate-600">
-                                            <p>... محتوای سوال و پاسخ دوم ...</p>
-                                        </div>
-                                    </div>
-                                </div>
+                                    {% endif %}
+                                {% endfor %}
                             </div>
+                        {% else %}
+                            <p class="text-sm text-slate-500">هیچ مدرکی بارگذاری نشده است.</p>
+                        {% endif %}
+                        {% if profile.auth_link %}
+                        <div>
+                            <a href="{{ profile.auth_link }}" target="_blank" class="inline-flex items-center text-sm text-blue-600 hover:underline">
+                                <span>لینک صفحه نظام پزشکی</span>
+                                <i class="fa-solid fa-arrow-up-right-from-square mr-1.5 h-4 w-4"></i>
+                            </a>
                         </div>
-
-                        <div class="lg:col-span-2 space-y-6">
-                            <div x-show="userStatus === 'pending'" x-transition class="bg-white p-6 rounded-xl shadow-sm border-2 border-dashed border-orange-300">
-                                <h3 class="text-lg font-semibold text-slate-700 mb-4">بررسی و تایید هویت کاربر</h3>
-                                <div class="flex flex-col sm:flex-row gap-4">
-                                    <button class="w-full py-3 px-5 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition">تایید هویت</button>
-                                    <button @click="rejectModalOpen = true" class="w-full py-3 px-5 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600 transition">رد هویت</button>
-                                </div>
-                            </div>
-
-                            <div class="bg-white p-6 rounded-xl shadow-sm">
-                                <h3 class="text-lg font-semibold text-slate-700 mb-4">مشخصات کاربری</h3>
-                                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
-                                    <div class="flex flex-col"><dt class="text-slate-500">نام و نام خانوادگی:</dt><dd class="font-medium mt-1">سارا احمدی</dd></div>
-                                    <div class="flex flex-col"><dt class="text-slate-500">شماره تماس (نام کاربری):</dt><dd class="font-medium mt-1">۰۹۱۲۳۴۵۶۷۸۹</dd></div>
-                                    <div class="flex flex-col"><dt class="text-slate-500">ایمیل:</dt><dd class="font-medium mt-1">sara.ahmadi@email.com</dd></div>
-                                    <div class="flex flex-col"><dt class="text-slate-500">تاریخ ثبت نام:</dt><dd class="font-medium mt-1">۱۴۰۴/۰۶/۱۵</dd></div>
-                                    <div class="flex flex-col sm:col-span-2"><dt class="text-slate-500">کد نظام پزشکی / دانشجویی:</dt><dd class="font-medium mt-1 p-2 bg-slate-100 rounded-md text-slate-400 italic">هنوز وارد نشده است</dd></div>
-                                </dl>
-                            </div>
-
-                            <div class="bg-white p-6 rounded-xl shadow-sm">
-                                <h3 class="text-lg font-semibold text-slate-700 mb-4">وضعیت اشتراک</h3>
-                                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm mb-6">
-                                    <div class="flex flex-col"><dt class="text-slate-500">نوع حساب:</dt><dd class="font-medium mt-1"><span class="px-2.5 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">کاربر ویژه</span></dd></div>
-                                    <div class="flex flex-col"><dt class="text-slate-500">وضعیت اشتراک:</dt><dd class="font-medium mt-1 text-green-600">فعال</dd></div>
-                                    <div class="flex flex-col sm:col-span-2"><dt class="text-slate-500">روزهای باقی‌مانده:</dt><dd class="font-medium mt-1">۲۵ روز باقی‌مانده است</dd></div>
-                                </dl>
-                                <div class="border-t pt-4 flex flex-wrap gap-3">
-                                    <button class="flex-1 min-w-[150px] py-2 px-4 text-sm font-semibold bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">مدیریت اشتراک</button>
-                                    <button class="flex-1 min-w-[150px] py-2 px-4 text-sm font-semibold bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition">ویرایش مشخصات</button>
-                                    <button class="flex-1 min-w-[150px] py-2 px-4 text-sm font-semibold bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition">حذف کاربر</button>
-                                </div>
-                            </div>
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
+            </div>
 
-                <div x-show="rejectModalOpen" x-cloak @keydown.escape.window="rejectModalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center">
-                    <div @click="rejectModalOpen = false" class="absolute inset-0 modal-backdrop"></div>
-                    <div x-show="rejectModalOpen" x-transition class="relative bg-white rounded-xl shadow-lg w-full max-w-md m-4">
-                        <div class="p-6">
-                            <h3 class="text-lg font-bold">لطفاً دلیل رد هویت را بنویسید</h3>
-                            <p class="text-sm text-slate-500 mt-1">این پیام برای کاربر ارسال خواهد شد.</p>
-                            <textarea rows="4" class="w-full mt-4 p-2 border rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-300" placeholder="مثال: تصویر کارت ملی ارسالی خوانا نیست..."></textarea>
+            <div class="lg:col-span-2 space-y-6">
+                {% if profile.auth_status == 'PENDING' %}
+                <div x-transition class="bg-white p-6 rounded-xl shadow-sm border-2 border-dashed border-orange-300">
+                    <h3 class="text-lg font-semibold text-slate-700 mb-4">بررسی و تایید هویت کاربر</h3>
+                    <form method="POST" class="flex flex-col sm:flex-row gap-4">
+                        {% csrf_token %}
+                        <button type="submit" name="action" value="approve" class="w-full py-3 px-5 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition">تایید هویت</button>
+                        <button type="button" @click="rejectModalOpen = true" class="w-full py-3 px-5 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600 transition">رد هویت</button>
+                    </form>
+                </div>
+                {% endif %}
+
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="text-lg font-semibold text-slate-700 mb-4">مشخصات کاربری</h3>
+                    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                        <div class="flex flex-col"><dt class="text-slate-500">نام و نام خانوادگی:</dt><dd class="font-medium mt-1">{{ target_user.full_name }}</dd></div>
+                        <div class="flex flex-col"><dt class="text-slate-500">شماره تماس:</dt><dd class="font-medium mt-1">{{ target_user.phone_number }}</dd></div>
+                        <div class="flex flex-col"><dt class="text-slate-500">ایمیل:</dt><dd class="font-medium mt-1">{{ target_user.email|default:"ثبت نشده" }}</dd></div>
+                        <div class="flex flex-col"><dt class="text-slate-500">تاریخ ثبت نام:</dt><dd class="font-medium mt-1">{{ target_user.date_joined|date:"Y/m/d" }}</dd></div>
+                        <div class="flex flex-col sm:col-span-2"><dt class="text-slate-500">کد نظام پزشکی / دانشجویی:</dt>
+                            <dd class="font-medium mt-1 p-2 bg-slate-50 rounded-md">
+                                {% if profile.medical_code %}{{ profile.medical_code }}{% else %}<span class="text-slate-400 italic">وارد نشده</span>{% endif %}
+                            </dd>
                         </div>
-                        <div class="px-6 py-4 bg-slate-50 rounded-b-xl flex justify-end space-x-2 space-x-reverse">
-                            <button @click="rejectModalOpen = false" class="py-2 px-4 text-sm font-semibold bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition">انصراف</button>
-                            <button class="py-2 px-4 text-sm font-semibold bg-red-500 text-white rounded-lg hover:bg-red-600 transition">ارسال دلیل و رد کردن</button>
-                        </div>
+                    </dl>
+                    <div class="border-t mt-6 pt-4 flex flex-wrap gap-3">
+                        <button @click="openEditModal()" class="flex-1 min-w-[150px] py-2 px-4 text-sm font-semibold bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition">ویرایش مشخصات</button>
+                        <button @click="openDeleteModal()" class="flex-1 min-w-[150px] py-2 px-4 text-sm font-semibold bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition">حذف کاربر</button>
                     </div>
                 </div>
-
-                <div x-show="imageViewerOpen" x-cloak @keydown.escape.window="imageViewerOpen = false" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div @click="imageViewerOpen = false" class="absolute inset-0 modal-backdrop"></div>
-                    <div class="relative max-w-4xl max-h-full">
-                        <img :src="imageUrl" alt="نمایش مدرک" class="rounded-lg shadow-2xl max-w-full max-h-[90vh]">
-                        <button @click="imageViewerOpen = false" class="absolute -top-3 -right-3 bg-white rounded-full p-1.5 text-slate-600 hover:text-red-600 transition">
-                             <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
-                    </div>
-                </div>
-
-            </main>
+            </div>
         </div>
     </div>
-</body>
-</html>
+
+    <div x-show="rejectModalOpen" x-cloak @keydown.escape.window="rejectModalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center">
+        <div @click="rejectModalOpen = false" class="absolute inset-0 bg-gray-600 bg-opacity-50"></div>
+        <div x-show="rejectModalOpen" x-transition class="relative bg-white rounded-xl shadow-lg w-full max-w-md m-4">
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reject">
+                <div class="p-6">
+                    <h3 class="text-lg font-bold">لطفاً دلیل رد هویت را بنویسید</h3>
+                    <p class="text-sm text-slate-500 mt-1">این پیام برای کاربر ارسال خواهد شد.</p>
+                    <textarea name="rejection_reason" rows="4" class="w-full mt-4 p-2 border rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-300" placeholder="مثال: تصویر کارت ملی ارسالی خوانا نیست..."></textarea>
+                </div>
+                <div class="px-6 py-4 bg-slate-50 rounded-b-xl flex justify-end space-x-2 space-x-reverse">
+                    <button type="button" @click="rejectModalOpen = false" class="py-2 px-4 text-sm font-semibold bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition">انصراف</button>
+                    <button type="submit" class="py-2 px-4 text-sm font-semibold bg-red-500 text-white rounded-lg hover:bg-red-600 transition">ارسال دلیل و رد کردن</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div x-show="imageViewerOpen" x-cloak @keydown.escape.window="imageViewerOpen = false" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div @click="imageViewerOpen = false" class="absolute inset-0 bg-gray-600 bg-opacity-50"></div>
+        <div class="relative max-w-4xl max-h-full"><img :src="imageUrl" alt="نمایش مدرک" class="rounded-lg shadow-2xl max-w-full max-h-[90vh]"><button @click="imageViewerOpen = false" class="absolute -top-3 -right-3 bg-white rounded-full p-1.5 text-slate-600 hover:text-red-600 transition"><i class="fa-solid fa-times h-6 w-6"></i></button></div>
+    </div>
+    <div x-show="editModalOpen" x-cloak class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div @click.away="editModalOpen = false" class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">ویرایش کاربر</h3>
+                <form id="editForm" method="POST" action="{% url 'dashboard:users:admin_user_update' pk=target_user.pk %}">
+                    {% csrf_token %}
+                    <div id="editFormBody" class="space-y-4">
+                        <p class="text-center text-slate-500">در حال بارگذاری اطلاعات...</p>
+                    </div>
+                    <div class="flex justify-end space-x-2 space-x-reverse mt-6">
+                        <button type="button" @click="editModalOpen = false" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">انصراف</button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">ذخیره تغییرات</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div x-show="deleteModalOpen" x-cloak class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div @click.away="deleteModalOpen = false" class="relative top-20 mx-auto p-5 border w-full max-w-sm shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4"><i class="fa-solid fa-triangle-exclamation h-6 w-6 text-red-600"></i></div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">حذف کاربر</h3>
+                <p class="text-sm text-gray-500 mb-4">آیا مطمئن هستید که می‌خواهید <strong x-text="userName"></strong> را حذف کنید؟</p>
+                <div class="flex justify-center space-x-2 space-x-reverse">
+                    <button @click="deleteModalOpen = false" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">انصراف</button>
+                    <button @click="confirmDelete()" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">بله، حذف کن</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('userDetailComponent', (userId, userName) => ({
+        // --- State Variables ---
+        rejectModalOpen: false,
+        imageViewerOpen: false,
+        imageUrl: '',
+        editModalOpen: false,
+        deleteModalOpen: false,
+        userId: userId,
+        userName: userName,
+
+        // --- Functions ---
+        openEditModal() {
+            fetch(`/dashboard/admin/users/${this.userId}/edit/`)
+                .then(response => response.json())
+                .then(data => {
+                    const formBody = `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">نام</label>
+                            <input type="text" name="first_name" value="${data.first_name || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">نام خانوادگی</label>
+                            <input type="text" name="last_name" value="${data.last_name || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">ایمیل</label>
+                            <input type="email" name="email" value="${data.email || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">نقش</label>
+                            <select name="role" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="visitor" ${data.role === 'visitor' ? 'selected' : ''}>بازدیدکننده</option>
+                                <option value="regular" ${data.role === 'regular' ? 'selected' : ''}>کاربر عادی</option>
+                                <option value="premium" ${data.role === 'premium' ? 'selected' : ''}>کاربر ویژه</option>
+                                <option value="admin" ${data.role === 'admin' ? 'selected' : ''}>ادمین</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="is_active" class="w-4 h-4 text-blue-600" ${data.is_active ? 'checked' : ''}>
+                                <span class="mr-2 text-sm text-gray-700">کاربر فعال</span>
+                            </label>
+                        </div>
+                    `;
+                    document.getElementById('editFormBody').innerHTML = formBody;
+                    this.editModalOpen = true;
+                })
+                .catch(error => console.error('Error fetching user data:', error));
+        },
+
+        openDeleteModal() {
+            this.deleteModalOpen = true;
+        },
+
+        confirmDelete() {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            fetch(`/dashboard/admin/users/${this.userId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = "{% url 'dashboard:users:users_list' %}";
+                } else {
+                    alert('خطا در حذف کاربر.');
+                }
+            })
+            .catch(error => console.error('Error deleting user:', error));
+        }
+    }));
+});
+</script>
+{% endblock %}
