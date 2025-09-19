@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils import timezone
 
-from apps.accounts.models import Profile, AuthStatusChoices
+from apps.accounts.models import Profile, AuthStatusChoices, AuthenticationDocument
 from ..serializers import RegisterSerializer, AuthenticationSerializer
 from apps.dashboard.administrator.services.email_service import send_welcome_email
 
@@ -69,14 +69,14 @@ class RegisterView(CreateAPIView, BaseAPIView):
         except Exception as e:
             return self.handle_exception(e)
 
-
+# =============== AUTHENTICATION VIEW =============== #
 class AuthenticationView(BaseAPIView):
     """
     احراز هویت پزشکی
     
     مرحله دوم: ارسال مدارک احراز هویت
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     serializer_class = AuthenticationSerializer
 
     def post(self, request, *args, **kwargs):
@@ -101,8 +101,13 @@ class AuthenticationView(BaseAPIView):
                     profile.medical_code = validated_data.get('medical_code', profile.medical_code)
                     profile.auth_link = validated_data.get('auth_link', profile.auth_link)
                     
-                    if validated_data.get('auth_image'):
-                        profile.auth_image = validated_data['auth_image']
+                    profile.documents.all().delete()
+                    
+                    document_files = validated_data.get("documents", [])
+                    for doc_file in document_files:
+                        AuthenticationDocument.objects.create(profile=profile, file=doc_file)
+                        
+                        logger.info(f"مدارک احراز هویت ارسال شد: {user.phone_number}")
                     
                     # تنظیم معرف در صورت وجود
                     referral_code = validated_data.get('referral_code')

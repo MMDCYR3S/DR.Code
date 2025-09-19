@@ -28,3 +28,9 @@ from .contacts_views import (
     ContactMarkReadView,
     ContactsBulkDeleteView 
 )
+
+from .messages_views import (
+    QuestionsListView,
+    QuestionActionView,
+    QuestionDetailView
+)

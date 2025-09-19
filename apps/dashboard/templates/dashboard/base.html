@@ -94,7 +94,7 @@
                     <i class="fa-solid fa-sitemap sidebar-icon"></i>
                     <span class="mx-3">دسته‌بندی‌ها</span>
                 </a>
-                <a href="#" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white">
+                <a href="{% url 'dashboard:questions:questions_list' %}" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 {% if request.resolver_match.url_name == 'admin_verification_queue' %}bg-slate-700 text-blue-300{% endif %}">
                     <i class="fa-solid fa-comments sidebar-icon"></i>
                     <span class="mx-3">سوالات کاربران</span>
                 </a>

@@ -71,7 +71,7 @@
                             </span>
                             {% endif %}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-slate-500" @click="navigateToMessage({{ contact.pk }})">{{ contact.created_at|date:"j M Y" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-slate-500" @click="navigateToMessage({{ contact.pk }})">{{ contact.jalali_date }}</td>
                     </tr>
                     {% empty %}
                     <tr>
@@ -95,7 +95,7 @@
                         </div>
                     </div>
                     <div class="flex flex-col items-end">
-                        <p class="text-xs text-slate-400 mb-1">{{ contact.created_at|date:"j F Y" }}</p>
+                        <p class="text-xs text-slate-400 mb-1">{{ contact.jalali_date }}</p>
                         {% if contact.status == 'pending' %}
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                             در انتظار

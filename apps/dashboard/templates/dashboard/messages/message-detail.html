@@ -1,0 +1,387 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}جزئیات سوال{% endblock %}
+
+{% block extra_css %}
+<style>
+    .editor-toolbar {
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        border-radius: 0.5rem 0.5rem 0 0;
+    }
+    .editor-content {
+        border-radius: 0 0 0.5rem 0.5rem;
+    }
+    .question-content {
+        line-height: 1.8;
+    }
+    .question-content p {
+        margin-bottom: 1rem;
+    }
+    .question-content p:last-child {
+        margin-bottom: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto max-w-4xl">
+
+    <!-- Header with Navigation and Actions -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <a href="{{ back_url }}" 
+           class="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors">
+            <i class="fa-solid fa-arrow-right ml-2"></i>
+            <span>بازگشت به لیست سوالات</span>
+        </a>
+        
+        <div class="flex items-center space-x-2 space-x-reverse">
+            <button onclick="deleteQuestion()" 
+                    class="p-2 bg-white border border-slate-300 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors" 
+                    title="حذف سوال">
+                <i class="fa-solid fa-trash h-5 w-5"></i>
+            </button>
+            
+            {% if question.is_answered %}
+            <button onclick="markAsUnread()" 
+                    class="p-2 bg-white border border-slate-300 rounded-lg text-slate-500 hover:text-orange-600 hover:bg-orange-50 transition-colors" 
+                    title="علامت‌گذاری به عنوان خوانده نشده">
+                <i class="fa-solid fa-envelope h-5 w-5"></i>
+            </button>
+            {% else %}
+            <button onclick="markAsRead()" 
+                    class="p-2 bg-white border border-slate-300 rounded-lg text-slate-500 hover:text-green-600 hover:bg-green-50 transition-colors" 
+                    title="علامت‌گذاری به عنوان خوانده شده">
+                <i class="fa-solid fa-envelope-open h-5 w-5"></i>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Question Card -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden border">
+        <!-- Question Header -->
+        <div class="p-6 border-b border-slate-200">
+            <h2 class="text-lg font-medium text-slate-500 mb-2">سوال در مورد نسخه:</h2>
+            <a href="{% url 'dashboard:prescriptions:prescription_detail' question.prescription.id %}" 
+               class="block text-xl font-bold text-blue-600 hover:text-blue-700 hover:underline transition-colors">
+                <i class="fa-solid fa-file-prescription ml-2"></i>
+                {{ question.prescription.title }}
+            </a>
+            <div class="mt-3 flex items-center text-sm text-slate-500">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium {{ question.prescription.get_category_color }}">
+                    <p class="text-white">
+                        {{ question.prescription.category.title }}
+                    </p>
+                </span>
+            </div>
+        </div>
+        
+        <!-- Sender Info -->
+        <div class="p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-50">
+            <div class="flex items-center">
+                <div class="h-12 w-12 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-user text-slate-500 text-lg"></i>
+                </div>
+                <div class="mr-3">
+                    <div class="flex items-center">
+                        <span class="text-sm text-slate-500 ml-2">از:</span>
+                        <span class="font-semibold text-slate-700">{{ question.user.full_name }}</span>
+                        {% if question.user.has_active_membership %}
+                        <span class="mr-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gold-100 text-gold-800">
+                            <i class="fa-solid fa-crown ml-1"></i>ویژه
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="text-sm text-slate-400">
+                        <i class="fa-solid fa-envelope ml-1"></i>
+                        {{ question.user.email|default:question.user.phone_number }}
+                    </div>
+                </div>
+            </div>
+            <div class="text-sm text-slate-500">
+                <i class="fa-solid fa-clock ml-1"></i>
+                {{ formatted_date }}
+            </div>
+        </div>
+        
+        <!-- Question Content -->
+        <div class="p-6">
+            <div class="question-content text-slate-700">
+                {{ question.question_text|linebreaks }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Answer Section -->
+    <div class="mt-8">
+        {% if question.is_answered %}
+        <!-- Existing Answer Display -->
+        <div class="bg-white rounded-xl shadow-sm border">
+            <div class="p-6 border-b border-slate-200 bg-green-50">
+                <h3 class="text-lg font-semibold flex items-center text-green-800">
+                    <i class="fa-solid fa-check-circle ml-3 text-green-600"></i>
+                    <span>پاسخ ارسال شده</span>
+                </h3>
+                <div class="mt-2 text-sm text-green-600">
+                    <i class="fa-solid fa-user ml-1"></i>
+                    پاسخ‌دهنده: {{ question.answered_by.full_name }}
+                    <span class="mr-4">
+                        <i class="fa-solid fa-calendar ml-1"></i>
+                        {{ formatted_answer_date }}
+                    </span>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="question-content text-slate-700">
+                    {{ question.answer_text|linebreaks }}
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-slate-50 rounded-b-xl">
+                <button onclick="editAnswer()" 
+                        class="inline-flex items-center px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                    <i class="fa-solid fa-edit ml-2"></i>
+                    ویرایش پاسخ
+                </button>
+            </div>
+        </div>
+        
+        {% else %}
+        <!-- Answer Form -->
+        <div class="bg-white rounded-xl shadow-sm border">
+            <div class="p-6 border-b border-slate-200">
+                <h3 class="text-lg font-semibold flex items-center">
+                    <i class="fa-solid fa-reply ml-3 text-blue-500"></i>
+                    <span>پاسخ شما</span>
+                </h3>
+            </div>
+            
+            <form method="POST" class="answer-form">
+                {% csrf_token %}
+                <div class="p-6 space-y-4">
+                    <div class="border border-slate-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-400 focus-within:border-blue-400 transition-all duration-200">
+                        
+                        <!-- Simple Toolbar -->
+                        <div class="editor-toolbar flex items-center p-2 space-x-1 space-x-reverse">
+                            <button type="button" onclick="formatText('bold')" 
+                                    class="p-2 rounded text-slate-600 hover:bg-slate-200 hover:text-slate-800 transition-colors" 
+                                    title="Bold">
+                                <i class="fa-solid fa-bold"></i>
+                            </button>
+                            <button type="button" onclick="formatText('italic')" 
+                                    class="p-2 rounded text-slate-600 hover:bg-slate-200 hover:text-slate-800 transition-colors" 
+                                    title="Italic">
+                                <i class="fa-solid fa-italic"></i>
+                            </button>
+                            <button type="button" onclick="insertText('• ')" 
+                                    class="p-2 rounded text-slate-600 hover:bg-slate-200 hover:text-slate-800 transition-colors" 
+                                    title="Bullet Point">
+                                <i class="fa-solid fa-list"></i>
+                            </button>
+                            <div class="border-r border-slate-300 h-6 mx-2"></div>
+                            <span class="text-xs text-slate-500 px-2">Ctrl+Enter برای ارسال</span>
+                        </div>
+                        
+                        <!-- Textarea -->
+                        <textarea id="answer-textarea" 
+                                  name="answer_text" 
+                                  rows="12" 
+                                  class="editor-content w-full p-4 text-sm focus:outline-none resize-y border-0" 
+                                  placeholder="پاسخ خود را اینجا بنویسید...
+
+نکات مهم:
+• پاسخ باید جامع و دقیق باشد
+• از منابع معتبر استفاده کنید  
+• در صورت نیاز، مراجع علمی ذکر کنید
+• پاسخ حداقل باید ۱۰ کاراکتر باشد"
+                                  required></textarea>
+                    </div>
+                    
+                    <!-- Character Counter -->
+                    <div class="flex justify-between items-center text-sm text-slate-500">
+                        <span>حداقل ۱۰ کاراکتر</span>
+                        <span id="char-counter">0 کاراکتر</span>
+                    </div>
+                </div>
+                
+                <!-- Submit Section -->
+                <div class="px-6 py-4 bg-slate-50 rounded-b-xl">
+                    <!-- Info Text -->
+                    <div class="text-sm text-slate-500 mb-4 md:mb-0 text-center md:text-right">
+                        <div class="md:hidden bg-blue-50 py-3 px-4 rounded-lg border border-blue-100 mb-4">
+                            <i class="fa-solid fa-info-circle ml-1 text-blue-600"></i>
+                            <span>پس از ارسال، کاربر از طریق ایمیل مطلع خواهد شد</span>
+                        </div>
+                        <div class="hidden md:block">
+                            <i class="fa-solid fa-info-circle ml-1"></i>
+                            پس از ارسال، کاربر از طریق ایمیل مطلع خواهد شد
+                        </div>
+                    </div>
+                    
+                    <!-- Buttons -->
+                    <div class="flex flex-col md:flex-row md:justify-end gap-3 md:gap-3 md:space-x-3 md:space-x-reverse">
+                        <button type="button" 
+                                class="w-full md:w-auto py-3 md:py-2.5 px-6 text-sm font-semibold border border-slate-300 text-slate-700 bg-white rounded-lg hover:bg-slate-50 transition-colors flex items-center justify-center md:order-2">
+                            <i class="fa-solid fa-save ml-2 md:hidden"></i>
+                            <span>ذخیره پیش‌نویس</span>
+                        </button>
+                        
+                        <button type="submit" 
+                                class="w-full md:w-auto py-3 md:py-2.5 px-6 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 flex items-center justify-center md:order-1">
+                            <i class="fa-solid fa-paper-plane ml-2"></i>
+                            <span>ارسال پاسخ</span>
+                        </button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Character counter
+    document.addEventListener('DOMContentLoaded', function() {
+        const textarea = document.getElementById('answer-textarea');
+        const counter = document.getElementById('char-counter');
+        
+        if (textarea && counter) {
+            textarea.addEventListener('input', function() {
+                const count = this.value.length;
+                counter.textContent = count + ' کاراکتر';
+                
+                if (count < 10) {
+                    counter.classList.add('text-red-500');
+                    counter.classList.remove('text-green-500');
+                } else {
+                    counter.classList.add('text-green-500');
+                    counter.classList.remove('text-red-500');
+                }
+            });
+            
+            // Ctrl+Enter shortcut
+            textarea.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.key === 'Enter') {
+                    document.querySelector('.answer-form').submit();
+                }
+            });
+        }
+    });
+
+    // Simple text formatting
+    function formatText(command) {
+        const textarea = document.getElementById('answer-textarea');
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = textarea.value.substring(start, end);
+        
+        let formattedText = selectedText;
+        if (command === 'bold') {
+            formattedText = `**${selectedText}**`;
+        } else if (command === 'italic') {
+            formattedText = `*${selectedText}*`;
+        }
+        
+        textarea.setRangeText(formattedText, start, end, 'end');
+        textarea.focus();
+    }
+
+    function insertText(text) {
+        const textarea = document.getElementById('answer-textarea');
+        const start = textarea.selectionStart;
+        textarea.setRangeText(text, start, start, 'end');
+        textarea.focus();
+    }
+
+    // Actions
+    function deleteQuestion() {
+        if (confirm('آیا مطمئن هستید که می‌خواهید این سوال را حذف کنید؟')) {
+            fetch('{% url "dashboard:questions:question_action" question.id %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: 'action=delete'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.dispatchEvent(new CustomEvent('notify', {
+                        detail: { type: 'success', message: data.message }
+                    }));
+                    if (data.redirect_url) {
+                        setTimeout(() => window.location.href = data.redirect_url, 1000);
+                    }
+                } else {
+                    window.dispatchEvent(new CustomEvent('notify', {
+                        detail: { type: 'error', message: data.message }
+                    }));
+                }
+            });
+        }
+    }
+
+    function markAsUnread() {
+        if (confirm('آیا مطمئن هستید که می‌خواهید این سوال را به عنوان خوانده نشده علامت‌گذاری کنید؟')) {
+            fetch('{% url "dashboard:questions:question_action" question.id %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: 'action=mark_unread'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.dispatchEvent(new CustomEvent('notify', {
+                        detail: { type: 'success', message: data.message }
+                    }));
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    window.dispatchEvent(new CustomEvent('notify', {
+                        detail: { type: 'error', message: data.message }
+                    }));
+                }
+            });
+        }
+    }
+
+    function markAsRead() {
+        fetch('{% url "dashboard:questions:question_action" question.id %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: 'action=mark_read'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.dispatchEvent(new CustomEvent('notify', {
+                    detail: { type: 'success', message: data.message }
+                }));
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                window.dispatchEvent(new CustomEvent('notify', {
+                    detail: { type: 'error', message: data.message }
+                }));
+            }
+        });
+    }
+
+    function editAnswer() {
+        // Implementation for editing existing answer
+        window.dispatchEvent(new CustomEvent('notify', {
+            detail: { type: 'info', message: 'ویرایش پاسخ به زودی اضافه خواهد شد' }
+        }));
+    }
+</script>
+{% endblock %}

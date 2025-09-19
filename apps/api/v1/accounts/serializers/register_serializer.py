@@ -2,8 +2,8 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.core.validators import RegexValidator
-from apps.accounts.models import Profile, AuthStatusChoices
+from django.core.validators import FileExtensionValidator
+from apps.accounts.models import Profile
 import re
 
 User = get_user_model()
@@ -98,6 +98,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 
+# ============= Authentication Serializer ============= #
 class AuthenticationSerializer(serializers.Serializer):
     """سریالایزر احراز هویت پزشکی"""
     
@@ -106,11 +107,6 @@ class AuthenticationSerializer(serializers.Serializer):
         allow_blank=True,
         max_length=50,
         help_text='کد نظام پزشکی یا کد دانشجویی'
-    )
-    auth_image = serializers.ImageField(
-        required=False,
-        allow_empty_file=False,
-        help_text='تصویر کارت نظام پزشکی یا کارت دانشجویی'
     )
     auth_link = serializers.URLField(
         required=False,
@@ -123,14 +119,23 @@ class AuthenticationSerializer(serializers.Serializer):
         max_length=10,
         help_text='کد معرف (اختیاری)'
     )
+    
+    documents = serializers.ListField(
+        child = serializers.FileField(
+            allow_empty_file=False,
+            validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'pdf'])]
+        ),
+        required=True,
+        help_text="تصاویر مربوط به احراز هویت"
+    )
 
     def validate(self, attrs):
         """اعتبارسنجی کلی - حداقل یکی از فیلدها باید پر باشد"""
         medical_code = attrs.get('medical_code', '').strip()
-        auth_image = attrs.get('auth_image')
+        documents = attrs.get('documents')
         auth_link = attrs.get('auth_link', '').strip()
         
-        if not any([medical_code, auth_image, auth_link]):
+        if not any([medical_code, documents, auth_link]):
             raise serializers.ValidationError(
                 'حداقل یکی از موارد زیر را وارد کنید: کد پزشکی، تصویر مدرک یا لینک پروفایل'
             )
@@ -145,20 +150,17 @@ class AuthenticationSerializer(serializers.Serializer):
                 raise serializers.ValidationError('کد معرف وارد شده معتبر نیست.')
         return value
 
-    def validate_auth_image(self, value):
-        """اعتبارسنجی تصویر احراز هویت"""
-        if value:
-            # بررسی حجم فایل (حداکثر 5 مگابایت)
-            if value.size > 5 * 1024 * 1024:
+    def validate_documents(self, value):
+        """اعتبارسنجی هر فایل در لیست مدارک ارسالی"""
+        for file in value:
+            if file.size > 2 * 1024 * 1024:
                 raise serializers.ValidationError(
-                    'حجم تصویر نباید بیش از ۵ مگابایت باشد.'
+                    f'حجم فایل "{file.name}" نباید بیش از 2 مگابایت باشد.'
                 )
-            
-            # بررسی نوع فایل
-            allowed_types = ['image/jpeg', 'image/jpg', 'image/png']
-            if value.content_type not in allowed_types:
+
+            allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf']
+            if file.content_type not in allowed_types:
                 raise serializers.ValidationError(
-                    'فقط فایل‌های JPG، JPEG و PNG مجاز هستند.'
+                    f'فرمت فایل "{file.name}" مجاز نیست. فقط فایل‌های JPG, PNG, PDF پشتیبانی می‌شوند.'
                 )
-        
         return value

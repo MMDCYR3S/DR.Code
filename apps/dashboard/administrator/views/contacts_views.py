@@ -64,6 +64,21 @@ class ContactDetailView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPerm
     model = Contact
     template_name = 'dashboard/contacts/contacts-detail.html'
     context_object_name = 'contact'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        contact = context['contact']
+        if contact.created_at:
+            jalali_date = jdatetime.datetime.fromgregorian(
+                datetime=contact.created_at.replace(tzinfo=None)
+            )
+            jalali_response = jdatetime.datetime.fromgregorian(
+                datetime=contact.responded_at.replace(tzinfo=None)
+            )
+            contact.jalali_date = jalali_date.strftime('%Y/%m/%d - %H:%M')
+            contact.jalali_response = jalali_response.strftime('%Y/%m/%d - %H:%M')
+        return context
+    
 
     def post(self, request, *args, **kwargs):
         """پردازش ارسال پاسخ"""

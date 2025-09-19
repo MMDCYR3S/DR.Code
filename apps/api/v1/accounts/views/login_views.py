@@ -25,7 +25,9 @@ User = get_user_model()
 
 logger = logging.getLogger(__name__)
 
+# ================================ #
 # ========== LOGIN VIEW ========== #
+# ================================ #
 class LoginView(BaseAPIView):
     """
     ورود کاربر به سیستم
@@ -114,7 +116,9 @@ class LoginView(BaseAPIView):
                 "message": "یک خطای داخلی در سرور رخ داد. لطفاً بعداً تلاش کنید."
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+# ====================================== #
 # ============ LOGOUT VIEW ============ # 
+# ====================================== #
 class LogoutView(BaseAPIView):
     """
     خروج کاربر از سیستم
@@ -154,8 +158,10 @@ class LogoutView(BaseAPIView):
                 
         except Exception as e:
             return self.handle_exception(e)
-        
+
+# ===================================================== #
 # ============ REFRESH ACCESS TOKEN VIEW ============ #
+# ===================================================== #
 class RefreshAccessTokenView(TokenRefreshView, BaseAPIView):
     """
     بازسازی Access Token با استفاده از Refresh Token
@@ -202,7 +208,9 @@ class RefreshAccessTokenView(TokenRefreshView, BaseAPIView):
                 'error_code': 'TOKEN_REFRESH_FAILED'
             }, status=status.HTTP_400_BAD_REQUEST)
 
+# ============================================= #
 # ============ FORCE LOGOUT VIEW ============ #
+# ============================================= #
 class ForceLogoutView(BaseAPIView):
     """
     خروج اجباری از تمام دستگاه‌ها
@@ -240,7 +248,9 @@ class ForceLogoutView(BaseAPIView):
         except Exception as e:
             return self.handle_exception(e)
 
+# ============================================ #
 # ============ LOGIN STATUS VIEW ============ #
+# ============================================ #
 class LoginStatusView(BaseAPIView):
     """
     بررسی وضعیت ورود کاربر

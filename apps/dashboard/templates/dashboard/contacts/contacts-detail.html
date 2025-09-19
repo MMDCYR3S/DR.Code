@@ -74,7 +74,7 @@
                     <span class="text-sm text-slate-400"> - {{ contact.phone_number }}</span>
                     {% endif %}
                 </div>
-                <div class="text-sm text-slate-500">{{ contact.created_at|date:"l، j F Y - ساعت H:i" }}</div>
+                <div class="text-sm text-slate-500">{{ contact.jalali_date }}</div>
             </div>
             
             <div class="p-6 leading-relaxed text-slate-700 prose prose-sm max-w-none">
@@ -88,7 +88,7 @@
                     {{ contact.admin_response|linebreaksbr }}
                 </div>
                 <div class="mt-3 text-sm text-green-600">
-                    پاسخ داده شده توسط {{ contact.responded_by.get_full_name|default:contact.responded_by.phone_number }} در {{ contact.responded_at|date:"j F Y - ساعت H:i" }}
+                    پاسخ داده شده توسط {{ contact.responded_by.get_full_name|default:contact.responded_by.phone_number }} در {{ contact.jalali_response }}
                 </div>
             </div>
             {% endif %}
