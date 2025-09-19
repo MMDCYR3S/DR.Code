@@ -72,7 +72,7 @@
                         <div class="flex flex-col"><dt class="text-slate-500">نام و نام خانوادگی:</dt><dd class="font-medium mt-1">{{ target_user.full_name }}</dd></div>
                         <div class="flex flex-col"><dt class="text-slate-500">شماره تماس:</dt><dd class="font-medium mt-1">{{ target_user.phone_number }}</dd></div>
                         <div class="flex flex-col"><dt class="text-slate-500">ایمیل:</dt><dd class="font-medium mt-1">{{ target_user.email|default:"ثبت نشده" }}</dd></div>
-                        <div class="flex flex-col"><dt class="text-slate-500">تاریخ ثبت نام:</dt><dd class="font-medium mt-1">{{ target_user.date_joined|date:"Y/m/d" }}</dd></div>
+                        <div class="flex flex-col"><dt class="text-slate-500">تاریخ ثبت نام:</dt><dd class="font-medium mt-1">{{ target_user.shamsi_date_joined }}</dd></div>
                         <div class="flex flex-col sm:col-span-2"><dt class="text-slate-500">کد نظام پزشکی / دانشجویی:</dt>
                             <dd class="font-medium mt-1 p-2 bg-slate-50 rounded-md">
                                 {% if profile.medical_code %}{{ profile.medical_code }}{% else %}<span class="text-slate-400 italic">وارد نشده</span>{% endif %}

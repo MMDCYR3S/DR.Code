@@ -103,9 +103,17 @@
                     <i class="fa-solid fa-envelope sidebar-icon"></i>
                     <span class="mx-3">پیام‌های تماس</span>
                 </a>
-                <a href="#" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white">
+                <a href="{% url 'dashboard:orders:discount_list' %}" 
+                    class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200
+                    {% if request.resolver_match.url_name == 'discount_list' %}bg-slate-700 text-blue-300{% endif %}">
                     <i class="fa-solid fa-tags sidebar-icon"></i>
                     <span class="mx-3">کدهای تخفیف</span>
+                </a>
+                <a href="{% url 'dashboard:tutorials:admin_tutorials' %}" 
+                    class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200
+                    {% if request.resolver_match.url_name == 'admin_tutorials' %}bg-slate-700 text-blue-300{% endif %}">
+                    <i class="fa-solid fa-video sidebar-icon"></i>
+                    <span class="mx-3">ویدیوهای آموزشی</span>
                 </a>
                 
                 <button type="button" onclick="logoutUser()" 

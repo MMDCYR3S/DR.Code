@@ -5,6 +5,8 @@ from django.core.exceptions import ValidationError
 
 from apps.prescriptions.models import Prescription
 
+import jdatetime
+
 # ======== Question Model ======== #
 class Question(models.Model):
     """
@@ -36,6 +38,23 @@ class Question(models.Model):
     is_answered = models.BooleanField(default=False, verbose_name="پاسخ داده شده؟")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ثبت سوال")
     answered_at = models.DateTimeField(null=True, blank=True, verbose_name="تاریخ ثبت پاسخ")
+    
+    @property
+    def shamsi_created_at(self):
+        if self.created_at is None:
+            return "—"
+        
+        jdate = jdatetime.datetime.fromgregorian(datetime=self.created_at)
+        return jdate.strftime("%Y/%m/%d - %H:%M")
+
+    @property
+    def shamsi_answered_at(self):
+        if self.updaanswered_atted_at is None:
+            return "—"
+            
+        jdate = jdatetime.datetime.fromgregorian(datetime=self.answered_at)
+        return jdate.strftime("%Y/%m/%d - %H:%M")
+
 
     class Meta:
         ordering = ['-created_at']

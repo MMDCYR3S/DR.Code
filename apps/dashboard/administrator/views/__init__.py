@@ -34,3 +34,17 @@ from .messages_views import (
     QuestionActionView,
     QuestionDetailView
 )
+
+from .discounts_views import(
+    DiscountListView,
+    DiscountCreateView,
+    DiscountDeleteView,
+    DiscountUpdateView
+)
+
+from .tutorials_views import (
+    TutorialsListView,
+    TutorialCreateView,
+    TutorialUpdateView,
+    TutorialDeleteView
+)

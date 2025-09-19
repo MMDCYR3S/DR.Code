@@ -1,8 +1,10 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import EmailValidator
-import re
 from django.core.exceptions import ValidationError
+
+import re
+import jdatetime
 
 User = get_user_model()
 
@@ -102,6 +104,31 @@ class Contact(models.Model):
         blank=True,
         verbose_name='تاریخ پاسخ'
     )
+    
+    @property
+    def shamsi_created_at(self):
+        if self.created_at is None:
+            return "—"
+        
+        jdate = jdatetime.datetime.fromgregorian(datetime=self.created_at)
+        return jdate.strftime("%Y/%m/%d - %H:%M")
+
+    @property
+    def shamsi_updated_at(self):
+        if self.updated_at is None:
+            return "—"
+            
+        jdate = jdatetime.datetime.fromgregorian(datetime=self.updated_at)
+        return jdate.strftime("%Y/%m/%d - %H:%M")
+    
+    @property
+    def shamsi_responded_at(self):
+        if self.responded_at is None:
+            return "—"
+            
+        jdate = jdatetime.datetime.fromgregorian(datetime=self.responded_at)
+        return jdate.strftime("%Y/%m/%d - %H:%M")
+
     
     class Meta:
         verbose_name = 'پیام تماس'

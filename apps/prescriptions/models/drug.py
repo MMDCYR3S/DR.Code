@@ -1,6 +1,8 @@
 from django.db import models
 from .prescription import Prescription
 
+import jdatetime
+
 class PrescriptionDrug(models.Model):
     """
     مدل برای هر داروی تعریف شده در یک نسخه.
@@ -43,3 +45,20 @@ class PrescriptionDrug(models.Model):
         if not self.instructions:
             return ''
         return self.instructions[:length] + '...' if len(self.instructions) > length else self.instructions
+
+    @property
+    def shamsi_created_at(self):
+        if self.created_at is None:
+            return "—"
+        
+        jdate = jdatetime.datetime.fromgregorian(datetime=self.created_at)
+        return jdate.strftime("%Y/%m/%d - %H:%M")
+
+    @property
+    def shamsi_updated_at(self):
+        if self.updated_at is None:
+            return "—"
+            
+        jdate = jdatetime.datetime.fromgregorian(datetime=self.updated_at)
+        return jdate.strftime("%Y/%m/%d - %H:%M")
+

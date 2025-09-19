@@ -6,6 +6,7 @@ from .category import PrescriptionCategory
 from slugify import slugify
 
 from django_ckeditor_5.fields import CKEditor5Field
+import jdatetime
 
 # ========= PRESCRIPTION ALIAS ========= #
 class PrescriptionAlias(models.Model):
@@ -126,6 +127,22 @@ class Prescription(models.Model):
     def has_alias(self, name):
         """بررسی اینکه آیا این نام در نام‌های جایگزین موجود است یا نه"""
         return self.aliases.filter(name__iexact=name).exists() or self.title.lower() == name.lower()
+    
+    @property
+    def shamsi_created_at(self):
+        if self.created_at is None:
+            return "—"
+        
+        jdate = jdatetime.datetime.fromgregorian(datetime=self.created_at)
+        return jdate.strftime("%Y/%m/%d - %H:%M")
+
+    @property
+    def shamsi_updated_at(self):
+        if self.updated_at is None:
+            return "—"
+            
+        jdate = jdatetime.datetime.fromgregorian(datetime=self.updated_at)
+        return jdate.strftime("%Y/%m/%d - %H:%M")
 
     def __str__(self):
         return self.title

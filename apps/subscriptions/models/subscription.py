@@ -5,6 +5,8 @@ from django.conf import settings
         
 from .plan import Plan
 
+import jdatetime
+
 # ========= Subscription Status Choices Model ========= # 
 class SubscriptionStatusChoicesModel(models.TextChoices):
     """ وضعیت اشتراک کاربر """
@@ -45,6 +47,23 @@ class Subscription(models.Model):
     
     start_date = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ شروع")
     end_date = models.DateTimeField(verbose_name="تاریخ انقضا")
+    
+    @property
+    def shamsi_start_date(self):
+        if self.start_date is None:
+            return "—"
+        
+        jdate = jdatetime.datetime.fromgregorian(datetime=self.start_date)
+        return jdate.strftime("%Y/%m/%d - %H:%M")
+
+    @property
+    def shamsi_end_date(self):
+        if self.end_date is None:
+            return "—"
+            
+        jdate = jdatetime.datetime.fromgregorian(datetime=self.end_date)
+        return jdate.strftime("%Y/%m/%d - %H:%M")
+
 
     class Meta:
         verbose_name = "اشتراک کاربر"

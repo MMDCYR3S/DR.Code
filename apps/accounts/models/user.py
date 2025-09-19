@@ -5,6 +5,8 @@ from django.core.validators import RegexValidator
 from django.utils import timezone
 import uuid
 
+import jdatetime
+
 from apps.subscriptions.models import SubscriptionStatusChoicesModel
 
 class CustomUserManager(BaseUserManager):
@@ -81,6 +83,15 @@ class User(AbstractUser):
         verbose_name = 'کاربر'
         verbose_name_plural = 'کاربران'
         db_table = 'accounts_user'
+        
+    @property
+    def shamsi_date_joined(self):
+        if self.date_joined is None:
+            return "—"
+        
+        jdate = jdatetime.datetime.fromgregorian(datetime=self.date_joined)
+        return jdate.strftime("%Y/%m/%d - %H:%M")
+
     
     def __str__(self):
         return f"{self.first_name} {self.last_name} - {self.phone_number}"

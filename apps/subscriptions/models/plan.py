@@ -2,6 +2,8 @@ from django.db import models
 
 from .membership import Membership
 
+import jdatetime
+
 # ========= Plan Model ========= #
 class Plan(models.Model):
     """
@@ -18,6 +20,16 @@ class Plan(models.Model):
     price = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="قیمت (ریال)")
     is_active = models.BooleanField(default=True, verbose_name="بسته فعال است؟")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد") 
+    
+    @property
+    def shamsi_created_at(self):
+        if self.created_at is None:
+            return "—"
+        
+        jdate = jdatetime.datetime.fromgregorian(datetime=self.created_at)
+        return jdate.strftime("%Y/%m/%d - %H:%M")
+
+
 
     class Meta:
         # جلوگیری از تعریف دو بسته با مدت زمان یکسان برای یک نوع اشتراک

@@ -7,6 +7,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
         
 import secrets
 import string
+import jdatetime
 
 # ========= Random Code Generator ========= #
 def generate_random_code(length=8, max_attempt=100):
@@ -22,6 +23,7 @@ class DiscountCode(models.Model):
     """
     مدل برای مدیریت کدهای تخفیف.
     """
+    title = models.CharField(max_length=150, blank=True, null=True)
     code = models.CharField(
         max_length=20, 
         unique=True, 
@@ -106,4 +108,21 @@ class DiscountCode(models.Model):
         
         # به‌روزرسانی instance فعلی
         self.refresh_from_db(fields=['usage_count'])
+        
+    @property
+    def shamsi_start_at(self):
+        if self.start_at is None:
+            return "—"
+        
+        jdate = jdatetime.datetime.fromgregorian(datetime=self.start_at)
+        return jdate.strftime("%Y/%m/%d - %H:%M")
+
+    # متد تبدیل تاریخ بروزرسانی به شمسی
+    @property
+    def shamsi_end_at(self):
+        if self.end_at is None:
+            return "—"
+            
+        jdate = jdatetime.datetime.fromgregorian(datetime=self.end_at)
+        return jdate.strftime("%Y/%m/%d - %H:%M")
     
