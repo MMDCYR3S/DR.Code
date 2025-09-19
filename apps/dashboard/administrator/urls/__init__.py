@@ -4,4 +4,5 @@ urlpatterns = [
     path("", include("apps.dashboard.administrator.urls.users_urls")),
     path("", include("apps.dashboard.administrator.urls.categories_urls")),
     path("", include("apps.dashboard.administrator.urls.prescriptions_urls")),
+    path("", include("apps.dashboard.administrator.urls.contacts_urls")),
 ]

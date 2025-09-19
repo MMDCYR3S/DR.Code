@@ -46,7 +46,7 @@ class User(AbstractUser):
     # فیلدهای اصلی
     first_name = models.CharField('نام', max_length=30)
     last_name = models.CharField('نام خانوادگی', max_length=30)
-    email = models.EmailField('ایمیل', blank=True, null=True, unique=True)
+    email = models.EmailField('ایمیل', unique=True)
     
     # اضافه کردن validator برای شماره تلفن
     phone_regex = RegexValidator(

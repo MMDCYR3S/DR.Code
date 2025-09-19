@@ -98,7 +98,8 @@
                     <i class="fa-solid fa-comments sidebar-icon"></i>
                     <span class="mx-3">سوالات کاربران</span>
                 </a>
-                <a href="#" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white">
+                <a href="{% url 'dashboard:contacts:contacts_list' %}" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white
+                 {% if request.resolver_match.url_name == 'contacts_list' %}bg-slate-700 text-blue-300{% endif %}">
                     <i class="fa-solid fa-envelope sidebar-icon"></i>
                     <span class="mx-3">پیام‌های تماس</span>
                 </a>
@@ -106,6 +107,15 @@
                     <i class="fa-solid fa-tags sidebar-icon"></i>
                     <span class="mx-3">کدهای تخفیف</span>
                 </a>
+                
+                <button type="button" onclick="logoutUser()" 
+                    class="flex items-center px-6 py-2 mt-2 text-slate-300 
+                        hover:bg-slate-700 hover:text-white 
+                        w-full text-left transition-colors duration-200">
+                    <i class="fa-solid fa-sign-out sidebar-icon"></i>
+                    <span class="mx-3">خروج</span>
+                </button>
+
             </nav>
         </aside>
 
@@ -154,6 +164,72 @@
             }));
         });
     </script>
+
+    <script>
+        function getCookie(name) {
+            // این تابع برای گرفتن توکن CSRF لازم است
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function logoutUser() {
+            // مرحله حیاتی: خواندن توکن‌ها از حافظه localStorage مرورگر
+            const accessToken = localStorage.getItem('access_token');
+            const refreshToken = localStorage.getItem('refresh_token');
+
+            if (!accessToken) {
+                alert('شما وارد سیستم نشده‌اید.');
+                // اگر توکنی وجود نداشت، مستقیم به صفحه لاگین برو
+                window.location.href = "{% url 'api:v1:accounts:login' %}"; // <-- این آدرس را تغییر دهید
+                return;
+            }
+
+            fetch("{% url 'api:v1:accounts:logout' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    // مهم‌ترین بخش: ارسال توکن دسترسی برای احراز هویت
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({
+                    'refresh_token': refreshToken // ارسال رفرش توکن برای باطل کردن آن
+                })
+            })
+            .then(response => {
+                // در هر صورت (موفق یا ناموفق) توکن‌ها را از حافظه مرورگر پاک می‌کنیم
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                
+                if (response.ok) {
+                    // در صورت موفقیت، کاربر را به صفحه ورود هدایت می‌کنیم
+                    window.location.href = "{% url 'api:v1:accounts:login' %}"; // <-- این آدرس را تغییر دهید
+                } else {
+                    console.error('خروج از سمت سرور با خطا مواجه شد.');
+                    alert('خروج با خطا مواجه شد، اما نشست شما در مرورگر پاک شد.');
+                    window.location.href = "{% url 'api:v1:accounts:login' %}"; // <-- این آدرس را تغییر دهید
+                }
+            })
+            .catch(error => {
+                console.error('خطا در هنگام ارسال درخواست خروج:', error);
+                // حتی در صورت خطای شبکه، توکن‌ها را پاک کرده و کاربر را به صفحه لاگین می‌بریم
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                window.location.href = "{% url 'api:v1:accounts:login' %}"; // <-- این آدرس را تغییر دهید
+            });
+        }
+    </script>
+
     {% block extra_js %}{% endblock %}
     {% include 'dashboard/messages.html' %}
 </body>

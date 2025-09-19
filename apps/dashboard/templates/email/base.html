@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}دکتر کد{% endblock %}</title>
+    <style>
+        body {
+            font-family: 'IRANSans', 'Tahoma', sans-serif;
+            direction: rtl;
+            text-align: right;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .response-box {
+            background-color: #f8f9fa;
+            border-right: 4px solid #007bff;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{% block header %}دکتر کد{% endblock %}</h1>
+        </div>
+        
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+        
+        <div class="footer">
+            <p>
+                این ایمیل از سوی سامانه دکتر کد ارسال شده است.<br>
+                اگر سوالی دارید، با ما تماس بگیرید: 
+                <a href="mailto:support@drcode-med.ir">support@drcode-med.ir</a>
+            </p>
+            <p>
+                <a href="{{ site_url }}">وب‌سایت دکتر کد</a> | 
+                <a href="https://t.me/Doctor_Code_Admin">پشتیبانی تلگرام</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

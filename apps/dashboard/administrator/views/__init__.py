@@ -20,3 +20,11 @@ from .prescriptions_views import(
     PrescriptionDeleteView,
     PrescriptionDetailView
 )
+
+from .contacts_views import (
+    ContactsListView,
+    ContactDetailView,
+    ContactDeleteView,
+    ContactMarkReadView,
+    ContactsBulkDeleteView 
+)

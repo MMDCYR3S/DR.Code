@@ -8,7 +8,8 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.accounts.models import Profile, AuthStatusChoices
-from ..serializers import RegisterSerializer, AuthenticationSerializer, ProfileSerializer
+from ..serializers import RegisterSerializer, AuthenticationSerializer
+from apps.dashboard.administrator.services.email_service import send_welcome_email
 
 import logging
 
@@ -33,22 +34,16 @@ class RegisterView(CreateAPIView, BaseAPIView):
                 serializer = self.get_serializer(data=request.data)
                 
                 if serializer.is_valid():
-                    # ایجاد کاربر جدید
                     user = serializer.save()
                     
-                    # ثبت اطلاعات ورود
+
                     user.last_login_ip = self.get_client_ip(request)
                     user.last_login_device = self.get_user_agent(request)
                     user.save(update_fields=['last_login_ip', 'last_login_device'])
                     
-                    # ایجاد JWT توکن
                     refresh = RefreshToken.for_user(user)
                     access_token = refresh.access_token
-                    
-                    # ثبت session key برای کنترل ورود همزمان
-                    if hasattr(request, 'session'):
-                        user.current_session_key = request.session.session_key
-                        user.save(update_fields=['current_session_key'])
+                    send_welcome_email(user=user)
                     
                     logger.info(f"کاربر جدید ثبت‌نام شد: {user.phone_number}")
                     
@@ -116,11 +111,10 @@ class AuthenticationView(BaseAPIView):
                             referrer_profile = Profile.objects.get(referral_code=referral_code.upper())
                             profile.referred_by = referrer_profile.user
                         except Profile.DoesNotExist:
-                            pass  # کد معرف نادرست - قبلاً در serializer بررسی شده
+                            pass
                     
-                    # تغییر وضعیت به در انتظار تایید
                     profile.auth_status = AuthStatusChoices.PENDING
-                    profile.rejection_reason = None  # پاک کردن دلیل رد قبلی
+                    profile.rejection_reason = None
                     profile.save()
                     
                     logger.info(f"مدارک احراز هویت ارسال شد: {user.phone_number}")

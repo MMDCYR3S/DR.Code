@@ -9,12 +9,12 @@ import json
 from apps.prescriptions.models import Prescription
 from ..forms import PrescriptionFilterForm
 from .mixins import PrescriptionFormMixin
-from apps.accounts.permissions import HasAdminAccessPermission
+from apps.accounts.permissions import HasAdminAccessPermission, IsTokenJtiActive
 
 # ================================================== #
 # ============= PRESCRIPTION LIST VIEW ============= #
 # ================================================== #
-class PrescriptionListView(LoginRequiredMixin, HasAdminAccessPermission, ListView):
+class PrescriptionListView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPermission, ListView):
     """ نمایش لیست نسخه ها """
     model = Prescription
     template_name = 'dashboard/prescriptions/prescriptions.html'
@@ -42,12 +42,22 @@ class PrescriptionListView(LoginRequiredMixin, HasAdminAccessPermission, ListVie
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['filter_form'] = PrescriptionFilterForm(self.request.GET)
+        
+        prescriptions_with_color = []
+        for prescription in context['prescriptions']:
+            prescriptions_with_color.append({
+                'object': prescription,
+                'category_color': prescription.category.color_code if prescription.category else 'bg-slate-500',
+                'category_title': prescription.category.title if prescription.category else 'بدون دسته‌بندی'
+            })
+        
+        context['prescriptions_data'] = prescriptions_with_color
         return context
 
 # ================================================== #
 # ============= PRESCRIPTION DETAIL VIEW ============= #
 # ================================================== #
-class PrescriptionDetailView(LoginRequiredMixin, HasAdminAccessPermission, View):
+class PrescriptionDetailView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPermission, View):
     """نمایش جزئیات نسخه به صورت JSON برای مودال"""
     
     def get(self, request, pk):
@@ -59,6 +69,7 @@ class PrescriptionDetailView(LoginRequiredMixin, HasAdminAccessPermission, View)
                 'id': prescription.id,
                 'title': prescription.title,
                 'category': prescription.category.title if prescription.category else None,
+                'category_color': prescription.category.color_code if prescription.category else 'bg-slate-500',
                 'access_level': prescription.access_level,
                 'detailed_description': prescription.detailed_description,
                 'drugs': list(prescription.drugs.values(
@@ -84,7 +95,7 @@ class PrescriptionDetailView(LoginRequiredMixin, HasAdminAccessPermission, View)
 # ================================================== #
 # ============= PRESCRIPTION CREATE VIEW ============= #
 # ================================================== #
-class PrescriptionCreateView(LoginRequiredMixin, HasAdminAccessPermission, PrescriptionFormMixin, CreateView):
+class PrescriptionCreateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPermission, PrescriptionFormMixin, CreateView):
     """ ایجاد نسخه به وسیله فرم شخصی سازی شده و همچنین استفاده از Mixin """
     def get_object(self, queryset=None):
         return None
@@ -92,7 +103,7 @@ class PrescriptionCreateView(LoginRequiredMixin, HasAdminAccessPermission, Presc
 # ================================================== #
 # ============= PRESCRIPTION UPDATE VIEW ============= #
 # ================================================== #
-class PrescriptionUpdateView(LoginRequiredMixin, HasAdminAccessPermission, PrescriptionFormMixin, UpdateView):
+class PrescriptionUpdateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPermission, PrescriptionFormMixin, UpdateView):
     """ ویرایش نسخه به وسیله داروهای آن به واسطه Mixin سفارشی """
     
     def get_context_data(self, **kwargs):
@@ -115,7 +126,7 @@ class PrescriptionUpdateView(LoginRequiredMixin, HasAdminAccessPermission, Presc
 # ================================================== #
 # ============= PRESCRIPTION DELETE VIEW ============= #
 # ================================================== #
-class PrescriptionDeleteView(LoginRequiredMixin, HasAdminAccessPermission, View):
+class PrescriptionDeleteView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPermission, View):
     """ حذف یک نسخه """
     def post(self, request, pk, *args, **kwargs):
         """ بررسی اینکه آیا نسخه وجود دارد یا خیر """
