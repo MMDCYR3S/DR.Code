@@ -76,7 +76,7 @@ class AuthenticationView(BaseAPIView):
     
     مرحله دوم: ارسال مدارک احراز هویت
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = AuthenticationSerializer
 
     def post(self, request, *args, **kwargs):

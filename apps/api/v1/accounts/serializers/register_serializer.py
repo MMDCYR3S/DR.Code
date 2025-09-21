@@ -33,7 +33,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             'first_name': {'required': True},
             'last_name': {'required': True},
             'phone_number': {'required': True},
-            'email': {'required': False},
+            'email': {'required': True},
         }
 
     def validate_phone_number(self, value):

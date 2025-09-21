@@ -8,6 +8,9 @@ from django.core.cache import cache
 from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 from apps.payment.models import Payment, PaymentStatus
 from apps.payment.services import ZarinpalService
@@ -159,7 +162,25 @@ class PaymentVerifyView(APIView):
                     sub.start_date = timezone.now()
                     sub.end_date = timezone.now() + timezone.timedelta(days=sub.plan.duration_days)
                     sub.save()
-                
+                    
+                    profile = sub.user.profile
+                    profile.role = 'premium'
+                    profile.subscription_end_date = sub.end_date
+                    profile.save()
+                    
+                    cache_key = f"purchase_summary:{payment.user.id}:{payment.subscription.plan.id}"
+                    
+                    purchase_data = cache.get(cache_key)
+                    if purchase_data and purchase_data.get('referral_code'):
+                        referral_code = purchase_data.get('referral_code')
+                        try:
+                            referrer_user = User.objects.get(profile__referral_code=referral_code)
+                            profile = payment.user.profile
+                            profile.referred_by = referrer_user
+                            profile.save()
+                        except User.DoesNotExist:
+                            pass
+                                    
                 return Response({
                     'success': True,
                     'message': 'پرداخت با موفقیت انجام شد',

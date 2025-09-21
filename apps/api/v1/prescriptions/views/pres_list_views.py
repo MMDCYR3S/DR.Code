@@ -38,9 +38,8 @@ class PrescriptionListView(generics.ListAPIView):
                 'aliases'
             ).distinct()
 
-            # اگر کاربر احراز هویت نشده، فقط نسخه‌های رایگان
             if not self.request.user.is_authenticated:
-                queryset = queryset.filter(access_level='FREE')
+                queryset = queryset.all()
 
             return queryset
 

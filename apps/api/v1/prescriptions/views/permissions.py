@@ -1,42 +1,44 @@
 from rest_framework import permissions
 from apps.accounts.models import AuthStatusChoices
 
-# ======== IS PRESCRIPTION ACCESSIBLE ======== #
 class IsPrescriptionAccessible(permissions.BasePermission):
     """
-    بررسی دسترسی به نسخه بر اساس سطح دسترسی
+    کلاس دسترسی یکپارچه برای نسخه‌ها.
+    - به همه اجازه دیدن نسخه‌های رایگان را می‌دهد.
+    - برای نسخه‌های ویژه، کاربر باید تایید هویت شده و اشتراک فعال داشته باشد.
     """
-    message = "برای دسترسی به این نسخه نیاز به اشتراک ویژه دارید."
-    
-    def has_object_permission(self, request, view, obj):
-        # اگر نسخه رایگان است
-        if obj.access_level == 'free':
-            return True
-            
-        # اگر نسخه ویژه است، کاربر باید تایید هویت شده و اشتراک فعال داشته باشد
-        if obj.access_level == 'premium':
-            if not request.user.is_authenticated:
-                return False
-            
-            # بررسی تایید هویت
-            if not hasattr(request.user, 'profile') or not request.user.profile.auth_status == AuthStatusChoices.APPROVED.value:
-                self.message = "حساب کاربری شما تایید نشده است."
-                return False
-            
-            # # بررسی اشتراک فعال
-            # if not hasattr(request.user, 'subscription') or not request.user.subscription.is_active:
-            #     self.message = "برای دسترسی به این نسخه نیاز به اشتراک فعال دارید."
-            #     return False
-        
-        return True
+    message = "شما اجازه دسترسی به این محتوا را ندارید."
 
-class IsVerifiedUser(permissions.BasePermission):
-    """
-    فقط کاربران تایید شده می‌توانند دسترسی داشته باشند
-    """
-    message = "حساب کاربری شما تایید نشده است."
-    
-    def has_permission(self, request, view):
-        if not request.user.is_authenticated:
-            return False
-        return hasattr(request.user, 'profile') and request.user.profile.is_verified
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+                
+        if user.is_authenticated and (user.is_staff or user.is_superuser):
+            return True
+
+        if obj.access_level == 'FREE':
+            return True
+        
+        elif obj.access_level == 'PREMIUM':
+            if not user.is_authenticated:
+                self.message = "برای دسترسی به این محتوا باید وارد حساب کاربری خود شوید."
+                return False
+
+            profile_approved = hasattr(user, 'profile') and user.profile.auth_status == AuthStatusChoices.APPROVED.value
+            if not profile_approved:
+                self.message = "حساب کاربری شما هنوز تایید نشده است. لطفا منتظر بمانید."
+                return False
+            
+            if user.profile.role == "regular":
+                self.message = "برای دسترسی به محتوای ویژه باید اشتراک بخرِید"
+                return False
+            elif user.profile.role == "visitor":
+                self.message = "برای دسترسی به محتوای ویژه باید ابتدا ثبت نام کرده و اشتراک خریداری کنید."
+                return False
+
+            has_active_sub = user.has_active_membership()
+            if not has_active_sub:
+                self.message = "برای دسترسی به این نسخه نیاز به اشتراک فعال دارید."
+                return False
+            
+            return True
+        return False
