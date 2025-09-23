@@ -10,6 +10,7 @@ from django.contrib import messages
 from apps.accounts.permissions import IsTokenJtiActive, HasAdminAccessPermission
 from apps.accounts.models import Profile, AuthStatusChoices
 from ..forms import UserSearchForm, UserEditForm, ProfileEditForm
+from ..services.email_service import resend_auth_email, send_auth_checked_email
 
 import jdatetime
 
@@ -169,12 +170,14 @@ class UserVerificationDetailView(LoginRequiredMixin, HasAdminAccessPermission, D
         action = request.POST.get('action')
         
         if action == 'approve':
+            send_auth_checked_email(user)
             profile.auth_status = AuthStatusChoices.APPROVED
             profile.role = 'regular'
             profile.rejection_reason = None
             profile.save()
             
         elif action == 'reject':
+            resend_auth_email(user)
             rejection_reason = request.POST.get('rejection_reason', 'دلیل مشخصی ثبت نشده است.')
             profile.auth_status = AuthStatusChoices.REJECTED
             profile.rejection_reason = rejection_reason

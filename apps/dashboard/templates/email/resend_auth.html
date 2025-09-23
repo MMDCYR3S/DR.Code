@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>احراز هویت مجدد - دکتر کد</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body { 
+            font-family: 'Tahoma', 'Vazir', sans-serif; 
+            direction: rtl; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .email-container {
+            max-width: 650px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="25" cy="25" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+            animation: float 20s infinite linear;
+        }
+        
+        @keyframes float {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        
+        .header h2 {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .greeting {
+            font-size: 20px;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            background: #dc3545;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        
+        .message-text {
+            color: #555;
+            font-size: 16px;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+        
+        .important-note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .important-note h4 {
+            color: #856404;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .steps-list {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 25px 0;
+        }
+        
+        .steps-list h4 {
+            color: #28a745;
+            margin-bottom: 15px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .steps-list h4::before {
+            content: '📝';
+            margin-left: 10px;
+            font-size: 20px;
+        }
+        
+        .steps-list ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .steps-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid #e9ecef;
+            position: relative;
+            padding-right: 30px;
+        }
+        
+        .steps-list li::before {
+            content: '✅';
+            position: absolute;
+            right: 0;
+            top: 12px;
+        }
+        
+        .steps-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .action-button {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 15px 40px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+        
+        .link-box {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+            word-break: break-all;
+        }
+        
+        .link-box small {
+            color: #6c757d;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .footer {
+            background: #2c3e50;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .footer .team-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .footer .contact-info {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .divider {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #28a745, transparent);
+            margin: 30px 0;
+            border-radius: 1px;
+        }
+        
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            
+            .content {
+                padding: 30px 20px;
+            }
+            
+            .header {
+                padding: 30px 20px;
+            }
+            
+            .header h2 {
+                font-size: 24px;
+            }
+            
+            .btn {
+                padding: 12px 30px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h2>🔄 احراز هویت مجدد</h2>
+            <div class="subtitle">دکتر کد - سامانه پزشکی</div>
+        </div>
+        
+        <div class="content">
+            <div class="greeting">
+                سلام {{ user.get_full_name|default:user.phone_number }} عزیز
+            </div>
+            
+            <div class="status-badge">
+                ❌ مدارک نیاز به بازبینی
+            </div>
+            
+            <p class="message-text">
+                متاسفانه مدارک احراز هویت ارسالی شما توسط تیم بررسی مورد تأیید قرار نگرفت.
+            </p>
+            
+            <div class="important-note">
+                <h4>⚠️ نکته مهم</h4>
+                <p>لطفاً مدارک خود را با دقت بیشتر و مطابق با راهنمای ارائه شده مجدداً ارسال نمایید.</p>
+            </div>
+            
+            <div class="steps-list">
+                <h4>مراحل احراز هویت مجدد:</h4>
+                <ul>
+                    <li>تصاویر واضح و خوانا از مدارک پزشکی آپلود کنید</li>
+                    <li>اطمینان حاصل کنید که تمام اطلاعات کاملاً قابل مشاهده است</li>
+                    <li>از فرمت‌های مجاز (JPG, PNG, PDF) استفاده کنید</li>
+                    <li>حداکثر حجم هر فایل: 5 مگابایت</li>
+                </ul>
+            </div>
+            
+            <div class="action-button">
+                <a href="http://127.0.0.1:8000/api/v1/accounts/resend-authentication/" class="btn">
+                    🔄 شروع احراز هویت مجدد
+                </a>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="link-box">
+                <small>یا می‌توانید از لینک زیر استفاده کنید:</small>
+                <code>http://127.0.0.1:8000/api/v1/accounts/resend-authentication/</code>
+            </div>
+            
+            <p class="message-text">
+                در صورت داشتن سوال یا نیاز به راهنمایی، با تیم پشتیبانی ما تماس بگیرید.
+            </p>
+        </div>
+        
+        <div class="footer">
+            <div class="team-nam💚 تیم دکتر کد</div
+            <div class="contact-info">
+                همراه شما در مسیر سلامت | دکتر کد © 1404
+            </div>
+        </div>
+    </div>
+</body>
+</html>

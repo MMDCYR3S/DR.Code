@@ -2,31 +2,388 @@
 <html dir="rtl" lang="fa">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>پاسخ به پیام شما - دکتر کد</title>
     <style>
-        body { font-family: Tahoma; direction: rtl; background: #f5f5f5; }
-        .container { max-width: 600px; margin: 20px auto; background: white; padding: 30px; border-radius: 8px; }
-        .header { background: #007bff; color: white; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 20px; }
-        .response { background: #f8f9fa; padding: 15px; border-right: 4px solid #007bff; margin: 20px 0; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body { 
+            font-family: 'Tahoma', 'Vazir', sans-serif; 
+            direction: rtl; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .email-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="25" cy="25" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+            animation: float 20s infinite linear;
+        }
+        
+        @keyframes float {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        
+        .header-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            display: block;
+            animation: swing 3s ease-in-out infinite;
+        }
+        
+        @keyframes swing {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(10deg); }
+            75% { transform: rotate(-10deg); }
+        }
+        
+        .header h2 {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .greeting {
+            font-size: 20px;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 25px;
+        }
+        
+        .message-info {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border: 1px solid #90caf9;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 25px 0;
+            border-right: 5px solid #007bff;
+        }
+        
+        .message-info h4 {
+            color: #1565c0;
+            margin-bottom: 15px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .message-info h4::before {
+            content: '📧';
+            margin-left: 10px;
+            font-size: 20px;
+        }
+        
+        .subject-box {
+            background: #ffffff;
+            padding: 15px 20px;
+            border-radius: 8px;
+            border: 2px solid #007bff;
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .subject-text {
+            font-size: 16px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .response-section {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+            border-right: 6px solid #007bff;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.1);
+            position: relative;
+        }
+        
+        .response-section::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            right: -5px;
+            bottom: -5px;
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            border-radius: 20px;
+            z-index: -1;
+            opacity: 0.1;
+        }
+        
+        .response-title {
+            color: #007bff;
+            margin-bottom: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .response-title::before {
+            content: '💬';
+            margin-left: 12px;
+            font-size: 24px;
+        }
+        
+        .response-content {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            color: #495057;
+            font-size: 16px;
+            line-height: 1.8;
+            border: 1px solid #dee2e6;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .support-info {
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+            padding: 25px;
+            border-radius: 12px;
+            margin: 30px 0;
+            text-align: center;
+            border: 2px dashed #ff9800;
+        }
+        
+        .support-info h4 {
+            color: #e65100;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .support-info p {
+            color: #bf360c;
+            font-size: 15px;
+        }
+        
+        .thank-you-section {
+            background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+            padding: 30px;
+            border-radius: 12px;
+            margin: 30px 0;
+            text-align: center;
+            border: 1px solid #a5d6a7;
+        }
+        
+        .thank-you-section h3 {
+            color: #2e7d32;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .thank-you-section p {
+            color: #388e3c;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        
+        .contact-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+        
+        .contact-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+        }
+        
+        .divider {
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #007bff, transparent);
+            margin: 40px 0;
+            border-radius: 1.5px;
+        }
+        
+        .footer {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .footer .team-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .footer .team-name::before {
+            content: '👥';
+            margin-left: 10px;
+            font-size: 22px;
+        }
+        
+        .footer .contact-info {
+            font-size: 14px;
+            opacity: 0.9;
+            line-height: 1.8;
+        }
+        
+        .footer .heart {
+            color: #e74c3c;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            
+            .content, .response-section, .support-info, .thank-you-section {
+                padding: 25px 20px;
+            }
+            
+            .header {
+                padding: 30px 20px;
+            }
+            
+            .header h2 {
+                font-size: 24px;
+            }
+            
+            .header-icon {
+                font-size: 36px;
+            }
+            
+            .response-title {
+                font-size: 18px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="email-container">
         <div class="header">
-            <h2>دکتر کد</h2>
+            <div class="header-icon">💌</div>
+            <h2>پاسخ به پیام شما</h2>
+            <div class="subtitle">دکتر کد - تیم پشتیبانی</div>
         </div>
         
-        <h3>سلام {{ contact.full_name }} عزیز</h3>
-        
-        <p>پیام شما با موضوع <strong>"{{ contact.subject_display }}"</strong> بررسی شد.</p>
-        
-        <div class="response">
-            <h4>پاسخ تیم پشتیبانی:</h4>
-            <p>{{ contact.admin_response|linebreaks }}</p>
+        <div class="content">
+            <div class="greeting">
+                سلام {{ contact.full_name }} عزیز
+            </div>
+            
+            <div class="status-badge">
+                ✅ پیام شما بررسی شد
+            </div>
+            
+            <div class="message-info">
+                <h4>اطلاعات پیام شما</h4>
+                <p>پیام شما با دقت بررسی و مورد رسیدگی قرار گرفت.</p>
+                <div class="subject-box">
+                    <div class="subject-text">
+                        📝 موضوع: "{{ contact.subject_display }}"
+                    </div>
+                </div>
+            </div>
+            
+            <div class="response-section">
+                <div class="response-title">
+                    پاسخ تیم پشتیبانی
+                </div>
+                <div class="response-content">
+                    {{ contact.admin_response|linebreaks }}
+                </div>
+            </div>
+            
+            <div class="support-info">
+                <h4>🤝 نیاز به راهنمایی بیشتر دارید؟</h4>
+                <p>تیم پشتیبانی ما همیشه آماده کمک به شما است.</p>
+                <a href="#" class="contact-button">
+                    📞 تماس با پشتیبانی
+                </a>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="thank-you-section">
+                <h3>🙏 تشکر از اعتماد شما</h3>
+                <p>
+                    ما همیشه در تلاش هستیم تا بهترین خدمات را به شما ارائه دهیم و از اینکه ما را برای دریافت خدمات پزشکی انتخاب کرده‌اید، متشکریم.
+                </p>
+            </div>
         </div>
         
-        <p>تشکر از اعتماد شما</p>
-        <p><strong>تیم دکتر کد</strong></p>
+        <div class="footer">
+            <div class="team-name">
+                تیم دکتر کد
+            </div>
+            <div class="contact-info">
+                پاسخگویی با <span class="heart">❤️</span> و دقت<br>
+                دکتر کد © 1404 - همراه شما در مسیر سلامت
+            </div>
+        </div>
     </div>
 </body>
 </html>

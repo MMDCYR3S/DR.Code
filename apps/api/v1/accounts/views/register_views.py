@@ -1,3 +1,6 @@
+import uuid
+import logging
+
 from rest_framework import status, permissions
 from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
@@ -10,9 +13,6 @@ from django.utils import timezone
 from apps.accounts.models import Profile, AuthStatusChoices, AuthenticationDocument
 from ..serializers import RegisterSerializer, AuthenticationSerializer
 from apps.dashboard.administrator.services.email_service import send_welcome_email
-
-import logging
-
 from .base_view import BaseAPIView
 
 User = get_user_model()
@@ -35,7 +35,6 @@ class RegisterView(CreateAPIView, BaseAPIView):
                 
                 if serializer.is_valid():
                     user = serializer.save()
-                    
 
                     user.last_login_ip = self.get_client_ip(request)
                     user.last_login_device = self.get_user_agent(request)
@@ -43,6 +42,14 @@ class RegisterView(CreateAPIView, BaseAPIView):
                     
                     refresh = RefreshToken.for_user(user)
                     access_token = refresh.access_token
+                    
+                    uuid_jti = uuid.uuid4().hex
+                    refresh.payload["jti"] = uuid_jti
+                    refresh.access_token.payload["jti"] = uuid_jti
+                    
+                    access_token = str(refresh.access_token)
+                    user.active_jti = uuid_jti
+                    
                     send_welcome_email(user=user)
                     
                     logger.info(f"کاربر جدید ثبت‌نام شد: {user.phone_number}")

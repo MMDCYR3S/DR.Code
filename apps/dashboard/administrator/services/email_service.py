@@ -18,7 +18,6 @@ def _send_email_task(subject, to_email, template_name, context=None):
     try:
         html_message = render_to_string(template_name, context)
         
-        # ارسال ایمیل
         send_mail(
             subject=subject,
             message='',
@@ -44,7 +43,6 @@ def send_email_in_background(subject, to_email, template_name, context=None):
     """
     logger.info(f"آماده‌سازی برای ارسال ایمیل به {to_email} با موضوع: {subject}")
     
-    # ایجاد و اجرای ترد جدید
     email_thread = threading.Thread(
         target=_send_email_task,
         args=(subject, to_email, template_name, context)
@@ -88,4 +86,41 @@ def send_welcome_email(user):
         template_name='email/welcome.html',
         context=context
     )
-
+    
+def resend_auth_email(user):
+    """ ایمیل عدم احراز هویت """
+    
+    if not user.email:
+        return
+    
+    subject = "رد احزار هویت - دکتر کد"
+    context = {
+        'user': user,
+        'site_name': 'دکتر کد',
+    }
+    
+    send_email_in_background(
+        subject=subject,
+        to_email=user.email,
+        template_name='email/resend_auth.html',
+        context=context
+    )
+    
+def send_auth_checked_email(user):
+    """ ایمیل موفقیت آمیز بودن احراز هویت """
+    
+    if not user.email:
+        return
+    
+    subject = "به جمع ما خوش آمدید - دکتر کد"
+    context = {
+        'user': user,
+        'site_name': 'دکتر کد',
+    }
+    
+    send_email_in_background(
+        subject=subject,
+        to_email=user.email,
+        template_name='email/auth_checked.html',
+        context=context
+    )
