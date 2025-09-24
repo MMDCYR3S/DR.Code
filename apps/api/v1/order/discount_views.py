@@ -1,6 +1,5 @@
 from rest_framework import status, generics
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 
@@ -10,6 +9,7 @@ from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 
 from apps.subscriptions.models import Plan
+from apps.accounts.permissions import IsTokenJtiActive
 from .discount_serializer import PurchaseDetailSerializer, PurchaseSummarySerializer
 
 # ========== PURCHASE DETAIL VIEW ========== #
@@ -19,7 +19,7 @@ class PurchaseDetailView(generics.RetrieveUpdateAPIView):
     GET: دریافت اطلاعات اولیه پلن
     POST: محاسبه قیمت با اعمال کدهای تخفیف
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsTokenJtiActive]
     throttle_classes = [UserRateThrottle]
     serializer_class = PurchaseDetailSerializer
     lookup_field = 'id'

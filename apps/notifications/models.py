@@ -1,4 +1,5 @@
-# notifications/models.py
+import jdatetime
+
 from django.db import models
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -31,3 +32,11 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"اعلان برای {self.recipient.username}: {self.message[:30]}..."
+    
+    def shamsi_created_at(self):
+        if self.created_at is None:
+            return "—"
+        
+        jdate = jdatetime.datetime.fromgregorian(datetime=self.created_at)
+        return jdate.strftime("%Y/%m/%d - %H:%M")
+    

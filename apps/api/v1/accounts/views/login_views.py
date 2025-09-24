@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import serializers
 
 from rest_framework_simplejwt.views import TokenRefreshView
-from rest_framework_simplejwt.tokens import RefreshToken, UntypedToken
+from rest_framework_simplejwt.tokens import RefreshToken, UntypedToken, AccessToken
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
 from django.contrib.auth import login, logout
@@ -55,33 +55,32 @@ class LoginView(BaseAPIView):
             
         user = serializer.user
 
-        if user.active_jti:
-            logger.warning(f"کاربر {user.phone_number} تلاش کرد با یک نشست فعال وارد شود.")
-            return Response({
-                'success': False,
-                'message': 'شما در حال حاضر در یک دستگاه دیگر وارد شده‌اید. لطفا ابتدا از آن دستگاه خارج شوید.'
-            }, status=status.HTTP_409_CONFLICT)
-
         try:
             with transaction.atomic():
-                refresh = RefreshToken.for_user(user)
-                access_token = refresh.access_token
-                
                 new_jti = uuid.uuid4().hex
-                
-                refresh.payload['jti'] = new_jti
-                refresh.access_token.payload['jti'] = new_jti
-                
-                access_token = str(refresh.access_token)
+
+                refresh = RefreshToken.for_user(user)
+                refresh['jti'] = new_jti
+
+                access_token = refresh.access_token
+
+                access_token['jti'] = new_jti
+
+                user.active_jti = new_jti
                 
                 user.last_login = timezone.now()
                 user.last_login_ip = self.get_client_ip(request)
                 user.last_login_device = self.get_user_agent(request)
-
-                user.active_jti = new_jti
-                user.save(update_fields=['last_login', 'last_login_ip', 'last_login_device', 'active_jti'])
+                user.save(update_fields=['active_jti', 'last_login', 'last_login_ip', 'last_login_device'])
 
                 login(request, user)
+                
+                if user.is_superuser or user.profile.role == "admin":
+                    request.session['jwt_tokens'] = {
+                        'access_token': str(access_token),
+                        'refresh_token': str(refresh),
+                        'jti': new_jti
+                    }
                 
                 logger.info(f"کاربر وارد شد: {user.phone_number} | JTI: {new_jti}")
 

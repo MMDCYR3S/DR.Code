@@ -13,6 +13,7 @@ import jdatetime
 
 from apps.questions.models import Question
 from apps.accounts.permissions import IsTokenJtiActive, HasAdminAccessPermission
+from ..services.email_service import send_email_to_answered_question
 
 # ============================================ #
 # ============ QUESTION LIST VIEW ============ #
@@ -193,10 +194,9 @@ class QuestionDetailView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPer
         question.answered_at = timezone.now()
         question.is_answered = True
         question.save()
+        send_email_to_answered_question(question.user)
         
         messages.success(request, 'پاسخ شما با موفقیت ثبت شد.')
-        
-        # هدایت به لیست سوالات
         return redirect('dashboard:questions:questions_list')
 
 # =============================================== #

@@ -124,3 +124,22 @@ def send_auth_checked_email(user):
         template_name='email/auth_checked.html',
         context=context
     )
+    
+def send_email_to_answered_question(user):
+    """ ایمیل مربوط به پاسخ به سوال مربوطه برای کاربر ویژه """
+    
+    if not user.email:
+        return
+    
+    subject = "پاسخ به سؤال شما - دکتر کد"
+    context = {
+        'user': user,
+        'site_name': 'دکتر کد',
+    }
+    
+    send_email_in_background(
+        subject=subject,
+        to_email=user.email,
+        template_name='email/question_answered.html',
+        context=context
+    )

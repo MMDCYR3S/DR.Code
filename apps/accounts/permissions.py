@@ -19,11 +19,11 @@ class HasActiveSubscription(permissions.BasePermission):
 # ========== IS TOKEN JTI ACTIVE ========== #
 class IsTokenJtiActive(permissions.BasePermission):
     """
-    بررسی می‌کند که آیا 'jti' توکن با 'active_jti' کاربر مطابقت دارد یا خیر.
-    این کار تضمین می‌کند که فقط آخرین توکن صادر شده فعال است.
+    بررسی می‌کند که آیا 'jti' توکن با 'active_jti' ذخیره شده برای کاربر مطابقت دارد یا خیر.
+    این کار تضمین می‌کند که فقط آخرین توکن صادر شده (آخرین نشست) فعال است.
     """
-    message = 'نشست شما منقضی شده است. لطفاً دوباره وارد شوید.'
-    
+    message = 'نشست شما منقضی شده یا از دستگاه دیگری وارد شده‌اید. لطفاً دوباره وارد شوید.'
+
     def has_permission(self, request, view):
         user = request.user
         
@@ -32,12 +32,18 @@ class IsTokenJtiActive(permissions.BasePermission):
         
         try:
             token_jti = request.auth.get('jti')
-            if not token_jti:
-                return False
-        except (InvalidToken, AttributeError):
-            return False
+        except AttributeError:
+            return True 
         
-        return token_jti == user.active_jti
+        active_jti = user.active_jti
+        
+        if token_jti and active_jti and token_jti == active_jti:
+            return True
+        
+        print(active_jti)
+        print(token_jti)
+        return False
+
     
 # ======= Has Admin Access Permission ======= #
 class HasAdminAccessPermission(UserPassesTestMixin):

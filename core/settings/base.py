@@ -60,7 +60,7 @@ INSTALLED_APPS = [
     "apps.prescriptions.apps.PrescriptionsConfig",
     "apps.dashboard.apps.DashboardConfig",
     "apps.order.apps.OrderConfig",
-    # "apps.notifications.apps.NotificationsConfig",
+    "apps.notifications.apps.NotificationsConfig",
     "apps.payment.apps.PaymentConfig",
     "apps.questions.apps.QuestionsConfig",
     "apps.subscriptions.apps.SubscriptionsConfig",
@@ -157,6 +157,7 @@ REST_FRAMEWORK = {
 
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
+        "apps.accounts.permissions.IsTokenJtiActive",
     ],
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
