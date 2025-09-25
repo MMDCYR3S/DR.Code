@@ -45,14 +45,6 @@ class PrescriptionAlias(models.Model):
                 prescription=self.prescription
             ).update(is_primary=False)
         super().save(*args, **kwargs)
-        
-    def clean(self):
-        # بررسی اینکه نام تکراری نباشد
-        if PrescriptionAlias.objects.filter(
-            prescription=self.prescription,
-            name=self.name
-        ).exclude(pk=self.pk).exists():
-            raise ValidationError(f"نام '{self.name}' قبلاً برای این نسخه ثبت شده است.")
 
 # ========= ACCESS CHOICES ========= #
 class AccessChoices(models.TextChoices):
@@ -64,13 +56,19 @@ class Prescription(models.Model):
     مدل اصلی برای هر نسخه پزشکی.
     این مدل شامل اطلاعات کلی نسخه است.
     """
-    
+    user = models.ForeignKey("accounts.User", verbose_name=_(""), on_delete=models.CASCADE)
     category = models.ForeignKey(
         PrescriptionCategory,
         on_delete=models.SET_NULL,
         null=True,
         related_name='prescriptions',
         verbose_name="دسته‌بندی"
+    )
+    items = models.ManyToManyField(
+        "Drug",
+        through='PrescriptionDrug',
+        related_name='prescriptions',
+        verbose_name="اقلام دارویی"
     )
     title = models.CharField(max_length=200, verbose_name="عنوان نسخه")
     slug = models.SlugField(unique=True, allow_unicode=True, blank=True, verbose_name="اسلاگ (آدرس)")

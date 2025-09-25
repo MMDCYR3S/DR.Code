@@ -50,8 +50,32 @@ class ProfileView(LoginRequiredMixin, TemplateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['page_title'] = 'پروفایل کاربری'
-        context['page_description'] = 'مدیریت اطلاعات حساب کاربری'
+        context['user'] = self.request.user
+        return context
+    
+# ========== PROFILE MESSAGES VIEW ========== #
+class ProfileMessagesView(LoginRequiredMixin, TemplateView):
+    """
+    صفحه پروفایل کاربر - نیاز به احراز هویت
+    """
+    template_name = 'accounts/profile-messsages.html'
+    login_url = '/accounts/login/'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['user'] = self.request.user
+        return context
+    
+# ========== PROFILE SAVED PRESCRIPTIONS VIEW ========== #
+class ProfileSavedPrescriptionsView(LoginRequiredMixin, TemplateView):
+    """
+    صفحه پروفایل کاربر - نیاز به احراز هویت
+    """
+    template_name = 'accounts/profile-saved-pres.html'
+    login_url = '/accounts/login/'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
         context['user'] = self.request.user
         return context
 

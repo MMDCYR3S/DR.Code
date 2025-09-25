@@ -8,7 +8,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django.db.models import Prefetch
 
-from apps.prescriptions.models import Prescription, PrescriptionCategory, PrescriptionDrug, AccessChoices
+from apps.prescriptions.models import Prescription, PrescriptionCategory,Drug, AccessChoices
 from ..serializers import PrescriptionListSerializer
 from .filters import PrescriptionFilter
 from .pagination import PrescriptionPagination

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.prescriptions.models import (
-    PrescriptionCategory, PrescriptionDrug, 
+    PrescriptionCategory, Drug, PrescriptionDrug,
     PrescriptionImage, PrescriptionVideo, PrescriptionAlias
 )
 
@@ -19,13 +19,22 @@ class PrescriptionCategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'slug', 'color_code']
 
 # ======= PRESCRIPTION DRUG SERIALIZER ======= #
+class DrugSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Drug
+        fields = [
+            'title', 'code', 
+        ]
+
 class PrescriptionDrugSerializer(serializers.ModelSerializer):
+    drug = DrugSerializer(read_only=True)
+    
     class Meta:
         model = PrescriptionDrug
         fields = [
-            'title', 'code', 'dosage', 'amount', 
-            'instructions', 'is_combination',
-            'combination_group', 'order'
+            "drug", "dosage",
+            "instructions", "amount", "is_combination",
+            "order"
         ]
 
 # ======= PRESCRIPTION IMAGE SERIALIZER ======== #

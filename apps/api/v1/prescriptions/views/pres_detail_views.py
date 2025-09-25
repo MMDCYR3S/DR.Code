@@ -1,6 +1,8 @@
-from rest_framework import generics, permissions, throttling
+from rest_framework import generics, throttling
 
-from apps.prescriptions.models import Prescription
+from django.db.models import Prefetch
+
+from apps.prescriptions.models import Prescription, PrescriptionDrug
 from ..serializers import PrescriptionDetailSerializer
 from .permissions import IsPrescriptionAccessible
 
@@ -23,7 +25,7 @@ class PrescriptionDetailView(generics.RetrieveAPIView):
             'category'
         ).prefetch_related(
             'aliases',
-            'drugs',
+            Prefetch('prescriptiondrug_set', queryset=PrescriptionDrug.objects.select_related('drug')),
             'images',
             'videos'
         )

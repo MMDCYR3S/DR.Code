@@ -4,9 +4,9 @@ from ..views import *
 app_name = 'prescriptions'
 
 urlpatterns = [
-    path('', PrescriptionListView.as_view(), name='prescription_list'),
-    path('detail/<int:pk>/', PrescriptionDetailView.as_view(), name='prescription_detail'),
-    path('create/', PrescriptionCreateView.as_view(), name='prescription_create'),
-    path('<int:pk>/update/', PrescriptionUpdateView.as_view(), name='prescription_update'),
-    path('<int:pk>/delete/', PrescriptionDeleteView.as_view(), name='prescription_delete'),
+    path('prescriptions/', PrescriptionListView.as_view(), name='prescription_list'),
+    path('prescriptions/detail/<int:pk>/', PrescriptionDetailView.as_view(), name='prescription_detail'),
+    path('prescriptions/create/', PrescriptionCreateView.as_view(), name='prescription_create'),
+    path('prescriptions/update/<int:pk>/', PrescriptionUpdateView.as_view(), name='prescription_update'),
+    path('prescriptions/delete/<int:pk>/', PrescriptionDeleteView.as_view(), name='prescription_delete'),
 ]

@@ -1,0 +1,723 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if object %}ویرایش نسخه{% else %}افزودن نسخه جدید{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+{{ form.media }}
+<style>
+    .drug-item {
+        transition: all 0.3s ease;
+    }
+    .drug-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .drag-handle {
+        cursor: grab;
+    }
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+    .formset-item {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 12px;
+        background: white;
+    }
+    .delete-checkbox {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="bg-white shadow-lg rounded-lg">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-gray-900">
+                    {% if object %}ویرایش نسخه: {{ object.title }}{% else %}افزودن نسخه جدید{% endif %}
+                </h1>
+                <a href="{% url 'dashboard:prescriptions:prescription_list' %}" 
+                   class="text-blue-600 hover:text-blue-800 flex items-center">
+                    <i class="fas fa-arrow-right ml-2"></i>
+                    بازگشت
+                </a>
+            </div>
+        </div>
+
+        <form id="prescriptionForm" method="post" enctype="multipart/form-data" class="p-6">
+            {% csrf_token %}
+            
+            <!-- Hidden field for drugs data -->
+            <input type="hidden" id="drugs_data" name="drugs_data" value="">
+            
+            {{ alias_formset.management_form }}
+            {{ video_formset.management_form }}
+            {{ image_formset.management_form }}
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Main Content -->
+                <div class="lg:col-span-2 space-y-8">
+                    
+                    <!-- اطلاعات پایه -->
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h2 class="text-xl font-semibold mb-4 text-gray-800">اطلاعات پایه</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    {{ form.title.label }} <span class="text-red-500">*</span>
+                                </label>
+                                {{ form.title }}
+                                {% if form.title.errors %}
+                                    <div class="text-red-500 text-sm mt-1">{{ form.title.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    {{ form.detailed_description.label }}
+                                </label>
+                                {{ form.detailed_description }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- انتخاب داروها -->
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h2 class="text-xl font-semibold mb-4 text-gray-800">انتخاب داروها</h2>
+                        
+                        <!-- جستجوی دارو -->
+                        <div class="mb-6">
+                            <div class="relative">
+                                <input type="text" 
+                                       id="drugSearch" 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="نام دارو را تایپ کنید...">
+                                <div id="drugDropdown" class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden">
+                                    <!-- نتایج جستجو اینجا نمایش داده می‌شود -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- داروهای انتخاب شده -->
+                        <div id="selectedDrugs" class="space-y-4">
+                            <h3 class="text-lg font-medium text-gray-700">داروهای انتخاب شده:</h3>
+                            <div id="drugsContainer" class="space-y-3">
+                                <!-- داروهای انتخاب شده اینجا نمایش داده می‌شوند -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- نام‌های جایگزین -->
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h2 class="text-xl font-semibold mb-4 text-gray-800">نام‌های جایگزین</h2>
+                        <div id="aliasesContainer" class="space-y-3">
+                            {% for alias_form in alias_formset %}
+                                <div class="formset-item alias-form" data-form-index="{{ forloop.counter0 }}">
+                                    {% for hidden in alias_form.hidden_fields %}{{ hidden }}{% endfor %}
+                                    
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h4 class="font-medium text-gray-700">نام جایگزین #{{ forloop.counter }}</h4>
+                                        <button type="button" onclick="removeFormsetItem(this, 'alias')" class="text-red-600 hover:text-red-800 text-sm">
+                                            <i class="fas fa-trash ml-1"></i>حذف
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div class="md:col-span-2">
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ alias_form.name.label }}</label>
+                                            {{ alias_form.name }}
+                                        </div>
+                                        <div class="flex items-center">
+                                            {{ alias_form.is_primary }}
+                                            <label class="mr-2 text-sm text-gray-700">{{ alias_form.is_primary.label }}</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="delete-checkbox">{{ alias_form.DELETE }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" id="addAlias" class="mt-3 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                            <i class="fas fa-plus ml-2"></i>افزودن نام جایگزین
+                        </button>
+                    </div>
+
+                    <!-- ویدیوها -->
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h2 class="text-xl font-semibold mb-4 text-gray-800">ویدیوهای آموزشی</h2>
+                        <div id="videosContainer" class="space-y-3">
+                            {% for video_form in video_formset %}
+                                <div class="formset-item video-form" data-form-index="{{ forloop.counter0 }}">
+                                    {% for hidden in video_form.hidden_fields %}{{ hidden }}{% endfor %}
+                                    
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h4 class="font-medium text-gray-700">ویدیو #{{ forloop.counter }}</h4>
+                                        <button type="button" onclick="removeFormsetItem(this, 'video')" class="text-red-600 hover:text-red-800 text-sm">
+                                            <i class="fas fa-trash ml-1"></i>حذف
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="space-y-3">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ video_form.video_url.label }}</label>
+                                            {{ video_form.video_url }}
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ video_form.title.label }}</label>
+                                            {{ video_form.title }}
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ video_form.description.label }}</label>
+                                            {{ video_form.description }}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="delete-checkbox">{{ video_form.DELETE }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" id="addVideo" class="mt-3 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                            <i class="fas fa-plus ml-2"></i>افزودن ویدیو
+                        </button>
+                    </div>
+
+                    <!-- تصاویر -->
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h2 class="text-xl font-semibold mb-4 text-gray-800">تصاویر</h2>
+                        <div id="imagesContainer" class="space-y-3">
+                            {% for image_form in image_formset %}
+                                <div class="formset-item image-form" data-form-index="{{ forloop.counter0 }}">
+                                    {% for hidden in image_form.hidden_fields %}{{ hidden }}{% endfor %}
+                                    
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h4 class="font-medium text-gray-700">تصویر #{{ forloop.counter }}</h4>
+                                        <button type="button" onclick="removeFormsetItem(this, 'image')" class="text-red-600 hover:text-red-800 text-sm">
+                                            <i class="fas fa-trash ml-1"></i>حذف
+                                        </button>
+                                    </div>
+                                    
+                                    {% if image_form.instance.image %}
+                                        <div class="mb-3">
+                                            <img src="{{ image_form.instance.image.url }}" alt="تصویر" class="w-32 h-32 object-cover rounded border">
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="space-y-3">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ image_form.image.label }}</label>
+                                            {{ image_form.image }}
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ image_form.caption.label }}</label>
+                                            {{ image_form.caption }}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="delete-checkbox">{{ image_form.DELETE }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" id="addImage" class="mt-3 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                            <i class="fas fa-plus ml-2"></i>افزودن تصویر
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="space-y-6">
+                    <!-- تنظیمات انتشار -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <h3 class="text-lg font-semibold mb-3 text-gray-800">انتشار</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center">
+                                {{ form.is_active }}
+                                <label class="mr-2 text-sm">{{ form.is_active.label }}</label>
+                            </div>
+                            <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+                                {% if object %}بروزرسانی نسخه{% else %}ایجاد نسخه{% endif %}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- تنظیمات -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <h3 class="text-lg font-semibold mb-3 text-gray-800">تنظیمات</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    {{ form.category.label }}
+                                </label>
+                                {{ form.category }}
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    {{ form.access_level.label }}
+                                </label>
+                                {{ form.access_level }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // داده‌های اولیه
+    const allDrugs = {{ all_drugs_json|safe }};
+    const existingDrugs = {% if existing_drugs_json %}{{ existing_drugs_json|safe }}{% else %}[]{% endif %};
+    
+    let selectedDrugs = [];
+    let drugCounter = 0;
+    let aliasCounter = {{ alias_formset.forms|length }};
+    let videoCounter = {{ video_formset.forms|length }};
+    let imageCounter = {{ image_formset.forms|length }};
+    
+    // عناصر DOM
+    const drugSearch = document.getElementById('drugSearch');
+    const drugDropdown = document.getElementById('drugDropdown');
+    const drugsContainer = document.getElementById('drugsContainer');
+    const prescriptionForm = document.getElementById('prescriptionForm');
+    
+    // مدیریت Formset ها
+    const formsetManagers = {
+        alias: {
+            container: document.getElementById('aliasesContainer'),
+            counter: aliasCounter,
+            prefix: 'aliases',
+            addButton: document.getElementById('addAlias'),
+            template: createAliasTemplate
+        },
+        video: {
+            container: document.getElementById('videosContainer'),
+            counter: videoCounter,
+            prefix: 'videos',
+            addButton: document.getElementById('addVideo'),
+            template: createVideoTemplate
+        },
+        image: {
+            container: document.getElementById('imagesContainer'),
+            counter: imageCounter,
+            prefix: 'images',
+            addButton: document.getElementById('addImage'),
+            template: createImageTemplate
+        }
+    };
+
+    // بارگیری داروهای موجود در حالت ویرایش
+    function loadExistingDrugs() {
+        if (existingDrugs.length > 0) {
+            existingDrugs.forEach(drug => {
+                addDrugToList({
+                    id: drug.drug_id,
+                    title: drug.drug_title,
+                    code: drug.drug_code
+                }, {
+                    dosage: drug.dosage,
+                    amount: drug.amount,
+                    instructions: drug.instructions,
+                    is_combination: drug.is_combination,
+                    order: drug.order
+                });
+            });
+        }
+        updateEmptyState();
+    }
+    
+    // جستجوی دارو
+    drugSearch.addEventListener('input', function() {
+        const searchTerm = this.value.trim();
+        
+        if (searchTerm.length < 2) {
+            drugDropdown.classList.add('hidden');
+            return;
+        }
+        
+        const filteredDrugs = allDrugs.filter(drug => 
+            drug.title.includes(searchTerm) || 
+            (drug.code && drug.code.includes(searchTerm))
+        ).filter(drug => 
+            !selectedDrugs.some(selected => selected.drug_id === drug.id)
+        );
+        
+        displaySearchResults(filteredDrugs);
+    });
+    
+    // نمایش نتایج جستجو
+    function displaySearchResults(drugs) {
+        if (drugs.length === 0) {
+            drugDropdown.innerHTML = '<div class="p-3 text-gray-500 text-center">نتیجه‌ای یافت نشد</div>';
+            drugDropdown.classList.remove('hidden');
+            return;
+        }
+        
+        drugDropdown.innerHTML = drugs.map(drug => `
+            <div class="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100" 
+                 onclick="selectDrug(${drug.id}, '${escapeHtml(drug.title)}', '${escapeHtml(drug.code || '')}')">
+                <div class="font-medium">${escapeHtml(drug.title)}</div>
+                ${drug.code ? `<div class="text-sm text-gray-500">کد: ${escapeHtml(drug.code)}</div>` : ''}
+            </div>
+        `).join('');
+        
+        drugDropdown.classList.remove('hidden');
+    }
+    
+    // Escape HTML
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // انتخاب دارو
+    window.selectDrug = function(id, title, code) {
+        const drugData = { id, title, code };
+        const drugDetails = {
+            dosage: '',
+            amount: 1,
+            instructions: '',
+            is_combination: false,
+            order: selectedDrugs.length + 1
+        };
+        
+        addDrugToList(drugData, drugDetails);
+        drugSearch.value = '';
+        drugDropdown.classList.add('hidden');
+        updateEmptyState();
+    };
+    
+    // اضافه کردن دارو به لیست
+    function addDrugToList(drugData, drugDetails) {
+        const drugId = `drug_${drugCounter++}`;
+        
+        selectedDrugs.push({
+            id: drugId,
+            drug_id: drugData.id,
+            title: drugData.title,
+            code: drugData.code,
+            dosage: drugDetails.dosage,
+            amount: drugDetails.amount,
+            instructions: drugDetails.instructions,
+            is_combination: drugDetails.is_combination,
+            order: drugDetails.order
+        });
+        
+        const drugElement = createDrugElement(drugId, drugData, drugDetails);
+        drugsContainer.appendChild(drugElement);
+    }
+    
+    // ایجاد عنصر دارو
+    function createDrugElement(drugId, drugData, drugDetails) {
+        const div = document.createElement('div');
+        div.className = 'drug-item bg-white border border-gray-200 rounded-lg p-4';
+        div.dataset.drugId = drugId;
+        
+        div.innerHTML = `
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex items-center space-x-reverse space-x-3">
+                    <span class="drag-handle text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-grip-vertical"></i>
+                    </span>
+                    <div>
+                        <h4 class="font-medium text-gray-900">${escapeHtml(drugData.title)}</h4>
+                        ${drugData.code ? `<span class="text-sm text-gray-500">کد: ${escapeHtml(drugData.code)}</span>` : ''}
+                    </div>
+                </div>
+                <button type="button" onclick="removeDrug('${drugId}')" 
+                        class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">دوز و نحوه مصرف</label>
+                    <input type="text" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="مثال: روزی 3 بار"
+                           value="${escapeHtml(drugDetails.dosage)}"
+                           onchange="updateDrugDetail('${drugId}', 'dosage', this.value)">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">مقدار</label>
+                    <input type="number" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           min="1"
+                           value="${drugDetails.amount}"
+                           onchange="updateDrugDetail('${drugId}', 'amount', parseInt(this.value))">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ترتیب نمایش</label>
+                    <input type="number" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           min="1"
+                           value="${drugDetails.order}"
+                           onchange="updateDrugDetail('${drugId}', 'order', parseInt(this.value))">
+                </div>
+                
+                <div class="flex items-center">
+                    <input type="checkbox" 
+                           ${drugDetails.is_combination ? 'checked' : ''}
+                           onchange="updateDrugDetail('${drugId}', 'is_combination', this.checked)"
+                           class="form-checkbox h-4 w-4 text-blue-600 ml-2">
+                    <label class="text-sm text-gray-700">دارو ترکیبی است</label>
+                </div>
+                
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">توضیحات اضافی</label>
+                    <textarea class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              rows="3"
+                              placeholder="توضیحات نحوه مصرف"
+                              onchange="updateDrugDetail('${drugId}', 'instructions', this.value)">${escapeHtml(drugDetails.instructions)}</textarea>
+                </div>
+            </div>
+        `;
+        
+        return div;
+    }
+    
+    // بروزرسانی جزئیات دارو
+    window.updateDrugDetail = function(drugId, field, value) {
+        const drug = selectedDrugs.find(d => d.id === drugId);
+        if (drug) {
+            drug[field] = value;
+        }
+    };
+    
+    // حذف دارو
+    window.removeDrug = function(drugId) {
+        selectedDrugs = selectedDrugs.filter(d => d.id !== drugId);
+        const element = document.querySelector(`[data-drug-id="${drugId}"]`);
+        if (element) {
+            element.remove();
+        }
+        updateEmptyState();
+    };
+    
+    // بروزرسانی وضعیت خالی
+    function updateEmptyState() {
+        if (selectedDrugs.length === 0) {
+            drugsContainer.innerHTML = `
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-pills text-3xl mb-3"></i>
+                    <p>هنوز داروی انتخاب شده‌ای ندارید</p>
+                    <p class="text-sm">از بخش جستجو، داروهای مورد نظر را انتخاب کنید</p>
+                </div>
+            `;
+        }
+    }
+    
+    // Templates برای formset ها
+    function createAliasTemplate(index) {
+        return `
+            <div class="formset-item alias-form" data-form-index="${index}">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="font-medium text-gray-700">نام جایگزین #${index + 1}</h4>
+                    <button type="button" onclick="removeFormsetItem(this, 'alias')" class="text-red-600 hover:text-red-800 text-sm">
+                        <i class="fas fa-trash ml-1"></i>حذف
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">نام جایگزین</label>
+                        <input type="text" name="aliases-${index}-name" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="نام جایگزین">
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" name="aliases-${index}-is_primary" value="on" class="form-checkbox h-4 w-4 text-blue-600 ml-2">
+                        <label class="text-sm text-gray-700">اصلی</label>
+                    </div>
+                </div>
+                
+                <input type="hidden" name="aliases-${index}-id" value="">
+                <div class="delete-checkbox">
+                    <input type="checkbox" name="aliases-${index}-DELETE" class="form-checkbox h-4 w-4 text-red-600">
+                </div>
+            </div>
+        `;
+    }
+    
+    function createVideoTemplate(index) {
+        return `
+            <div class="formset-item video-form" data-form-index="${index}">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="font-medium text-gray-700">ویدیو #${index + 1}</h4>
+                    <button type="button" onclick="removeFormsetItem(this, 'video')" class="text-red-600 hover:text-red-800 text-sm">
+                        <i class="fas fa-trash ml-1"></i>حذف
+                    </button>
+                </div>
+                
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">لینک ویدیو</label>
+                        <input type="url" name="videos-${index}-video_url" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="https://www.aparat.com/...">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">عنوان ویدیو</label>
+                        <input type="text" name="videos-${index}-title" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="عنوان ویدیو">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">توضیحات</label>
+                        <textarea name="videos-${index}-description" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="توضیحات ویدیو"></textarea>
+                    </div>
+                </div>
+                
+                <input type="hidden" name="videos-${index}-id" value="">
+                <div class="delete-checkbox">
+                    <input type="checkbox" name="videos-${index}-DELETE" class="form-checkbox h-4 w-4 text-red-600">
+                </div>
+            </div>
+        `;
+    }
+    
+    function createImageTemplate(index) {
+        return `
+            <div class="formset-item image-form" data-form-index="${index}">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="font-medium text-gray-700">تصویر #${index + 1}</h4>
+                    <button type="button" onclick="removeFormsetItem(this, 'image')" class="text-red-600 hover:text-red-800 text-sm">
+                        <i class="fas fa-trash ml-1"></i>حذف
+                    </button>
+                </div>
+                
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">فایل تصویر</label>
+                        <input type="file" name="images-${index}-image" accept="image/*" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">کپشن تصویر</label>
+                        <input type="text" name="images-${index}-caption" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="کپشن تصویر">
+                    </div>
+                </div>
+                
+                <input type="hidden" name="images-${index}-id" value="">
+                <div class="delete-checkbox">
+                    <input type="checkbox" name="images-${index}-DELETE" class="form-checkbox h-4 w-4 text-red-600">
+                </div>
+            </div>
+        `;
+    }
+    
+    // افزودن فرم جدید به formset
+    function addFormsetItem(type) {
+        const manager = formsetManagers[type];
+        const newForm = document.createElement('div');
+        newForm.innerHTML = manager.template(manager.counter);
+        manager.container.appendChild(newForm.firstElementChild);
+        
+        manager.counter++;
+        updateFormsetManagementForm(type);
+    }
+    
+    // حذف آیتم از formset
+    window.removeFormsetItem = function(button, type) {
+        const formItem = button.closest('.formset-item');
+        const deleteCheckbox = formItem.querySelector('input[name*="-DELETE"]');
+        
+        if (deleteCheckbox && formItem.querySelector('input[name*="-id"]').value) {
+            // آیتم موجود - فقط علامت‌گذاری برای حذف
+            deleteCheckbox.checked = true;
+            formItem.style.opacity = '0.5';
+            formItem.style.backgroundColor = '#fee2e2';
+            button.textContent = 'لغو حذف';
+            button.onclick = function() { cancelDelete(button, type); };
+        } else {
+            // آیتم جدید - حذف کامل
+            formItem.remove();
+            reindexFormset(type);
+        }
+    };
+    
+    // لغو حذف
+    function cancelDelete(button, type) {
+        const formItem = button.closest('.formset-item');
+        const deleteCheckbox = formItem.querySelector('input[name*="-DELETE"]');
+        
+        deleteCheckbox.checked = false;
+        formItem.style.opacity = '1';
+        formItem.style.backgroundColor = '';
+        button.innerHTML = '<i class="fas fa-trash ml-1"></i>حذف';
+        button.onclick = function() { removeFormsetItem(button, type); };
+    }
+    
+    // تنظیم مجدد index ها
+    function reindexFormset(type) {
+        const manager = formsetManagers[type];
+        const forms = manager.container.querySelectorAll('.formset-item');
+        
+        forms.forEach((form, index) => {
+            form.dataset.formIndex = index;
+            
+            // بروزرسانی نام‌های input
+            form.querySelectorAll('input, textarea, select').forEach(input => {
+                if (input.name) {
+                    input.name = input.name.replace(/\d+/, index);
+                }
+            });
+            
+            // بروزرسانی عنوان
+            const title = form.querySelector('h4');
+            if (title) {
+                title.textContent = title.textContent.replace(/#\d+/, `#${index + 1}`);
+            }
+        });
+        
+        manager.counter = forms.length;
+        updateFormsetManagementForm(type);
+    }
+    
+    // بروزرسانی فرم مدیریت
+    function updateFormsetManagementForm(type) {
+        const manager = formsetManagers[type];
+        const totalFormsInput = document.querySelector(`#id_${manager.prefix}-TOTAL_FORMS`);
+        if (totalFormsInput) {
+            totalFormsInput.value = manager.counter;
+        }
+    }
+    
+    // Event listeners برای دکمه‌های افزودن
+    Object.keys(formsetManagers).forEach(type => {
+        const manager = formsetManagers[type];
+        manager.addButton.addEventListener('click', () => addFormsetItem(type));
+    });
+    
+    // مخفی کردن dropdown هنگام کلیک خارج از آن
+    document.addEventListener('click', function(e) {
+        if (!drugSearch.contains(e.target) && !drugDropdown.contains(e.target)) {
+            drugDropdown.classList.add('hidden');
+        }
+    });
+    
+    // ارسال فرم
+    prescriptionForm.addEventListener('submit', function(e) {
+        const drugsData = selectedDrugs.map(drug => ({
+            drug_id: drug.drug_id,
+            dosage: drug.dosage,
+            amount: drug.amount,
+            instructions: drug.instructions,
+            is_combination: drug.is_combination,
+            order: drug.order
+        }));
+        
+        document.getElementById('drugs_data').value = JSON.stringify(drugsData);
+    });
+    
+    // بارگیری اولیه
+    loadExistingDrugs();
+});
+</script>
+{% endblock %}

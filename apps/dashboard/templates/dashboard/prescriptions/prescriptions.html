@@ -209,16 +209,17 @@
                     </div>
 
 
-                    <!-- Drugs Table with Dynamic Colors -->
+                    <!-- Drugs Section - بهبود یافته -->
                     <div x-show="detailData.drugs && detailData.drugs.length > 0">
                         <div class="flex items-center space-x-2 space-x-reverse mb-4">
                             <div class="w-4 h-4 rounded-full" :class="detailData.category_color || 'bg-slate-500'"></div>
                             <h4 class="text-lg font-semibold text-slate-800">لیست داروها</h4>
-                            <span class="text-sm text-slate-500" x-text="`(${detailData.drugs.length} دارو)`"></span>
+                            <span class="text-sm text-slate-500" x-text="`(${detailData.drugs?.length || 0} دارو)`"></span>
                         </div>
                         
-                        <!-- Table for both Desktop and Mobile with Horizontal Scroll -->
-                        <div class="overflow-x-auto rounded-lg border-2 border-opacity-30" :class="`border-${(detailData.category_color || 'bg-slate-500').replace('bg-', '')}-500`">
+                        <!-- جدول داروها -->
+                        <div class="overflow-x-auto rounded-lg border-2 border-opacity-30" 
+                            :class="`border-${(detailData.category_color || 'bg-slate-500').replace('bg-', '')}-500`">
                             <table class="min-w-full" style="min-width: 700px;">
                                 <thead class="bg-opacity-20" :class="detailData.category_color || 'bg-slate-500'">
                                     <tr>
@@ -226,6 +227,7 @@
                                         <th class="px-4 py-3 text-right text-sm font-medium text-slate-700 whitespace-nowrap min-w-[100px]">کد</th>
                                         <th class="px-4 py-3 text-right text-sm font-medium text-slate-700 whitespace-nowrap min-w-[120px]">دوز</th>
                                         <th class="px-4 py-3 text-right text-sm font-medium text-slate-700 whitespace-nowrap min-w-[80px]">مقدار</th>
+                                        <th class="px-4 py-3 text-right text-sm font-medium text-slate-700 whitespace-nowrap min-w-[100px]">نوع</th>
                                         <th class="px-4 py-3 text-right text-sm font-medium text-slate-700 whitespace-nowrap min-w-[200px]">توضیحات</th>
                                     </tr>
                                 </thead>
@@ -234,10 +236,10 @@
                                         <tr class="hover:bg-slate-50" 
                                             :class="drug.is_combination ? (detailData.category_color || 'bg-slate-500') + ' bg-opacity-15' : ''">
                                             <td class="px-4 py-3 text-sm text-slate-900 whitespace-nowrap" 
-                                                :class="drug.is_combination ? 'font-semibold' : 'font-medium'" 
-                                                x-text="drug.title"></td>
+                                                :class="drug.is_combination ? 'font-bold' : 'font-medium'" 
+                                                x-text="drug.title || 'نامشخص'"></td>
                                             <td class="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">
-                                                <div class="flex items-center space-x-2 space-x-reverse">
+                                                <div class="flex items-center space-x-2 space-x-reverse" x-show="drug.code">
                                                     <span x-text="drug.code"></span>
                                                     <button @click="copyDrugCode($event, drug.code)" 
                                                         class="text-xs text-slate-500 hover:text-slate-700 p-1 hover:bg-slate-200 rounded transition-colors"
@@ -245,10 +247,21 @@
                                                         <i class="fa-solid fa-copy"></i>
                                                     </button>
                                                 </div>
+                                                <span x-show="!drug.code" class="text-slate-400 text-xs">بدون کد</span>
                                             </td>
-                                            <td class="px-4 py-3 text-sm text-slate-600 whitespace-nowrap" x-text="drug.dosage"></td>
-                                            <td class="px-4 py-3 text-sm text-slate-600 whitespace-nowrap" x-text="drug.amount"></td>
-                                            <td class="px-4 py-3 text-sm text-slate-600" x-text="drug.instructions"></td>
+                                            <td class="px-4 py-3 text-sm text-slate-600 whitespace-nowrap" 
+                                                x-text="drug.dosage || '-'"></td>
+                                            <td class="px-4 py-3 text-sm text-slate-600 whitespace-nowrap text-center" 
+                                                x-text="drug.amount || '-'"></td>
+                                            <td class="px-4 py-3 text-sm whitespace-nowrap">
+                                                <span class="px-2 py-1 text-xs rounded-full" 
+                                                    :class="drug.is_combination ? 
+                                                        `text-purple-800 bg-purple-100` : 
+                                                        'text-blue-800 bg-blue-100'"
+                                                    x-text="drug.is_combination ? 'ترکیبی' : 'عادی'"></span>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm text-slate-600" 
+                                                x-text="drug.instructions || '-'"></td>
                                         </tr>
                                     </template>
                                 </tbody>
@@ -261,6 +274,14 @@
                             <span>برای مشاهده کامل جدول، انگشت خود را روی جدول بکشید</span>
                             <i class="fa-solid fa-arrows-left-right"></i>
                         </div>
+                    </div>
+
+                    <!-- Empty State برای داروها -->
+                    <div x-show="(!detailData.drugs || detailData.drugs.length === 0) && !loadingDetail" class="text-center py-8">
+                        <div class="mx-auto w-fit bg-slate-100 rounded-full p-3">
+                            <i class="fa-solid fa-pills text-2xl text-slate-400"></i>
+                        </div>
+                        <p class="mt-2 text-slate-500">هیچ داروی ثبت شده‌ای وجود ندارد</p>
                     </div>
 
 
@@ -424,6 +445,8 @@ document.addEventListener('alpine:init', () => {
 
         // Detail Modal Methods
         openDetailModal(id) {
+            console.log('Opening detail modal for ID:', id); // Debug
+            
             this.isDetailModalOpen = true;
             this.loadingDetail = true;
             this.detailData = {};
@@ -437,41 +460,81 @@ document.addEventListener('alpine:init', () => {
                     'Content-Type': 'application/json'
                 }
             })
-            .then(res => res.json())
+            .then(res => {
+                console.log('Response status:', res.status); // Debug
+                return res.json();
+            })
             .then(data => {
+                console.log('Response data:', data); // Debug
+                
                 this.loadingDetail = false;
                 if(data.success) {
                     this.detailData = data.data;
+                    console.log('Detail data set:', this.detailData); // Debug
+                    console.log('Drugs count:', this.detailData.drugs ? this.detailData.drugs.length : 0); // Debug
                 } else {
                     this.notify(data.message || 'خطایی در بارگذاری اطلاعات رخ داد', 'error');
                     this.isDetailModalOpen = false;
                 }
             })
             .catch(err => {
+                console.error('Fetch error:', err); // Debug
                 this.loadingDetail = false;
                 this.notify('یک خطای پیش‌بینی نشده رخ داد.', 'error');
                 this.isDetailModalOpen = false;
-                console.error(err);
+            });
+        },
+
+        // Helper method for copying drug codes
+        copyDrugCode(event, code) {
+            if (!code) return;
+            
+            navigator.clipboard.writeText(code).then(() => {
+                // پیدا کردن آیکون داخل دکمه
+                const icon = event.target.querySelector('i') || event.target;
+                
+                // ذخیره کلاس اصلی
+                const originalClass = icon.className;
+                
+                // تغییر به آیکون تیک
+                icon.className = 'fa-solid fa-check text-green-600';
+                
+                // برگشت به حالت اولیه بعد از 1 ثانیه
+                setTimeout(() => {
+                    icon.className = originalClass;
+                }, 1000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                this.notify('کپی کردن با مشکل مواجه شد', 'error');
             });
         }
     }));
 });
+
+// Global function برای compatibility
 function copyDrugCode(event, code) {
-    navigator.clipboard.writeText(code);
-    
-    // پیدا کردن آیکون داخل دکمه
-    const icon = event.target.querySelector('i') || event.target;
-    
-    // ذخیره کلاس اصلی
-    const originalClass = icon.className;
-    
-    // تغییر به آیکون تیک
-    icon.className = 'fa-solid fa-check text-green-600';
-    
-    // برگشت به حالت اولیه بعد از 1 ثانیه
-    setTimeout(() => {
-        icon.className = originalClass;
-    }, 1000);
+    // پیدا کردن Alpine component
+    const alpineData = Alpine.$data(document.querySelector('[x-data="prescriptionManager()"]'));
+    if (alpineData && alpineData.copyDrugCode) {
+        alpineData.copyDrugCode(event, code);
+    } else {
+        // Fallback method
+        if (!code) return;
+        
+        navigator.clipboard.writeText(code).then(() => {
+            const icon = event.target.querySelector('i') || event.target;
+            const originalClass = icon.className;
+            
+            icon.className = 'fa-solid fa-check text-green-600';
+            
+            setTimeout(() => {
+                icon.className = originalClass;
+            }, 1000);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+        });
+    }
 }
 </script>
 {% endblock %}
+

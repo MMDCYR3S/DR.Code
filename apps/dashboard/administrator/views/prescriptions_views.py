@@ -1,14 +1,16 @@
+import json
+
 from django.views.generic import ListView, CreateView, UpdateView, View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.db.models import Q
+from django.contrib import messages
+from django.shortcuts import redirect
+from django.urls import reverse_lazy
 
-import json
-
-from apps.prescriptions.models import Prescription
-from ..forms import PrescriptionFilterForm
 from .mixins import PrescriptionFormMixin
+from ..forms.prescriptions_forms import *
+from apps.prescriptions.models import Prescription, PrescriptionDrug
 from apps.accounts.permissions import HasAdminAccessPermission, IsTokenJtiActive
 
 # ================================================== #
@@ -23,25 +25,10 @@ class PrescriptionListView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessP
     
     def get_queryset(self):
         queryset = Prescription.objects.select_related('category').prefetch_related('aliases').all()
-        form = PrescriptionFilterForm(self.request.GET)
-        if form.is_valid():
-            search = form.cleaned_data.get('search')
-            category = form.cleaned_data.get('category')
-            sort_by = form.cleaned_data.get('sort_by')
-
-            if search:
-                queryset = queryset.filter(
-                    Q(title__icontains=search) | Q(aliases__name__icontains=search)
-                ).distinct()
-            if category:
-                queryset = queryset.filter(category=category)
-            if sort_by:
-                queryset = queryset.order_by(sort_by)
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['filter_form'] = PrescriptionFilterForm(self.request.GET)
         
         prescriptions_with_color = []
         for prescription in context['prescriptions']:
@@ -58,31 +45,41 @@ class PrescriptionListView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessP
 # ============= PRESCRIPTION DETAIL VIEW ============= #
 # ================================================== #
 class PrescriptionDetailView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPermission, View):
-    """نمایش جزئیات نسخه به صورت JSON برای مودال"""
-    
     def get(self, request, pk):
         try:
             prescription = get_object_or_404(Prescription, pk=pk)
             
-            # جمع‌آوری اطلاعات
+            drugs = []
+            
+            for prescription_drug in prescription.prescriptiondrug_set.select_related('drug').order_by('order'):
+                drug_data = {
+                    'id': prescription_drug.id,
+                    'drug_id': prescription_drug.drug.id,
+                    'title': prescription_drug.drug.title,
+                    'code': prescription_drug.drug.code or '',
+                    'dosage': prescription_drug.dosage or '',
+                    'amount': prescription_drug.amount or 1,
+                    'instructions': prescription_drug.instructions or '',
+                    'order': prescription_drug.order or 0,
+                    'is_combination': prescription_drug.is_combination
+                }
+                drugs.append(drug_data)
+            
             data = {
                 'id': prescription.id,
                 'title': prescription.title,
-                'category': prescription.category.title if prescription.category else None,
+                'category': prescription.category.title if prescription.category else 'بدون دسته‌بندی',
                 'category_color': prescription.category.color_code if prescription.category else 'bg-slate-500',
                 'access_level': prescription.access_level,
-                'detailed_description': prescription.detailed_description,
-                'drugs': list(prescription.drugs.values(
-                    'id', 'title', 'code', 'dosage', 'amount', 'instructions', 
-                    'is_combination', 'combination_group', 'order'
-                ).order_by('order')),
+                'detailed_description': prescription.detailed_description or '',
+                'drugs': drugs,  # تغییر اصلی: یک آرایه واحد
                 'aliases': list(prescription.aliases.values('id', 'name', 'is_primary')),
                 'videos': list(prescription.videos.values('id', 'video_url', 'title', 'description')),
                 'images': [
                     {
                         'id': img.id,
                         'image': img.image.url if img.image else '',
-                        'caption': img.caption
+                        'caption': img.caption or ''
                     } for img in prescription.images.all()
                 ]
             }
@@ -90,38 +87,182 @@ class PrescriptionDetailView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
             return JsonResponse({'success': True, 'data': data})
             
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)})
+            return JsonResponse({'success': False, 'message': f'خطا در بارگیری اطلاعات: {str(e)}'})
 
 # ================================================== #
 # ============= PRESCRIPTION CREATE VIEW ============= #
 # ================================================== #
-class PrescriptionCreateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPermission, PrescriptionFormMixin, CreateView):
-    """ ایجاد نسخه به وسیله فرم شخصی سازی شده و همچنین استفاده از Mixin """
-    def get_object(self, queryset=None):
-        return None
-
-# ================================================== #
-# ============= PRESCRIPTION UPDATE VIEW ============= #
-# ================================================== #
-class PrescriptionUpdateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPermission, PrescriptionFormMixin, UpdateView):
-    """ ویرایش نسخه به وسیله داروهای آن به واسطه Mixin سفارشی """
+class PrescriptionCreateView(LoginRequiredMixin, CreateView):
+    model = Prescription
+    form_class = PrescriptionForm
+    template_name = 'dashboard/prescriptions/prescription_form.html'
+    success_url = reverse_lazy('dashboard:prescriptions:prescription_list')
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        prescription = self.get_object()
-        drugs_data = list(prescription.drugs.values('id', 'title', 'code', 'dosage', 'amount', 'instructions', 'is_combination', 'combination_group', 'order'))
+        if self.request.POST:
+            context['alias_formset'] = AliasFormSet(self.request.POST, prefix='aliases')
+            context['video_formset'] = VideoFormSet(self.request.POST, prefix='videos')
+            context['image_formset'] = ImageFormSet(self.request.POST, self.request.FILES, prefix='images')
+        else:
+            context['alias_formset'] = AliasFormSet(prefix='aliases')
+            context['video_formset'] = VideoFormSet(prefix='videos')
+            context['image_formset'] = ImageFormSet(prefix='images')
         
-        context['object_data_json'] = json.dumps({
-            'title': prescription.title,
-            'detailed_description': prescription.detailed_description or "",
-            'category': prescription.category.id if prescription.category else "",
-            'access_level': prescription.access_level,
-            'is_active': prescription.is_active,
-            'slug': prescription.slug,
-            'drugs': drugs_data
-        })
+        # تمام داروها برای JavaScript
+        context['all_drugs_json'] = json.dumps(
+            list(Drug.objects.values('id', 'title', 'code').order_by('title'))
+        )
+        
         return context
+    
+    def form_valid(self, form):
+        context = self.get_context_data()
+        alias_formset = context['alias_formset']
+        video_formset = context['video_formset']
+        image_formset = context['image_formset']
+        
+        # ست کردن کاربر
+        form.instance.user = self.request.user
+        
+        if (form.is_valid() and alias_formset.is_valid() and 
+            video_formset.is_valid() and image_formset.is_valid()):
+            
+            # ذخیره نسخه
+            self.object = form.save()
+            
+            # پردازش داروها از POST data
+            self.save_prescription_drugs()
+            
+            # ذخیره سایر formset ها
+            alias_formset.instance = self.object
+            alias_formset.save()
+            
+            video_formset.instance = self.object
+            video_formset.save()
+            
+            image_formset.instance = self.object
+            image_formset.save()
+            
+            messages.success(self.request, 'نسخه با موفقیت ایجاد شد.')
+            return redirect(self.get_success_url())
+        else:
+            return self.form_invalid(form)
+    
+    def save_prescription_drugs(self):
+        """ذخیره داروهای نسخه از داده‌های JavaScript"""
+        drugs_data = json.loads(self.request.POST.get('drugs_data', '[]'))
+        
+        for drug_data in drugs_data:
+            PrescriptionDrug.objects.create(
+                prescription=self.object,
+                drug_id=drug_data['drug_id'],
+                dosage=drug_data['dosage'],
+                amount=drug_data['amount'],
+                instructions=drug_data['instructions'],
+                is_combination=drug_data['is_combination'],
+                order=drug_data['order']
+            )
+
+# ================================================== #
+# ============= PRESCRIPTION UPDATE VIEW ============= #
+# ================================================== #
+class PrescriptionUpdateView(LoginRequiredMixin, UpdateView):
+    model = Prescription
+    form_class = PrescriptionForm
+    template_name = 'dashboard/prescriptions/prescription_form.html'
+    success_url = reverse_lazy('dashboard:prescriptions:prescription_list')
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        if self.request.POST:
+            context['alias_formset'] = AliasFormSet(self.request.POST, instance=self.object, prefix='aliases')
+            context['video_formset'] = VideoFormSet(self.request.POST, instance=self.object, prefix='videos')
+            context['image_formset'] = ImageFormSet(self.request.POST, self.request.FILES, instance=self.object, prefix='images')
+        else:
+            context['alias_formset'] = AliasFormSet(instance=self.object, prefix='aliases')
+            context['video_formset'] = VideoFormSet(instance=self.object, prefix='videos')
+            context['image_formset'] = ImageFormSet(instance=self.object, prefix='images')
+        
+        # تمام داروها برای JavaScript
+        context['all_drugs_json'] = json.dumps(
+            list(Drug.objects.values('id', 'title', 'code').order_by('title'))
+        )
+        
+        # داروهای موجود
+        existing_drugs = []
+        for prescription_drug in self.object.prescriptiondrug_set.all():
+            existing_drugs.append({
+                'id': prescription_drug.id,
+                'drug_id': prescription_drug.drug.id,
+                'drug_title': prescription_drug.drug.title,
+                'drug_code': prescription_drug.drug.code,
+                'dosage': prescription_drug.dosage,
+                'amount': prescription_drug.amount,
+                'instructions': prescription_drug.instructions,
+                'is_combination': prescription_drug.is_combination,
+                'order': prescription_drug.order
+            })
+        
+        context['existing_drugs_json'] = json.dumps(existing_drugs)
+        
+        return context
+    
+    def form_valid(self, form):
+        context = self.get_context_data()
+        alias_formset = context['alias_formset']
+        video_formset = context['video_formset']
+        image_formset = context['image_formset']
+        
+        if (form.is_valid() and alias_formset.is_valid() and 
+            video_formset.is_valid() and image_formset.is_valid()):
+            
+            # ذخیره تغییرات
+            self.object = form.save()
+            
+            # پردازش داروها
+            self.update_prescription_drugs()
+            
+            # ذخیره سایر formset ها
+            alias_formset.save()
+            video_formset.save()
+            image_formset.save()
+            
+            messages.success(self.request, 'نسخه با موفقیت ویرایش شد.')
+            return redirect(self.get_success_url())
+        else:
+            return self.form_invalid(form)
+    
+    def update_prescription_drugs(self):
+        """بروزرسانی داروهای نسخه"""
+        # حذف داروهای قدیمی
+        self.object.prescriptiondrug_set.all().delete()
+        
+        # اضافه کردن داروهای جدید
+        drugs_data = json.loads(self.request.POST.get('drugs_data', '[]'))
+        
+        for drug_data in drugs_data:
+            PrescriptionDrug.objects.create(
+                prescription=self.object,
+                drug_id=drug_data['drug_id'],
+                dosage=drug_data['dosage'],
+                amount=drug_data['amount'],
+                instructions=drug_data['instructions'],
+                is_combination=drug_data['is_combination'],
+                order=drug_data['order']
+            )
 
 # ================================================== #
 # ============= PRESCRIPTION DELETE VIEW ============= #

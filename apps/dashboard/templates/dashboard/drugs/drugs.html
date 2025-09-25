@@ -1,0 +1,333 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}مدیریت داروها{% endblock %}
+
+{% block content %}
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-4 sm:p-6" x-data="drugManager()">
+    <div class="container mx-auto">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <h1 class="text-2xl font-bold text-slate-700">مدیریت داروها</h1>
+            <button @click="openAddModal()" class="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition-colors">
+                <i class="fa-solid fa-plus ml-2"></i>
+                <span>افزودن دارو جدید</span>
+            </button>
+        </div>
+
+        <!-- جدول دسکتاپ -->
+        <div class="hidden lg:block bg-white rounded-xl shadow-sm overflow-hidden">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 text-slate-600">
+                    <tr>
+                        <th scope="col" class="px-6 py-4 text-right font-medium">نام دارو</th>
+                        <th scope="col" class="px-6 py-4 text-right font-medium">کد دارو</th>
+                        <th scope="col" class="px-6 py-4 text-right font-medium">تاریخ ایجاد</th>
+                        <th scope="col" class="px-6 py-4 text-right font-medium">آخرین بروزرسانی</th>
+                        <th scope="col" class="px-6 py-4 text-center font-medium">عملیات</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200">
+                    <template x-for="drug in drugs" :key="drug.id">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-semibold text-slate-900" x-text="drug.title"></td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span x-show="drug.code" class="text-slate-600 font-mono text-sm" x-text="drug.code"></span>
+                                <span x-show="!drug.code" class="text-slate-400 text-sm">بدون کد</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-slate-600 text-sm" x-text="drug.created_at"></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-slate-600 text-sm" x-text="drug.updated_at"></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <div class="flex justify-center items-center space-x-2 space-x-reverse">
+                                    <button @click="openDetailModal(drug)" class="p-2 text-slate-500 hover:text-blue-600 rounded-md hover:bg-slate-200" title="مشاهده جزئیات">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </button>
+                                    <button @click="openEditModal(drug)" class="p-2 text-slate-500 hover:text-yellow-600 rounded-md hover:bg-slate-200" title="ویرایش">
+                                        <i class="fa-solid fa-pencil"></i>
+                                    </button>
+                                    <button @click="openDeleteModal(drug)" class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-200" title="حذف">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+            
+            <!-- Empty State -->
+            <div x-show="drugs.length === 0" class="text-center py-12">
+                <div class="mx-auto w-fit bg-slate-100 rounded-full p-4 mb-4">
+                    <i class="fa-solid fa-pills text-3xl text-slate-400"></i>
+                </div>
+                <h3 class="text-lg font-medium text-slate-900 mb-2">هیچ داروی ثبت شده‌ای وجود ندارد</h3>
+                <p class="text-slate-500 mb-4">برای شروع، اولین دارو را اضافه کنید</p>
+                <button @click="openAddModal()" class="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100">
+                    <i class="fa-solid fa-plus ml-2"></i>
+                    افزودن دارو جدید
+                </button>
+            </div>
+        </div>
+
+        <!-- کارت‌های موبایل -->
+        <div class="grid grid-cols-1 gap-4 lg:hidden">
+            <template x-for="drug in drugs" :key="drug.id">
+                <div class="bg-white rounded-xl shadow-sm p-4">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h3 class="font-bold text-slate-800 text-lg mb-2" x-text="drug.title"></h3>
+                            <div class="space-y-2 text-sm text-slate-600">
+                                <div class="flex items-center">
+                                    <i class="fa-solid fa-barcode w-4 text-slate-400 ml-2"></i>
+                                    <span x-show="drug.code" x-text="drug.code" class="font-mono"></span>
+                                    <span x-show="!drug.code" class="text-slate-400">بدون کد</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fa-solid fa-calendar-plus w-4 text-slate-400 ml-2"></i>
+                                    <span x-text="drug.created_at"></span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fa-solid fa-calendar-check w-4 text-slate-400 ml-2"></i>
+                                    <span x-text="drug.updated_at"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-1 space-x-reverse">
+                            <button @click="openDetailModal(drug)" class="p-2 text-slate-500 hover:text-blue-600 rounded-md hover:bg-slate-100" title="مشاهده جزئیات">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                            <button @click="openEditModal(drug)" class="p-2 text-slate-500 hover:text-yellow-600 rounded-md hover:bg-slate-100" title="ویرایش">
+                                <i class="fa-solid fa-pencil"></i>
+                            </button>
+                            <button @click="openDeleteModal(drug)" class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100" title="حذف">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            
+            <!-- Empty State موبایل -->
+            <div x-show="drugs.length === 0" class="text-center py-12">
+                <div class="mx-auto w-fit bg-slate-100 rounded-full p-4 mb-4">
+                    <i class="fa-solid fa-pills text-3xl text-slate-400"></i>
+                </div>
+                <h3 class="text-lg font-medium text-slate-900 mb-2">هیچ داروی ثبت شده‌ای وجود ندارد</h3>
+                <p class="text-slate-500 mb-4">برای شروع، اولین دارو را اضافه کنید</p>
+                <button @click="openAddModal()" class="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100">
+                    <i class="fa-solid fa-plus ml-2"></i>
+                    افزودن دارو جدید
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال افزودن/ویرایش -->
+    <div x-show="isModalOpen" x-cloak @keydown.escape.window="closeModal()" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div @click="closeModal()" class="absolute inset-0 bg-slate-900/60"></div>
+        <div x-show="isModalOpen" x-transition class="relative bg-white rounded-xl shadow-lg w-full max-w-md">
+            <div class="p-5 flex justify-between items-center border-b">
+                <h3 class="text-lg font-bold" x-text="modalTitle"></h3>
+                <button @click="closeModal()" class="p-1.5 hover:bg-slate-100 rounded-full">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <form @submit.prevent="saveDrug()">
+                {% csrf_token %}
+                <div class="p-6 space-y-5">
+                    <div>
+                        <label for="id_title" class="block text-sm font-medium text-slate-700 mb-2">{{ form.title.label }} <span class="text-red-500">*</span></label>
+                        {{ form.title }}
+                    </div>
+                    <div>
+                        <label for="id_code" class="block text-sm font-medium text-slate-700 mb-2">{{ form.code.label }}</label>
+                        {{ form.code }}
+                    </div>
+                </div>
+                <div class="px-6 py-4 bg-slate-50 rounded-b-xl flex justify-end items-center space-x-3 space-x-reverse">
+                    <button type="button" @click="closeModal()" class="py-2 px-5 text-sm font-semibold bg-white border border-slate-300 rounded-lg hover:bg-slate-100">
+                        انصراف
+                    </button>
+                    <button type="submit" class="py-2 px-6 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        ذخیره
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- مودال جزئیات -->
+    <div x-show="isDetailModalOpen" x-cloak @keydown.escape.window="isDetailModalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div @click="isDetailModalOpen = false" class="absolute inset-0 bg-slate-900/60"></div>
+        <div x-show="isDetailModalOpen" x-transition class="relative bg-white rounded-xl shadow-lg w-full max-w-lg">
+            <div class="p-5 flex justify-between items-center border-b">
+                <h3 class="text-lg font-bold">جزئیات دارو</h3>
+                <button @click="isDetailModalOpen = false" class="p-1.5 hover:bg-slate-100 rounded-full">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="bg-slate-50 rounded-lg p-4">
+                    <h4 class="font-semibold text-slate-800 mb-3" x-text="currentDrug.title"></h4>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-slate-600">کد دارو:</span>
+                            <span class="font-medium" x-text="currentDrug.code || 'ثبت نشده'"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-600">تاریخ ایجاد:</span>
+                            <span class="font-medium" x-text="currentDrug.created_at"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-600">آخرین بروزرسانی:</span>
+                            <span class="font-medium" x-text="currentDrug.updated_at"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-slate-50 rounded-b-xl flex justify-end">
+                <button @click="isDetailModalOpen = false" class="py-2 px-5 text-sm font-semibold bg-white border border-slate-300 rounded-lg hover:bg-slate-100">
+                    بستن
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال حذف -->
+    <div x-show="isDeleteModalOpen" x-cloak @keydown.escape.window="isDeleteModalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div @click="isDeleteModalOpen = false" class="absolute inset-0 bg-slate-900/60"></div>
+        <div x-show="isDeleteModalOpen" x-transition class="relative bg-white rounded-xl shadow-lg w-full max-w-sm text-center p-6">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <i class="fa-solid fa-triangle-exclamation text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-medium mb-2">حذف دارو</h3>
+            <p class="text-sm text-gray-500 mb-4">
+                آیا از حذف دارو <strong x-text="currentDrug.title"></strong> مطمئن هستید؟
+            </p>
+            <div class="flex justify-center space-x-2 space-x-reverse">
+                <button @click="isDeleteModalOpen = false" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
+                    انصراف
+                </button>
+                <button @click="deleteDrug()" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                    بله، حذف کن
+                </button>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('drugManager', () => ({
+        isModalOpen: false,
+        isDeleteModalOpen: false,
+        isDetailModalOpen: false,
+        isEditMode: false,
+        modalTitle: '',
+        currentDrug: { id: null, title: '', code: '', created_at: '', updated_at: '' },
+        
+        drugs: {{ drugs_json|safe }},
+
+        notify(message, type = 'success') {
+            window.dispatchEvent(new CustomEvent('notify', { detail: { message, type } }));
+        },
+
+        getCSRFToken() {
+            return document.querySelector('form input[name="csrfmiddlewaretoken"]').value;
+        },
+
+        openAddModal() {
+            this.isEditMode = false;
+            this.modalTitle = 'افزودن دارو جدید';
+            this.currentDrug = { id: null, title: '', code: '', created_at: '', updated_at: '' };
+            document.querySelector('#id_title').value = '';
+            document.querySelector('#id_code').value = '';
+            this.isModalOpen = true;
+        },
+
+        openEditModal(drug) {
+            this.isEditMode = true;
+            this.modalTitle = 'ویرایش دارو';
+            this.currentDrug = { ...drug };
+            document.querySelector('#id_title').value = drug.title;
+            document.querySelector('#id_code').value = drug.code || '';
+            this.isModalOpen = true;
+        },
+        
+        openDeleteModal(drug) {
+            this.currentDrug = drug;
+            this.isDeleteModalOpen = true;
+        },
+
+        openDetailModal(drug) {
+            this.currentDrug = drug;
+            this.isDetailModalOpen = true;
+        },
+        
+        closeModal() {
+            this.isModalOpen = false;
+        },
+
+        saveDrug() {
+            const titleInput = document.querySelector('#id_title');
+            const codeInput = document.querySelector('#id_code');
+            const formData = new FormData();
+            formData.append('title', titleInput.value);
+            formData.append('code', codeInput.value);
+
+            const url = this.isEditMode 
+                ? `{% url 'dashboard:drugs:drug_update' 0 %}`.replace('0', this.currentDrug.id) 
+                : `{% url 'dashboard:drugs:drug_create' %}`;
+            
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': this.getCSRFToken() },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    if(this.isEditMode) {
+                        const index = this.drugs.findIndex(d => d.id === data.drug.id);
+                        this.drugs[index] = data.drug;
+                    } else {
+                        this.drugs.unshift(data.drug); // اضافه کردن به ابتدای لیست
+                    }
+                    this.notify(data.message, 'success');
+                    this.closeModal();
+                } else {
+                    this.notify(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                this.notify('خطای غیرمنتظره رخ داد', 'error');
+            });
+        },
+
+        deleteDrug() {
+            const url = `{% url 'dashboard:drugs:drug_delete' 0 %}`.replace('0', this.currentDrug.id);
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': this.getCSRFToken() }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    this.drugs = this.drugs.filter(d => d.id !== this.currentDrug.id);
+                    this.notify(data.message, 'success');
+                    this.isDeleteModalOpen = false;
+                } else {
+                    this.notify(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                this.notify('خطای غیرمنتظره رخ داد', 'error');
+            });
+        }
+    }));
+});
+</script>
+{% endblock %}

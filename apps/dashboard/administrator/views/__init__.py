@@ -48,3 +48,5 @@ from .tutorials_views import (
     TutorialUpdateView,
     TutorialDeleteView
 )
+
+from .drugs_views import *

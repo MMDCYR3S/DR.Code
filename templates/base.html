@@ -1,0 +1,47 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>{% block title %}صفحه اصلی |  دکتر کد{% endblock title %}</title>
+
+    {% block extra_css %}
+    <!-- این بخش مربوط به Css هایی هست که برای صفحت مختلف ممکنه بزنی. -->
+    {% endblock extra_css %}
+    
+</head>
+<body>
+    <div id="wrapper" class="flex flex-col min-h-screen">
+        
+        <header id="header">
+            {% block header %}
+            <!-- اینجا باید قسمت مربوط به هدرو اضافه کنی -->
+            {% endblock header %}
+        </header>
+        
+        <main id="main-content" class="flex-grow p-4">
+            <div class="page-content">
+                {% block content %}
+                <!-- این قسمت نیازی به اضافه کردن چیزی نداره. برای بخش هایی هست که به این فایل میخوان متصل بشند -->
+                {% endblock content %}
+            </div>
+        </main>
+        
+        <footer>
+            {% block footer %}
+            <!-- بخش مربوط به فوتر -->
+                <p>
+                    کلیه حقوق محفوظ است
+                </p>
+            {% endblock footer %}
+        </footer>
+        
+    </div>
+    {% block extra_js %}
+    <!-- اینجا هم برای فایل base هست و هم برای باقی صفحات که میخای js اضافه کنی. حالا چه لینک فایل و چه داخل خود صفحه. -->
+    {% endblock extra_js %}
+</body>
+</html>

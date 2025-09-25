@@ -9,18 +9,16 @@ from .all_serializers import PrescriptionAliasSerializer, PrescriptionCategorySe
 class PrescriptionListSerializer(serializers.ModelSerializer):
     """سریالایزر برای لیست نسخه‌ها - اطلاعات محدود"""
     category = PrescriptionCategorySerializer(read_only=True)
-    aliases = PrescriptionAliasSerializer(many=True, read_only=True)
     detail_url = serializers.SerializerMethodField()
-    
     all_names = serializers.SerializerMethodField()
     primary_name = serializers.SerializerMethodField()
     
     class Meta:
         model = Prescription
         fields = [
-            'id', 'title', 'slug', 'category', 'aliases', 
-            'all_names', 'primary_name', 'access_level',
-            'detail_url', 'created_at', 'updated_at'
+            'id', 'title', 'slug', 'all_names', 'category', 
+            'detail_url', 'primary_name',
+            'access_level', 'created_at',
         ]
     
     def get_detail_url(self, obj):

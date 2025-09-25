@@ -8,31 +8,30 @@ from .all_serializers import (
     PrescriptionCategorySerializer,
     PrescriptionDrugSerializer,
     PrescriptionImageSerializer,
-    PrescriptionVideoSerializer
+    PrescriptionVideoSerializer,
+    DrugSerializer,
 )
 
 # ======== PRESCRIPTION DETAIL SERIALIZER ======== #
 class PrescriptionDetailSerializer(serializers.ModelSerializer):
     """سریالایزر برای جزئیات کامل نسخه"""
     category = PrescriptionCategorySerializer(read_only=True)
-    aliases = PrescriptionAliasSerializer(many=True, read_only=True)
-    drugs = PrescriptionDrugSerializer(many=True, read_only=True)
+    all_names = serializers.SerializerMethodField()
+    prescription_drugs = PrescriptionDrugSerializer(source="prescriptiondrug_set" ,many=True, read_only=True)
     images = PrescriptionImageSerializer(many=True, read_only=True)
     videos = PrescriptionVideoSerializer(many=True, read_only=True)
-    all_names = serializers.SerializerMethodField()
     primary_name = serializers.SerializerMethodField()
-    category_color = serializers.SerializerMethodField()
     description_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Prescription
         fields = [
-            'id', 'title', 'slug', "description_url",
-            'category', 'category_color',
-            'aliases', 'all_names', 'primary_name',
-            'access_level', 
-            'drugs', 'images', 'videos', 'is_active',
-            'created_at', 'updated_at'
+            'id', 'title', 'all_names',
+            'category', 'prescription_drugs',
+            'images', 'videos', 
+            'access_level',
+            'primary_name', "description_url",
+            'created_at',
         ]
     
     def get_description_url(self, obj):

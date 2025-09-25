@@ -1,96 +1,197 @@
+import json
 from django.urls import reverse_lazy
-from django.db import transaction
+from django.http import HttpResponseRedirect
 from django.contrib import messages
-from apps.prescriptions.models import Prescription
-from ..forms import PrescriptionForm, DrugFormSet, AliasFormSet, ImageFormSet, VideoFormSet
-from apps.prescriptions.models import *
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import CreateView, UpdateView
+from django.db.models import Max
 
+from apps.prescriptions.models import Prescription, PrescriptionDrug, Drug
+from ..forms import (
+    PrescriptionForm, 
+    PrescriptionDrugFormSet, 
+    AliasFormSet, 
+    ImageFormSet, 
+    VideoFormSet
+)
+
+# ======== Prescription Form Mixin ======== #
 class PrescriptionFormMixin:
     model = Prescription
     form_class = PrescriptionForm
     template_name = 'dashboard/prescriptions/prescription-form.html'
 
-    def get_success_url(self):
-        messages.success(self.request, f"نسخه «{self.object.title}» با موفقیت ذخیره شد.")
-        return reverse_lazy('dashboard:prescriptions:prescription_list')
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        if self.request.POST:
+            context['drug_formset'] = PrescriptionDrugFormSet(
+                self.request.POST, 
+                instance=self.object,
+                prefix='drugs'  # اضافه کردن prefix
+            )
+            context['alias_formset'] = AliasFormSet(
+                self.request.POST, 
+                instance=self.object,
+                prefix='aliases'
+            )
+            context['image_formset'] = ImageFormSet(
+                self.request.POST, 
+                self.request.FILES, 
+                instance=self.object,
+                prefix='images'
+            )
+            context['video_formset'] = VideoFormSet(
+                self.request.POST, 
+                instance=self.object,
+                prefix='videos'
+            )
+        else:
+            # برای حالت GET - نمایش فرم خالی یا با داده‌های موجود
+            if self.object and self.object.pk:
+                # حالت ویرایش - نمایش داروهای موجود
+                context['drug_formset'] = PrescriptionDrugFormSet(
+                    instance=self.object,
+                    prefix='drugs'
+                )
+            else:
+                # حالت ایجاد - نمایش فرم خالی
+                context['drug_formset'] = PrescriptionDrugFormSet(
+                    prefix='drugs'
+                )
+                
+            context['alias_formset'] = AliasFormSet(
+                instance=self.object,
+                prefix='aliases'
+            )
+            context['image_formset'] = ImageFormSet(
+                instance=self.object,
+                prefix='images'
+            )
+            context['video_formset'] = VideoFormSet(
+                instance=self.object,
+                prefix='videos'
+            )
+        
+        # اضافه کردن لیست تمام داروها برای جاوااسکریپت
+        context['all_drugs'] = list(
+            Drug.objects.values('id', 'title', 'code').order_by('title')
+        )
+        
+        return context
 
     def form_valid(self, form):
-        with transaction.atomic():
-            # ذخیره فرم اصلی
-            self.object = form.save()
+        # ذخیره فرم اصلی
+        self.object = form.save(commit=False)
+        
+        # دریافت formset ها
+        context = self.get_context_data()
+        drug_formset = context['drug_formset']
+        alias_formset = context['alias_formset']
+        image_formset = context['image_formset']
+        video_formset = context['video_formset']
+
+        # بررسی اعتبار همه formset ها
+        is_valid = all([
+            drug_formset.is_valid(),
+            alias_formset.is_valid(),
+            image_formset.is_valid(),
+            video_formset.is_valid()
+        ])
+
+        if is_valid:
+            # ذخیره نسخه اصلی
+            self.object.save()
             
-            # پردازش داده‌های related objects
-            self.process_drugs()
-            self.process_aliases()
-            self.process_videos()
-            self.process_images()
+            # حالا که نسخه ذخیره شد، formset ها را ذخیره کن
+            drug_formset.instance = self.object
+            drug_formset.save()
             
-            # چک کردن action
-            action = self.request.POST.get('action', 'save_draft')
-            if action == 'publish':
+            alias_formset.instance = self.object
+            alias_formset.save()
+            
+            image_formset.instance = self.object
+            image_formset.save()
+            
+            video_formset.instance = self.object
+            video_formset.save()
+            
+            # پردازش داروهای انتخاب شده از چک‌باکس‌ها (فقط برای حالت ایجاد)
+            if not self.object.pk or self.request.GET.get('new_drugs'):
+                self.process_new_drugs(form)
+            
+            # بررسی عمل انتشار
+            if 'publish' in self.request.POST:
                 self.object.is_active = True
                 self.object.save()
-        
-        return super().form_valid(form)
+                messages.success(self.request, 'نسخه با موفقیت منتشر شد!')
+            else:
+                messages.success(self.request, f'نسخه «{self.object.title}» با موفقیت ذخیره شد!')
+                
+            return HttpResponseRedirect(self.get_success_url())
+        else:
+            # نمایش خطاهای دقیق
+            if not drug_formset.is_valid():
+                messages.error(self.request, f'خطا در اطلاعات داروها: {drug_formset.errors}')
+            if not alias_formset.is_valid():
+                messages.error(self.request, f'خطا در نام‌های جایگزین: {alias_formset.errors}')
+            if not image_formset.is_valid():
+                messages.error(self.request, f'خطا در تصاویر: {image_formset.errors}')
+            if not video_formset.is_valid():
+                messages.error(self.request, f'خطا در ویدیوها: {video_formset.errors}')
+            
+            return self.form_invalid(form)
 
-    def process_drugs(self):
-        self.object.drugs.all().delete()
+    def process_new_drugs(self, form):
+        """
+        فقط برای اضافه کردن داروهای جدید از چک‌باکس‌ها
+        این متد فقط در حالت ایجاد یا زمانی که کاربر داروی جدید انتخاب کرده استفاده می‌شود
+        """
+        # داروهای موجود را دریافت کن
+        existing_drug_ids = set(
+            self.object.prescriptiondrug_set.values_list('drug_id', flat=True)
+        )
         
-        drug_count = 0
-        while f'drug_{drug_count}_title' in self.request.POST:
-            title = self.request.POST.get(f'drug_{drug_count}_title', '').strip()
-            if title:
+        # محاسبه آخرین order
+        last_order = self.object.prescriptiondrug_set.aggregate(
+            max_order=Max('order')
+        )['max_order'] or 0
+        
+        order = last_order + 1
+        
+        # اضافه کردن داروهای عادی جدید
+        regular_drugs = form.cleaned_data.get('regular_drugs', [])
+        for drug in regular_drugs:
+            if drug.id not in existing_drug_ids:
                 PrescriptionDrug.objects.create(
                     prescription=self.object,
-                    title=title,
-                    code=self.request.POST.get(f'drug_{drug_count}_code', ''),
-                    dosage=self.request.POST.get(f'drug_{drug_count}_dosage', ''),
-                    amount=int(self.request.POST.get(f'drug_{drug_count}_amount', 0) or 0),
-                    instructions=self.request.POST.get(f'drug_{drug_count}_instructions', ''),
-                    is_combination=self.request.POST.get(f'drug_{drug_count}_is_combination') == 'true',
-                    combination_group=self.request.POST.get(f'drug_{drug_count}_combination_group', ''),
-                    order=drug_count + 1
+                    drug=drug,
+                    dosage="",
+                    amount=1,
+                    instructions="",
+                    is_combination=False,
+                    order=order
                 )
-            drug_count += 1
-
-    def process_aliases(self):
-        self.object.aliases.all().delete()
+                order += 1
         
-        alias_count = 0
-        while f'alias_{alias_count}_name' in self.request.POST:
-            name = self.request.POST.get(f'alias_{alias_count}_name', '').strip()
-            if name:
-                PrescriptionAlias.objects.create(
+        # اضافه کردن داروهای ترکیبی جدید
+        combination_drugs = form.cleaned_data.get('combination_drugs', [])
+        for drug in combination_drugs:
+            if drug.id not in existing_drug_ids:
+                PrescriptionDrug.objects.create(
                     prescription=self.object,
-                    name=name,
-                    is_primary=self.request.POST.get(f'alias_{alias_count}_is_primary') == 'true'
+                    drug=drug,
+                    dosage="",
+                    amount=1,
+                    instructions="",
+                    is_combination=True,
+                    order=order
                 )
-            alias_count += 1
+                order += 1
 
-    def process_videos(self):
-        self.object.videos.all().delete()
-        
-        video_count = 0
-        while f'video_{video_count}_url' in self.request.POST:
-            url = self.request.POST.get(f'video_{video_count}_url', '').strip()
-            if url:
-                from apps.prescriptions.models import PrescriptionVideo  # Import مدل
-                PrescriptionVideo.objects.create(
-                    prescription=self.object,
-                    video_url=url,
-                    title=self.request.POST.get(f'video_{video_count}_title', ''),
-                    description=self.request.POST.get(f'video_{video_count}_description', '')
-                )
-            video_count += 1
+    def form_invalid(self, form):
+        messages.error(self.request, 'لطفاً خطاهای موجود در فرم را بررسی کنید.')
+        return super().form_invalid(form)
 
-    def process_images(self):
-        image_count = 0
-        while f'image_{image_count}' in self.request.FILES:
-            image_file = self.request.FILES.get(f'image_{image_count}')
-            if image_file:
-                PrescriptionImage.objects.create(
-                    prescription=self.object,
-                    image=image_file,
-                    caption=self.request.POST.get(f'image_{image_count}_caption', '')
-                )
-            image_count += 1
+    def get_success_url(self):
+        return reverse_lazy('dashboard:prescriptions:prescription_list')

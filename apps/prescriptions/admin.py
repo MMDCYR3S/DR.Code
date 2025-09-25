@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Prescription, PrescriptionAlias, PrescriptionDrug, PrescriptionCategory, PrescriptionImage, PrescriptionVideo
+from .models import Prescription, PrescriptionAlias, Drug, PrescriptionDrug, PrescriptionCategory, PrescriptionImage, PrescriptionVideo
 
 class PrescriptionAliasInline(admin.TabularInline):
     model = PrescriptionAlias
@@ -35,6 +35,10 @@ class AdminCat(admin.ModelAdmin):
 
 @admin.register(PrescriptionImage)
 class AdminImage(admin.ModelAdmin):
+    pass
+
+@admin.register(Drug)
+class DrugAdmin(admin.ModelAdmin):
     pass
 
 @admin.register(PrescriptionDrug)
