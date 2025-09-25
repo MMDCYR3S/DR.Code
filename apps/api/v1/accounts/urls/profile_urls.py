@@ -2,6 +2,16 @@ from django.urls import path
 from .. import views
 
 urlpatterns = [
-    path('profile/', views.ProfileView.as_view(), name='profile'),
-    path('update-profile/', views.UpdateProfileView.as_view(), name='update_profile'),
+    path('', views.ProfileView.as_view(), name='profile'),
+    path('update/', views.UpdateProfileView.as_view(), name='update_profile'),
+    path(
+        'prescription/save/<str:slug>/', 
+        views.PrescriptionSaveToggleView.as_view(), 
+        name='prescription-save-toggle'
+    ),
+    path(
+        'saved/', 
+        views.SavedPrescriptionListView.as_view(), 
+        name='saved-prescriptions-list'
+    ),
 ]

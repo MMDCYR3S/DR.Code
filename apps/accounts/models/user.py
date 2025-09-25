@@ -50,6 +50,13 @@ class User(AbstractUser):
     last_name = models.CharField('نام خانوادگی', max_length=30)
     email = models.EmailField('ایمیل', unique=True)
     
+    saved_prescriptions = models.ManyToManyField(
+        'prescriptions.Prescription',
+        related_name='savers',
+        blank=True,
+        verbose_name='نسخه‌های ذخیره‌شده'
+    )
+    
     # اضافه کردن validator برای شماره تلفن
     phone_regex = RegexValidator(
         regex=r'^09\d{9}$',

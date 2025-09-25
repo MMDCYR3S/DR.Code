@@ -157,16 +157,13 @@ class UpdateProfileView(BaseAPIView):
         try:
             if not profile.profile_image:
                 return
-            
-            # باز کردن تصویر
+
             image = Image.open(profile.profile_image)
             
-            # تبدیل به RGB در صورت نیاز
             if image.mode in ('RGBA', 'P'):
                 image = image.convert('RGB')
             
-            # تغییر اندازه در صورت نیاز (حداکثر 800x800)
-            max_size = (800, 800)
+            max_size = (1500, 1500)
             if image.size[0] > max_size[0] or image.size[1] > max_size[1]:
                 image.thumbnail(max_size, Image.Resampling.LANCZOS)
             

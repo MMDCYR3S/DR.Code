@@ -1,7 +1,10 @@
+import re
+
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+
+from apps.prescriptions.models import Prescription
 from apps.accounts.models import Profile
-import re
 
 User = get_user_model()
 
@@ -154,3 +157,22 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
             profile.save(update_fields=list(profile_data.keys()))
         
         return instance
+
+# ========== SAVED PRESCRIPTION LIST SERIALIZER ========== #
+class SavedPrescriptionListSerializer(serializers.ModelSerializer):
+    """
+    سریالایزر برای نمایش لیست نسخه‌های ذخیره‌شده توسط کاربر، شامل لینک جزئیات.
+    """
+    category_title = serializers.CharField(source='category.title', read_only=True)
+    detail_url = serializers.HyperlinkedIdentityField(
+        view_name='api:v1:prescriptions_api:prescription-detail',
+        lookup_field='slug'
+    )
+    
+    class Meta:
+        model = Prescription
+        fields = [
+            'id', 'title', 'slug', 'category_title',
+            'access_level',  'detail_url'
+        ]
+    

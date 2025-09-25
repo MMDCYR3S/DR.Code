@@ -5,7 +5,8 @@ from .register_serializer import (
 
 from .profile_serializer import (
     ProfileSerializer,
-    UpdateProfileSerializer
+    UpdateProfileSerializer,
+    SavedPrescriptionListSerializer
 )
 
 from .login_serializer import (
