@@ -19,12 +19,12 @@ ZARINPAL_CONFIG = {
 }
 
 # ======= CACHE CONFIGS ======= #
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "unique-snowflake",
-    }
-}
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+#         "LOCATION": "unique-snowflake",
+#     }
+# }
 
 # ====== EMAIL CONFIGS ====== #
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
