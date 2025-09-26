@@ -2,6 +2,7 @@ from rest_framework import generics, throttling
 
 from django.db.models import Prefetch
 
+from apps.accounts.permissions import IsTokenJtiActive
 from apps.prescriptions.models import Prescription, PrescriptionDrug
 from ..serializers import PrescriptionDetailSerializer
 from .permissions import IsPrescriptionAccessible
@@ -13,7 +14,7 @@ class PrescriptionDetailView(generics.RetrieveAPIView):
     """
     
     serializer_class = PrescriptionDetailSerializer
-    permission_classes = [IsPrescriptionAccessible]
+    permission_classes = [IsPrescriptionAccessible, IsTokenJtiActive]
     throttle_classes = [throttling.AnonRateThrottle, throttling.UserRateThrottle]
     lookup_field = 'slug'
 

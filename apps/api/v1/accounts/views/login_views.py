@@ -182,6 +182,8 @@ class RefreshAccessTokenView(TokenRefreshView, BaseAPIView):
                 refresh_token = request.data.get('refresh')
                 if refresh_token:
                     try:
+                        token_obj = RefreshToken(refresh_token)
+                        jti = token_obj.get('jti')
                         token = UntypedToken(refresh_token)
                         user_id = token.get('user_id')
                         user = User.objects.get(id=user_id)
@@ -194,7 +196,8 @@ class RefreshAccessTokenView(TokenRefreshView, BaseAPIView):
                     response.data.update({
                         'success': True,
                         'message': 'توکن با موفقیت بازسازی شد.',
-                        'token_refreshed_at': timezone.now().isoformat()
+                        'token_refreshed_at': timezone.now().isoformat(),
+                        "jti": jti
                     })
             
             return response
