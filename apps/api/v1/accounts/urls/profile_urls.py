@@ -14,4 +14,11 @@ urlpatterns = [
         views.SavedPrescriptionListView.as_view(), 
         name='saved-prescriptions-list'
     ),
+    
+    path(
+        'questions/', 
+        views.QuestionListAPIView.as_view(), 
+        name='questions-prescriptions-list'
+    ),
+    
 ]

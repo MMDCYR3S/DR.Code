@@ -1,1 +1,2 @@
 from .admin_views import NotificationListView, NotificationMarkAsReadView
+from .user_views import UserNotificationListView, UserNotificationMarkAsReadView

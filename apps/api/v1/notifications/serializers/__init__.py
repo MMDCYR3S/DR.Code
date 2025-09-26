@@ -1,1 +1,2 @@
-from .admin_serializer import NotificationSerializer
+from .admin_serializers import NotificationSerializer
+from .user_serializers import UserNotificationSerializer

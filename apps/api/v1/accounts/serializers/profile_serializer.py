@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 
 from apps.prescriptions.models import Prescription
 from apps.accounts.models import Profile
+from apps.questions.models import Question
 
 User = get_user_model()
 
@@ -175,4 +176,17 @@ class SavedPrescriptionListSerializer(serializers.ModelSerializer):
             'id', 'title', 'slug', 'category_title',
             'access_level',  'detail_url'
         ]
+        
+# ========== QUESTION LIST SERIALIZER ========== #
+class QuestionListSerializer(serializers.ModelSerializer):
+    """
+    سریالایزر برای نمایش سوالاتی که کاربر پرسیده و جواب هایی که دریافت کرده
+    """
     
+    prescription_title = serializers.StringRelatedField(source="prescription.title", read_only=True)
+    category_title = serializers.StringRelatedField(source="prescription.category.title", read_only=True)
+    answerer_name = serializers.CharField(source="answered_by.full_name", read_only=True)
+    
+    class Meta:
+        model = Question
+        fields = ["prescription_title", "category_title", "question_text", "answerer_name", "answer_text", "answered_at"]
