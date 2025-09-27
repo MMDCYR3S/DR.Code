@@ -50,3 +50,4 @@ from .tutorials_views import (
 )
 
 from .drugs_views import *
+from .index_views import admin_dashboard_view

@@ -1,0 +1,245 @@
+<!-- templates/dashboard/admin_dashboard.html -->
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}داشبورد مدیریتی{% endblock %}
+
+{% block content %}
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-4 sm:p-6">
+    <div class="container mx-auto">
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-bold text-slate-700">داشبورد مدیریتی</h1>
+            <div class="text-sm text-slate-500">
+                آخرین بروزرسانی: <span id="last-update">در حال بارگذاری...</span>
+            </div>
+        </div>
+
+        <!-- کارت‌های آماری -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
+            <!-- سود این ماه -->
+            <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-300">
+                <h3 class="text-sm font-medium text-slate-500">درآمد این ماه</h3>
+                <div class="mt-2 flex items-baseline">
+                    <p class="text-3xl font-bold text-slate-800">{{ current_month_revenue|floatformat:0|intcomma }}</p>
+                    <span class="text-sm text-slate-500 mr-1">تومان</span>
+                </div>
+                <div class="mt-2 flex items-center text-sm">
+                    {% if growth_percentage >= 0 %}
+                        <svg class="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                        </svg>
+                        <span class="mr-1 text-green-500">{{ growth_percentage }}٪</span>
+                    {% else %}
+                        <svg class="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                        </svg>
+                        <span class="mr-1 text-red-500">{{ growth_percentage }}٪</span>
+                    {% endif %}
+                    <span class="text-slate-400 mr-1">نسبت به ماه قبل</span>
+                </div>
+            </div>
+
+            <!-- کاربران ویژه فعال -->
+            <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-300 cursor-pointer" 
+                 onclick="window.location.href='{% url 'dashboard:users:users_list' %}?role=premium'">
+                <h3 class="text-sm font-medium text-slate-500">کاربران ویژه فعال</h3>
+                <div class="mt-2">
+                    <p class="text-3xl font-bold text-slate-800">{{ active_premium_users|intcomma }}</p>
+                </div>
+                <div class="mt-2 text-sm text-slate-400">
+                    <p>کاربر با اشتراک فعال</p>
+                </div>
+            </div>
+
+            <!-- در صف احراز هویت -->
+            <div class="bg-orange-50 p-6 rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-300 cursor-pointer border border-orange-200"
+                 onclick="window.location.href='{% url 'dashboard:users:admin_verification_queue' %}'">
+                <h3 class="text-sm font-medium text-orange-600">در صف احراز هویت</h3>
+                <div class="mt-2">
+                    <p class="text-3xl font-bold text-orange-700">{{ pending_verification_count|intcomma }}</p>
+                </div>
+                <div class="mt-2 text-sm text-orange-500">
+                    <p>کاربر منتظر تایید</p>
+                </div>
+            </div>
+
+            <!-- سوالات بدون پاسخ -->
+            <div class="bg-blue-50 p-6 rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-300 cursor-pointer border border-blue-200"
+                 onclick="window.location.href='{% url 'dashboard:questions:questions_list' %}'">
+                <h3 class="text-sm font-medium text-blue-600">سوالات پاسخ داده نشده</h3>
+                <div class="mt-2">
+                    <p class="text-3xl font-bold text-blue-700">{{ unanswered_questions_count|intcomma }}</p>
+                </div>
+                <div class="mt-2 text-sm text-blue-500">
+                    <p>سوال جدید از کاربران ویژه</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- بخش‌های اطلاعاتی -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- آخرین کاربران در صف احراز هویت -->
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-slate-700">آخرین کاربران در صف احراز هویت</h3>
+                    <a href="{% url 'dashboard:users:admin_verification_queue' %}" 
+                       class="text-sm text-blue-600 hover:text-blue-800">مشاهده همه</a>
+                </div>
+                
+                {% if pending_users %}
+                    <ul class="space-y-4">
+                        {% for profile in pending_users %}
+                        <li class="flex items-center justify-between">
+                            <div>
+                                <p class="font-medium">{{ profile.user.full_name }}</p>
+                                <p class="text-sm text-slate-500">{{ profile.user.phone_number }}</p>
+                                <p class="text-xs text-slate-400">{{ profile.user.shamsi_date_joined }}</p>
+                            </div>
+                            <a href="{% url 'dashboard:users:admin_user_detail' profile.user.pk %}"
+                               class="px-4 py-2 text-sm font-semibold text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors duration-200">
+                                بررسی مدارک
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-center py-8">
+                        <p class="text-slate-500">هیچ کاربری در صف احراز هویت نیست</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- آخرین سوالات بدون پاسخ -->
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-slate-700">آخرین سوالات کاربران ویژه</h3>
+                    <a href="{% url 'dashboard:questions:questions_list' %}" 
+                       class="text-sm text-blue-600 hover:text-blue-800">مشاهده همه</a>
+                </div>
+                
+                {% if recent_questions %}
+                    <ul class="space-y-4">
+                        {% for question in recent_questions %}
+                        <li class="flex items-center justify-between">
+                            <div class="flex-1 min-w-0">
+                                <p class="font-medium truncate">{{ question.user.full_name }}</p>
+                                <p class="text-sm text-slate-500 truncate">نسخه: {{ question.prescription.title }}</p>
+                                <p class="text-xs text-slate-400">{{ question.shamsi_created_at }}</p>
+                            </div>
+                            <a href="{% url 'dashboard:questions:questions_detail' question.pk %}"
+                               class="px-4 py-2 text-sm font-semibold text-white bg-gray-700 rounded-lg hover:bg-gray-800 transition-colors duration-200 flex-shrink-0">
+                                مشاهده و پاسخ
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-center py-8">
+                        <p class="text-slate-500">همه سوالات پاسخ داده شده‌اند</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- نمودار و پیام‌های تماس -->
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <!-- نمودار درآمد -->
+            <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm">
+                <h3 class="text-lg font-semibold text-slate-700 mb-4">نمودار درآمد (۶ ماه اخیر)</h3>
+                <div class="h-64">
+                    <canvas id="revenueChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- آخرین پیام‌های تماس -->
+            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-slate-700">آخرین پیام‌های تماس با ما</h3>
+                    <a href="{% url 'dashboard:contacts:contacts_list' %}" 
+                       class="text-sm text-blue-600 hover:text-blue-800">مشاهده همه</a>
+                </div>
+                
+                {% if recent_contacts %}
+                    <ul class="space-y-3">
+                        {% for contact in recent_contacts %}
+                        <li class="p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
+                            onclick="window.location.href='{% url 'dashboard:contacts:contact_detail' contact.pk %}'">
+                            <p class="font-medium text-sm truncate">موضوع: {{ contact.subject_display }}</p>
+                            <p class="text-xs text-slate-500 mt-1 truncate">از طرف: {{ contact.full_name }}</p>
+                            <p class="text-xs text-slate-400 mt-1">{{ contact.shamsi_created_at }}</p>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-center py-8">
+                        <p class="text-slate-500">پیام جدیدی وجود ندارد</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // نمایش زمان آخرین بروزرسانی
+    document.getElementById('last-update').textContent = new Date().toLocaleString('fa-IR');
+    
+    // نمودار درآمد
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    const monthlyData = {{ monthly_revenue_chart|safe }};
+    
+    // تبدیل داده‌ها برای Chart.js
+    const labels = monthlyData.map(item => {
+        const date = new Date(item.month);
+        return date.toLocaleDateString('fa-IR', { year: 'numeric', month: 'long' });
+    });
+    
+    const data = monthlyData.map(item => item.revenue || 0);
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'درآمد (تومان)',
+                data: data,
+                borderColor: '#60a5fa',
+                backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString('fa-IR');
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // بروزرسانی خودکار هر ۵ دقیقه
+    setInterval(function() {
+        window.location.reload();
+    }, 300000); // 5 minutes
+});
+</script>
+{% endblock %}

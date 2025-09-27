@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
+from django.db.models import Q
 
 from .mixins import PrescriptionFormMixin
 from ..forms.prescriptions_forms import *
@@ -25,6 +26,34 @@ class PrescriptionListView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessP
     
     def get_queryset(self):
         queryset = Prescription.objects.select_related('category').prefetch_related('aliases').all()
+
+        form = PrescriptionFilterForm(self.request.GET)
+        
+        if form.is_valid():
+            search = form.cleaned_data.get('search')
+            category = form.cleaned_data.get('category')
+            sort_by = form.cleaned_data.get('sort_by')
+            
+            # Apply search filter
+            if search:
+                queryset = queryset.filter(
+                    Q(title__icontains=search) |
+                    Q(detailed_description__icontains=search) |
+                    Q(aliases__name__icontains=search)
+                ).distinct()
+            
+            # Apply category filter
+            if category:
+                queryset = queryset.filter(category=category)
+            
+            # Apply sorting
+            if sort_by:
+                queryset = queryset.order_by(sort_by)
+            else:
+                queryset = queryset.order_by('-created_at')  # Default sorting
+        else:
+            queryset = queryset.order_by('-created_at')
+            
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -37,7 +66,7 @@ class PrescriptionListView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessP
                 'category_color': prescription.category.color_code if prescription.category else 'bg-slate-500',
                 'category_title': prescription.category.title if prescription.category else 'بدون دسته‌بندی'
             })
-        
+        context['filter_form'] = PrescriptionFilterForm(self.request.GET)
         context['prescriptions_data'] = prescriptions_with_color
         return context
 
