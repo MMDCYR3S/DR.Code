@@ -72,6 +72,7 @@ class ContactDetailView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPerm
             jalali_date = jdatetime.datetime.fromgregorian(
                 datetime=contact.created_at.replace(tzinfo=None)
             )
+        if contact.responded_at:
             jalali_response = jdatetime.datetime.fromgregorian(
                 datetime=contact.responded_at.replace(tzinfo=None)
             )
