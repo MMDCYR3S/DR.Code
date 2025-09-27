@@ -58,11 +58,10 @@
                 {% if profile.auth_status == 'PENDING' %}
                 <div x-transition class="bg-white p-6 rounded-xl shadow-sm border-2 border-dashed border-orange-300">
                     <h3 class="text-lg font-semibold text-slate-700 mb-4">بررسی و تایید هویت کاربر</h3>
-                    <form method="POST" class="flex flex-col sm:flex-row gap-4">
-                        {% csrf_token %}
-                        <button type="submit" name="action" value="approve" class="w-full py-3 px-5 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition">تایید هویت</button>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button type="button" @click="approveModalOpen = true" class="w-full py-3 px-5 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition">تایید هویت</button>
                         <button type="button" @click="rejectModalOpen = true" class="w-full py-3 px-5 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600 transition">رد هویت</button>
-                    </form>
+                    </div>
                 </div>
                 {% endif %}
 
@@ -89,6 +88,40 @@
         </div>
     </div>
 
+    <!-- مودال تایید با کد نظام پزشکی -->
+    <div x-show="approveModalOpen" x-cloak @keydown.escape.window="approveModalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center">
+        <div @click="approveModalOpen = false" class="absolute inset-0 bg-gray-600 bg-opacity-50"></div>
+        <div x-show="approveModalOpen" x-transition class="relative bg-white rounded-xl shadow-lg w-full max-w-md m-4">
+            <div class="p-6">
+                <h3 class="text-lg font-bold mb-2">تایید احراز هویت</h3>
+                <p class="text-sm text-slate-500 mb-4">در صورت تمایل، کد نظام پزشکی کاربر را وارد کنید:</p>
+                
+                <div class="mb-4">
+                    <label for="medical_code" class="block text-sm font-medium text-slate-700 mb-2">
+                        کد نظام پزشکی (اختیاری)
+                    </label>
+                    <input type="text" 
+                           id="medical_code" 
+                           x-model="medicalCode"
+                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                           placeholder="در صورت وجود وارد کنید"
+                           maxlength="50">
+                    <p class="text-xs text-slate-500 mt-1">
+                        این فیلد اختیاری است و می‌توانید خالی بگذارید
+                    </p>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-slate-50 rounded-b-xl flex justify-end space-x-2 space-x-reverse">
+                <button type="button" @click="approveModalOpen = false" class="py-2 px-4 text-sm font-semibold bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition">انصراف</button>
+                <button type="button" @click="confirmApprove()" :disabled="isProcessing" class="py-2 px-4 text-sm font-semibold bg-green-500 text-white rounded-lg hover:bg-green-600 transition disabled:opacity-50">
+                    <span x-show="!isProcessing">تایید نهایی</span>
+                    <span x-show="isProcessing">در حال پردازش...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال رد -->
     <div x-show="rejectModalOpen" x-cloak @keydown.escape.window="rejectModalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center">
         <div @click="rejectModalOpen = false" class="absolute inset-0 bg-gray-600 bg-opacity-50"></div>
         <div x-show="rejectModalOpen" x-transition class="relative bg-white rounded-xl shadow-lg w-full max-w-md m-4">
@@ -107,6 +140,8 @@
             </form>
         </div>
     </div>
+
+    <!-- سایر مودال‌ها -->
     <div x-show="imageViewerOpen" x-cloak @keydown.escape.window="imageViewerOpen = false" class="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div @click="imageViewerOpen = false" class="absolute inset-0 bg-gray-600 bg-opacity-50"></div>
         <div class="relative max-w-4xl max-h-full"><img :src="imageUrl" alt="نمایش مدرک" class="rounded-lg shadow-2xl max-w-full max-h-[90vh]"><button @click="imageViewerOpen = false" class="absolute -top-3 -right-3 bg-white rounded-full p-1.5 text-slate-600 hover:text-red-600 transition"><i class="fa-solid fa-times h-6 w-6"></i></button></div>
@@ -150,14 +185,65 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('userDetailComponent', (userId, userName) => ({
         // ... State Variables ...
         rejectModalOpen: false,
+        approveModalOpen: false,
         imageViewerOpen: false,
         imageUrl: '',
         editModalOpen: false,
         deleteModalOpen: false,
         userId: userId,
         userName: userName,
+        medicalCode: '',
+        isProcessing: false,
 
         // --- Functions ---
+        confirmApprove() {
+            this.isProcessing = true;
+            
+            const formData = new FormData();
+            formData.append('action', 'approve');
+            formData.append('medical_code', this.medicalCode);
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+            
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.showNotification(data.message, 'success');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    this.showNotification('خطا در پردازش درخواست', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                this.showNotification('خطا در ارتباط با سرور', 'error');
+            })
+            .finally(() => {
+                this.isProcessing = false;
+            });
+        },
+
+        showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 left-4 right-4 p-4 rounded-lg text-white z-50 ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            }`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        },
+
         openEditModal() {
             fetch(`/dashboard/admin/users/${this.userId}/edit/`)
                 .then(response => response.json())
@@ -184,7 +270,6 @@ document.addEventListener('alpine:init', () => {
                                 <option value="admin" ${data.role === 'admin' ? 'selected' : ''}>ادمین</option>
                             </select>
                         </div>
-
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">وضعیت احراز هویت</label>
                             <select name="auth_status" class="w-full px-3 py-2 border border-gray-300 rounded-md">

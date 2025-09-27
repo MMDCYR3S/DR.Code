@@ -166,22 +166,41 @@ class UserVerificationDetailView(LoginRequiredMixin, HasAdminAccessPermission, D
     def post(self, request, *args, **kwargs):
         """ مدیریت درخواست‌های تایید یا رد هویت """
         user = self.get_object()
+        
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         profile = user.profile
         action = request.POST.get('action')
         
         if action == 'approve':
+            medical_code = request.POST.get('medical_code', '').strip()
             send_auth_checked_email(user)
             profile.auth_status = AuthStatusChoices.APPROVED
             profile.role = 'regular'
             profile.rejection_reason = None
+            if medical_code:
+                profile.medical_code = medical_code
             profile.save()
             
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'message': f'احراز هویت کاربر {user.full_name} با موفقیت تایید شد.',
+                    'redirect_url': request.path_info
+                })
+                
         elif action == 'reject':
             resend_auth_email(user)
             rejection_reason = request.POST.get('rejection_reason', 'دلیل مشخصی ثبت نشده است.')
             profile.auth_status = AuthStatusChoices.REJECTED
             profile.rejection_reason = rejection_reason
             profile.save()
+            
+            if is_ajax:
+                return JsonResponse({
+                    'success': True,
+                    'message': f'احراز هویت کاربر {user.full_name} رد شد.',
+                    'redirect_url': request.path_info
+                })
 
         return redirect(request.path_info)
 
