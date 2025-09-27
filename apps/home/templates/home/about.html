@@ -9,6 +9,333 @@
 
 {% block content %}
 <!-- محتوای صفحات اینجاست -->
+<style>
+    /* Custom animations */
+    @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        @keyframes pulse-slow {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.05); opacity: 0.5; }
+        }
+        
+        .float-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .pulse-animation {
+            animation: pulse-slow 4s ease-in-out infinite;
+        }
+        
+        /* Gradient text */
+        .gradient-text {
+            background: linear-gradient(135deg, #0077b6 0%, #00b4d8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Custom shapes */
+        .shape-blob {
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+        }
+        
+        .shape-blob-2 {
+            border-radius: 70% 30% 30% 70% / 70% 70% 30% 30%;
+        }
+</style>
+
+
+<div id="base__div">
+
+
+<!-- Hero Section -->
+<section class="relative min-h-screen flex items-center py-20 overflow-hidden">
+    <!-- Background Elements -->
+    <div class="absolute inset-0">
+        <!-- Gradient circles -->
+        <div class="absolute top-20 right-10 w-96 h-96 bg-c2 rounded-full opacity-10 blur-3xl pulse-animation"></div>
+        <div class="absolute bottom-20 left-10 w-96 h-96 bg-c3 rounded-full opacity-10 blur-3xl pulse-animation" style="animation-delay: 2s;"></div>
+        
+        <!-- Medical pattern overlay -->
+        <div class="absolute inset-0 opacity-5">
+            <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+                <path fill="#0077b6" fill-opacity="0.1" d="M0,224L48,208C96,192,192,160,288,170.7C384,181,480,235,576,245.3C672,256,768,224,864,197.3C960,171,1056,149,1152,165.3C1248,181,1344,235,1392,261.3L1440,288L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+            </svg>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 lg:px-8 relative z-10">
+        <div class="grid lg:grid-cols-2 gap-12 items-center">
+            <!-- Content -->
+            <div class="text-center lg:text-right order-2 lg:order-1" data-aos="fade-left">
+                <h1 class="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
+                    تمرکز شما بر بیمار، 
+                    <span class="gradient-text">نسخه‌نویسی با ما</span>
+                </h1>
+                <p class="text-lg lg:text-xl text-gray-600 leading-relaxed">
+                    ما دکتر کد را ساختیم تا با هوشمندسازی فرآیند درمان، به پزشکان کمک کنیم تا ارزشمندترین دارایی خود یعنی "زمان و تمرکز" را به بیمارانشان اختصاص دهند.
+                </p>
+            </div>
+            
+            <!-- Hero Image -->
+            <div class="order-1 lg:order-2" data-aos="fade-right">
+                <div class="relative">
+                    <div class="absolute inset-0 bg-gradient-to-br from-c1 to-c3 rounded-3xl opacity-20 blur-2xl shape-blob"></div>
+                    <div class="relative bg-white rounded-3xl shadow-2xl p-8 flex items-center justify-center min-h-[400px] overflow-hidden">
+                        <!-- Doctor-Patient Illustration Placeholder -->
+                        <div class="text-center">
+                            <svg class="w-64 h-64 mx-auto text-c2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                            <p class="text-gray-400 mt-4">تصویر پزشک در حال گفتگو با بیمار</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Our Origin Story Section -->
+<section class="py-20 bg-white">
+    <div class="container mx-auto px-4 lg:px-8">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-3xl lg:text-4xl font-bold text-center text-gray-900 mb-16" data-aos="fade-up">
+                داستان ما از یک <span class="gradient-text">نیاز واقعی</span> شروع شد
+            </h2>
+            
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <!-- Icon/Graphic -->
+                <div class="flex justify-center" data-aos="fade-right">
+                    <div class="relative">
+                        <!-- Challenge Icon -->
+                        <div class="w-80 h-80 bg-gradient-to-br from-c5 to-c4 rounded-full flex items-center justify-center relative overflow-hidden">
+                            <div class="absolute inset-0 bg-white/50 shape-blob-2"></div>
+                            <svg class="w-48 h-48 text-c1 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Content -->
+                <div class="space-y-6" data-aos="fade-left">
+                    <p class="text-lg text-gray-700 leading-relaxed">
+                        پلتفرم دکتر کد با انگیزه پاسخ به نیازهای روزمره و واقعی پزشکان عمومی شکل گرفت. ما متوجه شدیم که پزشکان در فرآیند نسخه‌نویسی، با چالش‌هایی مواجه هستند که نه تنها زمان ارزشمند آن‌ها را می‌گیرد، بلکه کیفیت خدمات درمانی را نیز تحت تأثیر قرار می‌دهد.
+                    </p>
+                    <p class="text-lg text-gray-700 leading-relaxed">
+                        پزشکان عمومی، به عنوان ستون اصلی نظام درمانی کشور، روزانه با حجم بالایی از مراجعین روبرو هستند. آن‌ها نیاز به ابزاری دارند که بتواند سرعت و دقت عملکردشان را افزایش دهد، بدون آنکه از کیفیت ارتباط انسانی با بیمار کاسته شود.
+                    </p>
+                    <div class="flex items-center gap-4 mt-8">
+                        <div class="w-16 h-1 bg-gradient-to-r from-c1 to-c2 rounded-full"></div>
+                        <span class="text-c1 font-semibold">ماموریت ما: ساده‌سازی پیچیدگی‌ها</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Our Solution Section -->
+<section class="py-20 bg-gray-50">
+    <div class="container mx-auto px-4 lg:px-8">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-6" data-aos="fade-up">
+                    راه حل ما: <span class="gradient-text">هوشمندی، دقت و سرعت</span>
+                </h2>
+                <h3 class="text-xl text-gray-600" data-aos="fade-up" data-aos-delay="100">
+                    یک دستیار دیجیتال برای تصمیم‌گیری‌های مطمئن بالینی
+                </h3>
+            </div>
+
+            <!-- Feature Cards -->
+            <div class="grid lg:grid-cols-3 gap-8">
+                <!-- Card 1 -->
+                <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 group" data-aos="fade-up" data-aos-delay="100">
+                    <div class="w-20 h-20 bg-gradient-to-br from-c1 to-c2 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"></path>
+                        </svg>
+                    </div>
+                    <h4 class="text-xl font-bold text-gray-900 mb-4">بانک جامع و استاندارد</h4>
+                    <p class="text-gray-600 leading-relaxed">
+                        ما با گردآوری و تدوین بانک جامع نسخه‌های شایع پزشکی، بر اساس جدیدترین گایدلاین‌های ملی و بین‌المللی، فرآیند نسخه‌نویسی را به یک تجربه سریع و مطمئن تبدیل کرده‌ایم.
+                    </p>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 group" data-aos="fade-up" data-aos-delay="200">
+                    <div class="w-20 h-20 bg-gradient-to-br from-c2 to-c3 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
+                    </div>
+                    <h4 class="text-xl font-bold text-gray-900 mb-4">کاهش خطای پزشکی</h4>
+                    <p class="text-gray-600 leading-relaxed">
+                        این سامانه شامل کد داروها، دوزها، تعداد مصرف، مدت درمان و نکات مهمی مانند اندیکاسیون، کنترااندیکاسیون و عوارض جانبی است که به کاهش خطاهای پزشکی کمک می‌کند.
+                    </p>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 group" data-aos="fade-up" data-aos-delay="300">
+                    <div class="w-20 h-20 bg-gradient-to-br from-c3 to-c1 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <h4 class="text-xl font-bold text-gray-900 mb-4">آموزش و توانمندسازی</h4>
+                    <p class="text-gray-600 leading-relaxed">
+                        بخش آموزش و ویدیوهای آموزشی، به ارتقاء سطح دانش کاربران کمک می‌کند. این محتوا با همکاری متخصصین برجسته تهیه شده و به روز نگه داشته می‌شود.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Vision & Commitment Section -->
+<section class="py-20 bg-white">
+    <div class="bg-gray-50 py-20">
+        <div class="container mx-auto px-4 lg:px-8">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="text-3xl lg:text-4xl font-bold text-center text-gray-900 mb-16" data-aos="fade-up">
+                    چشم‌انداز و <span class="gradient-text">تعهد ما</span>
+                </h2>
+                
+                <div class="grid lg:grid-cols-2 gap-12">
+                    <!-- Vision -->
+                    <div class="bg-white rounded-2xl p-8 shadow-lg" data-aos="fade-right">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-gradient-to-br from-c1 to-c2 rounded-xl flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-2xl font-bold text-gray-900">چشم‌انداز ما</h3>
+                        </div>
+                        <p class="text-gray-700 leading-relaxed">
+                            تبدیل شدن به مرجع اصلی و مورد اعتماد پزشکان عمومی کشور در حوزه نسخه‌نویسی دیجیتال. ما می‌خواهیم با ارائه راهکارهای نوآورانه، استاندارد جدیدی در کیفیت و سرعت خدمات درمانی ایجاد کنیم.
+                        </p>
+                        <div class="mt-6 p-4 bg-c5 rounded-xl">
+                            <p class="text-c1 font-semibold">هدف ما: بهبود کیفیت زندگی میلیون‌ها ایرانی</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Commitment -->
+                    <div class="bg-white rounded-2xl p-8 shadow-lg" data-aos="fade-left">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-gradient-to-br from-c2 to-c3 rounded-xl flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-2xl font-bold text-gray-900">تعهد ما به شما</h3>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <!-- Security -->
+                            <div class="flex gap-3">
+                                <div class="w-8 h-8 bg-c5 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-4 h-4 text-c1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-gray-900 mb-1">امنیت و حریم خصوصی</h4>
+                                    <p class="text-gray-600 text-sm">ما در «دکتر کد» به اهمیت حفظ امنیت و حریم خصوصی اطلاعات کاربران واقفیم و از بالاترین استانداردهای امنیتی استفاده می‌کنیم.</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Collaboration -->
+                            <div class="flex gap-3">
+                                <div class="w-8 h-8 bg-c5 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-4 h-4 text-c2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-gray-900 mb-1">همکاری و بهبود مستمر</h4>
+                                    <p class="text-gray-600 text-sm">ما باور داریم که با همکاری نزدیک با جامعه پزشکی و دریافت بازخوردهای سازنده، می‌توانیم سهمی موثر در بهبود نظام سلامت کشور داشته باشیم.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action Section -->
+<section class="py-20 bg-gradient-to-br from-c1 to-c2 relative overflow-hidden">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-10">
+        <div class="absolute top-0 left-0 w-96 h-96 bg-white rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+        <div class="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full translate-x-1/2 translate-y-1/2"></div>
+    </div>
+    
+    <div class="container mx-auto px-4 lg:px-8 relative z-10">
+        <div class="max-w-4xl mx-auto text-center text-white">
+            <h2 class="text-3xl lg:text-5xl font-bold mb-6" data-aos="fade-up">
+                آماده‌اید تا نسخه‌نویسی را متحول کنید؟
+            </h2>
+            <p class="text-xl mb-12 opacity-90" data-aos="fade-up" data-aos-delay="100">
+                به هزاران متخصص سلامت بپیوندید و کیفیت خدمات درمانی خود را ارتقا دهید.
+            </p>
+            
+            <!-- Stats -->
+            <div class="grid grid-cols-3 gap-8 mb-12" data-aos="fade-up" data-aos-delay="200">
+                <div>
+                    <div class="text-4xl font-bold mb-2">+۵۰۰۰</div>
+                    <div class="text-sm opacity-80">پزشک فعال</div>
+                </div>
+                <div>
+                    <div class="text-4xl font-bold mb-2">+۲۰۰۰</div>
+                    <div class="text-sm opacity-80">نسخه استاندارد</div>
+                </div>
+                <div>
+                    <div class="text-4xl font-bold mb-2">۹۸٪</div>
+                    <div class="text-sm opacity-80">رضایت کاربران</div>
+                </div>
+            </div>
+            
+            <!-- CTA Buttons -->
+            <div class="flex flex-col sm:flex-row gap-4 justify-center" data-aos="fade-up" data-aos-delay="300">
+                <a href="#" class="inline-flex items-center justify-center px-8 py-4 bg-white text-c1 rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
+                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    شروع رایگان
+                </a>
+                <a href="#" class="inline-flex items-center justify-center px-8 py-4 bg-transparent text-white border-2 border-white rounded-2xl font-semibold text-lg hover:bg-white hover:text-c1 transform hover:scale-105 transition-all duration-300">
+                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                    </svg>
+                    ثبت نام
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
 
 {% endblock content %}
 

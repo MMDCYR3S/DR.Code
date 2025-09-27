@@ -33,7 +33,7 @@
     <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
 
     <!-- smooth scroll -->
-    <script defer src="https://unpkg.com/smooth-scroll/dist/smooth-scroll.polyfills.min.js"></script>
+    <!-- <script defer src="https://unpkg.com/smooth-scroll/dist/smooth-scroll.polyfills.min.js"></script> -->
 
 
     <!-- Font -->
@@ -53,25 +53,38 @@
         font-family: 'Vazirmatn', sans-serif;
     }
 
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 4px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: #f1f1f100;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: #00b4d8;
+        border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: #0077b6;
+    }
+
+    /* Glass morphism effect */
+    .glass {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(50px);
+    -webkit-backdrop-filter: blur(50px);
+    }
+
   </style>
 
 </head>
 
 <body>
     <div id="wrapper" class="flex flex-col min-h-screen" x-data="{ 
-        mobileMenu: false, scrolled: false , 
-        init() {
-            // Scroll handler
-            window.addEventListener('scroll', () => {
-                this.scrolled = window.scrollY > 50
-            });
-            // Initialize smooth scroll
-        var scroll = new SmoothScroll('a[href*=\'#\']', {
-            speed: 800,
-            speedAsDuration: true,
-            easing: 'easeInOutCubic'
-        });
-    }
+        mobileMenu: false
     }">
 
         <header id="header">
@@ -312,6 +325,12 @@
         offset: 100
     });
 
+    // Initialize Smooth Scroll
+    var scroll = new SmoothScroll('a[href*="#"]', {
+        speed: 800,
+        speedAsDuration: true,
+        easing: 'easeInOutCubic'
+    });
 
 </script>
 

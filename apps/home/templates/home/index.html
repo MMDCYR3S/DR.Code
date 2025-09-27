@@ -28,13 +28,6 @@
             animation: pulse-slow 4s ease-in-out infinite;
         }
         
-    /* Glass morphism effect */
-    .glass {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(50px);
-    -webkit-backdrop-filter: blur(50px);
-    }
-        
         /* Gradient text */
         .gradient-text {
             background: linear-gradient(135deg, #0077b6 0%, #00b4d8 100%);
@@ -43,27 +36,11 @@
             background-clip: text;
         }
         
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #00b4d8;
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: #0077b6;
-        }
+
 </style>
 
 <!-- base div -->
-<div class="bg-gray-50 overflow-x-hidden" x-data="{ 
+<div class="bg-gray-50 " x-data="{ 
     prescriptions: [],
     loading: false,
     init() {
