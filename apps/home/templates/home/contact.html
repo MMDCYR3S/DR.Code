@@ -32,6 +32,25 @@
         .hover-lift:hover {
             transform: translateY(-8px);
         }
+         /* Custom animations */
+         @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        @keyframes pulse-slow {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.05); opacity: 0.5; }
+        }
+        
+        .float-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .pulse-animation {
+            animation: pulse-slow 4s ease-in-out infinite;
+        }
+        
 </style>
 
 <div class="bg-gray-50 pt-10" x-data="contactForm()" >
