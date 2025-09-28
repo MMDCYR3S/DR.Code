@@ -19,6 +19,14 @@ class PrescriptionDetailView(TemplateView):
     """
     template_name = 'prescriptions/prescription_detail.html'
     
+    def get_context_data(self, **kwargs):
+        """
+        این متد slug را از URL گرفته و به context تمپلیت اضافه می‌کند.
+        """
+        context = super().get_context_data(**kwargs)
+        context['slug'] = kwargs.get('slug')
+        return context
+    
 
 # ========= Prescription Content View ========= #
 @method_decorator(cache_page(60 * 1), name='dispatch')
@@ -27,5 +35,13 @@ class PrescriptionContentView(TemplateView):
     صفحه ارتباط با ما
     """
     template_name = 'prescriptions/prescription_content.html'
+    
+    def get_context_data(self, **kwargs):
+        """
+        این متد slug را از URL گرفته و به context تمپلیت اضافه می‌کند.
+        """
+        context = super().get_context_data(**kwargs)
+        context['slug'] = kwargs.get('slug')
+        return context
 
 

@@ -1,0 +1,79 @@
+<!-- templates/prescriptions/prescription_detail.html -->
+
+{% extends "base.html" %}
+
+{% block title %}جزئیات نسخه{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 id="prescription-title">در حال بارگذاری...</h1>
+    <hr>
+    <div id="prescription-detail-container">
+        <p>در حال دریافت اطلاعات نسخه، لطفاً شکیبا باشید...</p>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const detailContainer = document.getElementById('prescription-detail-container');
+    const titleElement = document.getElementById('prescription-title');
+    const prescriptionSlug = '{{ slug }}';
+
+    if (!prescriptionSlug) {
+        // ... (کد مدیریت خطا)
+        return;
+    }
+
+    const apiDetailUrl = `/api/v1/prescriptions/${prescriptionSlug}/`;
+
+    fetch(apiDetailUrl)
+        .then(response => {
+            // ... (کد مدیریت خطاهای 404, 403 و ...)
+            return response.json();
+        })
+        .then(data => {
+            titleElement.textContent = data.primary_name;
+            document.title = `جزئیات: ${data.primary_name}`;
+
+            let drugsHtml = '...'; // (کد ساخت لیست داروها مانند قبل)
+            
+            // ================== بخش جدید ==================
+            // ساختن URL برای صفحه فرانت‌اند توضیحات
+            const contentPageUrl = `/prescriptions/content/${prescriptionSlug}/`;
+            
+            // نمایش دکمه "مشاهده توضیحات کامل"
+            // ما اینجا چک نمی‌کنیم که detailed_description محتوا دارد یا نه،
+            // چون صفحه توضیحات خودش می‌تواند این را مدیریت کند.
+            // اگر خواستید، می‌توانید یک فیلد is_detailed_description_available به سریالایزر اضافه کنید.
+            const descriptionButtonHtml = `
+                <a href="${contentPageUrl}" class="btn btn-info mt-3">مشاهده توضیحات و محتوای تکمیلی</a>
+            `;
+            // ============================================
+
+            const detailHtml = `
+                <div class="card">
+                    <div class="card-header">
+                        <strong>نام‌های دیگر:</strong> ${data.all_names.join(' / ')}
+                    </div>
+                    <div class="card-body">
+                        <p><strong>دسته بندی:</strong> ${data.category.title}</p>
+                        <p><strong>سطح دسترسی:</strong> ${data.access_level === 'PREMIUM' ? 'ویژه' : 'رایگان'}</p>
+                        
+                        <!-- دکمه توضیحات اینجا اضافه می‌شود -->
+                        ${descriptionButtonHtml}
+                        
+                        <hr>
+                        <h4>داروهای موجود در نسخه</h4>
+                        ${drugsHtml}
+                    </div>
+                </div>
+            `;
+            
+            detailContainer.innerHTML = detailHtml;
+        })
+        .catch(error => {
+            // ... (کد مدیریت خطا)
+        });
+});
+</script>
+{% endblock %}

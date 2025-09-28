@@ -11,6 +11,6 @@ app_name = 'prescriptions'
 
 urlpatterns = [
     path('', PrescriptionListView.as_view(), name='contact'),
-    path('detail/', PrescriptionDetailView.as_view(), name='about'),
-    path('detail/content/', PrescriptionContentView.as_view(), name='index'),
+    path('<slug:slug>/', PrescriptionDetailView.as_view(), name='about'),
+    path('content/<slug:slug>/', PrescriptionContentView.as_view(), name='index'),
 ]

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}توضیحات تکمیلی{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 id="content-title">توضیحات تکمیلی</h1>
+    <hr>
+    
+    <!-- محلی برای نمایش محتوای توضیحات -->
+    <div id="content-container">
+        <p>در حال بارگذاری محتوا، لطفاً شکیبا باشید...</p>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const contentContainer = document.getElementById('content-container');
+    const titleElement = document.getElementById('content-title');
+
+    // 1. دریافت slug از context که توسط ویوی PrescriptionContentView پاس داده شده
+    const prescriptionSlug = '{{ slug }}';
+
+    if (!prescriptionSlug) {
+        console.error('Slug نسخه یافت نشد!');
+        contentContainer.innerHTML = '<p class="alert alert-danger">خطا: شناسه نسخه برای بارگذاری محتوا نامعتبر است.</p>';
+        return;
+    }
+
+    // 2. ساخت URL برای API توضیحات
+    const apiContentUrl = `/api/v1/prescriptions/${prescriptionSlug}/description/`;
+
+    fetch(apiContentUrl)
+        .then(response => {
+            if (response.status === 404) throw new Error('NOT_FOUND');
+            if (response.status === 403) throw new Error('FORBIDDEN');
+            if (!response.ok) throw new Error(`خطای شبکه: ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            // 3. ساخت HTML برای نمایش محتوا
+            
+            // لینک بازگشت به صفحه جزئیات اصلی نسخه
+            const backLinkUrl = `/prescriptions/${prescriptionSlug}/`;
+            
+            // بررسی اینکه آیا محتوایی برای نمایش وجود دارد یا خیر
+            let contentHtml;
+            if (data.detailed_description && data.detailed_description.trim() !== '') {
+                // اگر فیلد detailed_description شما حاوی HTML است، این روش امن است.
+                // اگر متن ساده است، می‌توانید آن را در تگ <p> قرار دهید.
+                contentHtml = data.detailed_description;
+            } else {
+                contentHtml = '<p class="text-muted">توضیحات تکمیلی برای این نسخه ثبت نشده است.</p>';
+            }
+
+            const finalHtml = `
+                <div class="mb-3">
+                    <a href="${backLinkUrl}" class="btn btn-secondary">&larr; بازگشت به جزئیات نسخه</a>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        ${contentHtml}
+                    </div>
+                </div>
+            `;
+            
+            contentContainer.innerHTML = finalHtml;
+        })
+        .catch(error => {
+            let errorMessage = '<p class="alert alert-danger">خطایی در بارگذاری محتوا رخ داد.</p>';
+            if (error.message === 'NOT_FOUND') {
+                errorMessage = '<p class="alert alert-warning">محتوای مورد نظر یافت نشد.</p>';
+            } else if (error.message === 'FORBIDDEN') {
+                errorMessage = '<p class="alert alert-danger">شما دسترسی لازم برای مشاهده این محتوا را ندارید.</p>';
+            }
+            console.error('خطا در دریافت محتوای نسخه:', error);
+            titleElement.textContent = "خطا";
+            contentContainer.innerHTML = errorMessage;
+        });
+});
+</script>
+{% endblock %}
