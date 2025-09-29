@@ -546,12 +546,15 @@
         if (authBtnMobile && StorageManager.isLoggedIn()) {
             const userData = StorageManager.getUserData();
             authBtnMobile.innerHTML = `
-                <button class="profile-btn-mobile" onclick="toggleMobileUserMenu()">
+                <button class="profile-btn-mobile " onclick="toggleMobileUserMenu()">
                     <i class="fas fa-user-circle"></i>
                     ${userData?.full_name || 'کاربر'}
                 </button>
-                <div id="mobile-user-menu" class="mobile-dropdown-menu absolute px-8 " style="display: none;">
+                <div id="mobile-user-menu" class="mobile-dropdown-menu absolute px-8" style="display: none;">
                     <a href="/profile"><i class="fas fa-user"></i> پروفایل</a>
+                    ${profile?.role === 'premium' ? `
+                        <a href="/premium"><i class="fas fa-crown"></i> پنل ویژه</a>
+                    ` : ''}
                     <a href="#" onclick="Auth.logout(); return false;">
                         <i class="fas fa-sign-out-alt"></i> خروج
                     </a>

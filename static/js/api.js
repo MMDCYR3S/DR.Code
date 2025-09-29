@@ -64,10 +64,32 @@ const API = {
         }
     },
 
-    // خروج کاربر (اگر API دارید)
-    async logout() {
-        // اگر API برای logout دارید، اینجا فراخوانی کنید
-        // در غیر این صورت فقط localStorage رو پاک می‌کنیم
+
+// خروج کاربر
+async logout() {
+    try {
+        const tokens = StorageManager.getTokens();
+        
+        if (tokens?.access_token) {
+            const response = await fetch(`${this.baseURL}/accounts/logout/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${tokens.access_token}`
+                }
+            });
+            
+            // حتی اگر API ارور داد، باز هم localStorage رو پاک کن
+            if (!response.ok) {
+                console.warn('Logout API returned error, but clearing local data anyway');
+            }
+        }
+    } catch (error) {
+        console.error('Logout error:', error);
+    } finally {
+        // در هر صورت localStorage رو پاک کن
         StorageManager.clearAll();
     }
+}
+
 };

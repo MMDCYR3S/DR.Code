@@ -1,4 +1,5 @@
 const Auth = {
+    
     // ثبت‌نام کاربر
     async register(formData) {
         try {
@@ -78,14 +79,42 @@ const Auth = {
         }
     },
 
-    // خروج کاربر
-    async logout() {
-        if (confirm('آیا مطمئن هستید که می‌خواهید خارج شوید؟')) {
+// خروج کاربر
+async logout() {
+    if (confirm('آیا مطمئن هستید که می‌خواهید خارج شوید؟')) {
+        try {
+            // نمایش لودینگ
+            const logoutBtn = event.target.closest('a');
+            if (logoutBtn) {
+                logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال خروج...';
+                logoutBtn.style.pointerEvents = 'none';
+                
+            }
+            
+            // فراخوانی API logout
             await API.logout();
+            
+            // به‌روزرسانی UI
+            this.updateUIForLoggedOutUser();
+            
+            // نمایش پیام موفقیت
+            this.showLogoutMessage();
+            
+            // ریدایرکت به صفحه اصلی
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Logout error:', error);
+            // در صورت ارور هم خروج انجام بشه
+            StorageManager.clearAll();
             this.updateUIForLoggedOutUser();
             window.location.href = '/';
         }
-    },
+    }
+    
+},
 
     // به‌روزرسانی UI برای کاربر لاگین شده
     updateUIForLoggedInUser() {
@@ -131,7 +160,7 @@ const Auth = {
                     <i class="fas fa-user-circle"></i>
                     ${userData?.full_name || 'کاربر'}
                 </button>
-                <div id="mobile-user-menu" class="mobile-dropdown-menu" style="display: none;">
+                <div id="mobile-user-menu" class="mobile-dropdown-menu absolute px-8" style="display: none;">
                     <a href="/profile"><i class="fas fa-user"></i> پروفایل</a>
                     ${profile?.role === 'premium' ? `
                         <a href="/premium"><i class="fas fa-crown"></i> پنل ویژه</a>
@@ -213,7 +242,25 @@ const Auth = {
             }
         });
     },
-
+// نمایش پیام خروج موفق
+showLogoutMessage() {
+    // ایجاد المان پیام
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'logout-message';
+    messageDiv.innerHTML = `
+        <i class="fas fa-check-circle"></i>
+        <span>با موفقیت خارج شدید</span>
+    `;
+    
+    // اضافه کردن به body
+    document.body.appendChild(messageDiv);
+    
+    // حذف بعد از 3 ثانیه
+    setTimeout(() => {
+        messageDiv.remove();
+    }, 3000);
+}
+,
     // اولیه‌سازی
     init() {
         // بررسی وضعیت لاگین در بارگذاری صفحه
@@ -243,9 +290,11 @@ const Auth = {
             }
         });
     }
+    
 };
 
 // اولیه‌سازی در بارگذاری صفحه
 document.addEventListener('DOMContentLoaded', () => {
     Auth.init();
 });
+
