@@ -135,6 +135,58 @@
     }
 }
 
+
+
+
+/* Desktop scrollbar for categories */
+@media (min-width: 768px) {
+    .category-scroll-container {
+        position: relative;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar {
+        height: 6px;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar-track {
+        background: transparent;
+        margin: 0 10px;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+        background: #e5e7eb;
+        border-radius: 3px;
+        transition: background 0.2s;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+        background: #d1d5db;
+    }
+    
+    /* Firefox */
+    .scrollbar-thin {
+        scrollbar-width: thin;
+        scrollbar-color: #e5e7eb transparent;
+    }
+    
+    /* نمایش اسکرول بار */
+    .scrollbar-thin {
+        overflow-x: auto;
+        padding-bottom: 8px;
+    }
+}
+
+/* Mobile - hide scrollbar */
+@media (max-width: 767px) {
+    .scrollbar-thin {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar {
+        display: none;  /* Chrome, Safari and Opera */
+    }
+}
     </style>
 
 <div x-data="prescriptionsApp()" x-init="init()" class="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50 overflow-x-hidden">

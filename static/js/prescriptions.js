@@ -14,21 +14,18 @@ function prescriptionsApp() {
         isPremiumUser: false,
         fuse: null,
         searchCache: {},
-        totalCount: 0,
-nextPage: null,
-previousPage: null,
+        lastLoadTime: null, // اضافه کن
+        totalCount: 0,      // اضافه کن
+        nextPage: null,     // اضافه کن
+        previousPage: null, // اضافه کن
+        
         
         // Computed
         get totalPages() {
             return Math.ceil(this.totalCount / this.itemsPerPage);
         },
         
-        
-        get paginatedPrescriptions() {
-            const start = (this.currentPage - 1) * this.itemsPerPage;
-            const end = start + this.itemsPerPage;
-            return this.filteredPrescriptions.slice(start, end);
-        },
+    
         
         get visiblePages() {
             const pages = [];
@@ -64,27 +61,53 @@ previousPage: null,
             try {
                 this.loading = true;
                 
-                // اضافه کردن پارامتر page به API
-                const response = await axios.get(`${API.BASE_URL}api/v1/prescriptions/`, {
-                    params: {
-                        page: page,
-                        page_size: this.itemsPerPage
-                    }
-                });
-        
+                // درخواست به API با پارامترهای صفحه‌بندی
+                let url = `${API.BASE_URL}api/v1/prescriptions/`;
+                const params = new URLSearchParams();
+                
+                if (page > 1) {
+                    params.append('page', page);
+                }
+                
+                if (params.toString()) {
+                    url += '?' + params.toString();
+                }
+                
+                const response = await axios.get(url);
+                
+                // ذخیره نتایج
                 this.prescriptions = response.data.results;
                 this.filteredPrescriptions = [...this.prescriptions];
-                this.categories = response.data.filters.categories;
                 
-                // تنظیم تعداد کل صفحات از API
+                // برای صفحه اول، دسته‌بندی‌ها رو هم بگیر
+                if (page === 1 && response.data.filters) {
+                    this.categories = response.data.filters.categories;
+                }
+                
+                // ذخیره اطلاعات پیجینیشن
                 this.totalCount = response.data.count;
                 this.nextPage = response.data.next;
                 this.previousPage = response.data.previous;
-        
-                // Load detailed data for search
+                
+                // محاسبه مجدد تعداد صفحات
+                // بر اساس page_size واقعی که API برمی‌گردونه
+                if (response.data.results.length > 0 && page === 1) {
+                    // تخمین page_size از طول نتایج صفحه اول
+                    this.itemsPerPage = response.data.results.length;
+                }
+                
+                // Load detailed data برای جستجو
                 await this.loadDetailedData();
+                
             } catch (error) {
                 console.error('Error loading prescriptions:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطا',
+                    text: 'خطا در بارگیری نسخه‌ها',
+                    confirmButtonText: 'باشه',
+                    confirmButtonColor: '#0077b6'
+                });
             } finally {
                 this.loading = false;
             }
