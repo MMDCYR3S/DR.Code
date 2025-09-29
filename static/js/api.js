@@ -93,3 +93,33 @@ async logout() {
 }
 
 };
+
+
+
+// Prescription APIs
+API.prescriptions = {
+    // Get all prescriptions
+    async getAll(params = {}) {
+        try {
+            const queryString = new URLSearchParams(params).toString();
+            const url = `${API.BASE_URL}api/v1/prescriptions/${queryString ? '?' + queryString : ''}`;
+            
+            const response = await axios.get(url);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching prescriptions:', error);
+            throw error;
+        }
+    },
+    
+    // Get prescription detail
+    async getDetail(slug) {
+        try {
+            const response = await axios.get(`${API.BASE_URL}api/v1/prescriptions/${slug}/`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching prescription detail:', error);
+            throw error;
+        }
+    }
+};
