@@ -32,7 +32,7 @@ urlpatterns = [
     
     path('', include('apps.home.urls')),
     path('prescriptions/', include('apps.prescriptions.urls')),
-    path('accounts/', include('apps.accounts.urls')),
+    path('', include('apps.accounts.urls')),
     path('dashboard/', include('apps.dashboard.urls')),
     
     # === SWAGGERS  === #

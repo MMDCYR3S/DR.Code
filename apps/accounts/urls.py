@@ -8,9 +8,6 @@ from .views import (
 app_name = 'accounts'
 
 urlpatterns = [
-    # احراز هویت
-    path('register/', RegisterView.as_view(), name='register'),
-    path('login/', LoginView.as_view(), name='login'),
     path('authentication/', AuthenticationView.as_view(), name='authentication'),
     
     # صفحات کاربری (نیاز به احراز هویت)
