@@ -1,0 +1,576 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}مدیریت پلن‌ها و Membershipها{% endblock %}
+
+{% block content %}
+<div x-data="planManager">
+    <div class="container mx-auto">
+        
+        <!-- Header Section -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <h1 class="text-2xl font-bold text-slate-700">مدیریت پلن‌ها و Membershipها</h1>
+        </div>
+
+        <!-- Membership Management Section -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <h2 class="text-xl font-bold text-slate-700">انواع Membership</h2>
+                <button @click="openAddMembershipModal()" 
+                        class="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition-colors">
+                    <i class="fa-solid fa-plus ml-2"></i>
+                    <span>افزودن Membership جدید</span>
+                </button>
+            </div>
+
+            <!-- Membership List -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for membership in memberships %}
+                <div class="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div class="flex justify-between items-start mb-3">
+                        <h3 class="font-bold text-slate-800 text-lg">{{ membership.title }}</h3>
+                        <div class="flex space-x-2 space-x-reverse">
+                            <button @click="openEditMembershipModal({{ membership.id }}, '{{ membership.title }}', '{{ membership.description }}', {{ membership.is_active|yesno:"true,false" }})"
+                                    class="p-1.5 text-slate-500 hover:text-yellow-600 rounded-md hover:bg-slate-100 transition-colors"
+                                    title="ویرایش">
+                                <i class="fa-solid fa-edit text-sm"></i>
+                            </button>
+                            <button @click="deleteMembership({{ membership.id }})"
+                                    class="p-1.5 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100 transition-colors"
+                                    title="حذف">
+                                <i class="fa-solid fa-trash text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-slate-600 text-sm mb-3 line-clamp-2">{{ membership.description|default:"بدون توضیحات" }}</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-500">
+                            {{ membership.plans.count }} پلن
+                        </span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if membership.is_active %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                            {% if membership.is_active %}
+                                <i class="fa-solid fa-check ml-1"></i>
+                                فعال
+                            {% else %}
+                                <i class="fa-solid fa-times ml-1"></i>
+                                غیرفعال
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-span-full text-center py-8">
+                    <i class="fa-solid fa-layer-group text-4xl mb-4 text-slate-300"></i>
+                    <p class="text-lg font-medium text-slate-700">هیچ Membershipی وجود ندارد</p>
+                    <p class="text-sm text-slate-500">برای شروع، اولین Membership خود را اضافه کنید.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Plan Management Section -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <h2 class="text-xl font-bold text-slate-700">پلن‌ها</h2>
+                <button @click="openAddPlanModal()" 
+                        class="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 shadow-sm transition-colors">
+                    <i class="fa-solid fa-plus ml-2"></i>
+                    <span>افزودن پلن جدید</span>
+                </button>
+            </div>
+
+            <!-- Desktop Table -->
+            <div class="hidden lg:block bg-white rounded-xl shadow-sm overflow-hidden">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-slate-50 text-slate-600">
+                        <tr>
+                            <th scope="col" class="px-6 py-4 text-right font-medium">نام پلن</th>
+                            <th scope="col" class="px-6 py-4 text-right font-medium">Membership</th>
+                            <th scope="col" class="px-6 py-4 text-right font-medium">مدت زمان (روز)</th>
+                            <th scope="col" class="px-6 py-4 text-right font-medium">قیمت (ریال)</th>
+                            <th scope="col" class="px-6 py-4 text-center font-medium">وضعیت</th>
+                            <th scope="col" class="px-6 py-4 text-center font-medium">تاریخ ایجاد</th>
+                            <th scope="col" class="px-6 py-4 text-center font-medium">عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        {% for plan in plans %}
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-semibold">{{ plan.name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                                    {{ plan.membership.title }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {{ plan.duration_days }} روز
+                                <span class="text-slate-500 text-xs">({{ plan.duration_months }} ماه)</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap font-mono">
+                                {{ plan.price|floatformat:0 }} ریال
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                {% if plan.is_active %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fa-solid fa-check ml-1"></i>
+                                        فعال
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        <i class="fa-solid fa-times ml-1"></i>
+                                        غیرفعال
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-slate-600">
+                                {{ plan.shamsi_created_at }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <div class="flex justify-center items-center space-x-2 space-x-reverse">
+                                    <button @click="openEditPlanModal({{ plan.id }})" 
+                                            class="p-2 text-slate-500 hover:text-yellow-600 rounded-md hover:bg-slate-200 transition-colors" 
+                                            title="ویرایش">
+                                        <i class="fa-solid fa-edit"></i>
+                                    </button>
+                                    <button @click="deletePlan({{ plan.id }})" 
+                                            class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-200 transition-colors" 
+                                            title="حذف">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="px-6 py-8 text-center text-slate-500">
+                                <div class="flex flex-col items-center">
+                                    <i class="fa-solid fa-box-open text-4xl mb-4 text-slate-300"></i>
+                                    <p class="text-lg font-medium">هیچ پلنی وجود ندارد</p>
+                                    <p class="text-sm">برای شروع، اولین پلن خود را اضافه کنید.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile Cards -->
+            <div class="grid grid-cols-1 gap-4 lg:hidden">
+                {% for plan in plans %}
+                <div class="bg-white rounded-xl shadow-sm p-4 border border-slate-200">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex-1">
+                            <h3 class="font-bold text-slate-800 mb-2">{{ plan.name }}</h3>
+                            <div class="space-y-2">
+                                <p class="text-sm text-slate-600">
+                                    Membership: 
+                                    <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                                        {{ plan.membership.title }}
+                                    </span>
+                                </p>
+                                <p class="text-sm text-slate-600">
+                                    مدت: <span class="font-semibold">{{ plan.duration_days }} روز ({{ plan.duration_months }} ماه)</span>
+                                </p>
+                                <p class="text-sm text-slate-600">
+                                    قیمت: <span class="font-mono font-semibold">{{ plan.price|floatformat:0 }} ریال</span>
+                                </p>
+                                <div class="flex items-center">
+                                    {% if plan.is_active %}
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fa-solid fa-check ml-1"></i>
+                                            فعال
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                            <i class="fa-solid fa-times ml-1"></i>
+                                            غیرفعال
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-center space-y-2">
+                            <button @click="openEditPlanModal({{ plan.id }})" 
+                                    class="p-2 text-slate-500 hover:text-yellow-600 rounded-md hover:bg-slate-100 transition-colors" 
+                                    title="ویرایش">
+                                <i class="fa-solid fa-edit"></i>
+                            </button>
+                            <button @click="deletePlan({{ plan.id }})" 
+                                    class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100 transition-colors" 
+                                    title="حذف">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-xs text-slate-500 border-t border-slate-100 pt-2">
+                        ایجاد: {{ plan.shamsi_created_at }}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="bg-white rounded-xl shadow-sm p-8 text-center">
+                    <i class="fa-solid fa-box-open text-4xl mb-4 text-slate-300"></i>
+                    <p class="text-lg font-medium text-slate-700 mb-2">هیچ پلنی وجود ندارد</p>
+                    <p class="text-sm text-slate-500">برای شروع، اولین پلن خود را اضافه کنید.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals will be included from plan_forms.html -->
+    {% include 'dashboard/plans/plan_forms.html' %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('planManager', () => ({
+        // Modal states
+        isPlanModalOpen: false,
+        isMembershipModalOpen: false,
+        isEditMode: false,
+        isLoading: false,
+        modalTitle: '',
+        editingPlanId: null,
+        editingMembershipId: null,
+        
+        // Form data
+        planFormData: {
+            membership: '',
+            name: '',
+            duration_days: '',
+            price: '',
+            is_active: true
+        },
+        
+        membershipFormData: {
+            title: '',
+            description: '',
+            is_active: true
+        },
+
+        // Plan Modal Methods
+        openAddPlanModal() {
+            this.resetPlanForm();
+            this.isPlanModalOpen = true;
+            this.isEditMode = false;
+            this.modalTitle = 'افزودن پلن جدید';
+        },
+
+        async openEditPlanModal(planId) {
+            this.isLoading = true;
+            try {
+                const response = await fetch(`{% url 'dashboard:plans:plan_detail' 0 %}`.replace('0', planId));
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.planFormData = {
+                        membership: data.data.membership.toString(),
+                        name: data.data.name,
+                        duration_days: data.data.duration_days.toString(),
+                        price: data.data.price,
+                        is_active: data.data.is_active
+                    };
+                    this.isPlanModalOpen = true;
+                    this.isEditMode = true;
+                    this.modalTitle = 'ویرایش پلن';
+                    this.editingPlanId = planId;
+                } else {
+                    window.dispatchEvent(new CustomEvent('notify', {
+                        detail: {
+                            type: 'error',
+                            message: data.message || 'خطا در دریافت اطلاعات پلن'
+                        }
+                    }));
+                }
+            } catch (error) {
+                console.error('Error fetching plan data:', error);
+                window.dispatchEvent(new CustomEvent('notify', {
+                    detail: {
+                        type: 'error',
+                        message: 'خطا در ارتباط با سرور'
+                    }
+                }));
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        // Membership Modal Methods
+        openAddMembershipModal() {
+            this.resetMembershipForm();
+            this.isMembershipModalOpen = true;
+            this.isEditMode = false;
+            this.modalTitle = 'افزودن Membership جدید';
+        },
+
+        openEditMembershipModal(id, title, description, isActive) {
+            this.membershipFormData = {
+                title: title,
+                description: description || '',
+                is_active: isActive
+            };
+            this.isMembershipModalOpen = true;
+            this.isEditMode = true;
+            this.modalTitle = 'ویرایش Membership';
+            this.editingMembershipId = id;
+        },
+
+        // Close Modals
+        closePlanModal() {
+            this.isPlanModalOpen = false;
+            this.resetPlanForm();
+        },
+
+        closeMembershipModal() {
+            this.isMembershipModalOpen = false;
+            this.resetMembershipForm();
+        },
+
+        // Reset Forms
+        resetPlanForm() {
+            this.planFormData = {
+                membership: '',
+                name: '',
+                duration_days: '',
+                price: '',
+                is_active: true
+            };
+            this.editingPlanId = null;
+        },
+
+        resetMembershipForm() {
+            this.membershipFormData = {
+                title: '',
+                description: '',
+                is_active: true
+            };
+            this.editingMembershipId = null;
+        },
+
+        // Form Submissions
+        async submitPlanForm() {
+            this.isLoading = true;
+            
+            const url = this.isEditMode 
+                ? `{% url 'dashboard:plans:plan_update' 0 %}`.replace('0', this.editingPlanId)
+                : `{% url 'dashboard:plans:plan_create' %}`;
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify(this.planFormData)
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.dispatchEvent(new CustomEvent('notify', {
+                        detail: {
+                            type: 'success',
+                            message: data.message
+                        }
+                    }));
+                    
+                    this.closePlanModal();
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    let errorMessage = data.message;
+                    if (data.errors) {
+                        errorMessage += '<br>' + Object.values(data.errors).flat().join('<br>');
+                    }
+                    window.dispatchEvent(new CustomEvent('notify', {
+                        detail: {
+                            type: 'error',
+                            message: errorMessage
+                        }
+                    }));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                window.dispatchEvent(new CustomEvent('notify', {
+                    detail: {
+                        type: 'error',
+                        message: 'خطا در ارتباط با سرور'
+                    }
+                }));
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        async submitMembershipForm() {
+            this.isLoading = true;
+            
+            const url = this.isEditMode 
+                ? `{% url 'dashboard:plans:membership_update' 0 %}`.replace('0', this.editingMembershipId)
+                : `{% url 'dashboard:plans:membership_create' %}`;
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify(this.membershipFormData)
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.dispatchEvent(new CustomEvent('notify', {
+                        detail: {
+                            type: 'success',
+                            message: data.message
+                        }
+                    }));
+                    
+                    this.closeMembershipModal();
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    let errorMessage = data.message;
+                    if (data.errors) {
+                        errorMessage += '<br>' + Object.values(data.errors).flat().join('<br>');
+                    }
+                    window.dispatchEvent(new CustomEvent('notify', {
+                        detail: {
+                            type: 'error',
+                            message: errorMessage
+                        }
+                    }));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                window.dispatchEvent(new CustomEvent('notify', {
+                    detail: {
+                        type: 'error',
+                        message: 'خطا در ارتباط با سرور'
+                    }
+                }));
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        // Delete Operations
+        async deletePlan(planId) {
+            if (!confirm('آیا از حذف این پلن اطمینان دارید؟')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`{% url 'dashboard:plans:plan_delete' 0 %}`.replace('0', planId), {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.dispatchEvent(new CustomEvent('notify', {
+                        detail: {
+                            type: 'success',
+                            message: data.message
+                        }
+                    }));
+                    
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    window.dispatchEvent(new CustomEvent('notify', {
+                        detail: {
+                            type: 'error',
+                            message: data.message || 'خطا در حذف پلن'
+                        }
+                    }));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                window.dispatchEvent(new CustomEvent('notify', {
+                    detail: {
+                        type: 'error',
+                        message: 'خطا در ارتباط با سرور'
+                    }
+                }));
+            }
+        },
+
+        async deleteMembership(membershipId) {
+            if (!confirm('آیا از حذف این Membership اطمینان دارید؟')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`{% url 'dashboard:plans:membership_delete' 0 %}`.replace('0', membershipId), {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.dispatchEvent(new CustomEvent('notify', {
+                        detail: {
+                            type: 'success',
+                            message: data.message
+                        }
+                    }));
+                    
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    window.dispatchEvent(new CustomEvent('notify', {
+                        detail: {
+                            type: 'error',
+                            message: data.message || 'خطا در حذف Membership'
+                        }
+                    }));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                window.dispatchEvent(new CustomEvent('notify', {
+                    detail: {
+                        type: 'error',
+                        message: 'خطا در ارتباط با سرور'
+                    }
+                }));
+            }
+        }
+    }));
+});
+
+// تابع کمکی برای گرفتن CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

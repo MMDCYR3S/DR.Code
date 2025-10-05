@@ -245,11 +245,23 @@
                     <i class="fa-solid fa-tags sidebar-icon"></i>
                     <span class="mx-3">کدهای تخفیف</span>
                 </a>
+                <a href="{% url 'dashboard:plans:plan_list' %}" 
+                    class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200
+                    {% if request.resolver_match.url_name == 'plan_list' %}bg-slate-700 text-blue-300{% endif %}">
+                    <i class="fa-solid fa-shopping-cart sidebar-icon"></i>
+                    <span class="mx-3">مدیریت پلن‌ها</span>
+                </a>
                 <a href="{% url 'dashboard:tutorials:admin_tutorials' %}" 
                     class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200
                     {% if request.resolver_match.url_name == 'admin_tutorials' %}bg-slate-700 text-blue-300{% endif %}">
                     <i class="fa-solid fa-video sidebar-icon"></i>
                     <span class="mx-3">ویدیوهای آموزشی</span>
+                </a>
+                <a href="{% url 'dashboard:analysis:analysis' %}" 
+                    class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200
+                    {% if request.resolver_match.url_name == 'analysis' %}bg-slate-700 text-blue-300{% endif %}">
+                    <i class="fa-solid fa-bar-chart sidebar-icon"></i>
+                    <span class="mx-3">گزارشات</span>
                 </a>
 
                 
@@ -346,10 +358,10 @@
                 
                 async loadUnreadCount() {
                     try {
-                        const accessToken = localStorage.getItem('access_token');
+                        const accessToken = localStorage.getItem('drcode_access_token');
                         if (!accessToken) return;
                         
-                        const response = await fetch('/api/v1/notifications/', {
+                        const response = await fetch('/api/v1/notifications/admin/', {
                             method: 'GET',
                             headers: {
                                 'Authorization': `Bearer ${accessToken}`,
@@ -408,7 +420,7 @@
                             return;
                         }
                         
-                        const response = await fetch('/api/v1/notifications/', {
+                        const response = await fetch('/api/v1/notifications/admin/', {
                             method: 'GET',
                             headers: {
                                 'Authorization': `Bearer ${accessToken}`,
@@ -445,7 +457,7 @@
                         
                         // علامت‌گذاری به عنوان خوانده شده
                         if (!notification.is_read) {
-                            const response = await fetch(`/api/v1/notifications/${notification.id}/`, {
+                            const response = await fetch(`/api/v1/notifications/admin/${notification.id}/`, {
                                 method: 'POST',
                                 headers: {
                                     'Authorization': `Bearer ${accessToken}`,
@@ -493,7 +505,7 @@
                         const unreadNotifications = this.notifications.filter(n => !n.is_read);
                         
                         for (const notification of unreadNotifications) {
-                            await fetch(`/api/v1/notifications/${notification.id}/`, {
+                            await fetch(`/api/v1/notifications/admin/${notification.id}/`, {
                                 method: 'POST',
                                 headers: {
                                     'Authorization': `Bearer ${accessToken}`,

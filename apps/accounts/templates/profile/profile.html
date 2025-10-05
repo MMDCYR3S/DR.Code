@@ -1,14 +1,9 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}صفحه اصلی{% endblock title %}
+{% block title %}پروفایل{% endblock title %}
+
 {% block extra_css %}
-<!-- قسمت css و حتی ایمپورت کردن فایل هات رو اینجا بزار -->
-
-{% endblock extra_css %}
-
-{% block content %}
-<!-- محتوای صفحات اینجاست -->
 <style>
     /* Gradient backgrounds */
     .gradient-primary {
@@ -68,7 +63,9 @@
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         }
 </style>
+{% endblock extra_css %}
 
+{% block content %}
 <div class="BASE__DIV" x-data="profileApp()">
 <!-- Main Container -->
 <div class="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
@@ -271,6 +268,10 @@
 </div>
 </div>
 
+
+{% endblock content %}
+
+{% block extra_js %}
 <script>
      // profile__API Configuration
      const profile__API = {
@@ -373,12 +374,5 @@
             };
         }
 </script>
-
-
-{% endblock content %}
-
-{% block extra_js %}
-<!-- قسمت js و حتی ایمپورت کردن فایل هات رو اینجا بزار -->
-
 {% endblock extra_js %}
     
