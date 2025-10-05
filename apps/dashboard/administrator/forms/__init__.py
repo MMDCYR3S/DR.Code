@@ -1,4 +1,4 @@
-from .users_forms import UserEditForm, UserSearchForm, ProfileEditForm
+from .users_forms import UserEditForm, UserSearchForm, ProfileEditForm, AddUserForm
 from .categories_forms import CategoryForm, TAILWIND_COLOR_CHOICES
 from .prescriptions_forms import *
 from .drugs_forms import DrugForm

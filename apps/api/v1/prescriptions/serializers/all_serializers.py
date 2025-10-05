@@ -34,7 +34,7 @@ class PrescriptionDrugSerializer(serializers.ModelSerializer):
         fields = [
             "drug", "dosage",
             "instructions", "amount", "is_combination",
-            "order"
+            "order", "group_number"
         ]
 
 # ======= PRESCRIPTION IMAGE SERIALIZER ======== #

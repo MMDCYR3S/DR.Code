@@ -71,6 +71,7 @@ class Prescription(models.Model):
         verbose_name="اقلام دارویی"
     )
     title = models.CharField(max_length=200, verbose_name="عنوان نسخه")
+    description = CKEditor5Field('Description', config_name='extends', blank=True, null=True)
     slug = models.SlugField(unique=True, allow_unicode=True, blank=True, verbose_name="اسلاگ (آدرس)")
     access_level = models.CharField(
         max_length=10,
@@ -83,7 +84,7 @@ class Prescription(models.Model):
         verbose_name='فعال',
         help_text='نسخه‌های غیرفعال نمایش داده نمی‌شوند'
     )
-    detailed_description = CKEditor5Field('Text', config_name='extends')
+    detailed_description = CKEditor5Field('Text', config_name='extends', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
     class Meta:

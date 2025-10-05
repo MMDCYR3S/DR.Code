@@ -80,7 +80,7 @@ class PrescriptionDetailView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
             
             drugs = []
             
-            for prescription_drug in prescription.prescriptiondrug_set.select_related('drug').order_by('order'):
+            for prescription_drug in prescription.prescriptiondrug_set.select_related('drug').order_by('group_number', 'order'):  # ✅ مرتب‌سازی بر اساس گروه
                 drug_data = {
                     'id': prescription_drug.id,
                     'drug_id': prescription_drug.drug.id,
@@ -90,7 +90,8 @@ class PrescriptionDetailView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
                     'amount': prescription_drug.amount or 1,
                     'instructions': prescription_drug.instructions or '',
                     'order': prescription_drug.order or 0,
-                    'is_combination': prescription_drug.is_combination
+                    'is_combination': prescription_drug.is_combination,
+                    'group_number': prescription_drug.group_number  # ✅ اضافه شد
                 }
                 drugs.append(drug_data)
             
@@ -101,7 +102,7 @@ class PrescriptionDetailView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
                 'category_color': prescription.category.color_code if prescription.category else 'bg-slate-500',
                 'access_level': prescription.access_level,
                 'detailed_description': prescription.detailed_description or '',
-                'drugs': drugs,  # تغییر اصلی: یک آرایه واحد
+                'drugs': drugs,
                 'aliases': list(prescription.aliases.values('id', 'name', 'is_primary')),
                 'videos': list(prescription.videos.values('id', 'video_url', 'title', 'description')),
                 'images': [
@@ -196,7 +197,8 @@ class PrescriptionCreateView(LoginRequiredMixin, CreateView):
                 amount=drug_data['amount'],
                 instructions=drug_data['instructions'],
                 is_combination=drug_data['is_combination'],
-                order=drug_data['order']
+                order=drug_data['order'],
+                group_number=drug_data.get('group_number')
             )
 
 # ================================================== #
@@ -242,7 +244,8 @@ class PrescriptionUpdateView(LoginRequiredMixin, UpdateView):
                 'amount': prescription_drug.amount,
                 'instructions': prescription_drug.instructions,
                 'is_combination': prescription_drug.is_combination,
-                'order': prescription_drug.order
+                'order': prescription_drug.order,
+                'group_number': prescription_drug.group_number
             })
         
         context['existing_drugs_json'] = json.dumps(existing_drugs)
@@ -290,7 +293,8 @@ class PrescriptionUpdateView(LoginRequiredMixin, UpdateView):
                 amount=drug_data['amount'],
                 instructions=drug_data['instructions'],
                 is_combination=drug_data['is_combination'],
-                order=drug_data['order']
+                order=drug_data['order'],
+                group_number=drug_data.get('group_number')
             )
 
 # ================================================== #

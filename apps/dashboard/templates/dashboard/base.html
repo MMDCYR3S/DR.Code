@@ -208,7 +208,7 @@
                     <i class="fa-solid fa-house sidebar-icon"></i>
                     <span class="mx-3">داشبورد</span>
                 </a>
-                <a href="{% url 'dashboard:users:users_list' %}" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 {% if request.resolver_match.url_name == 'users_list' %}bg-slate-700 text-blue-300{% endif %}">
+                <a href="{% url 'dashboard:users:admin_users_list' %}" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 {% if request.resolver_match.url_name == 'admin_users_list' %}bg-slate-700 text-blue-300{% endif %}">
                     <i class="fa-solid fa-users sidebar-icon"></i>
                     <span class="mx-3">مدیریت کاربران</span>
                 </a>

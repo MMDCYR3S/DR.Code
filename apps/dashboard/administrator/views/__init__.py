@@ -3,7 +3,8 @@ from .users_views import (
     UserDeleteView,
     UserUpdateView,
     UserVerificationDetailView,
-    PendingVerificationListView
+    PendingVerificationListView,
+    AddUserView
 )
 
 from .categories_views import (
@@ -54,3 +55,4 @@ from .index_views import admin_dashboard_view
 
 from .plan_views import *
 from .analysis_views import *
+

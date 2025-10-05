@@ -7,6 +7,9 @@
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-slate-700">لیست کاربران</h1>
         <div class="flex space-x-2 space-x-reverse">
+            <a href="{% url 'dashboard:users:admin_add_user' %}" class="px-3 py-1 bg-green-600 text-white rounded-full text-sm hover:bg-green-700 transition-colors">
+                افزودن کاربر جدید
+            </a>
             <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
                 کل: {{ stats.total_users }}
             </span>
