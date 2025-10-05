@@ -48,7 +48,7 @@ class PrescriptionForm(forms.ModelForm):
     
     class Meta:
         model = Prescription
-        fields = ['title', 'category', 'access_level', 'is_active', 'detailed_description']
+        fields = ['title', 'description', 'category', 'access_level', 'is_active', 'detailed_description']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition',
