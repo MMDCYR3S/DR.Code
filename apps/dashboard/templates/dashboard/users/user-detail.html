@@ -81,7 +81,7 @@
                     <div class="border-t mt-6 pt-4 flex flex-wrap gap-3">
                         <button @click="openEditModal()" class="flex-1 min-w-[150px] py-2 px-4 text-sm font-semibold bg-blue-200 text-blue-700 rounded-lg hover:bg-blue-300 transition">ویرایش مشخصات</button>
                         <button @click="openDeleteModal()" class="flex-1 min-w-[150px] py-2 px-4 text-sm font-semibold bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition">حذف کاربر</button>
-                        <button onclick="window.location.href='{% url 'dashboard:users:users_list' %}'" class="flex-1 min-w-[150px] py-2 px-4 text-sm font-semibold bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">بازگشت</button>
+                        <button onclick="window.location.href='{% url 'dashboard:users:admin_users_list' %}'" class="flex-1 min-w-[150px] py-2 px-4 text-sm font-semibold bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">بازگشت</button>
                     </div>
                 </div>
             </div>
@@ -306,7 +306,7 @@ document.addEventListener('alpine:init', () => {
             })
             .then(response => {
                 if (response.ok) {
-                    window.location.href = "{% url 'dashboard:users:users_list' %}";
+                    window.location.href = "{% url 'dashboard:users:admin_users_list' %}";
                 } else {
                     alert('خطا در حذف کاربر.');
                 }

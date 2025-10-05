@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.core.validators import RegexValidator
 
 from apps.accounts.models import Profile, AuthStatusChoices
 
@@ -115,3 +116,106 @@ class ProfileEditForm(forms.ModelForm):
                 'rows': 3
             })
         }
+
+# ================================================ #
+# ============== PROFILE EDIT FORM ============== #
+# ================================================ #
+class ProfileEditForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ['role', 'auth_status']
+        widgets = {
+            'role': forms.Select(attrs={
+                'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            }),
+            'auth_status': forms.Select(attrs={
+                'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            })
+        }
+
+# ============================================= #
+# ============== ADD USER FORM ============== #
+# ============================================= #
+class AddUserForm(forms.Form):
+    first_name = forms.CharField(
+        max_length=30,
+        label='نام',
+        widget=forms.TextInput(attrs={
+            'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+            'placeholder': 'نام'
+        })
+    )
+    
+    last_name = forms.CharField(
+        max_length=30,
+        label='نام خانوادگی',
+        widget=forms.TextInput(attrs={
+            'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+            'placeholder': 'نام خانوادگی'
+        })
+    )
+    
+    email = forms.EmailField(
+        label='ایمیل',
+        widget=forms.EmailInput(attrs={
+            'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+            'placeholder': 'example@email.com'
+        })
+    )
+    
+    phone_number = forms.CharField(
+        max_length=11,
+        label='شماره تلفن',
+        validators=[RegexValidator(
+            regex=r'^09\d{9}$',
+            message="شماره تلفن باید با 09 شروع شده و 11 رقم باشد."
+        )],
+        widget=forms.TextInput(attrs={
+            'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+            'placeholder': '09123456789'
+        })
+    )
+    
+    password = forms.CharField(
+        label='پسورد',
+        widget=forms.PasswordInput(attrs={
+            'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+            'placeholder': 'پسورد'
+        })
+    )
+    
+    medical_code = forms.CharField(
+        max_length=50,
+        label='کد نظام پزشکی',
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+            'placeholder': 'کد نظام پزشکی'
+        })
+    )
+    
+    role = forms.ChoiceField(
+        choices=[
+            ('regular', 'کاربر عادی'),
+            ('visitor', 'بازدیدکننده'),
+            ('premium', 'کاربر ویژه'),
+            ('admin', 'ادمین')
+        ],
+        label='نقش',
+        initial='regular',
+        widget=forms.Select(attrs={
+            'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+        })
+    )
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError("ایمیل وارد شده تکراری است.")
+        return email
+        
+    def clean_phone_number(self):
+        phone_number = self.cleaned_data.get('phone_number')
+        if User.objects.filter(phone_number=phone_number).exists():
+            raise forms.ValidationError("شماره تلفن وارد شده تکراری است.")
+        return phone_number

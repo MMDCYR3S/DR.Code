@@ -27,9 +27,9 @@ class PrescriptionDetailSerializer(serializers.ModelSerializer):
         model = Prescription
         fields = [
             'id', 'title', 'all_names',
+            'description',
             'category', 'prescription_drugs',
-            'images', 'videos', 
-            'access_level',
+            'images', 'videos', 'access_level',
             'primary_name', "description_url",
             'created_at',
         ]

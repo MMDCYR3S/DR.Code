@@ -6,7 +6,6 @@
 {% endblock %}
 
 {% block extra_css %}
-{{ form.media }}
 <style>
     .drug-item {
         transition: all 0.3s ease;
@@ -31,7 +30,98 @@
     .delete-checkbox {
         display: none;
     }
+    /* استایل مودال */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: none;
+        z-index: 1000;
+    }
+    
+    .modal-content {
+        background-color: white;
+        margin: 10% auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .modal-title {
+        font-size: 1.25rem;
+        font-weight: bold;
+    }
+    
+    .close {
+        font-size: 1.5rem;
+        cursor: pointer;
+    }
+    
+    .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+    }
+    
+    .form-input {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    
+    .form-input:focus {
+        outline: none;
+        ring: 2px solid #3b82f6;
+        border-color: #3b82f6;
+    }
+    
+    .btn {
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .btn-primary {
+        background-color: #3b82f6;
+        color: white;
+        border: none;
+    }
+    
+    .btn-primary:hover {
+        background-color: #2563eb;
+    }
+    
+    .btn-secondary {
+        background-color: #6b7280;
+        color: white;
+        border: none;
+    }
+    
+    .btn-secondary:hover {
+        background-color: #4b5563;
+    }
 </style>
+{{ form.media.css }}
 {% endblock %}
 
 {% block content %}
@@ -81,9 +171,9 @@
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    {{ form.detailed_description.label }}
+                                    {{ form.description.label }}
                                 </label>
-                                {{ form.detailed_description }}
+                                {{ form.description }}
                             </div>
                         </div>
                     </div>
@@ -102,6 +192,16 @@
                                 <div id="drugDropdown" class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden">
                                     <!-- نتایج جستجو اینجا نمایش داده می‌شود -->
                                 </div>
+                            </div>
+                            
+                            <!-- دکمه افزودن دارو -->
+                            <div class="mt-3">
+                                <button type="button" 
+                                        id="openCreateDrugModalBtn"
+                                        class="w-full flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                                    <i class="fas fa-plus ml-2"></i>
+                                    افزودن داروی جدید
+                                </button>
                             </div>
                         </div>
 
@@ -147,6 +247,17 @@
                         <button type="button" id="addAlias" class="mt-3 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
                             <i class="fas fa-plus ml-2"></i>افزودن نام جایگزین
                         </button>
+                    </div>
+
+                    <!-- توضیحات تفصیلی -->
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h2 class="text-xl font-semibold mb-4 text-gray-800">توضیحات تفصیلی</h2>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ form.detailed_description.label }}
+                            </label>
+                            {{ form.detailed_description }}
+                        </div>
                     </div>
 
                     <!-- ویدیوها -->
@@ -269,14 +380,41 @@
         </form>
     </div>
 </div>
+
+<!-- مودال ایجاد دارو -->
+<div id="createDrugModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">ایجاد داروی جدید</h2>
+            <span id="closeCreateDrugModal" class="close">&times;</span>
+        </div>
+        <form id="createDrugForm">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="id_title" class="form-label">نام دارو</label>
+                <input type="text" name="title" id="id_title" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label for="id_code" class="form-label">کد دارو (اختیاری)</label>
+                <input type="text" name="code" id="id_code" class="form-input">
+            </div>
+            <div class="flex justify-end space-x-2 space-x-reverse">
+                <button type="button" id="closeCreateDrugModalBtn" class="btn btn-secondary">انصراف</button>
+                <button type="submit" class="btn btn-primary">ایجاد دارو</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
+{{ form.media.js }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // داده‌های اولیه
     const allDrugs = {{ all_drugs_json|safe }};
     const existingDrugs = {% if existing_drugs_json %}{{ existing_drugs_json|safe }}{% else %}[]{% endif %};
+    const drugGroups = {% if drug_groups_json %}{{ drug_groups_json|safe }}{% else %}[]{% endif %};
     
     let selectedDrugs = [];
     let drugCounter = 0;
@@ -289,6 +427,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const drugDropdown = document.getElementById('drugDropdown');
     const drugsContainer = document.getElementById('drugsContainer');
     const prescriptionForm = document.getElementById('prescriptionForm');
+    
+    // متغیرهای مودال ایجاد دارو
+    const createDrugModal = document.getElementById('createDrugModal');
+    const openCreateDrugModalBtn = document.getElementById('openCreateDrugModalBtn');
+    const closeCreateDrugModalBtn = document.getElementById('closeCreateDrugModal');
+    const closeCreateDrugModalBtn2 = document.getElementById('closeCreateDrugModalBtn');
+    const createDrugForm = document.getElementById('createDrugForm');
+    
+    // تابع برای باز کردن مودال
+    function openModal() {
+        createDrugModal.style.display = 'block';
+        document.body.style.overflow = 'hidden'; // جلوگیری از اسکرول صفحه
+    }
+    
+    // تابع برای بستن مودال
+    function closeModal() {
+        createDrugModal.style.display = 'none';
+        document.body.style.overflow = 'auto'; // فعال کردن اسکرول صفحه
+        createDrugForm.reset();
+    }
     
     // مدیریت Formset ها
     const formsetManagers = {
@@ -328,7 +486,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     amount: drug.amount,
                     instructions: drug.instructions,
                     is_combination: drug.is_combination,
-                    order: drug.order
+                    order: drug.order,
+                    group_number: drug.group_number
                 });
             });
         }
@@ -357,8 +516,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // نمایش نتایج جستجو
     function displaySearchResults(drugs) {
         if (drugs.length === 0) {
-            drugDropdown.innerHTML = '<div class="p-3 text-gray-500 text-center">نتیجه‌ای یافت نشد</div>';
+            drugDropdown.innerHTML = `
+                <div class="p-3 text-gray-500 text-center">نتیجه‌ای یافت نشد</div>
+                <div class="p-2 border-t border-gray-200">
+                    <button type="button" class="open-create-drug-modal w-full text-center py-2 text-blue-600 hover:text-blue-800 text-sm">
+                        + ایجاد داروی جدید
+                    </button>
+                </div>
+            `;
             drugDropdown.classList.remove('hidden');
+            
+            // اضافه کردن event listener برای دکمه جدید
+            attachModalListeners();
             return;
         }
         
@@ -368,9 +537,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="font-medium">${escapeHtml(drug.title)}</div>
                 ${drug.code ? `<div class="text-sm text-gray-500">کد: ${escapeHtml(drug.code)}</div>` : ''}
             </div>
-        `).join('');
+        `).join('') + `
+            <div class="p-2 border-t border-gray-200">
+                <button type="button" class="open-create-drug-modal w-full text-center py-2 text-blue-600 hover:text-blue-800 text-sm">
+                    + ایجاد داروی جدید
+                </button>
+            </div>
+        `;
         
         drugDropdown.classList.remove('hidden');
+        
+        // اضافه کردن event listener برای دکمه جدید
+        attachModalListeners();
+    }
+    
+    // تابع جداگانه برای اضافه کردن event listener به دکمه‌های مودال
+    function attachModalListeners() {
+        const modalButtons = document.querySelectorAll('.open-create-drug-modal');
+        modalButtons.forEach(btn => {
+            btn.removeEventListener('click', handleOpenModal); // حذف listener قبلی
+            btn.addEventListener('click', handleOpenModal);
+        });
+    }
+    
+    // handler برای باز کردن مودال
+    function handleOpenModal() {
+        drugDropdown.classList.add('hidden');
+        document.getElementById('id_title').value = drugSearch.value;
+        openModal();
     }
     
     // Escape HTML
@@ -410,7 +604,8 @@ document.addEventListener('DOMContentLoaded', function() {
             amount: drugDetails.amount,
             instructions: drugDetails.instructions,
             is_combination: drugDetails.is_combination,
-            order: drugDetails.order
+            order: drugDetails.order,
+            group_number: drugDetails.group_number || null
         });
         
         const drugElement = createDrugElement(drugId, drugData, drugDetails);
@@ -432,6 +627,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div>
                         <h4 class="font-medium text-gray-900">${escapeHtml(drugData.title)}</h4>
                         ${drugData.code ? `<span class="text-sm text-gray-500">کد: ${escapeHtml(drugData.code)}</span>` : ''}
+                        ${drugDetails.group_number ? `<span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2">گروه ${drugDetails.group_number}</span>` : ''}
                     </div>
                 </div>
                 <button type="button" onclick="removeDrug('${drugId}')" 
@@ -444,44 +640,54 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">دوز و نحوه مصرف</label>
                     <input type="text" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           placeholder="مثال: روزی 3 بار"
-                           value="${escapeHtml(drugDetails.dosage)}"
-                           onchange="updateDrugDetail('${drugId}', 'dosage', this.value)">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="مثال: روزی 3 بار"
+                        value="${escapeHtml(drugDetails.dosage)}"
+                        onchange="updateDrugDetail('${drugId}', 'dosage', this.value)">
                 </div>
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">مقدار</label>
                     <input type="number" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           min="1"
-                           value="${drugDetails.amount}"
-                           onchange="updateDrugDetail('${drugId}', 'amount', parseInt(this.value))">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        min="1"
+                        value="${drugDetails.amount}"
+                        onchange="updateDrugDetail('${drugId}', 'amount', parseInt(this.value))">
                 </div>
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">ترتیب نمایش</label>
                     <input type="number" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           min="1"
-                           value="${drugDetails.order}"
-                           onchange="updateDrugDetail('${drugId}', 'order', parseInt(this.value))">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        min="1"
+                        value="${drugDetails.order}"
+                        onchange="updateDrugDetail('${drugId}', 'order', parseInt(this.value))">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">شماره گروه</label>
+                    <input type="number" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        min="1"
+                        placeholder="شماره گروه (اختیاری)"
+                        value="${drugDetails.group_number || ''}"
+                        onchange="updateDrugDetail('${drugId}', 'group_number', this.value ? parseInt(this.value) : null)">
                 </div>
                 
                 <div class="flex items-center">
                     <input type="checkbox" 
-                           ${drugDetails.is_combination ? 'checked' : ''}
-                           onchange="updateDrugDetail('${drugId}', 'is_combination', this.checked)"
-                           class="form-checkbox h-4 w-4 text-blue-600 ml-2">
+                        ${drugDetails.is_combination ? 'checked' : ''}
+                        onchange="updateDrugDetail('${drugId}', 'is_combination', this.checked)"
+                        class="form-checkbox h-4 w-4 text-blue-600 ml-2">
                     <label class="text-sm text-gray-700">دارو ترکیبی است</label>
                 </div>
                 
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">توضیحات اضافی</label>
                     <textarea class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              rows="3"
-                              placeholder="توضیحات نحوه مصرف"
-                              onchange="updateDrugDetail('${drugId}', 'instructions', this.value)">${escapeHtml(drugDetails.instructions)}</textarea>
+                            rows="3"
+                            placeholder="توضیحات نحوه مصرف"
+                            onchange="updateDrugDetail('${drugId}', 'instructions', this.value)">${escapeHtml(drugDetails.instructions)}</textarea>
                 </div>
             </div>
         `;
@@ -710,11 +916,112 @@ document.addEventListener('DOMContentLoaded', function() {
             amount: drug.amount,
             instructions: drug.instructions,
             is_combination: drug.is_combination,
-            order: drug.order
+            order: drug.order,
+            group_number: drug.group_number
         }));
         
         document.getElementById('drugs_data').value = JSON.stringify(drugsData);
     });
+    
+    // مدیریت مودال ایجاد دارو
+    // باز کردن مودال از دکمه اصلی
+    if (openCreateDrugModalBtn) {
+        openCreateDrugModalBtn.addEventListener('click', function() {
+            document.getElementById('id_title').value = drugSearch.value;
+            openModal();
+        });
+    }
+    
+    // بستن مودال با دکمه بستن
+    if (closeCreateDrugModalBtn) {
+        closeCreateDrugModalBtn.addEventListener('click', closeModal);
+    }
+    
+    // بستن مودال با دکمه انصراف
+    if (closeCreateDrugModalBtn2) {
+        closeCreateDrugModalBtn2.addEventListener('click', closeModal);
+    }
+    
+    // بستن مودال با کلیک خارج از آن
+    createDrugModal.addEventListener('click', function(event) {
+        if (event.target === createDrugModal) {
+            closeModal();
+        }
+    });
+    
+    // ارسال فرم ایجاد دارو
+    if (createDrugForm) {
+        createDrugForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            
+            // نمایش بارگذاری
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i>در حال ایجاد...';
+            submitBtn.disabled = true;
+            
+            fetch("{% url 'dashboard:drugs:drug_create' %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // نمایش پیام موفقیت
+                    alert(data.message);
+                    
+                    // اضافه کردن دارو به لیست allDrugs
+                    allDrugs.push({
+                        id: data.drug.id,
+                        title: data.drug.title,
+                        code: data.drug.code
+                    });
+                    
+                    // اضافه کردن دارو به لیست انتخاب شده‌ها
+                    const drugData = {
+                        id: data.drug.id,
+                        title: data.drug.title,
+                        code: data.drug.code
+                    };
+                    
+                    const drugDetails = {
+                        dosage: '',
+                        amount: 1,
+                        instructions: '',
+                        is_combination: false,
+                        order: selectedDrugs.length + 1
+                    };
+                    
+                    addDrugToList(drugData, drugDetails);
+                    updateEmptyState();
+                    
+                    // بستن مودال
+                    closeModal();
+                } else {
+                    // نمایش خطاها
+                    let errorMsg = data.message || 'خطا در ایجاد دارو';
+                    if (data.errors) {
+                        errorMsg += '\n' + Object.values(data.errors).flat().join('\n');
+                    }
+                    alert(errorMsg);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('خطا در ارتباط با سرور');
+            })
+            .finally(() => {
+                // بازگرداندن دکمه به حالت اولیه
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+            });
+        });
+    }
     
     // بارگیری اولیه
     loadExistingDrugs();

@@ -42,7 +42,7 @@
 
             <!-- کاربران ویژه فعال -->
             <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-300 cursor-pointer" 
-                 onclick="window.location.href='{% url 'dashboard:users:users_list' %}?role=premium'">
+                 onclick="window.location.href='{% url 'dashboard:users:admin_users_list' %}?role=premium'">
                 <h3 class="text-sm font-medium text-slate-500">کاربران ویژه فعال</h3>
                 <div class="mt-2">
                     <p class="text-3xl font-bold text-slate-800">{{ active_premium_users|intcomma }}</p>

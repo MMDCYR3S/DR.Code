@@ -4,12 +4,13 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect
 from django.http import JsonResponse
+from django.shortcuts import render
 from django.db import transaction
 from django.contrib import messages
 
 from apps.accounts.permissions import IsTokenJtiActive, HasAdminAccessPermission
 from apps.accounts.models import Profile, AuthStatusChoices
-from ..forms import UserSearchForm, UserEditForm, ProfileEditForm
+from ..forms import UserSearchForm, UserEditForm, ProfileEditForm, AddUserForm
 from ..services.email_service import resend_auth_email, send_auth_checked_email
 
 import jdatetime
@@ -131,9 +132,9 @@ class UserUpdateView(LoginRequiredMixin, HasAdminAccessPermission, View):
 
         return redirect('dashboard:users:admin_user_detail', pk=pk)
     
-# ================================================== #
-# ======== USER DELETE VIEW ======== #
-# ================================================== #
+# =================================================== #
+# ================ USER DELETE VIEW ================ #
+# =================================================== #
 class UserDeleteView(LoginRequiredMixin, HasAdminAccessPermission, View):
     """ویو برای حذف کاربر"""
 
@@ -142,6 +143,28 @@ class UserDeleteView(LoginRequiredMixin, HasAdminAccessPermission, View):
         user = get_object_or_404(User, pk=pk)
         user.delete()
         return JsonResponse({'success': True}, status=200)
+    
+# =================================================== #
+# ========= PENDING VERIFICATION LIST VIEW ========= #
+# =================================================== #
+class PendingVerificationListView(LoginRequiredMixin, HasAdminAccessPermission, ListView):
+    """
+    لیست کاربرانی که در صف انتظار برای احراز هویت هستند.
+    """
+    model = User
+    template_name = 'dashboard/users/verify-user.html'
+    context_object_name = 'pending_users'
+    paginate_by = 12
+    
+    def get_queryset(self):
+        """
+        فقط کاربرانی را برمی‌گرداند که وضعیت پروفایل آن‌ها 'PENDING' است.
+        کاربران به ترتیب تاریخ ثبت‌نام (قدیمی‌ترین در ابتدا) مرتب می‌شوند.
+        """
+        queryset = User.objects.select_related('profile').filter(
+            profile__auth_status=AuthStatusChoices.PENDING.value
+        ).order_by('date_joined')
+        return queryset
 
 # ================================================== #
 # ======== USER VERIFICATION DETAIL VIEW ======== #
@@ -205,23 +228,46 @@ class UserVerificationDetailView(LoginRequiredMixin, HasAdminAccessPermission, D
         return redirect(request.path_info)
 
 # ================================================== #
-# ======== USER VERIFICATION DETAIL VIEW ======== #
+# ============= ADD USER VIEW ============= #
 # ================================================== #
-class PendingVerificationListView(LoginRequiredMixin, HasAdminAccessPermission, ListView):
-    """
-    لیست کاربرانی که در صف انتظار برای احراز هویت هستند.
-    """
-    model = User
-    template_name = 'dashboard/users/verify-user.html'
-    context_object_name = 'pending_users'
-    paginate_by = 12
+class AddUserView(LoginRequiredMixin, HasAdminAccessPermission, View):
+    """ویو برای افزودن کاربر جدید"""
     
-    def get_queryset(self):
-        """
-        فقط کاربرانی را برمی‌گرداند که وضعیت پروفایل آن‌ها 'PENDING' است.
-        کاربران به ترتیب تاریخ ثبت‌نام (قدیمی‌ترین در ابتدا) مرتب می‌شوند.
-        """
-        queryset = User.objects.select_related('profile').filter(
-            profile__auth_status=AuthStatusChoices.PENDING.value
-        ).order_by('date_joined')
-        return queryset
+    def get(self, request):
+        """نمایش فرم افزودن کاربر"""
+        form = AddUserForm()
+        return render(request, 'dashboard/users/add_user.html', {'form': form})
+    
+    def post(self, request):
+        """افزودن کاربر جدید"""
+        form = AddUserForm(request.POST)
+        
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    # ایجاد کاربر جدید با استفاده از پسورد ارائه شده
+                    user = User.objects.create_user(
+                        phone_number=form.cleaned_data['phone_number'],
+                        email=form.cleaned_data['email'],
+                        first_name=form.cleaned_data['first_name'],
+                        last_name=form.cleaned_data['last_name'],
+                        password=form.cleaned_data['password'],
+                        is_active=True
+                    )
+                    
+                    # به‌روزرسانی پروفایل کاربر
+                    profile = user.profile
+                    profile.role = form.cleaned_data['role']
+                    profile.medical_code = form.cleaned_data['medical_code'] or None
+                    profile.auth_status = 'APPROVED'  # به صورت خودکار تایید شده
+                    profile.save()
+                    
+                messages.success(request, f'کاربر {user.full_name} با موفقیت اضافه شد.')
+                return redirect('dashboard:users:admin_users_list')
+            
+            except Exception as e:
+                messages.error(request, f'خطا در ایجاد کاربر: {str(e)}')
+        else:
+            messages.error(request, 'اطلاعات وارد شده معتبر نیست. لطفاً خطاهای زیر را بررسی کنید.')
+            
+        return render(request, 'dashboard/users/add_user.html', {'form': form})

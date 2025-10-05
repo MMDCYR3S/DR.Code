@@ -3,16 +3,16 @@ from .prescription import Prescription
 
 import jdatetime
 
+
 class Drug(models.Model):
     """
     مدل برای هر داروی تعریف شده در یک نسخه.
     هر نسخه می‌تواند شامل چندین دارو باشد.
     """
-    title = models.CharField(max_length=150, verbose_name="نام دارو")
-    code = models.CharField(max_length=50, blank=True, verbose_name="کد دارو")
+    title = models.CharField(max_length=150, verbose_name="نام دارو", unique=True)
+    code = models.CharField(max_length=50, blank=True, verbose_name="کد دارو", unique=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='زمان ساخت')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='زمان بروزرسانی')
-
 
     def __str__(self):
         return f"داروی «{self.title}»"
@@ -57,6 +57,12 @@ class PrescriptionDrug(models.Model):
         help_text='این گزینه را برای داروهایی که باید با هم ترکیب شوند، فعال کنید'
     )
     order = models.PositiveIntegerField(default=0, verbose_name="ترتیب نمایش")
+    group_number = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="شماره گروه دارویی",
+        help_text="برای گروه‌بندی داروها در یک نسخه استفاده می‌شود"
+    )
 
     class Meta:
         ordering = ['order']
@@ -67,7 +73,6 @@ class PrescriptionDrug(models.Model):
             return ''
         return self.instructions[:length] + '...' if len(self.instructions) > length else self.instructions
 
-
     def __str__(self):
-        return f"داروی «{self.drug.title}» در نسخه «{self.prescription.title}»"
-
+        group_info = f" (گروه {self.group_number})" if self.group_number else ""
+        return f"داروی «{self.drug.title}» در نسخه «{self.prescription.title}»{group_info}"

@@ -30,5 +30,21 @@ LOGGING = {
     },
 }
 
-# ======== ZarinPal Merchant Id ======== #
-ZARINPAL_MERCHANT_ID = 'YOUR_MERCHANT_ID'
+# ========= ZarinPal Sandbox Settings ========= #
+ZARINPAL_CONFIG = {
+    'MERCHANT_ID': "faeddedf-558c-4cd6-9f18-63d0c6088477",
+    'SANDBOX': True,
+    'REQUEST_URL': 'https://sandbox.zarinpal.com/pg/v4/payment/request.json',
+    'START_PAY_URL': 'https://sandbox.zarinpal.com/pg/StartPay/',
+    'VERIFY_URL': 'https://sandbox.zarinpal.com/pg/v4/payment/verify.json',
+    'CALLBACK_URL': 'http://localhost:8000/api/v1/payments/verify/',
+}
+
+# ====== EMAIL CONFIGS ====== #
+EMAIL_BACKEND = env("EMAIL_BACKEND")
+EMAIL_HOST = env("EMAIL_HOST")
+EMAIL_PORT = env("EMAIL_PORT")
+EMAIL_USE_TLS = env("EMAIL_USE_TLS")
+EMAIL_HOST_USER = env("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = ("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = ("EMAIL_HOST_PASSWORD")
