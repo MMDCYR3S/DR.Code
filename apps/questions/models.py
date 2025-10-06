@@ -49,7 +49,7 @@ class Question(models.Model):
 
     @property
     def shamsi_answered_at(self):
-        if self.updaanswered_atted_at is None:
+        if self.answered_at is None:
             return "—"
             
         jdate = jdatetime.datetime.fromgregorian(datetime=self.answered_at)
