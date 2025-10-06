@@ -84,7 +84,7 @@ class PrescriptionDrugForm(forms.ModelForm):
     
     class Meta:
         model = PrescriptionDrug
-        fields = ['drug', 'dosage', 'amount', 'instructions', 'is_combination', 'order']
+        fields = ['drug', 'dosage', 'amount', 'instructions', 'is_combination', 'is_substitute', 'order']
         widgets = {
             'drug': forms.HiddenInput(),
             'dosage': forms.TextInput(attrs={
@@ -105,6 +105,9 @@ class PrescriptionDrugForm(forms.ModelForm):
             'is_combination': forms.CheckboxInput(attrs={
                 'class': 'form-checkbox h-4 w-4 text-blue-600'
             }),
+            'is_substitute': forms.CheckboxInput(attrs={
+                'class': 'form-checkbox h-4 w-4 text-blue-600'
+            }),
             'order': forms.NumberInput(attrs={
                 'class': 'form-input w-full px-3 py-2 border border-slate-300 rounded-lg',
                 'min': 1
@@ -116,6 +119,7 @@ class PrescriptionDrugForm(forms.ModelForm):
             'amount': 'مقدار/تعداد',
             'instructions': 'توضیحات اضافی',
             'is_combination': 'دارو ترکیبی است؟',
+            'is_substitute': 'داروی جایگزین',
             'order': 'ترتیب نمایش'
         }
 

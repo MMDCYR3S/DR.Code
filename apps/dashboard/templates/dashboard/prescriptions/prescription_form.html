@@ -486,6 +486,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     amount: drug.amount,
                     instructions: drug.instructions,
                     is_combination: drug.is_combination,
+                    is_substitute: drug.is_substitute,
                     order: drug.order,
                     group_number: drug.group_number
                 });
@@ -577,12 +578,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // انتخاب دارو
     window.selectDrug = function(id, title, code) {
         const drugData = { id, title, code };
+        // محاسبه مرتبه قبل از ساخت شیء
+        const nextOrder = selectedDrugs.length + 1;
         const drugDetails = {
             dosage: '',
             amount: 1,
             instructions: '',
             is_combination: false,
-            order: selectedDrugs.length + 1
+            is_substitute: false,
+            order: nextOrder
         };
         
         addDrugToList(drugData, drugDetails);
@@ -604,6 +608,7 @@ document.addEventListener('DOMContentLoaded', function() {
             amount: drugDetails.amount,
             instructions: drugDetails.instructions,
             is_combination: drugDetails.is_combination,
+            is_substitute: drugDetails.is_substitute,
             order: drugDetails.order,
             group_number: drugDetails.group_number || null
         });
@@ -682,6 +687,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     <label class="text-sm text-gray-700">دارو ترکیبی است</label>
                 </div>
                 
+                <div class="flex items-center">
+                    <input type="checkbox" 
+                        ${drugDetails.is_substitute ? 'checked' : ''}
+                        onchange="updateDrugDetail('${drugId}', 'is_substitute', this.checked)"
+                        class="form-checkbox h-4 w-4 text-blue-600 ml-2">
+                    <label class="text-sm text-gray-700">داروی جایگزین</label>
+                </div>
+                
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">توضیحات اضافی</label>
                     <textarea class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -699,7 +712,12 @@ document.addEventListener('DOMContentLoaded', function() {
     window.updateDrugDetail = function(drugId, field, value) {
         const drug = selectedDrugs.find(d => d.id === drugId);
         if (drug) {
-            drug[field] = value;
+            // اطمینان از اینکه مقادیر بولین به درستی پردازش می‌شوند
+            if (field === 'is_combination' || field === 'is_substitute') {
+                drug[field] = Boolean(value);
+            } else {
+                drug[field] = value;
+            }
         }
     };
     
@@ -916,6 +934,7 @@ document.addEventListener('DOMContentLoaded', function() {
             amount: drug.amount,
             instructions: drug.instructions,
             is_combination: drug.is_combination,
+            is_substitute: drug.is_substitute,
             order: drug.order,
             group_number: drug.group_number
         }));

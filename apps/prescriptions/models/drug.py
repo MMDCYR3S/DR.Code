@@ -56,6 +56,11 @@ class PrescriptionDrug(models.Model):
         verbose_name='جزء داروی ترکیبی است؟',
         help_text='این گزینه را برای داروهایی که باید با هم ترکیب شوند، فعال کنید'
     )
+    is_substitute = models.BooleanField(
+        default=False,
+        verbose_name='داروی جایگزین',
+        help_text='این گزینه را برای داروهایی که می‌توانند با یکدیگر جایگزین شوند، فعال کنید'
+    )
     order = models.PositiveIntegerField(default=0, verbose_name="ترتیب نمایش")
     group_number = models.PositiveIntegerField(
         null=True,

@@ -91,7 +91,8 @@ class PrescriptionDetailView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
                     'instructions': prescription_drug.instructions or '',
                     'order': prescription_drug.order or 0,
                     'is_combination': prescription_drug.is_combination,
-                    'group_number': prescription_drug.group_number  # ✅ اضافه شد
+                    'is_substitute': prescription_drug.is_substitute,
+                    'group_number': prescription_drug.group_number
                 }
                 drugs.append(drug_data)
             
@@ -197,6 +198,7 @@ class PrescriptionCreateView(LoginRequiredMixin, CreateView):
                 amount=drug_data['amount'],
                 instructions=drug_data['instructions'],
                 is_combination=drug_data['is_combination'],
+                is_substitute=drug_data.get('is_substitute', False),
                 order=drug_data['order'],
                 group_number=drug_data.get('group_number')
             )
@@ -244,6 +246,7 @@ class PrescriptionUpdateView(LoginRequiredMixin, UpdateView):
                 'amount': prescription_drug.amount,
                 'instructions': prescription_drug.instructions,
                 'is_combination': prescription_drug.is_combination,
+                'is_substitute': prescription_drug.is_substitute,
                 'order': prescription_drug.order,
                 'group_number': prescription_drug.group_number
             })
@@ -293,6 +296,7 @@ class PrescriptionUpdateView(LoginRequiredMixin, UpdateView):
                 amount=drug_data['amount'],
                 instructions=drug_data['instructions'],
                 is_combination=drug_data['is_combination'],
+                is_substitute=drug_data.get('is_substitute', False),
                 order=drug_data['order'],
                 group_number=drug_data.get('group_number')
             )
