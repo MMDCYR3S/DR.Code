@@ -1046,4 +1046,252 @@ document.addEventListener('DOMContentLoaded', function() {
     loadExistingDrugs();
 });
 </script>
+<script>
+        function prescriptionForm() {
+            return {
+                // Initial State (Static Data for Edit Mode)
+                isEditMode: true,
+                prescriptionTitle: 'درمان میخچه یا زگیل',
+                prescriptionInstructions: 'ابتدا پا را به مدت ۵ دقیقه در آب گرم بخیسانید...',
+                drugs: [
+                    { id: 1, name: 'SALICYLIC ACID TOP SOL', code: '01668', dosage: 'Q12h-8h', amount: '1', description: 'توضیحات مربوط به سالیسیلیک اسید', isCombination: true },
+                    { id: 2, name: 'SALICYLIC ACID', code: '01116', dosage: 'طبق دستور', amount: '20g', description: 'در صورت کوچک بودن ضایعه ۱۵ گرم', isCombination: true },
+                    { id: 3, name: 'Lactic acid', code: '00729', dosage: 'طبق دستور', amount: '20g', description: 'در صورت کوچک بودن ضایعه ۱۵ گرم', isCombination: true },
+                    { id: 4, name: 'Flexible collodion', code: '00351', dosage: 'طبق دستور', amount: '60g', description: '', isCombination: false },
+                ],
+                category: 'skin',
+                isPremium: true,
+                slug: 'corn-or-wart-treatment',
+                videos: [
+                    { url: 'https://www.aparat.com/v/example1' },
+                    { url: '' }
+                ],
+                isDragging: false,
+                uploadedFiles: [],
+
+                init() {
+                    // Initialize SortableJS on the drug list
+                    const el = this.$refs.drugList;
+                    new Sortable(el, {
+                        animation: 150,
+                        handle: '.drag-handle',
+                        ghostClass: 'ghost-class',
+                        onEnd: (evt) => {
+                            // Reorder the Alpine data array to match the DOM
+                            const item = this.drugs.splice(evt.oldIndex, 1)[0];
+                            this.drugs.splice(evt.newIndex, 0, item);
+                        }
+                    });
+                },
+                
+                // Drug Management Methods
+                addDrug() {
+                    this.drugs.push({
+                        id: Date.now(), // Simple unique ID
+                        name: '',
+                        code: '',
+                        dosage: '',
+                        amount: '',
+                        description: '',
+                        isCombination: false
+                    });
+                },
+                removeDrug(id) {
+                    this.drugs = this.drugs.filter(drug => drug.id !== id);
+                },
+
+                // Media Management Methods
+                addVideo() {
+                    this.videos.push({ url: '' });
+                },
+                removeVideo(index) {
+                    this.videos.splice(index, 1);
+                },
+                
+                // Slug Generation
+                generateSlug() {
+                    this.slug = (this.prescriptionTitle || '')
+                        .toLowerCase()
+                        .trim()
+                        .replace(/[\s\W-]+/g, '-') // Replace spaces, non-word chars with a single dash
+                        .replace(/--+/g, '-'); // Replace multiple dashes with a single dash
+                },
+
+                // File Uploader Logic
+                handleFileSelect(event) {
+                    this.addFiles(event.target.files);
+                },
+                handleFileDrop(event) {
+                    this.isDragging = false;
+                    this.addFiles(event.dataTransfer.files);
+                },
+                addFiles(files) {
+                    Array.from(files).forEach(file => {
+                        if (!file.type.startsWith('image/')) return;
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            const newFile = {
+                                name: file.name,
+                                size: `${(file.size / 1024).toFixed(1)} KB`,
+                                preview: e.target.result,
+                                progress: 0
+                            };
+                            this.uploadedFiles.push(newFile);
+                            this.simulateUpload(newFile);
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                },
+                removeFile(fileName) {
+                    this.uploadedFiles = this.uploadedFiles.filter(f => f.name !== fileName);
+                },
+                simulateUpload(file) {
+                    const interval = setInterval(() => {
+                        file.progress += 10;
+                        if (file.progress >= 100) {
+                            clearInterval(interval);
+                        }
+                    }, 100);
+                }
+            }
+        }
+    </script>
+    
+    <script>
+        // در prescription_form.html - اضافه کن به انتهای script
+let drugSortable = null;
+
+// تابع برای initialize کردن sortable
+function initializeDrugSortable() {
+    const selectedDrugsContainer = document.getElementById('selected-drugs');
+    
+    if (selectedDrugsContainer && !drugSortable) {
+        drugSortable = Sortable.create(selectedDrugsContainer, {
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            dragClass: 'sortable-drag',
+            handle: '.drag-handle', // اگر handle خاصی داری
+            onEnd: function(evt) {
+                console.log('Drug order changed:', evt.oldIndex, '->', evt.newIndex);
+                // اینجا می‌تونی order رو ذخیره کنی
+                updateDrugOrder();
+            }
+        });
+    }
+}
+
+// تابع برای به‌روزرسانی ترتیب داروها
+function updateDrugOrder() {
+    const drugItems = document.querySelectorAll('#selected-drugs .selected-drug-item');
+    drugItems.forEach((item, index) => {
+        // اگر input مخفی برای order داری
+        const orderInput = item.querySelector('input[name*="order"]');
+        if (orderInput) {
+            orderInput.value = index + 1;
+        }
+        
+        // یا اگر data attribute استفاده می‌کنی
+        item.setAttribute('data-order', index + 1);
+    });
+}
+
+// ویرایش تابع addSelectedDrug
+function addSelectedDrug(drugId, drugName) {
+    const selectedDrugsContainer = document.getElementById('selected-drugs');
+    
+    // بررسی تکراری نبودن
+    if (document.querySelector(`[data-drug-id="${drugId}"]`)) {
+        alert('این دارو قبلاً انتخاب شده است.');
+        return;
+    }
+
+    const drugItem = document.createElement('div');
+    drugItem.className = 'selected-drug-item bg-gray-50 p-3 rounded-lg border flex items-center justify-between';
+    drugItem.setAttribute('data-drug-id', drugId);
+    
+    drugItem.innerHTML = `
+        <div class="flex items-center gap-3">
+            <!-- Handle برای drag کردن -->
+            <div class="drag-handle cursor-move text-gray-400 hover:text-gray-600">
+                <i class="fas fa-grip-vertical"></i>
+            </div>
+            <span class="font-medium">${drugName}</span>
+        </div>
+        <button type="button" onclick="removeSelectedDrug(${drugId})" 
+                class="text-red-500 hover:text-red-700">
+            <i class="fas fa-times"></i>
+        </button>
+        <input type="hidden" name="selected_drugs" value="${drugId}">
+        <input type="hidden" name="drug_order_${drugId}" value="${selectedDrugsContainer.children.length + 1}">
+    `;
+
+    selectedDrugsContainer.appendChild(drugItem);
+    
+    // دوباره initialize کردن sortable بعد از اضافه کردن عنصر جدید
+    if (drugSortable) {
+        drugSortable.destroy();
+        drugSortable = null;
+    }
+    initializeDrugSortable();
+    
+    updateSelectedDrugsInput();
+}
+
+// ویرایش تابع removeSelectedDrug
+function removeSelectedDrug(drugId) {
+    const drugItem = document.querySelector(`[data-drug-id="${drugId}"]`);
+    if (drugItem) {
+        drugItem.remove();
+        updateSelectedDrugsInput();
+        updateDrugOrder(); // به‌روزرسانی ترتیب بعد از حذف
+    }
+}
+
+// اضافه کردن CSS برای sortable
+const sortableStyles = `
+<style>
+.sortable-ghost {
+    opacity: 0.4;
+    background: #f3f4f6;
+}
+
+.sortable-chosen {
+    background: #e5e7eb;
+}
+
+.sortable-drag {
+    background: #ffffff;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transform: rotate(5deg);
+}
+
+.drag-handle {
+    cursor: grab;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.selected-drug-item {
+    transition: all 0.2s ease;
+}
+
+.selected-drug-item:hover {
+    background-color: #f9fafb;
+    border-color: #d1d5db;
+}
+</style>
+`;
+
+// اضافه کردن styles به head
+document.head.insertAdjacentHTML('beforeend', sortableStyles);
+
+// Initialize کردن در DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeDrugSortable();
+});
+
+    </script>
 {% endblock %}

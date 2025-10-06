@@ -12,11 +12,11 @@ const StorageManager = {
 
     // ذخیره توکن‌ها
     saveTokens(tokens) {
-        if (tokens.access_token) {
-            localStorage.setItem(this.KEYS.ACCESS_TOKEN, tokens.access_token);
+        if (tokens.access_token || tokens.access) {
+            localStorage.setItem(this.KEYS.ACCESS_TOKEN, tokens.access_token || tokens.access);
         }
-        if (tokens.refresh_token) {
-            localStorage.setItem(this.KEYS.REFRESH_TOKEN, tokens.refresh_token);
+        if (tokens.refresh_token || tokens.refresh) {
+            localStorage.setItem(this.KEYS.REFRESH_TOKEN, tokens.refresh_token || tokens.refresh);
         }
     },
 
@@ -33,6 +33,19 @@ const StorageManager = {
     // دریافت Access Token
     getAccessToken() {
         return localStorage.getItem(this.KEYS.ACCESS_TOKEN);
+    },
+
+    // دریافت Refresh Token
+    getRefreshToken() {
+        return localStorage.getItem(this.KEYS.REFRESH_TOKEN);
+    },
+
+    // دریافت همه توکن‌ها
+    getTokens() {
+        return {
+            access_token: this.getAccessToken(),
+            refresh_token: this.getRefreshToken()
+        };
     },
 
     // دریافت اطلاعات کاربر
