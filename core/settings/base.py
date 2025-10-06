@@ -25,13 +25,14 @@ env = environ.Env(
 )
 
 # Take environment variables from .env file
-environ.Env.read_env(BASE_DIR / '../env/.env.dev')
-
+# Use different .env files based on the environment
+env_file = os.path.join(BASE_DIR, 'env\\.env.dev')  # Default to development
+environ.Env.read_env(env_file)
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env("SECRET_KEY", default="django-insecure-%38g47^+$0*2yo7u-61p=1n_&tfc41$lkcf#e34#)=z(^*uu$o")
+SECRET_KEY = env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env("DEBUG", cast=bool, default=True)
@@ -211,6 +212,13 @@ SIMPLE_JWT = {
 
 # MAX FILE SIZE UPLOAD
 FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024
+
+# Redis Cache Settings
+# DJANGO_REDIS_IGNORE_EXCEPTIONS = True
+# DJANGO_REDIS_LOG_IGNORED_EXCEPTIONS = True
+
+# Cache timeout for templates
+TEMPLATE_CACHE_TIMEOUT = 300  # 5 minutes
 
 # ========== CK-EDITOR-5 CONFIGS ========== #
 customColorPalette = [
