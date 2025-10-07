@@ -1,8 +1,7 @@
-// مدیریت لوکال استوریج برای لاگین و ثبت نام
+// مدیریت لوکال استوریج
+console.log('📦 Storage.js loading...');
 
-// مدیریت ذخیره‌سازی توکن‌ها و اطلاعات کاربر
 const StorageManager = {
-    // کلیدهای ذخیره‌سازی
     KEYS: {
         ACCESS_TOKEN: 'drcode_access_token',
         REFRESH_TOKEN: 'drcode_refresh_token',
@@ -10,8 +9,8 @@ const StorageManager = {
         USER_PROFILE: 'drcode_user_profile'
     },
 
-    // ذخیره توکن‌ها
     saveTokens(tokens) {
+        console.log('💾 Saving tokens');
         if (tokens.access_token || tokens.access) {
             localStorage.setItem(this.KEYS.ACCESS_TOKEN, tokens.access_token || tokens.access);
         }
@@ -20,27 +19,22 @@ const StorageManager = {
         }
     },
 
-    // ذخیره اطلاعات کاربر
     saveUserData(userData) {
         localStorage.setItem(this.KEYS.USER_DATA, JSON.stringify(userData));
     },
 
-    // ذخیره پروفایل کاربر
     saveUserProfile(profile) {
         localStorage.setItem(this.KEYS.USER_PROFILE, JSON.stringify(profile));
     },
 
-    // دریافت Access Token
     getAccessToken() {
         return localStorage.getItem(this.KEYS.ACCESS_TOKEN);
     },
 
-    // دریافت Refresh Token
     getRefreshToken() {
         return localStorage.getItem(this.KEYS.REFRESH_TOKEN);
     },
 
-    // دریافت همه توکن‌ها
     getTokens() {
         return {
             access_token: this.getAccessToken(),
@@ -48,27 +42,28 @@ const StorageManager = {
         };
     },
 
-    // دریافت اطلاعات کاربر
     getUserData() {
         const data = localStorage.getItem(this.KEYS.USER_DATA);
         return data ? JSON.parse(data) : null;
     },
 
-    // دریافت پروفایل کاربر
     getUserProfile() {
         const profile = localStorage.getItem(this.KEYS.USER_PROFILE);
         return profile ? JSON.parse(profile) : null;
     },
 
-    // بررسی وضعیت لاگین
     isLoggedIn() {
-        return !!this.getAccessToken();
+        const hasToken = !!this.getAccessToken();
+        console.log('🔐 isLoggedIn check:', hasToken);
+        return hasToken;
     },
 
-    // پاک کردن همه داده‌ها (لاگ‌اوت)
     clearAll() {
+        console.log('🗑️ Clearing all storage');
         Object.values(this.KEYS).forEach(key => {
             localStorage.removeItem(key);
         });
     }
 };
+
+console.log('✅ Storage.js loaded');

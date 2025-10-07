@@ -103,6 +103,8 @@ async logout() {
             // ریدایرکت به صفحه اصلی
             setTimeout(() => {
                 window.location.href = '/';
+                // Reload the page to ensure all state is cleared
+                window.location.reload();
             }, 1000);
             
         } catch (error) {
@@ -110,7 +112,9 @@ async logout() {
             // در صورت ارور هم خروج انجام بشه
             StorageManager.clearAll();
             this.updateUIForLoggedOutUser();
+            // ریدایرکت به صفحه اصلی و ریلود صفحه
             window.location.href = '/';
+            window.location.reload();
         }
     }
     

@@ -107,21 +107,26 @@ const API = {
             const tokens = StorageManager.getTokens();
 
             if (tokens?.access_token) {
-                const response = await fetch(`${this.BASE_URL}api/v1/accounts/logout/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${tokens.access_token}`
-                    }
-                });
+                try {
+                    const response = await fetch(`${this.BASE_URL}api/v1/accounts/logout/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${tokens.access_token}`
+                        }
+                    });
 
-                // حتی اگر API ارور داد، باز هم localStorage رو پاک کن
-                if (!response.ok) {
-                    console.warn('Logout API returned error, but clearing local data anyway');
+                    // حتی اگر API ارور داد، باز هم localStorage رو پاک کن
+                    if (!response.ok) {
+                        console.warn('Logout API returned error, but clearing local data anyway');
+                    }
+                } catch (apiError) {
+                    console.error('Logout API error:', apiError);
+                    // در صورت خطا در تماس با API هم داده‌ها پاک شوند
                 }
             }
         } catch (error) {
-            console.error('Logout error:', error);
+            console.error('General logout error:', error);
         } finally {
             // در هر صورت localStorage رو پاک کن
             StorageManager.clearAll();
