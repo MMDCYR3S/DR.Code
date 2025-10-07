@@ -132,3 +132,47 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 console.log('✅ Profile.js loaded');
+
+// UserApi response
+// این خروجی هست که بهت گفتم
+// {
+//     "success": true,
+//     "data": {
+//         "user_full_name": "محمد امین غلامی",
+//         "user_phone": "09137555555",
+//         "role": "regular",
+//         "medical_code": null,
+//         "auth_status": "APPROVED",
+//         "auth_status_display": "تایید شده",
+//         "rejection_reason": "",
+//         "subscription_end_date": null,
+//         "created_at": "2025-09-25T08:35:04.315036Z",
+//         "updated_at": "2025-09-26T10:41:01.728978Z"
+//     }
+// }
+
+// UserApi Update response
+// {
+//     "success": true,
+//     "data": {
+//         "user": {
+//             "id": 1,
+//             "first_name": "محمد امین",
+//             "last_name": "غلامی",
+//             "full_name": "محمد امین غلامی",
+//             "phone_number": "09137555555",
+//             "email": "amingholami06@gmail.com",
+//             "profile_image": null,
+//             "date_joined": "2025-09-25T08:35:03.411977+00:00",
+//             "last_login": "2025-10-07T14:28:12.705209+00:00"
+//         },
+//         "profile": {
+//             "auth_status": "APPROVED",
+//             "auth_status_display": "تایید شده",
+//             "role": "regular",
+//             "role_display": "کاربر عادی",
+//             "medical_code": null,
+//             "referral_code": "168233F9"
+//         }
+//     }
+// }
