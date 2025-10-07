@@ -55,4 +55,5 @@ from .index_views import admin_dashboard_view
 
 from .plan_views import *
 from .analysis_views import *
+from .subscriptions_views import *
 

@@ -12,4 +12,5 @@ urlpatterns = [
     path("", include("apps.dashboard.administrator.urls.drugs_urls")),
     path("", include("apps.dashboard.administrator.urls.plan_urls")),
     path("", include("apps.dashboard.administrator.urls.analysis_urls")),
+    path("", include("apps.dashboard.administrator.urls.subscriptions_urls")),
 ]

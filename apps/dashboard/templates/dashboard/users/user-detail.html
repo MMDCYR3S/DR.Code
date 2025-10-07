@@ -65,6 +65,97 @@
                 </div>
                 {% endif %}
 
+                <!-- بخش مدیریت اشتراک -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border-2" :class="hasActiveSubscription ? 'border-green-300' : 'border-slate-200'">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-slate-700">مدیریت اشتراک</h3>
+                        <span x-show="hasActiveSubscription" class="px-3 py-1 text-xs font-semibold text-green-800 bg-green-200 rounded-full">
+                            اشتراک فعال
+                        </span>
+                    </div>
+                    
+                    <!-- اطلاعات اشتراک فعال -->
+                    <div x-show="hasActiveSubscription && activeSubscription" class="space-y-3 mb-4">
+                        <div class="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border border-green-200">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                                <div class="flex flex-col">
+                                    <span class="text-slate-500 text-xs">نام پلن:</span>
+                                    <span class="font-semibold mt-1" x-text="activeSubscription?.plan_name"></span>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-slate-500 text-xs">تاریخ انقضا:</span>
+                                    <span class="font-semibold mt-1" x-text="activeSubscription?.end_date"></span>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-slate-500 text-xs">روزهای باقیمانده:</span>
+                                    <span class="font-semibold mt-1" :class="activeSubscription?.days_remaining < 7 ? 'text-red-600' : 'text-green-600'" x-text="activeSubscription?.days_remaining + ' روز'"></span>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-slate-500 text-xs">وضعیت:</span>
+                                    <span class="font-semibold mt-1 text-green-600" x-text="activeSubscription?.status_display"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- دکمه‌های عملیات -->
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button 
+                            x-show="!hasActiveSubscription" 
+                            @click="openCreateSubscriptionModal()" 
+                            class="flex-1 py-3 px-5 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 transition flex items-center justify-center">
+                            <i class="fa-solid fa-plus ml-2"></i>
+                            افزودن اشتراک
+                        </button>
+                        
+                        <button 
+                            x-show="hasActiveSubscription" 
+                            @click="openEditSubscriptionModal()" 
+                            class="flex-1 py-3 px-5 bg-amber-500 text-white font-bold rounded-lg hover:bg-amber-600 transition flex items-center justify-center">
+                            <i class="fa-solid fa-pen-to-square ml-2"></i>
+                            ویرایش اشتراک
+                        </button>
+                        
+                        <button 
+                            x-show="hasActiveSubscription" 
+                            @click="openExtendSubscriptionModal()" 
+                            class="flex-1 py-3 px-5 bg-purple-500 text-white font-bold rounded-lg hover:bg-purple-600 transition flex items-center justify-center">
+                            <i class="fa-solid fa-clock-rotate-left ml-2"></i>
+                            تمدید اشتراک
+                        </button>
+                    </div>
+
+                    <!-- لیست تمام اشتراک‌های کاربر -->
+                    <div x-show="allSubscriptions.length > 0" class="mt-6 border-t pt-4">
+                        <h4 class="text-sm font-semibold text-slate-600 mb-3">تاریخچه اشتراک‌ها</h4>
+                        <div class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+                            <template x-for="sub in allSubscriptions" :key="sub.id">
+                                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs">
+                                    <div class="flex justify-between items-start">
+                                        <div class="space-y-1">
+                                            <div class="font-semibold" x-text="sub.plan_name"></div>
+                                            <div class="text-slate-500">
+                                                <span x-text="sub.start_date"></span>
+                                                <span class="mx-1">تا</span>
+                                                <span x-text="sub.end_date"></span>
+                                            </div>
+                                        </div>
+                                        <span 
+                                            class="px-2 py-1 text-xs font-semibold rounded-full"
+                                            :class="{
+                                                'bg-green-200 text-green-800': sub.status === 'active',
+                                                'bg-red-200 text-red-800': sub.status === 'expired',
+                                                'bg-gray-200 text-gray-800': sub.status === 'canceled'
+                                            }"
+                                            x-text="sub.status_display">
+                                        </span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="bg-white p-6 rounded-xl shadow-sm">
                     <h3 class="text-lg font-semibold text-slate-700 mb-4">مشخصات کاربری</h3>
                     <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
@@ -88,38 +179,310 @@
         </div>
     </div>
 
+    <!-- مودال افزودن اشتراک -->
+    <div x-show="createSubscriptionModalOpen" x-cloak @keydown.escape.window="createSubscriptionModalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div @click="createSubscriptionModalOpen = false" class="absolute inset-0 bg-gray-600 bg-opacity-50"></div>
+        <div x-show="createSubscriptionModalOpen" x-transition class="relative bg-white rounded-xl shadow-lg w-full max-w-lg">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-slate-800">افزودن اشتراک جدید</h3>
+                    <button @click="createSubscriptionModalOpen = false" class="text-slate-400 hover:text-slate-600">
+                        <i class="fa-solid fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <form @submit.prevent="createSubscription()" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            انتخاب پلن اشتراک
+                            <span class="text-red-500">*</span>
+                        </label>
+                        <select 
+                            x-model="subscriptionForm.plan_id" 
+                            @change="updatePlanPrice()"
+                            required
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">لطفاً یک پلن انتخاب کنید</option>
+                            <template x-for="plan in availablePlans" :key="plan.id">
+                                <option :value="plan.id">
+                                    <span x-text="plan.name"></span> - 
+                                    <span x-text="plan.membership"></span> 
+                                    (<span x-text="plan.duration_months"></span> ماه)
+                                </option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <div x-show="subscriptionForm.plan_id">
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            مبلغ (تومان)
+                        </label>
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                x-model="subscriptionForm.payment_amount"
+                                readonly
+                                class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-600 cursor-not-allowed">
+                            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
+                                <i class="fa-solid fa-coins"></i>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">
+                            مبلغ به صورت خودکار از پلن انتخابی تنظیم می‌شود
+                        </p>
+                    </div>
+
+                    <div x-show="subscriptionForm.plan_id" class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <h4 class="text-sm font-semibold text-blue-800 mb-2">اطلاعات پلن انتخابی:</h4>
+                        <div class="text-xs text-slate-600 space-y-1">
+                            <div>مدت زمان: <span class="font-semibold" x-text="selectedPlanInfo?.duration_days + ' روز'"></span></div>
+                            <div>نوع عضویت: <span class="font-semibold" x-text="selectedPlanInfo?.membership"></span></div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-2 space-x-reverse pt-4 border-t">
+                        <button 
+                            type="button" 
+                            @click="createSubscriptionModalOpen = false" 
+                            class="py-2 px-4 text-sm font-semibold bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition">
+                            انصراف
+                        </button>
+                        <button 
+                            type="submit" 
+                            :disabled="isProcessing || !subscriptionForm.plan_id"
+                            class="py-2 px-4 text-sm font-semibold bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span x-show="!isProcessing">ایجاد اشتراک</span>
+                            <span x-show="isProcessing">در حال پردازش...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال ویرایش اشتراک -->
+    <div x-show="editSubscriptionModalOpen" x-cloak @keydown.escape.window="editSubscriptionModalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div @click="editSubscriptionModalOpen = false" class="absolute inset-0 bg-gray-600 bg-opacity-50"></div>
+        <div x-show="editSubscriptionModalOpen" x-transition class="relative bg-white rounded-xl shadow-lg w-full max-w-lg">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-slate-800">ویرایش اشتراک</h3>
+                    <button @click="editSubscriptionModalOpen = false" class="text-slate-400 hover:text-slate-600">
+                        <i class="fa-solid fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <form @submit.prevent="updateSubscription()" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            تغییر پلن اشتراک
+                        </label>
+                        <select 
+                            x-model="editForm.plan_id" 
+                            @change="updateEditPlanPrice()"
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                            <template x-for="plan in availablePlans" :key="plan.id">
+                                <option :value="plan.id">
+                                    <span x-text="plan.name"></span> - 
+                                    <span x-text="plan.membership"></span> 
+                                    (<span x-text="plan.duration_months"></span> ماه)
+                                </option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            مبلغ (تومان)
+                        </label>
+                        <input 
+                            type="text" 
+                            x-model="editForm.payment_amount"
+                            readonly
+                            class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-600 cursor-not-allowed">
+                    </div>
+
+                    <div class="flex justify-between items-center pt-4 border-t">
+                        <button 
+                            type="button"
+                            @click="openDeleteSubscriptionModal()"
+                            class="py-2 px-4 text-sm font-semibold bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition flex items-center">
+                            <i class="fa-solid fa-trash ml-2"></i>
+                            حذف اشتراک
+                        </button>
+                        
+                        <div class="flex space-x-2 space-x-reverse">
+                            <button 
+                                type="button" 
+                                @click="editSubscriptionModalOpen = false" 
+                                class="py-2 px-4 text-sm font-semibold bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition">
+                                انصراف
+                            </button>
+                            <button 
+                                type="submit" 
+                                :disabled="isProcessing"
+                                class="py-2 px-4 text-sm font-semibold bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition disabled:opacity-50">
+                                <span x-show="!isProcessing">ذخیره تغییرات</span>
+                                <span x-show="isProcessing">در حال پردازش...</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال تمدید اشتراک -->
+    <div x-show="extendSubscriptionModalOpen" x-cloak @keydown.escape.window="extendSubscriptionModalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div @click="extendSubscriptionModalOpen = false" class="absolute inset-0 bg-gray-600 bg-opacity-50"></div>
+        <div x-show="extendSubscriptionModalOpen" x-transition class="relative bg-white rounded-xl shadow-lg w-full max-w-md">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-slate-800">تمدید اشتراک</h3>
+                    <button @click="extendSubscriptionModalOpen = false" class="text-slate-400 hover:text-slate-600">
+                        <i class="fa-solid fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <form @submit.prevent="extendSubscription()" class="space-y-4">
+                    <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                        <p class="text-sm text-slate-600 mb-2">تاریخ انقضای فعلی:</p>
+                        <p class="font-semibold text-slate-800" x-text="activeSubscription?.end_date"></p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            تعداد روز برای تمدید
+                            <span class="text-red-500">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            x-model="extendForm.days_to_add"
+                            min="1"
+                            max="365"
+                            required
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                            placeholder="مثلاً: 30">
+                        <p class="text-xs text-slate-500 mt-1">
+                            تعداد روزی که می‌خواهید به اشتراک فعلی اضافه شود
+                        </p>
+                    </div>
+
+                    <div class="flex justify-end space-x-2 space-x-reverse pt-4 border-t">
+                        <button 
+                            type="button" 
+                            @click="extendSubscriptionModalOpen = false" 
+                            class="py-2 px-4 text-sm font-semibold bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition">
+                            انصراف
+                        </button>
+                        <button 
+                            type="submit" 
+                            :disabled="isProcessing || !extendForm.days_to_add"
+                            class="py-2 px-4 text-sm font-semibold bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition disabled:opacity-50">
+                            <span x-show="!isProcessing">تمدید اشتراک</span>
+                            <span x-show="isProcessing">در حال پردازش...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال حذف اشتراک -->
+    <div x-show="deleteSubscriptionModalOpen" x-cloak @keydown.escape.window="deleteSubscriptionModalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div @click="deleteSubscriptionModalOpen = false" class="absolute inset-0 bg-gray-600 bg-opacity-50"></div>
+        <div x-show="deleteSubscriptionModalOpen" x-transition class="relative bg-white rounded-xl shadow-lg w-full max-w-md">
+            <div class="p-6">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                    <i class="fa-solid fa-triangle-exclamation text-red-600 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-center text-slate-800 mb-2">حذف اشتراک</h3>
+                <p class="text-sm text-slate-600 text-center mb-6">
+                    آیا مطمئن هستید که می‌خواهید اشتراک این کاربر را حذف کنید؟
+                    <br>
+                    <span class="text-red-600 font-semibold">این عملیات قابل بازگشت نیست!</span>
+                </p>
+                
+                <div class="flex justify-center space-x-2 space-x-reverse">
+                    <button 
+                        @click="deleteSubscriptionModalOpen = false" 
+                        class="py-2 px-4 text-sm font-semibold bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition">
+                        انصراف
+                    </button>
+                    <button 
+                        @click="confirmDeleteSubscription()" 
+                        :disabled="isProcessing"
+                        class="py-2 px-4 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50">
+                        <span x-show="!isProcessing">بله، حذف کن</span>
+                        <span x-show="isProcessing">در حال پردازش...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- مودال تایید با کد نظام پزشکی -->
     <div x-show="approveModalOpen" x-cloak @keydown.escape.window="approveModalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center">
         <div @click="approveModalOpen = false" class="absolute inset-0 bg-gray-600 bg-opacity-50"></div>
         <div x-show="approveModalOpen" x-transition class="relative bg-white rounded-xl shadow-lg w-full max-w-md m-4">
             <div class="p-6">
-                <h3 class="text-lg font-bold mb-2">تایید احراز هویت</h3>
-                <p class="text-sm text-slate-500 mb-4">در صورت تمایل، کد نظام پزشکی کاربر را وارد کنید:</p>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-slate-800">تایید احراز هویت</h3>
+                    <button @click="approveModalOpen = false" class="text-slate-400 hover:text-slate-600">
+                        <i class="fa-solid fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="bg-yellow-50 border-r-4 border-yellow-400 p-4 mb-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fa-solid fa-exclamation-triangle text-yellow-400"></i>
+                        </div>
+                        <div class="mr-3">
+                            <p class="text-sm text-yellow-700">
+                                برای تایید هویت کاربر، وارد کردن کد نظام پزشکی <strong>الزامی</strong> است.
+                            </p>
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="mb-4">
                     <label for="medical_code" class="block text-sm font-medium text-slate-700 mb-2">
-                        کد نظام پزشکی (اختیاری)
+                        کد نظام پزشکی
+                        <span class="text-red-500">*</span>
                     </label>
-                    <input type="text" 
-                           id="medical_code" 
-                           x-model="medicalCode"
-                           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                           placeholder="در صورت وجود وارد کنید"
-                           maxlength="50">
+                    <input 
+                        type="text" 
+                        id="medical_code" 
+                        x-model="medicalCode"
+                        required
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        placeholder="کد نظام پزشکی را وارد کنید"
+                        maxlength="50">
                     <p class="text-xs text-slate-500 mt-1">
-                        این فیلد اختیاری است و می‌توانید خالی بگذارید
+                        فقط اعداد مجاز است
                     </p>
                 </div>
             </div>
             <div class="px-6 py-4 bg-slate-50 rounded-b-xl flex justify-end space-x-2 space-x-reverse">
-                <button type="button" @click="approveModalOpen = false" class="py-2 px-4 text-sm font-semibold bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition">انصراف</button>
-                <button type="button" @click="confirmApprove()" :disabled="isProcessing" class="py-2 px-4 text-sm font-semibold bg-green-500 text-white rounded-lg hover:bg-green-600 transition disabled:opacity-50">
+                <button 
+                    type="button" 
+                    @click="approveModalOpen = false; medicalCode = ''" 
+                    class="py-2 px-4 text-sm font-semibold bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition">
+                    انصراف
+                </button>
+                <button 
+                    type="button" 
+                    @click="confirmApprove()" 
+                    :disabled="isProcessing || !medicalCode || medicalCode.length < 5" 
+                    class="py-2 px-4 text-sm font-semibold bg-green-500 text-white rounded-lg hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
                     <span x-show="!isProcessing">تایید نهایی</span>
                     <span x-show="isProcessing">در حال پردازش...</span>
                 </button>
             </div>
         </div>
     </div>
+
 
     <!-- مودال رد -->
     <div x-show="rejectModalOpen" x-cloak @keydown.escape.window="rejectModalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center">
@@ -146,6 +509,7 @@
         <div @click="imageViewerOpen = false" class="absolute inset-0 bg-gray-600 bg-opacity-50"></div>
         <div class="relative max-w-4xl max-h-full"><img :src="imageUrl" alt="نمایش مدرک" class="rounded-lg shadow-2xl max-w-full max-h-[90vh]"><button @click="imageViewerOpen = false" class="absolute -top-3 -right-3 bg-white rounded-full p-1.5 text-slate-600 hover:text-red-600 transition"><i class="fa-solid fa-times h-6 w-6"></i></button></div>
     </div>
+    
     <div x-show="editModalOpen" x-cloak class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div @click.away="editModalOpen = false" class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <div class="mt-3">
@@ -163,6 +527,7 @@
             </div>
         </div>
     </div>
+    
     <div x-show="deleteModalOpen" x-cloak class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div @click.away="deleteModalOpen = false" class="relative top-20 mx-auto p-5 border w-full max-w-sm shadow-lg rounded-md bg-white">
             <div class="mt-3 text-center">
@@ -177,13 +542,30 @@
         </div>
     </div>
 </main>
+
+<style>
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+</style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 document.addEventListener('alpine:init', () => {
     Alpine.data('userDetailComponent', (userId, userName) => ({
-        // ... State Variables ...
+        // --- State Variables ---
         rejectModalOpen: false,
         approveModalOpen: false,
         imageViewerOpen: false,
@@ -195,8 +577,297 @@ document.addEventListener('alpine:init', () => {
         medicalCode: '',
         isProcessing: false,
 
-        // --- Functions ---
+        // Subscription related states
+        createSubscriptionModalOpen: false,
+        editSubscriptionModalOpen: false,
+        extendSubscriptionModalOpen: false,
+        deleteSubscriptionModalOpen: false,
+        hasActiveSubscription: false,
+        activeSubscription: null,
+        allSubscriptions: [],
+        availablePlans: [],
+        
+        subscriptionForm: {
+            user_id: userId,
+            plan_id: '',
+            payment_amount: ''
+        },
+        
+        editForm: {
+            subscription_id: '',
+            plan_id: '',
+            payment_amount: '',
+            status: 'active'
+        },
+        
+        extendForm: {
+            days_to_add: 30
+        },
+
+        selectedPlanInfo: null,
+
+        // --- Init Method ---
+        init() {
+            this.loadSubscriptionData();
+            this.loadAvailablePlans();
+        },
+
+        // --- Subscription Functions ---
+        async loadSubscriptionData() {
+            try {
+                const response = await fetch(`/dashboard/admin/subscriptions/user/${this.userId}/`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.hasActiveSubscription = data.has_active_subscription;
+                    this.activeSubscription = data.active_subscription;
+                    this.allSubscriptions = data.subscriptions;
+                }
+            } catch (error) {
+                console.error('Error loading subscription data:', error);
+            }
+        },
+
+        async loadAvailablePlans() {
+            try {
+                const response = await fetch('/dashboard/admin/subscriptions/plans/', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.availablePlans = data.plans;
+                }
+            } catch (error) {
+                console.error('Error loading plans:', error);
+            }
+        },
+
+        openCreateSubscriptionModal() {
+            this.subscriptionForm = {
+                user_id: this.userId,
+                plan_id: '',
+                payment_amount: ''
+            };
+            this.selectedPlanInfo = null;
+            this.createSubscriptionModalOpen = true;
+        },
+
+        updatePlanPrice() {
+            const selectedPlan = this.availablePlans.find(p => p.id == this.subscriptionForm.plan_id);
+            if (selectedPlan) {
+                this.subscriptionForm.payment_amount = this.formatNumber(selectedPlan.price);
+                this.selectedPlanInfo = selectedPlan;
+            }
+        },
+
+        async createSubscription() {
+            this.isProcessing = true;
+            
+            try {
+                const formData = new FormData();
+                formData.append('user_id', this.subscriptionForm.user_id);
+                formData.append('plan_id', this.subscriptionForm.plan_id);
+                formData.append('payment_amount', this.subscriptionForm.payment_amount.replace(/,/g, ''));
+                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                
+                const response = await fetch('/dashboard/admin/subscriptions/create/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.showNotification(data.message, 'success');
+                    this.createSubscriptionModalOpen = false;
+                    await this.loadSubscriptionData();
+                } else {
+                    this.showNotification(data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error creating subscription:', error);
+                this.showNotification('خطا در ایجاد اشتراک', 'error');
+            } finally {
+                this.isProcessing = false;
+            }
+        },
+
+        async openEditSubscriptionModal() {
+            if (!this.activeSubscription) return;
+            
+            try {
+                const response = await fetch(`/dashboard/admin/subscriptions/${this.activeSubscription.id}/edit/`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.editForm = {
+                        subscription_id: data.subscription.id,
+                        plan_id: data.subscription.plan_id,
+                        payment_amount: this.formatNumber(data.subscription.payment_amount),
+                        status: data.subscription.status
+                    };
+                    this.editSubscriptionModalOpen = true;
+                }
+            } catch (error) {
+                console.error('Error loading subscription:', error);
+                this.showNotification('خطا در بارگذاری اطلاعات', 'error');
+            }
+        },
+
+        updateEditPlanPrice() {
+            const selectedPlan = this.availablePlans.find(p => p.id == this.editForm.plan_id);
+            if (selectedPlan) {
+                this.editForm.payment_amount = this.formatNumber(selectedPlan.price);
+            }
+        },
+
+        async updateSubscription() {
+            this.isProcessing = true;
+            
+            try {
+                const formData = new FormData();
+                formData.append('plan_id', this.editForm.plan_id);
+                formData.append('payment_amount', this.editForm.payment_amount.replace(/,/g, ''));
+                formData.append('status', this.editForm.status);
+                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                
+                const response = await fetch(`/dashboard/admin/subscriptions/${this.editForm.subscription_id}/edit/`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.showNotification(data.message, 'success');
+                    this.editSubscriptionModalOpen = false;
+                    await this.loadSubscriptionData();
+                } else {
+                    this.showNotification(data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error updating subscription:', error);
+                this.showNotification('خطا در بروزرسانی اشتراک', 'error');
+            } finally {
+                this.isProcessing = false;
+            }
+        },
+
+        openExtendSubscriptionModal() {
+            this.extendForm.days_to_add = 30;
+            this.extendSubscriptionModalOpen = true;
+        },
+
+        async extendSubscription() {
+            if (!this.activeSubscription) return;
+            
+            this.isProcessing = true;
+            
+            try {
+                const formData = new FormData();
+                formData.append('days_to_add', this.extendForm.days_to_add);
+                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                
+                const response = await fetch(`/dashboard/admin/subscriptions/${this.activeSubscription.id}/extend/`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.showNotification(data.message, 'success');
+                    this.extendSubscriptionModalOpen = false;
+                    await this.loadSubscriptionData();
+                } else {
+                    this.showNotification(data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error extending subscription:', error);
+                this.showNotification('خطا در تمدید اشتراک', 'error');
+            } finally {
+                this.isProcessing = false;
+            }
+        },
+
+        openDeleteSubscriptionModal() {
+            this.editSubscriptionModalOpen = false;
+            this.deleteSubscriptionModalOpen = true;
+        },
+
+        async confirmDeleteSubscription() {
+            if (!this.activeSubscription) return;
+            
+            this.isProcessing = true;
+            
+            try {
+                const formData = new FormData();
+                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                
+                const response = await fetch(`/dashboard/admin/subscriptions/${this.activeSubscription.id}/delete/`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.showNotification(data.message, 'success');
+                    this.deleteSubscriptionModalOpen = false;
+                    await this.loadSubscriptionData();
+                } else {
+                    this.showNotification(data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting subscription:', error);
+                this.showNotification('خطا در حذف اشتراک', 'error');
+            } finally {
+                this.isProcessing = false;
+            }
+        },
+
+        formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        },
+
+        // --- User Functions ---
         confirmApprove() {
+            if (!this.medicalCode || this.medicalCode.trim() === '') {
+                this.showNotification('لطفاً کد نظام پزشکی را وارد کنید', 'error');
+                return;
+            }
+            
+            if (this.medicalCode.length < 5) {
+                this.showNotification('کد نظام پزشکی باید حداقل ۵ رقم باشد', 'error');
+                return;
+            }
+            
             this.isProcessing = true;
             
             const formData = new FormData();
@@ -219,7 +890,7 @@ document.addEventListener('alpine:init', () => {
                         window.location.reload();
                     }, 1500);
                 } else {
-                    this.showNotification('خطا در پردازش درخواست', 'error');
+                    this.showNotification(data.message || 'خطا در پردازش درخواست', 'error');
                 }
             })
             .catch(error => {

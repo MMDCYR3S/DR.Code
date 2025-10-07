@@ -218,7 +218,7 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024
 # DJANGO_REDIS_LOG_IGNORED_EXCEPTIONS = True
 
 # Cache timeout for templates
-TEMPLATE_CACHE_TIMEOUT = 300  # 5 minutes
+# TEMPLATE_CACHE_TIMEOUT = 300  # 5 minutes
 
 # ========== CK-EDITOR-5 CONFIGS ========== #
 customColorPalette = [
@@ -251,31 +251,51 @@ customColorPalette = [
 CKEDITOR_5_CONFIGS = {
     'default': {
         'toolbar': {
-            'items': ['heading', '|', 'bold', 'italic', 'link',
-                        'bulletedList', 'numberedList', 'blockQuote', 'imageUpload', ],
-                    }
-
+            'items': [
+                'heading', '|', 'bold', 'italic', 'link',
+                'bulletedList', 'numberedList', 'blockQuote', 'imageUpload',
+                '|', 'alignment'  # ابزار جهت متن
+            ]
+        },
+        'language': {
+            'content': 'fa',  # محتوای فارسی
+            'ui': 'fa'        # رابط کاربری فارسی
+        }
     },
+
     'extends': {
         'blockToolbar': [
             'paragraph', 'heading1', 'heading2', 'heading3',
             '|',
             'bulletedList', 'numberedList',
             '|',
-            'blockQuote',
+            'blockQuote'
         ],
         'toolbar': {
-            'items': ['heading', '|', 'outdent', 'indent', '|', 'bold', 'italic', 'link', 'underline', 'strikethrough',
-                        'code','subscript', 'superscript', 'highlight', '|', 'codeBlock', 'sourceEditing', 'insertImage',
-                    'bulletedList', 'numberedList', 'todoList', '|',  'blockQuote', 'imageUpload', '|',
-                    'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', 'mediaEmbed', 'removeFormat',
-                    'insertTable',
-                    ],
+            'items': [
+                'heading', '|', 'outdent', 'indent', '|', 'bold', 'italic', 'link', 'underline',
+                'strikethrough', 'code','subscript', 'superscript', 'highlight', '|',
+                'codeBlock', 'sourceEditing', 'insertImage',
+                'bulletedList', 'numberedList', 'todoList', '|',
+                'blockQuote', 'imageUpload', '|',
+                'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', 'mediaEmbed',
+                'removeFormat', 'insertTable',
+                '|', 'alignment'  # اضافه کردن ابزار راست/چپ‌چین در Toolbar
+            ],
             'shouldNotGroupWhenFull': 'true'
         },
+        'language': {
+            'content': 'fa',
+            'ui': 'fa'
+        },
+        'alignment': {
+            'options': ['left', 'center', 'right', 'justify']
+        },
         'image': {
-            'toolbar': ['imageTextAlternative', '|', 'imageStyle:alignLeft',
-                        'imageStyle:alignRight', 'imageStyle:alignCenter', 'imageStyle:side',  '|'],
+            'toolbar': [
+                'imageTextAlternative', '|', 'imageStyle:alignLeft',
+                'imageStyle:alignRight', 'imageStyle:alignCenter', 'imageStyle:side', '|'
+            ],
             'styles': [
                 'full',
                 'side',
@@ -283,11 +303,12 @@ CKEDITOR_5_CONFIGS = {
                 'alignRight',
                 'alignCenter',
             ]
-
         },
         'table': {
-            'contentToolbar': [ 'tableColumn', 'tableRow', 'mergeTableCells',
-            'tableProperties', 'tableCellProperties' ],
+            'contentToolbar': [
+                'tableColumn', 'tableRow', 'mergeTableCells',
+                'tableProperties', 'tableCellProperties'
+            ],
             'tableProperties': {
                 'borderColors': customColorPalette,
                 'backgroundColors': customColorPalette
@@ -297,7 +318,7 @@ CKEDITOR_5_CONFIGS = {
                 'backgroundColors': customColorPalette
             }
         },
-        'heading' : {
+        'heading': {
             'options': [
                 { 'model': 'paragraph', 'title': 'Paragraph', 'class': 'ck-heading_paragraph' },
                 { 'model': 'heading1', 'view': 'h1', 'title': 'Heading 1', 'class': 'ck-heading_heading1' },
@@ -306,6 +327,7 @@ CKEDITOR_5_CONFIGS = {
             ]
         }
     },
+
     'list': {
         'properties': {
             'styles': 'true',
@@ -314,6 +336,7 @@ CKEDITOR_5_CONFIGS = {
         }
     }
 }
+
 
 # ========= Logging  And Debug ========= #
 LOGGING = {
