@@ -10,7 +10,7 @@ class Drug(models.Model):
     هر نسخه می‌تواند شامل چندین دارو باشد.
     """
     title = models.CharField(max_length=150, verbose_name="نام دارو", unique=True)
-    code = models.CharField(max_length=50, blank=True, verbose_name="کد دارو", unique=True)
+    code = models.CharField(max_length=50, blank=True, verbose_name="کد دارو")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='زمان ساخت')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='زمان بروزرسانی')
 

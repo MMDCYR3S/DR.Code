@@ -5,7 +5,8 @@
 
 {% block content %}
 <main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-4 sm:p-6" x-data="drugManager()">
-    <div class="container mx-auto">
+    <div class="container mx-auto max-w-7xl">
+        <!-- هدر و دکمه افزودن -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <h1 class="text-2xl font-bold text-slate-700">مدیریت داروها</h1>
             <button @click="openAddModal()" class="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition-colors">
@@ -14,120 +15,182 @@
             </button>
         </div>
 
+        <!-- باکس جستجو -->
+        <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+            <div class="relative">
+                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <i class="fa-solid fa-search text-slate-400"></i>
+                </div>
+                <input 
+                    type="text" 
+                    x-model="searchQuery"
+                    @input.debounce.500ms="searchDrugs()"
+                    placeholder="جستجو بر اساس نام دارو یا کد دارو..."
+                    class="w-full pr-10 pl-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                >
+                <div x-show="searchQuery.length > 0" class="absolute inset-y-0 left-0 flex items-center pl-3">
+                    <button @click="clearSearch()" class="text-slate-400 hover:text-slate-600">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- نتایج جستجو -->
+            <div x-show="searchQuery.length > 0" class="mt-3 text-sm text-slate-600">
+                <span x-show="filteredDrugs.length > 0">
+                    <i class="fa-solid fa-check-circle text-green-500 ml-1"></i>
+                    <span x-text="filteredDrugs.length"></span> دارو یافت شد
+                </span>
+                <span x-show="filteredDrugs.length === 0" class="text-amber-600">
+                    <i class="fa-solid fa-info-circle ml-1"></i>
+                    هیچ داروی مطابقی یافت نشد
+                </span>
+            </div>
+        </div>
+
         <!-- جدول دسکتاپ -->
         <div class="hidden lg:block bg-white rounded-xl shadow-sm overflow-hidden">
-            <table class="min-w-full text-sm">
-                <thead class="bg-slate-50 text-slate-600">
-                    <tr>
-                        <th scope="col" class="px-6 py-4 text-right font-medium">نام دارو</th>
-                        <th scope="col" class="px-6 py-4 text-right font-medium">کد دارو</th>
-                        <th scope="col" class="px-6 py-4 text-right font-medium">تاریخ ایجاد</th>
-                        <th scope="col" class="px-6 py-4 text-right font-medium">آخرین بروزرسانی</th>
-                        <th scope="col" class="px-6 py-4 text-center font-medium">عملیات</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-200">
-                    <template x-for="drug in drugs" :key="drug.id">
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-4 whitespace-nowrap font-semibold text-slate-900" x-text="drug.title"></td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span x-show="drug.code" class="text-slate-600 font-mono text-sm" x-text="drug.code"></span>
-                                <span x-show="!drug.code" class="text-slate-400 text-sm">بدون کد</span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-slate-600 text-sm" x-text="drug.created_at"></td>
-                            <td class="px-6 py-4 whitespace-nowrap text-slate-600 text-sm" x-text="drug.updated_at"></td>
-                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                <div class="flex justify-center items-center space-x-2 space-x-reverse">
-                                    <button @click="openDetailModal(drug)" class="p-2 text-slate-500 hover:text-blue-600 rounded-md hover:bg-slate-200" title="مشاهده جزئیات">
-                                        <i class="fa-solid fa-eye"></i>
-                                    </button>
-                                    <button @click="openEditModal(drug)" class="p-2 text-slate-500 hover:text-yellow-600 rounded-md hover:bg-slate-200" title="ویرایش">
-                                        <i class="fa-solid fa-pencil"></i>
-                                    </button>
-                                    <button @click="openDeleteModal(drug)" class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-200" title="حذف">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </template>
-                </tbody>
-            </table>
+            <!-- Container با ارتفاع ثابت و اسکرول -->
+            <div class="overflow-x-auto">
+                <div class="max-h-[calc(100vh-320px)] overflow-y-auto custom-scrollbar">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-slate-50 text-slate-600 sticky top-0 z-10">
+                            <tr>
+                                <th scope="col" class="px-6 py-4 text-right font-medium whitespace-nowrap">نام دارو</th>
+                                <th scope="col" class="px-6 py-4 text-right font-medium whitespace-nowrap">کد دارو</th>
+                                <th scope="col" class="px-6 py-4 text-right font-medium whitespace-nowrap">تاریخ ایجاد</th>
+                                <th scope="col" class="px-6 py-4 text-right font-medium whitespace-nowrap">آخرین بروزرسانی</th>
+                                <th scope="col" class="px-6 py-4 text-center font-medium whitespace-nowrap sticky left-0 bg-slate-50">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            <template x-for="drug in filteredDrugs" :key="drug.id">
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="px-6 py-4 font-semibold text-slate-900">
+                                        <span x-html="highlightText(drug.title, searchQuery)"></span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span x-show="drug.code" class="text-slate-600 font-mono text-sm" x-html="highlightText(drug.code, searchQuery)"></span>
+                                        <span x-show="!drug.code" class="text-slate-400 text-sm">بدون کد</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-slate-600 text-sm" x-text="drug.created_at"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-slate-600 text-sm" x-text="drug.updated_at"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center sticky left-0 bg-white">
+                                        <div class="flex justify-center items-center space-x-2 space-x-reverse">
+                                            <button @click="openDetailModal(drug)" class="p-2 text-slate-500 hover:text-blue-600 rounded-md hover:bg-slate-100 transition-colors" title="مشاهده جزئیات">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </button>
+                                            <button @click="openEditModal(drug)" class="p-2 text-slate-500 hover:text-yellow-600 rounded-md hover:bg-slate-100 transition-colors" title="ویرایش">
+                                                <i class="fa-solid fa-pencil"></i>
+                                            </button>
+                                            <button @click="openDeleteModal(drug)" class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100 transition-colors" title="حذف">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             
             <!-- Empty State -->
-            <div x-show="drugs.length === 0" class="text-center py-12">
+            <div x-show="filteredDrugs.length === 0" class="text-center py-12">
                 <div class="mx-auto w-fit bg-slate-100 rounded-full p-4 mb-4">
                     <i class="fa-solid fa-pills text-3xl text-slate-400"></i>
                 </div>
-                <h3 class="text-lg font-medium text-slate-900 mb-2">هیچ داروی ثبت شده‌ای وجود ندارد</h3>
-                <p class="text-slate-500 mb-4">برای شروع، اولین دارو را اضافه کنید</p>
-                <button @click="openAddModal()" class="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100">
+                <h3 class="text-lg font-medium text-slate-900 mb-2">
+                    <span x-show="searchQuery.length === 0">هیچ داروی ثبت شده‌ای وجود ندارد</span>
+                    <span x-show="searchQuery.length > 0">هیچ داروی مطابقی یافت نشد</span>
+                </h3>
+                <p class="text-slate-500 mb-4">
+                    <span x-show="searchQuery.length === 0">برای شروع، اولین دارو را اضافه کنید</span>
+                    <span x-show="searchQuery.length > 0">لطفاً عبارت دیگری را جستجو کنید</span>
+                </p>
+                <button x-show="searchQuery.length === 0" @click="openAddModal()" class="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100">
                     <i class="fa-solid fa-plus ml-2"></i>
                     افزودن دارو جدید
+                </button>
+                <button x-show="searchQuery.length > 0" @click="clearSearch()" class="inline-flex items-center px-4 py-2 text-sm font-medium text-slate-600 bg-slate-50 rounded-lg hover:bg-slate-100">
+                    <i class="fa-solid fa-times ml-2"></i>
+                    پاک کردن جستجو
                 </button>
             </div>
         </div>
 
         <!-- کارت‌های موبایل -->
-        <div class="grid grid-cols-1 gap-4 lg:hidden">
-            <template x-for="drug in drugs" :key="drug.id">
-                <div class="bg-white rounded-xl shadow-sm p-4">
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <h3 class="font-bold text-slate-800 text-lg mb-2" x-text="drug.title"></h3>
-                            <div class="space-y-2 text-sm text-slate-600">
-                                <div class="flex items-center">
-                                    <i class="fa-solid fa-barcode w-4 text-slate-400 ml-2"></i>
-                                    <span x-show="drug.code" x-text="drug.code" class="font-mono"></span>
-                                    <span x-show="!drug.code" class="text-slate-400">بدون کد</span>
-                                </div>
-                                <div class="flex items-center">
-                                    <i class="fa-solid fa-calendar-plus w-4 text-slate-400 ml-2"></i>
-                                    <span x-text="drug.created_at"></span>
-                                </div>
-                                <div class="flex items-center">
-                                    <i class="fa-solid fa-calendar-check w-4 text-slate-400 ml-2"></i>
-                                    <span x-text="drug.updated_at"></span>
+        <div class="lg:hidden">
+            <!-- Container با اسکرول برای موبایل -->
+            <div class="max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar space-y-4">
+                <template x-for="drug in filteredDrugs" :key="drug.id">
+                    <div class="bg-white rounded-xl shadow-sm p-4">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-bold text-slate-800 text-lg mb-2 break-words" x-html="highlightText(drug.title, searchQuery)"></h3>
+                                <div class="space-y-2 text-sm text-slate-600">
+                                    <div class="flex items-center">
+                                        <i class="fa-solid fa-barcode w-4 text-slate-400 ml-2 flex-shrink-0"></i>
+                                        <span x-show="drug.code" x-html="highlightText(drug.code, searchQuery)" class="font-mono break-all"></span>
+                                        <span x-show="!drug.code" class="text-slate-400">بدون کد</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <i class="fa-solid fa-calendar-plus w-4 text-slate-400 ml-2 flex-shrink-0"></i>
+                                        <span x-text="drug.created_at" class="break-all"></span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <i class="fa-solid fa-calendar-check w-4 text-slate-400 ml-2 flex-shrink-0"></i>
+                                        <span x-text="drug.updated_at" class="break-all"></span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="flex items-center space-x-1 space-x-reverse">
-                            <button @click="openDetailModal(drug)" class="p-2 text-slate-500 hover:text-blue-600 rounded-md hover:bg-slate-100" title="مشاهده جزئیات">
-                                <i class="fa-solid fa-eye"></i>
-                            </button>
-                            <button @click="openEditModal(drug)" class="p-2 text-slate-500 hover:text-yellow-600 rounded-md hover:bg-slate-100" title="ویرایش">
-                                <i class="fa-solid fa-pencil"></i>
-                            </button>
-                            <button @click="openDeleteModal(drug)" class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100" title="حذف">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
+                            <div class="flex items-center space-x-1 space-x-reverse mr-2 flex-shrink-0">
+                                <button @click="openDetailModal(drug)" class="p-2 text-slate-500 hover:text-blue-600 rounded-md hover:bg-slate-100 transition-colors" title="مشاهده جزئیات">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                                <button @click="openEditModal(drug)" class="p-2 text-slate-500 hover:text-yellow-600 rounded-md hover:bg-slate-100 transition-colors" title="ویرایش">
+                                    <i class="fa-solid fa-pencil"></i>
+                                </button>
+                                <button @click="openDeleteModal(drug)" class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100 transition-colors" title="حذف">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </template>
+                </template>
+            </div>
             
             <!-- Empty State موبایل -->
-            <div x-show="drugs.length === 0" class="text-center py-12">
+            <div x-show="filteredDrugs.length === 0" class="text-center py-12">
                 <div class="mx-auto w-fit bg-slate-100 rounded-full p-4 mb-4">
                     <i class="fa-solid fa-pills text-3xl text-slate-400"></i>
                 </div>
-                <h3 class="text-lg font-medium text-slate-900 mb-2">هیچ داروی ثبت شده‌ای وجود ندارد</h3>
-                <p class="text-slate-500 mb-4">برای شروع، اولین دارو را اضافه کنید</p>
-                <button @click="openAddModal()" class="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100">
+                <h3 class="text-lg font-medium text-slate-900 mb-2">
+                    <span x-show="searchQuery.length === 0">هیچ داروی ثبت شده‌ای وجود ندارد</span>
+                    <span x-show="searchQuery.length > 0">هیچ داروی مطابقی یافت نشد</span>
+                </h3>
+                <p class="text-slate-500 mb-4">
+                    <span x-show="searchQuery.length === 0">برای شروع، اولین دارو را اضافه کنید</span>
+                    <span x-show="searchQuery.length > 0">لطفاً عبارت دیگری را جستجو کنید</span>
+                </p>
+                <button x-show="searchQuery.length === 0" @click="openAddModal()" class="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100">
                     <i class="fa-solid fa-plus ml-2"></i>
                     افزودن دارو جدید
+                </button>
+                <button x-show="searchQuery.length > 0" @click="clearSearch()" class="inline-flex items-center px-4 py-2 text-sm font-medium text-slate-600 bg-slate-50 rounded-lg hover:bg-slate-100">
+                    <i class="fa-solid fa-times ml-2"></i>
+                    پاک کردن جستجو
                 </button>
             </div>
         </div>
     </div>
 
     <!-- مودال افزودن/ویرایش -->
-    <div x-show="isModalOpen" x-cloak @keydown.escape.window="closeModal()" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div x-show="isModalOpen" x-cloak @keydown.escape.window="closeModal()" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
         <div @click="closeModal()" class="absolute inset-0 bg-slate-900/60"></div>
-        <div x-show="isModalOpen" x-transition class="relative bg-white rounded-xl shadow-lg w-full max-w-md">
+        <div x-show="isModalOpen" x-transition class="relative bg-white rounded-xl shadow-lg w-full max-w-md my-8">
             <div class="p-5 flex justify-between items-center border-b">
                 <h3 class="text-lg font-bold" x-text="modalTitle"></h3>
-                <button @click="closeModal()" class="p-1.5 hover:bg-slate-100 rounded-full">
+                <button @click="closeModal()" class="p-1.5 hover:bg-slate-100 rounded-full transition-colors">
                     <i class="fa-solid fa-times"></i>
                 </button>
             </div>
@@ -144,10 +207,10 @@
                     </div>
                 </div>
                 <div class="px-6 py-4 bg-slate-50 rounded-b-xl flex justify-end items-center space-x-3 space-x-reverse">
-                    <button type="button" @click="closeModal()" class="py-2 px-5 text-sm font-semibold bg-white border border-slate-300 rounded-lg hover:bg-slate-100">
+                    <button type="button" @click="closeModal()" class="py-2 px-5 text-sm font-semibold bg-white border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors">
                         انصراف
                     </button>
-                    <button type="submit" class="py-2 px-6 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <button type="submit" class="py-2 px-6 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                         ذخیره
                     </button>
                 </div>
@@ -156,36 +219,36 @@
     </div>
 
     <!-- مودال جزئیات -->
-    <div x-show="isDetailModalOpen" x-cloak @keydown.escape.window="isDetailModalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div x-show="isDetailModalOpen" x-cloak @keydown.escape.window="isDetailModalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
         <div @click="isDetailModalOpen = false" class="absolute inset-0 bg-slate-900/60"></div>
-        <div x-show="isDetailModalOpen" x-transition class="relative bg-white rounded-xl shadow-lg w-full max-w-lg">
+        <div x-show="isDetailModalOpen" x-transition class="relative bg-white rounded-xl shadow-lg w-full max-w-lg my-8">
             <div class="p-5 flex justify-between items-center border-b">
                 <h3 class="text-lg font-bold">جزئیات دارو</h3>
-                <button @click="isDetailModalOpen = false" class="p-1.5 hover:bg-slate-100 rounded-full">
+                <button @click="isDetailModalOpen = false" class="p-1.5 hover:bg-slate-100 rounded-full transition-colors">
                     <i class="fa-solid fa-times"></i>
                 </button>
             </div>
             <div class="p-6 space-y-4">
                 <div class="bg-slate-50 rounded-lg p-4">
-                    <h4 class="font-semibold text-slate-800 mb-3" x-text="currentDrug.title"></h4>
+                    <h4 class="font-semibold text-slate-800 mb-3 break-words" x-text="currentDrug.title"></h4>
                     <div class="space-y-3 text-sm">
-                        <div class="flex justify-between">
-                            <span class="text-slate-600">کد دارو:</span>
-                            <span class="font-medium" x-text="currentDrug.code || 'ثبت نشده'"></span>
+                        <div class="flex justify-between items-start">
+                            <span class="text-slate-600 flex-shrink-0">کد دارو:</span>
+                            <span class="font-medium font-mono break-all text-left" x-text="currentDrug.code || 'ثبت نشده'"></span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-600">تاریخ ایجاد:</span>
-                            <span class="font-medium" x-text="currentDrug.created_at"></span>
+                        <div class="flex justify-between items-start">
+                            <span class="text-slate-600 flex-shrink-0">تاریخ ایجاد:</span>
+                            <span class="font-medium text-left" x-text="currentDrug.created_at"></span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-600">آخرین بروزرسانی:</span>
-                            <span class="font-medium" x-text="currentDrug.updated_at"></span>
+                        <div class="flex justify-between items-start">
+                            <span class="text-slate-600 flex-shrink-0">آخرین بروزرسانی:</span>
+                            <span class="font-medium text-left" x-text="currentDrug.updated_at"></span>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="px-6 py-4 bg-slate-50 rounded-b-xl flex justify-end">
-                <button @click="isDetailModalOpen = false" class="py-2 px-5 text-sm font-semibold bg-white border border-slate-300 rounded-lg hover:bg-slate-100">
+                <button @click="isDetailModalOpen = false" class="py-2 px-5 text-sm font-semibold bg-white border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors">
                     بستن
                 </button>
             </div>
@@ -193,27 +256,63 @@
     </div>
 
     <!-- مودال حذف -->
-    <div x-show="isDeleteModalOpen" x-cloak @keydown.escape.window="isDeleteModalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div x-show="isDeleteModalOpen" x-cloak @keydown.escape.window="isDeleteModalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
         <div @click="isDeleteModalOpen = false" class="absolute inset-0 bg-slate-900/60"></div>
-        <div x-show="isDeleteModalOpen" x-transition class="relative bg-white rounded-xl shadow-lg w-full max-w-sm text-center p-6">
+        <div x-show="isDeleteModalOpen" x-transition class="relative bg-white rounded-xl shadow-lg w-full max-w-sm text-center p-6 my-8">
             <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
                 <i class="fa-solid fa-triangle-exclamation text-red-600 text-xl"></i>
             </div>
             <h3 class="text-lg font-medium mb-2">حذف دارو</h3>
             <p class="text-sm text-gray-500 mb-4">
-                آیا از حذف دارو <strong x-text="currentDrug.title"></strong> مطمئن هستید؟
+                آیا از حذف دارو <strong class="break-words" x-text="currentDrug.title"></strong> مطمئن هستید؟
             </p>
             <div class="flex justify-center space-x-2 space-x-reverse">
-                <button @click="isDeleteModalOpen = false" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
+                <button @click="isDeleteModalOpen = false" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors">
                     انصراف
                 </button>
-                <button @click="deleteDrug()" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                <button @click="deleteDrug()" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors">
                     بله، حذف کن
                 </button>
             </div>
         </div>
     </div>
 </main>
+
+<style>
+    /* استایل اسکرول سفارشی */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+    
+    /* برای فایرفاکس */
+    .custom-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 #f1f5f9;
+    }
+
+    /* Highlight برای نتایج جستجو */
+    .search-highlight {
+        background-color: #fef08a;
+        font-weight: 600;
+        padding: 0 2px;
+        border-radius: 2px;
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}
@@ -226,8 +325,10 @@ document.addEventListener('alpine:init', () => {
         isEditMode: false,
         modalTitle: '',
         currentDrug: { id: null, title: '', code: '', created_at: '', updated_at: '' },
+        searchQuery: '',
         
         drugs: {{ drugs_json|safe }},
+        filteredDrugs: {{ drugs_json|safe }},
 
         notify(message, type = 'success') {
             window.dispatchEvent(new CustomEvent('notify', { detail: { message, type } }));
@@ -235,6 +336,35 @@ document.addEventListener('alpine:init', () => {
 
         getCSRFToken() {
             return document.querySelector('form input[name="csrfmiddlewaretoken"]').value;
+        },
+
+        // جستجوی محلی (سریع‌تر)
+        searchDrugs() {
+            const query = this.searchQuery.trim().toLowerCase();
+            
+            if (query === '') {
+                this.filteredDrugs = this.drugs;
+                return;
+            }
+            
+            this.filteredDrugs = this.drugs.filter(drug => 
+                drug.title.toLowerCase().includes(query) || 
+                (drug.code && drug.code.toLowerCase().includes(query))
+            );
+        },
+
+        // پاک کردن جستجو
+        clearSearch() {
+            this.searchQuery = '';
+            this.filteredDrugs = this.drugs;
+        },
+
+        // Highlight کردن متن جستجو شده
+        highlightText(text, query) {
+            if (!query || !text) return text;
+            
+            const regex = new RegExp(`(${query})`, 'gi');
+            return text.replace(regex, '<span class="search-highlight">$1</span>');
         },
 
         openAddModal() {
@@ -292,8 +422,10 @@ document.addEventListener('alpine:init', () => {
                         const index = this.drugs.findIndex(d => d.id === data.drug.id);
                         this.drugs[index] = data.drug;
                     } else {
-                        this.drugs.unshift(data.drug); // اضافه کردن به ابتدای لیست
+                        this.drugs.unshift(data.drug);
                     }
+                    // بروزرسانی لیست فیلتر شده
+                    this.searchDrugs();
                     this.notify(data.message, 'success');
                     this.closeModal();
                 } else {
@@ -316,6 +448,8 @@ document.addEventListener('alpine:init', () => {
             .then(data => {
                 if(data.success) {
                     this.drugs = this.drugs.filter(d => d.id !== this.currentDrug.id);
+                    // بروزرسانی لیست فیلتر شده
+                    this.searchDrugs();
                     this.notify(data.message, 'success');
                     this.isDeleteModalOpen = false;
                 } else {

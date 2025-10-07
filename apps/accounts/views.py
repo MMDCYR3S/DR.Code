@@ -58,7 +58,7 @@ class ProfileMessagesView(LoginRequiredMixin, TemplateView):
     """
     صفحه پروفایل کاربر - نیاز به احراز هویت
     """
-    template_name = 'profile/profile-messsages.html'
+    template_name = 'profile/profile-messages.html'
     login_url = '/accounts/login/'
     
     def get_context_data(self, **kwargs):
@@ -71,7 +71,20 @@ class ProfileSavedPrescriptionsView(LoginRequiredMixin, TemplateView):
     """
     صفحه پروفایل کاربر - نیاز به احراز هویت
     """
-    template_name = 'profile/profile-saved-pres.html'
+    template_name = 'profile/saved-prescriptions.html'
+    login_url = '/accounts/login/'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['user'] = self.request.user
+        return context
+    
+# ========== PROFILE NOTIFICATIONS ========== #
+class ProfileNotificationsView(LoginRequiredMixin, TemplateView):
+    """
+    صفحه پروفایل کاربر - نیاز به احراز هویت
+    """
+    template_name = 'profile/notifications.html'
     login_url = '/accounts/login/'
     
     def get_context_data(self, **kwargs):

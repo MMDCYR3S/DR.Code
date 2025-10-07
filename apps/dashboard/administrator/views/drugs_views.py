@@ -2,6 +2,7 @@ from django.views.generic import ListView, View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from django.db.models import Q
 
 import json
 
@@ -148,3 +149,37 @@ class DrugDetailView(LoginRequiredMixin, HasAdminAccessPermission, View):
                 'message': 'خطا در بارگیری اطلاعات دارو.',
                 'error': str(e)
             }, status=500)
+
+# ================================================== #
+# ============= DRUG SEARCH VIEW ============= #
+# ================================================== #
+class DrugSearchView(LoginRequiredMixin, HasAdminAccessPermission, View):
+    """ ویو برای جستجوی داروها بر اساس نام یا کد """
+    
+    def get(self, request, *args, **kwargs):
+        search_query = request.GET.get('q', '').strip()
+        
+        if not search_query:
+            drugs = Drug.objects.all().order_by('-created_at')
+        else:
+            drugs = Drug.objects.filter(
+                Q(title__icontains=search_query) | 
+                Q(code__icontains=search_query)
+            ).order_by('-created_at')
+        
+        drugs_data = [
+            {
+                'id': drug.id,
+                'title': drug.title,
+                'code': drug.code or '',
+                'created_at': drug.shamsi_created_at,
+                'updated_at': drug.shamsi_updated_at,
+            }
+            for drug in drugs
+        ]
+        
+        return JsonResponse({
+            'success': True,
+            'drugs': drugs_data,
+            'count': len(drugs_data)
+        })

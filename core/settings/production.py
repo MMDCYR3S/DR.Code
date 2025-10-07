@@ -2,7 +2,7 @@ from .base import *
 import os
 
 # Session تنظیمات
-SESSION_COOKIE_AGE = 30 * 24 * 60 * 60  # 30 روز
+SESSION_COOKIE_AGE = 2 * 24 * 60 * 60  # 30 روز
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_SAVE_EVERY_REQUEST = True
 
