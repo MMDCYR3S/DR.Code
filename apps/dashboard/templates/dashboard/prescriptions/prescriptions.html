@@ -321,7 +321,7 @@
                                                         
                                                         <!-- توضیحات -->
                                                         <td class="px-4 py-3 text-sm text-slate-600" 
-                                                            x-text="drug.instructions || '-'"></td>
+                                                            x-html="formatLineBreaks(drug.instructions) || '-'"></td>
                                                     </tr>
                                                 </template>
                                             </tbody>
@@ -688,6 +688,12 @@ document.addEventListener('alpine:init', () => {
                 console.error('Failed to copy:', err);
                 this.notify('کپی کردن با مشکل مواجه شد', 'error');
             });
+        },
+
+        // Helper method to format line breaks similar to Django's linebreaks filter
+        formatLineBreaks(text) {
+            if (!text) return '';
+            return text.replace(/\n/g, '<br>');
         }
     }));
 });

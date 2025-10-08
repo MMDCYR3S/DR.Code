@@ -120,9 +120,9 @@ class PrescriptionDetailView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'خطا در بارگیری اطلاعات: {str(e)}'})
 
-# ================================================== #
+# ====================================================== #
 # ============= PRESCRIPTION CREATE VIEW ============= #
-# ================================================== #
+# ====================================================== #
 class PrescriptionCreateView(LoginRequiredMixin, CreateView):
     model = Prescription
     form_class = PrescriptionForm

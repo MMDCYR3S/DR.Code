@@ -77,6 +77,10 @@ class PrescriptionForm(forms.ModelForm):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         self.fields['detailed_description'].required = False
+        
+        last_prescription = Prescription.objects.select_related("category").order_by("-created_at").first()
+        if last_prescription:
+            self.initial["category"] = last_prescription.category
 
 # ========== PrescriptionDrug Inline Form ========== #
 class PrescriptionDrugForm(forms.ModelForm):
