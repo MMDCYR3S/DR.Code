@@ -96,6 +96,54 @@
                         </div>
                     {% endif %}
                 </div>
+                
+                <!-- Subscription section for premium users -->
+                <div id="subscription-section" class="md:col-span-2 hidden">
+                    <div class="border-t border-gray-200 pt-6 mt-4">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">اطلاعات اشتراک ویژه</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="subscription-plan" class="block text-sm font-medium text-gray-700 mb-1">
+                                    پلن اشتراک
+                                </label>
+                                <select 
+                                    id="subscription-plan" 
+                                    name="subscription_plan" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="">انتخاب پلن اشتراک...</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    مدت زمان (روز)
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="subscription-duration" 
+                                    readonly 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                                    placeholder="مدت زمان اشتراک"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    قیمت (ریال)
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="subscription-price" 
+                                    readonly 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                                    placeholder="قیمت اشتراک"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div class="flex justify-end space-x-2 space-x-reverse">
@@ -116,6 +164,66 @@
     // افزودن کلاس‌های استایل به فیلدهای فرم
     document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"], select').forEach(field => {
         field.classList.add('w-full', 'px-3', 'py-2', 'border', 'border-gray-300', 'rounded-md', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500');
+    });
+    
+    // مدیریت نمایش بخش اشتراک برای کاربران ویژه
+    const roleSelect = document.getElementById('{{ form.role.id_for_label }}');
+    const subscriptionSection = document.getElementById('subscription-section');
+    const planSelect = document.getElementById('subscription-plan');
+    const durationInput = document.getElementById('subscription-duration');
+    const priceInput = document.getElementById('subscription-price');
+    
+    // دریافت پلن‌های اشتراک از سرور
+    async function loadSubscriptionPlans() {
+        try {
+            const response = await fetch('{% url "dashboard:subscriptions:available_plans" %}');
+            const result = await response.json();
+            
+            if (result.success) {
+                // پاک کردن گزینه‌های قبلی
+                planSelect.innerHTML = '<option value="">انتخاب پلن اشتراک...</option>';
+                
+                // اضافه کردن پلن‌های جدید
+                result.plans.forEach(plan => {
+                    const option = document.createElement('option');
+                    option.value = plan.id;
+                    option.textContent = `${plan.name} (${parseInt(plan.price).toLocaleString()} ریال)`;
+                    option.dataset.duration = plan.duration_days;
+                    option.dataset.price = plan.price;
+                    planSelect.appendChild(option);
+                });
+            } else {
+                console.error('Error loading subscription plans:', result.message);
+            }
+        } catch (error) {
+            console.error('Error loading subscription plans:', error);
+        }
+    }
+    
+    // تغییر وضعیت نمایش بخش اشتراک
+    roleSelect.addEventListener('change', function() {
+        if (this.value === 'premium') {
+            subscriptionSection.classList.remove('hidden');
+            loadSubscriptionPlans();
+        } else {
+            subscriptionSection.classList.add('hidden');
+            // پاک کردن مقادیر فرم
+            planSelect.value = '';
+            durationInput.value = '';
+            priceInput.value = '';
+        }
+    });
+    
+    // به‌روزرسانی اطلاعات هنگام انتخاب پلن
+    planSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.value) {
+            durationInput.value = selectedOption.dataset.duration + ' روز';
+            priceInput.value = parseInt(selectedOption.dataset.price).toLocaleString() + ' ریال';
+        } else {
+            durationInput.value = '';
+            priceInput.value = '';
+        }
     });
 </script>
 {% endblock %}

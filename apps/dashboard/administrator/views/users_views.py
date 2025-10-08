@@ -262,6 +262,32 @@ class AddUserView(LoginRequiredMixin, HasAdminAccessPermission, View):
                     profile.auth_status = 'APPROVED'  # به صورت خودکار تایید شده
                     profile.save()
                     
+                    # ایجاد اشتراک برای کاربران ویژه
+                    if form.cleaned_data['role'] == 'premium':
+                        subscription_plan_id = request.POST.get('subscription_plan')
+                        if subscription_plan_id:
+                            try:
+                                from apps.subscriptions.models import Plan, Subscription, SubscriptionStatusChoicesModel
+                                from django.utils import timezone
+                                from datetime import timedelta
+                                
+                                plan = Plan.objects.get(id=subscription_plan_id)
+                                # محاسبه تاریخ انقضا
+                                end_date = timezone.now() + timedelta(days=plan.duration_days)
+                                
+                                # ایجاد اشتراک
+                                Subscription.objects.create(
+                                    user=user,
+                                    plan=plan,
+                                    payment_amount=plan.price,
+                                    status=SubscriptionStatusChoicesModel.active.value,
+                                    start_date=timezone.now(),
+                                    end_date=end_date
+                                )
+                            except Plan.DoesNotExist:
+                                messages.error(request, 'پلن انتخاب شده معتبر نیست.')
+                                return render(request, 'dashboard/users/add_user.html', {'form': form})
+                    
                 messages.success(request, f'کاربر {user.full_name} با موفقیت اضافه شد.')
                 return redirect('dashboard:users:admin_users_list')
             
