@@ -31,7 +31,7 @@ class ZarinpalService:
         """
         ایجاد یک درخواست پرداخت جدید در زرین‌پال.
 
-        :param amount: مبلغ تراکنش به ریال.
+        :param amount: مبلغ تراکنش به تومان.
         :param description: توضیحات تراکنش.
         :param callback_url: آدرس URL برای بازگشت کاربر پس از پرداخت.
         :param metadata: اطلاعات اضافی (مانند payment_id) که به صورت JSON ذخیره می‌شود.
@@ -42,6 +42,7 @@ class ZarinpalService:
             "amount": int(amount),  # زرین‌پال مبلغ را به صورت integer می‌پذیرد
             "description": description,
             "callback_url": callback_url,
+            "currency": "IRR"
         }
         if metadata:
             request_data["metadata"] = metadata
@@ -97,13 +98,14 @@ class ZarinpalService:
         تایید نهایی پرداخت پس از بازگشت کاربر از درگاه.
 
         :param authority: کد رهگیری که از زرین‌پال دریافت شده.
-        :param amount: مبلغ تراکنش به ریال.
+        :param amount: مبلغ تراکنش به تومان.
         :return: یک دیکشنری شامل وضعیت موفقیت و شماره مرجع تراکنش (ref_id).
         """
         request_data = {
             "merchant_id": self.merchant_id,
             "authority": authority,
-            "amount": int(amount)
+            "amount": int(amount),
+            "currency": "IRR"
         }
         
         try:

@@ -105,72 +105,72 @@ LOGGING = {
 }
 
 # ========= ZarinPal Production Settings ========= #
-ZARINPAL_CONFIG = {
-    'MERCHANT_ID': env("ZARINPAL_MERCHANT_ID"),
-    'SANDBOX': env("ZARINPAL_SANDBOX", default=False),
-    'REQUEST_URL': 'https://api.zarinpal.com/pg/v4/payment/request.json',
-    'START_PAY_URL': 'https://www.zarinpal.com/pg/StartPay/',
-    'VERIFY_URL': 'https://api.zarinpal.com/pg/v4/payment/verify.json',
-    'CALLBACK_URL': env("ZARINPAL_CALLBACK_URL"),
+# لاگ‌گیری
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': 'logs/accounts.log',
+        },
+    },
+    'loggers': {
+        'accounts': {
+            'handlers': ['file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
 }
 
-PARSPAL_CONFIG = {
-    'API_KEY': env('PARSPAL_API_KEY'),
-    'SANDBOX': env.bool('PARSPAL_SANDBOX', default=False),
+# ========= ZarinPal Sandbox Settings ========= #
+ZARINPAL_CONFIG = {
+    'MERCHANT_ID': "45209320-b090-4116-a1bd-8abd770d7787",
+    'SANDBOX': False,
+    'REQUEST_URL': 'https://sandbox.zarinpal.com/pg/v4/payment/request.json',
+    'START_PAY_URL': 'https://sandbox.zarinpal.com/pg/StartPay/',
+    'VERIFY_URL': 'https://sandbox.zarinpal.com/pg/v4/payment/verify.json',
+    'CALLBACK_URL': 'http://localhost:8000/api/v1/payments/verify/',
+}
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-suffix',
+    }
 }
 
 # ====== EMAIL CONFIGS ====== #
-EMAIL_BACKEND = env("EMAIL_BACKEND", default='django.core.mail.backends.smtp.EmailBackend')
-EMAIL_HOST = env("EMAIL_HOST")
-EMAIL_PORT = env.int("EMAIL_PORT", default=587)
-EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
-EMAIL_HOST_USER = env("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default=EMAIL_HOST_USER)
-EMAIL_TIMEOUT = 30  # زمان اجرا برای اتصال ایمیل
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "arad.pws-dns.net"
+EMAIL_PORT = "465"
+EMAIL_USE_SSL = True
+EMAIL_HOST_USER = "info@drcode-med.ir"
+EMAIL_HOST_PASSWORD = "A!s2D#f4G%h6J&"
+DEFAULT_FROM_EMAIL = "info@drcode-med.ir"
 
-# ======= CACHE CONFIGS ======= #
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": env("REDIS_URL", default="redis://127.0.0.1:6379/1"),
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "CONNECTION_POOL_KWARGS": {
-                'max_connections': 50,
-                'retry_on_timeout': True,
-            }
+# ====== DATABASE CONFIGS ====== #
+DATABASES = {
+    'default': {
+        'ENGINE': env('DB_ENGINE', default='django.db.backends.mysql'),
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),
+        'HOST': env('DB_HOST', default='localhost'),
+        'PORT': env('DB_PORT', default='3306'),
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'use_unicode': True,
+            'init_command': "SET NAMES utf8mb4; SET character_set_connection = 'utf8mb4';",
         },
-        "KEY_PREFIX": "dr_code",
-        "TIMEOUT": 300,  # 5 minutes default timeout
-        "VERSION": 1,
-        "KEY_FUNCTION": None,
-        "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
-        "SERIALIZER": "django_redis.serializers.json.JSONSerializer",
     }
 }
 
 # Cache session backend
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
-
-# Cache security settings
-DJANGO_REDIS_IGNORE_EXCEPTIONS = True
-DJANGO_REDIS_LOG_IGNORED_EXCEPTIONS = True
-DJANGO_REDIS_CONNECTION_POOL_KWARGS = {
-    'max_connections': 50,
-    'retry_on_timeout': True,
-}
-
-# Cache backend for django-rq
-RQ_QUEUES = {
-    'default': {
-        'HOST': env("REDIS_HOST", default='127.0.0.1'),
-        'PORT': env.int("REDIS_PORT", default=6379),
-        'DB': env.int("REDIS_DB", default=0),
-        'DEFAULT_TIMEOUT': 360,
-    }
-}
 
 # Database for production (PostgreSQL)
 DATABASES = {

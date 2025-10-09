@@ -3,25 +3,14 @@ from apps.payment.models import Payment, PaymentGateway
 
 # ====== Payment Create Serializer ====== #
 class PaymentCreateSerializer(serializers.Serializer):
-    """سریالایزر ایجاد پرداخت"""
+    """ستومانایزر ایجاد پرداخت"""
     plan_id = serializers.IntegerField(required=True)
     discount_code = serializers.CharField(max_length=50, required=False, allow_blank=True)
-    gateway = serializers.ChoiceField(
-        choices=PaymentGateway.choices,
-        required=True,
-        help_text="نوع درگاه پرداخت (ZARINPAL یا PAR SPAL)"
-    )
-    
-    def validate_gateway(self, value):
-        """اعتبارسنجی درگاه پرداخت"""
-        if value not in [PaymentGateway.ZARINPAL, PaymentGateway.PARSPAL]:
-            raise serializers.ValidationError("درگاه پرداخت انتخابی معتبر نیست.")
-        return value
 
     
 # ====== Payment Serializer ====== #
 class PaymentSerializer(serializers.ModelSerializer):
-    """ سریال سازی اطلاعات مربوط به درگاه پرداخت """
+    """ ستومان سازی اطلاعات مربوط به درگاه پرداخت """
     class Meta:
         model = Payment
         fields = [

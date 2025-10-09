@@ -388,3 +388,9 @@ LOGGING = {
     },
 }
 
+# ========= Parspal Settings ========= #
+PARSPAL_CONFIG = {
+    'API_KEY': env('PARSPAL_API_KEY', default=''),
+    'CALLBACK_URL': env('PARSPAL_CALLBACK_URL', default='https://drcode-med.ir/payment/verify'),
+    'SANDBOX': env.bool('PARSPAL_SANDBOX', default=True),
+}

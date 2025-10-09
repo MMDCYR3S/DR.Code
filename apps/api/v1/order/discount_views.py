@@ -55,7 +55,7 @@ class PurchaseDetailView(generics.RetrieveUpdateAPIView):
             'referral_code': ''
         }
         
-        # سریالایز کردن داده‌ها
+        # ستومانایز کردن داده‌ها
         summary_serializer = PurchaseSummarySerializer(initial_data)
         
         return Response({

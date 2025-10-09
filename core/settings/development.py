@@ -19,11 +19,6 @@ ZARINPAL_CONFIG = {
     'CALLBACK_URL': env("ZARINPAL_CALLBACK_URL", default='http://localhost:8000/api/v1/payments/verify/'),
 }
 
-PARSPAL_CONFIG = {
-    'API_KEY': "00000000aaaabbbbcccc000000000000",
-    'PARSPAL_CALLBACK_URL': 'https://drcode-med.com/',
-    'SANDBOX': True,
-}
 
 # ======= CACHE CONFIGS ======= #
 # CACHES = {
