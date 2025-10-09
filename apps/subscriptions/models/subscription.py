@@ -35,7 +35,7 @@ class Subscription(models.Model):
     payment_amount = models.DecimalField(
         max_digits=12, 
         decimal_places=0, 
-        verbose_name="مبلغ پرداختی (تومان)",
+        verbose_name="مبلغ پرداختی (ریال)",
         help_text="مبلغ واقعی که کاربر پرداخت کرده (بعد از تخفیف)"
     )
     status = models.CharField(

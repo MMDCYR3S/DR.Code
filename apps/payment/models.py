@@ -5,6 +5,11 @@ from apps.subscriptions.models import Subscription
 
 import uuid
 
+# ======== Payment Gateway ======== #
+class PaymentGateway(models.TextChoices):
+    ZARINPAL = 'ZARINPAL', 'زرین‌پال'
+    PARSPAL = 'PARSPAL', 'پارس‌پال'
+
 # ======== Payment Status ======== #
 class PaymentStatus(models.TextChoices):
     PENDING = 'PENDING', 'در انتظار پرداخت'
@@ -61,7 +66,7 @@ class Payment(models.Model):
         verbose_name="مبلغ نهایی (ریال)"
     )
     
-    authority = models.CharField(max_length=255, unique=True, verbose_name="کد رهگیری درگاه")
+    authority = models.CharField(max_length=255, verbose_name="کد رهگیری درگاه")
     ref_id = models.CharField(
         max_length=255, 
         null=True, 
@@ -80,6 +85,15 @@ class Payment(models.Model):
         blank=True,
         verbose_name="اطلاعات مرورگر"
     )
+    
+    # ====== اطلاعات پرداخت ====== #
+    gateway = models.CharField(
+        max_length=20,
+        choices=PaymentGateway.choices,
+        default=PaymentGateway.ZARINPAL,
+        verbose_name="درگاه پرداخت"
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد تراکنش")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
     paid_at = models.DateTimeField(null=True, blank=True, verbose_name="تاریخ پرداخت")

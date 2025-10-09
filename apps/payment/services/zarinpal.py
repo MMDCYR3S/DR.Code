@@ -1,5 +1,3 @@
-# apps/payment/services.py
-
 import requests
 import json
 from django.conf import settings

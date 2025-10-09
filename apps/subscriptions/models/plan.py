@@ -17,7 +17,7 @@ class Plan(models.Model):
     )
     name = models.CharField(max_length=100, verbose_name="نام بسته")
     duration_days = models.PositiveIntegerField(verbose_name="مدت زمان (به روز)")
-    price = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="قیمت (ریال)")
+    price = models.IntegerField(default=0, verbose_name="قیمت (ریال)")
     is_active = models.BooleanField(default=True, verbose_name="بسته فعال است؟")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد") 
     

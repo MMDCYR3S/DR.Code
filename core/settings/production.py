@@ -114,6 +114,11 @@ ZARINPAL_CONFIG = {
     'CALLBACK_URL': env("ZARINPAL_CALLBACK_URL"),
 }
 
+PARSPAL_CONFIG = {
+    'API_KEY': env('PARSPAL_API_KEY'),
+    'SANDBOX': env.bool('PARSPAL_SANDBOX', default=False),
+}
+
 # ====== EMAIL CONFIGS ====== #
 EMAIL_BACKEND = env("EMAIL_BACKEND", default='django.core.mail.backends.smtp.EmailBackend')
 EMAIL_HOST = env("EMAIL_HOST")

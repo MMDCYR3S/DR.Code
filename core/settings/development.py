@@ -19,6 +19,12 @@ ZARINPAL_CONFIG = {
     'CALLBACK_URL': env("ZARINPAL_CALLBACK_URL", default='http://localhost:8000/api/v1/payments/verify/'),
 }
 
+PARSPAL_CONFIG = {
+    'API_KEY': "00000000aaaabbbbcccc000000000000",
+    'PARSPAL_CALLBACK_URL': 'https://drcode-med.com/',
+    'SANDBOX': True,
+}
+
 # ======= CACHE CONFIGS ======= #
 # CACHES = {
 #     "default": {
@@ -53,3 +59,9 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default=EMAIL_HOST_USER)
 #         'DB': env.int("REDIS_DB", default=0),
 #     }
 # }
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-suffix',
+    }
+}
