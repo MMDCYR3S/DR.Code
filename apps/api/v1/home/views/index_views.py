@@ -1,7 +1,7 @@
 from rest_framework.generics import ListAPIView
 
 from apps.home.models import Tutorial
-from apps.prescriptions.models import Prescription
+from apps.prescriptions.models import Prescription, AccessChoices
 from ..serializers import (
     RecentPrescriptionSerializer,
     RecentTutorialSerializer
@@ -14,7 +14,7 @@ class RecentPrescriptionsAPIView(ListAPIView):
     
     serializer_class = RecentPrescriptionSerializer
     permission_classes = []
-    queryset = Prescription.objects.filter(is_active=True).order_by("-created_at")[:4]
+    queryset = Prescription.objects.filter(is_active=True, access_level=AccessChoices.free.value).order_by("-created_at")[:4]
     
 class RecentTutorialAPIView(ListAPIView):
     """

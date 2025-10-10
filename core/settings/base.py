@@ -26,7 +26,7 @@ env = environ.Env(
 
 # Take environment variables from .env file
 # Use different .env files based on the environment
-env_file = os.path.join(BASE_DIR, 'env\\.env.dev')  # Default to development
+env_file = os.path.join(BASE_DIR, 'env\\.env.prod')  # Default to development
 environ.Env.read_env(env_file)
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -166,12 +166,12 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle'
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '10/min',
-        'user': '60/min',
+        'anon': '10000/min',
+        'user': '60000/min',
         'login_attempts': '5/min',
         'login_attempts_ip': '10/hour',
-        'prescription_list': '300/hour',
-        'prescription_detail': '500/hour',
+        'prescription_list': '30000/hour',
+        'prescription_detail': '50000/hour',
     },
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
@@ -391,6 +391,6 @@ LOGGING = {
 # ========= Parspal Settings ========= #
 PARSPAL_CONFIG = {
     'API_KEY': env('PARSPAL_API_KEY', default=''),
-    'CALLBACK_URL': env('PARSPAL_CALLBACK_URL', default='https://drcode-med.ir/payment/verify'),
-    'SANDBOX': env.bool('PARSPAL_SANDBOX', default=True),
+    'CALLBACK_URL': env('PARSPAL_CALLBACK_URL'),
+    'SANDBOX': env.bool('PARSPAL_SANDBOX'),
 }
