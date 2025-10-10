@@ -473,10 +473,77 @@ x-show="!loading && prescription"
 class="container mx-auto px-4 py-8"
 >
 <!-- Desktop: Two Column Layout | Mobile: Stacked -->
-<div class="flex flex-col lg:flex-row-reverse gap-6 order-2 lg:order-1">
+<div class="flex flex-col lg:flex-row-reverse gap-6 ">
     
+    <!-- ============ LEFT COLUMN: DESCRIPTION (20-30% on Desktop) ============ -->
+    <template x-if="prescription?.description" class="order-1 lg:order-2">
+        <aside class="w-full lg:w-80 lg:flex-shrink-0 order-1 lg:order-2">
+            <!-- Sticky Container -->
+            <div class="lg:sticky lg:top-24">
+                <!-- Card Design -->
+                <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <!-- Header -->
+                    <div 
+                        :class="prescription?.category?.color_code" 
+                        class="px-5 py-4 text-white"
+                    >
+                        <h3 class="text-lg font-bold flex items-center gap-2">
+                            <i class="fas fa-file-medical-alt"></i>
+                            <span>توضیحات نسخه</span>
+                        </h3>
+                    </div>
+
+                    <!-- Description Content -->
+                    <div class="p-5">
+                        <!-- Loading State -->
+                        <template x-if="descriptionLoading">
+                            <div class="flex items-center justify-center py-8">
+                                <div class="flex flex-col items-center gap-3">
+                                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-c1"></div>
+                                    <p class="text-sm text-gray-500">در حال بارگذاری...</p>
+                                </div>
+                            </div>
+                        </template>
+
+<!-- Description Text (HTML Content) -->
+<template x-if="!descriptionLoading">
+    <div>
+        <!-- Check if description has content -->
+        <template x-if="description && description.trim() !== '' && description !== '<p></p>'">
+            <div 
+                class="prose prose-sm max-w-none text-gray-700 leading-relaxed"
+                x-html="description"
+            ></div>
+        </template>
+        
+        <!-- Fallback: No description available -->
+        <template x-if="!description || description.trim() === '' || description === '<p></p>'">
+            <div class="flex flex-col items-center justify-center py-8 text-center">
+                <i class="fas fa-file-alt text-4xl text-gray-300 mb-3"></i>
+                <p class="text-gray-500 text-sm">
+                    توضیحاتی برای این نسخه ثبت نشده است.
+                </p>
+            </div>
+        </template>
+    </div>
+</template>
+
+                    </div>
+
+                    <!-- Footer: Icon Decoration -->
+                    <div class="px-5 py-3 bg-gray-50 border-t border-gray-100">
+                        <p class="text-xs text-gray-500 flex items-center gap-2">
+                            <i class="fas fa-lightbulb text-amber-500"></i>
+                            <span>این توضیحات توسط متخصصین تهیه شده است</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </template>
+
     <!-- ============ RIGHT COLUMN: DRUGS TABLE (70-80% on Desktop) ============ -->
-    <div class="w-full lg:flex-1">
+    <div class="w-full lg:flex-1 order-2 lg:order-1">
         <!-- Section Title -->
         <div class="mb-6">
             <h2 class="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-3">
@@ -671,72 +738,7 @@ class="container mx-auto px-4 py-8"
 
     </div>
 
-    <!-- ============ LEFT COLUMN: DESCRIPTION (20-30% on Desktop) ============ -->
-    <template x-if="prescription?.description">
-        <aside class="w-full lg:w-80 lg:flex-shrink-0 order-1 lg:order-2">
-            <!-- Sticky Container -->
-            <div class="lg:sticky lg:top-24">
-                <!-- Card Design -->
-                <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                    <!-- Header -->
-                    <div 
-                        :class="prescription?.category?.color_code" 
-                        class="px-5 py-4 text-white"
-                    >
-                        <h3 class="text-lg font-bold flex items-center gap-2">
-                            <i class="fas fa-file-medical-alt"></i>
-                            <span>توضیحات نسخه</span>
-                        </h3>
-                    </div>
 
-                    <!-- Description Content -->
-                    <div class="p-5">
-                        <!-- Loading State -->
-                        <template x-if="descriptionLoading">
-                            <div class="flex items-center justify-center py-8">
-                                <div class="flex flex-col items-center gap-3">
-                                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-c1"></div>
-                                    <p class="text-sm text-gray-500">در حال بارگذاری...</p>
-                                </div>
-                            </div>
-                        </template>
-
-<!-- Description Text (HTML Content) -->
-<template x-if="!descriptionLoading">
-    <div>
-        <!-- Check if description has content -->
-        <template x-if="description && description.trim() !== '' && description !== '<p></p>'">
-            <div 
-                class="prose prose-sm max-w-none text-gray-700 leading-relaxed"
-                x-html="description"
-            ></div>
-        </template>
-        
-        <!-- Fallback: No description available -->
-        <template x-if="!description || description.trim() === '' || description === '<p></p>'">
-            <div class="flex flex-col items-center justify-center py-8 text-center">
-                <i class="fas fa-file-alt text-4xl text-gray-300 mb-3"></i>
-                <p class="text-gray-500 text-sm">
-                    توضیحاتی برای این نسخه ثبت نشده است.
-                </p>
-            </div>
-        </template>
-    </div>
-</template>
-
-                    </div>
-
-                    <!-- Footer: Icon Decoration -->
-                    <div class="px-5 py-3 bg-gray-50 border-t border-gray-100">
-                        <p class="text-xs text-gray-500 flex items-center gap-2">
-                            <i class="fas fa-lightbulb text-amber-500"></i>
-                            <span>این توضیحات توسط متخصصین تهیه شده است</span>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </aside>
-    </template>
 
 </div>
 </section>
