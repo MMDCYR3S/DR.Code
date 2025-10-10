@@ -1,3 +1,4 @@
+@ -1,443 +1,406 @@
 {% extends 'base.html' %}
 {% load static %}
 
@@ -267,9 +268,41 @@
         justify-content: center;
     }
 }
+/* Warning Box */
+.warning-box {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border-right: 6px solid #dc2626;
+    box-shadow: 0 8px 32px rgba(220, 38, 38, 0.15);
+    animation: warningPulse 3s ease-in-out infinite;
+}
+
+@keyframes warningPulse {
+    0%, 100% {
+        box-shadow: 0 8px 32px rgba(220, 38, 38, 0.15);
+    }
+    50% {
+        box-shadow: 0 12px 40px rgba(220, 38, 38, 0.25);
+    }
+}
+
+.warning-icon {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    box-shadow: 0 4px 16px rgba(220, 38, 38, 0.3);
+    animation: iconBounce 2s ease-in-out infinite;
+}
+
+@keyframes iconBounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
     </style>
 
-<div x-data="prescriptionDetailApp()" x-init="init()" class="min-h-screen pt-20 bg-gray-50">
+<div x-data="prescriptionDetailApp()" x-init="init()" class="min-h-screen pt-12 bg-gray-50">
     
     <!-- 🔐 Watermark -->
     <div class="watermark" :data-text="watermarkText"></div>
@@ -394,44 +427,46 @@
         </div>
         
     </div>
- <!-- ========== WARNING BOX ========== -->
- <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            
-    <div class="warning-box rounded-2xl p-6 sm:p-8">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-            
-            <!-- آیکون هشدار -->
-            <div class="warning-icon flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center">
-                <i class="fas fa-exclamation-triangle text-white text-2xl sm:text-3xl"></i>
-            </div>
-            
-            <!-- متن هشدار -->
-            <div class="flex-1">
-                <h3 class="text-lg sm:text-xl font-black text-red-800 mb-3 flex items-center gap-2">
-                    <i class="fas fa-shield-alt text-red-600"></i>
-                    <span>هشدار قانونی و کپی‌رایت</span>
-                </h3>
+
+    <!-- ========== WARNING BOX ========== -->
+    <div class="mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 
-                <div class="space-y-2 text-sm sm:text-base text-red-900 leading-relaxed">
-                    <p class="font-bold">
-                        <i class="fas fa-info-circle text-red-600 ml-1"></i>
-                        محتوای این نسخه حاصل ساعت‌ها تلاش و بررسی از منابع مختلف است.
-                    </p>
-                    <p class="font-semibold">
-                        <i class="fas fa-ban text-red-600 ml-1"></i>
-                        انتشار این محتوا شرعاً حرام و از نظر قانونی قابل پیگیری خواهد بود.
-                    </p>
-                    <p class="font-medium text-red-700 mt-3 p-3 bg-red-50 rounded-lg border-r-4 border-red-500">
-                        <i class="fas fa-gavel text-red-600 ml-1"></i>
-                        لطفاً از انتشار محتوا بپرهیزید.
-                    </p>
+        <div class="warning-box rounded-2xl p-6 sm:p-8">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+                
+                <!-- آیکون هشدار -->
+                <div class="warning-icon flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center">
+                    <i class="fas fa-exclamation-triangle text-white text-2xl sm:text-3xl"></i>
                 </div>
+                
+                <!-- متن هشدار -->
+                <div class="flex-1">
+                    <h3 class="text-lg sm:text-xl font-black text-red-800 mb-3 flex items-center gap-2">
+                        <i class="fas fa-shield-alt text-red-600"></i>
+                        <span>هشدار قانونی و کپی‌رایت</span>
+                    </h3>
+                    
+                    <div class="space-y-2 text-sm sm:text-base text-red-900 leading-relaxed">
+                        <p class="font-bold">
+                            <i class="fas fa-info-circle text-red-600 ml-1"></i>
+                            محتوای این نسخه حاصل ساعت‌ها تلاش و بررسی از منابع مختلف است.
+                        </p>
+                        <p class="font-semibold">
+                            <i class="fas fa-ban text-red-600 ml-1"></i>
+                            انتشار این محتوا شرعاً حرام و از نظر قانونی قابل پیگیری خواهد بود.
+                        </p>
+                        <p class="font-medium text-red-700 mt-3 p-3 bg-red-50 rounded-lg border-r-4 border-red-500">
+                            <i class="fas fa-gavel text-red-600 ml-1"></i>
+                            لطفاً از انتشار محتوا بپرهیزید.
+                        </p>
+                    </div>
+                </div>
+                
             </div>
-            
         </div>
+        
     </div>
-    
-</div>
+
 
 </div>
 
