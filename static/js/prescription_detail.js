@@ -1,703 +1,459 @@
-/**
- * ╔════════════════════════════════════════════════════════════════╗
- * ║  📋 Prescription Detail Page - Alpine.js Component            ║
- * ║  دکتر کد - صفحه جزئیات نسخه                                  ║
- * ║  نسخه: 2.0 - بهینه‌سازی شده                                  ║
- * ╚════════════════════════════════════════════════════════════════╝
- */
-
+// Alpine.js Component for Prescription Detail Page
 function prescriptionDetailApp() {
     return {
-        // ═══════════════════════════════════════════════════════════
-        // 📊 STATE MANAGEMENT
-        // ═══════════════════════════════════════════════════════════
-        
-        // Core Data
         prescription: null,
+        description: '',
         loading: true,
-        error: false,
-        errorMessage: '',
-        slug: '',
-
-        // User & Access
+        descriptionLoading: true,
+        isSaved: false,
         isPremiumUser: false,
-        isBookmarked: false,
-
-        // Modals & UI States
-        descriptionModalOpen: false,
-        descriptionLoading: false,
-        detailedDescription: null,
+        userProfile: null,
         
-        galleryOpen: false,
-        currentImageIndex: 0,
-
-        // Q&A Form
         questionText: '',
         questionSubmitting: false,
+        
+        showTutorialModal: false,
+        showDescriptionModal: false,
+        fullDescription: '',
+        
+        watermarkText: 'drcode-med.ir',
 
-        // ═══════════════════════════════════════════════════════════
-        // 🚀 LIFECYCLE & INITIALIZATION
-        // ═══════════════════════════════════════════════════════════
+        
 
         async init() {
-            console.log('🎬 Initializing Prescription Detail App...');
-
-            // Extract slug from URL
-            this.slug = this.getSlugFromURL();
-
-            if (!this.slug) {
-                this.showError('نسخه مورد نظر یافت نشد');
+            const slug = this.getSlugFromURL();
+            
+            if (!slug) {
+                window.location.href = '/prescriptions';
                 return;
             }
 
-            // Check user premium status
-            this.checkUserPremiumStatus();
+            const userData = StorageManager.getUserData();
+            // استفاده از متد جدید برای چک کردن Premium
+    this.checkPremiumStatus();
+    
+    // تست دستی (میتونی بعدا کامنت کنی)
+    console.log('🎯 Premium Status:', this.isPremiumUser);
+            this.userProfile = userData;
+            
+            if (userData?.medical_code) {
+                this.watermarkText = userData.medical_code;
+            }
 
-            // Load prescription data
-            await this.loadPrescription();
-
-            // Check bookmark status
-            this.checkBookmarkStatus();
-
-            // Initialize AOS animations
-            this.initAnimations();
-
-            console.log('✅ App initialized successfully');
+            await this.loadPrescription(slug);
+            await this.loadDescription(slug);
+            
+            this.initSecurityMeasures();
+            
         },
 
-        /**
-         * Extract slug from current URL path
-         * URL format: /prescriptions/{slug}/
-         */
         getSlugFromURL() {
             const path = window.location.pathname;
-            const parts = path.split('/').filter(p => p);
-            
-            if (parts.length >= 2 && parts[0] === 'prescriptions') {
-                return parts[1];
-            }
-            
-            console.warn('⚠️ Could not extract slug from URL:', path);
-            return null;
+            const match = path.match(/\/prescriptions\/([^\/]+)/);
+            return match ? match[1] : null;
         },
 
-        /**
-         * Check if current user has premium access
-         */
-        checkUserPremiumStatus() {
-            const profile = StorageManager.getUserProfile();
-            this.isPremiumUser = ['premium', 'doctor'].includes(profile?.role);
-            
-            console.log('👤 User Premium Status:', this.isPremiumUser);
-        },
-
-        /**
-         * Initialize AOS animations if library is loaded
-         */
-        initAnimations() {
-            if (typeof AOS !== 'undefined') {
-                AOS.init({
-                    duration: 600,
-                    once: true,
-                    offset: 100,
-                    easing: 'ease-in-out'
-                });
-                console.log('✨ AOS animations initialized');
-            }
-        },
-
-        // ═══════════════════════════════════════════════════════════
-        // 📡 API & DATA LOADING
-        // ═══════════════════════════════════════════════════════════
-
-        /**
-         * Load prescription data from API
-         * Maps prescription_drugs to medications for consistency
-         */
-        async loadPrescription() {
+        async loadPrescription(slug) {
             try {
                 this.loading = true;
-                this.error = false;
-
-                console.log('📡 Fetching prescription:', this.slug);
-
-                const response = await axios.get(
-                    `${API.BASE_URL}api/v1/prescriptions/${this.slug}/`
+                const response = await API.prescriptions.getDetail(slug);
+                
+                this.prescription = response;
+                this.isSaved = response.is_saved || false;
+                
+                const drugs = this.prescription.prescription_drugs || [];
+                
+                this.prescription.normalDrugs = drugs.filter(
+                    d => !d.is_combination && !d.is_substitute
                 );
-
-                this.prescription = response.data;
-
-                // 🔥 Map prescription_drugs to medications
-                this.prescription.medications = this.mapPrescriptionDrugs(
-                    this.prescription.prescription_drugs
+                
+                this.prescription.combinationGroups = this.getCombinationGroups(drugs);
+                
+                this.prescription.substituteDrugs = drugs.filter(
+                    d => d.is_substitute && !d.is_combination
                 );
-
-                console.log('✅ Prescription loaded:', this.prescription);
-                console.log('💊 Medications count:', this.prescription.medications?.length || 0);
-
-                // Update page title
-                this.updatePageTitle(this.prescription.title);
 
             } catch (error) {
-                console.error('❌ Error loading prescription:', error);
-                this.handleLoadError(error);
-
+                console.error('Error loading prescription:', error);
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطا',
+                    text: 'خطا در بارگذاری اطلاعات نسخه',
+                    confirmButtonText: 'بازگشت',
+                    confirmButtonColor: '#0077b6'
+                }).then(() => {
+                    window.location.href = '/prescriptions';
+                });
             } finally {
                 this.loading = false;
             }
         },
 
-        /**
-         * Map prescription_drugs array to medications format
-         * Ensures compatibility with frontend expectations
-         */
-        mapPrescriptionDrugs(prescriptionDrugs) {
-            if (!prescriptionDrugs || !Array.isArray(prescriptionDrugs)) {
-                console.warn('⚠️ No prescription_drugs found');
-                return [];
-            }
-
-            return prescriptionDrugs.map((item, index) => ({
-                // Core fields
-                id: item.drug.code || `drug-${index}`,
-                drug_name: item.drug.title || 'نامشخص',
-                drug_code: item.drug.code || '-',
-                
-                // Dosage & instructions
-                dosage: item.dosage || '-',
-                frequency: item.instructions || '-',
-                quantity: item.amount || 0,
-                notes: item.instructions || '',
-                
-                // Flags
-                is_combination: item.is_combination || false,
-                order: item.order || index + 1,
-                
-                // Keep original data for debugging
-                _raw: item
-            }));
-        },
-
-        /**
-         * Handle API errors gracefully
-         */
-        handleLoadError(error) {
-            this.error = true;
-
-            if (error.response) {
-                const status = error.response.status;
-                
-                const errorMessages = {
-                    404: 'نسخه مورد نظر یافت نشد',
-                    403: 'شما به این نسخه دسترسی ندارید',
-                    401: 'لطفاً وارد حساب کاربری خود شوید',
-                    500: 'خطای سرور - لطفاً بعداً تلاش کنید',
-                    default: 'خطا در بارگذاری اطلاعات نسخه'
-                };
-
-                this.errorMessage = errorMessages[status] || errorMessages.default;
-            } else if (error.request) {
-                this.errorMessage = 'خطا در ارتباط با سرور - اتصال اینترنت خود را بررسی کنید';
-            } else {
-                this.errorMessage = 'خطای نامشخص در بارگذاری داده‌ها';
-            }
-        },
-
-        /**
-         * Update document title
-         */
-        updatePageTitle(title) {
-            document.title = `${title} - دکتر کد`;
-        },
-
-        /**
-         * Show error state
-         */
-        showError(message) {
-            this.error = true;
-            this.errorMessage = message;
-            this.loading = false;
-        },
-
-        // ═══════════════════════════════════════════════════════════
-        // 📋 CLIPBOARD & COPY FUNCTIONALITY
-        // ═══════════════════════════════════════════════════════════
-
-        /**
-         * Copy drug code to clipboard with visual feedback
-         */
-        async copyDrugCode(code) {
-            if (!code || code === '-') {
-                this.showToast('error', 'کد دارو موجود نیست');
-                return;
-            }
-
-            try {
-                await navigator.clipboard.writeText(code);
-                
-                this.showToast('success', 'کد دارو کپی شد', code);
-                
-                console.log('📋 Copied to clipboard:', code);
-
-            } catch (error) {
-                console.error('❌ Copy failed:', error);
-                
-                // Fallback for older browsers
-                this.fallbackCopy(code);
-            }
-        },
-
-        /**
-         * Fallback copy method for browsers without clipboard API
-         */
-        fallbackCopy(text) {
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            textArea.style.position = 'fixed';
-            textArea.style.left = '-999999px';
-            
-            document.body.appendChild(textArea);
-            textArea.select();
-            
-            try {
-                document.execCommand('copy');
-                this.showToast('success', 'کد دارو کپی شد', text);
-            } catch (error) {
-                this.showToast('error', 'خطا در کپی کردن');
-            } finally {
-                document.body.removeChild(textArea);
-            }
-        },
-
-        // ═══════════════════════════════════════════════════════════
-        // 📖 DESCRIPTION MODAL
-        // ═══════════════════════════════════════════════════════════
-
-        /**
-         * Open detailed description modal
-         * Loads content from API if not already loaded
-         */
-        async openDescriptionModal() {
-            this.descriptionModalOpen = true;
-
-            // Already loaded - skip API call
-            if (this.detailedDescription) {
-                return;
-            }
-
+        async loadDescription(slug) {
             try {
                 this.descriptionLoading = true;
-
-                console.log('📡 Fetching detailed description...');
-
-                const response = await axios.get(
-                    `${API.BASE_URL}api/v1/prescriptions/${this.slug}/description/`
-                );
-
-                this.detailedDescription = response.data.detailed_description || 
-                    '<p class="text-gray-500">توضیحات تکمیلی در دسترس نیست</p>';
-
-                console.log('✅ Description loaded');
-
+                const response = await API.prescriptions.getDescription(slug);
+                this.description = response.description || '';
             } catch (error) {
-                console.error('❌ Error loading description:', error);
-                
-                this.detailedDescription = 
-                    '<p class="text-red-500">خطا در بارگذاری توضیحات - لطفاً دوباره تلاش کنید</p>';
-
+                console.error('Error loading description:', error);
+                this.description = '<p>توضیحاتی برای این نسخه موجود نیست.</p>';
             } finally {
                 this.descriptionLoading = false;
             }
         },
 
-        // ═══════════════════════════════════════════════════════════
-        // 🖼️ IMAGE GALLERY
-        // ═══════════════════════════════════════════════════════════
-
-        /**
-         * Open image gallery at specific index
-         */
-        openImageGallery(index) {
-            if (!this.prescription?.images?.length) {
-                console.warn('⚠️ No images available');
-                return;
-            }
-
-            this.currentImageIndex = index;
-            this.galleryOpen = true;
+        getCombinationGroups(drugs) {
+            const groups = {};
             
-            // Prevent body scroll when gallery is open
-            document.body.style.overflow = 'hidden';
-            
-            console.log('🖼️ Gallery opened at index:', index);
-        },
-
-        /**
-         * Close image gallery
-         */
-        closeImageGallery() {
-            this.galleryOpen = false;
-            
-            // Restore body scroll
-            document.body.style.overflow = '';
-            
-            console.log('🖼️ Gallery closed');
-        },
-
-        /**
-         * Navigate to next image
-         */
-        nextImage() {
-            const totalImages = this.prescription.images.length;
-            
-            if (this.currentImageIndex < totalImages - 1) {
-                this.currentImageIndex++;
-            } else {
-                this.currentImageIndex = 0; // Loop to first
-            }
-        },
-
-        /**
-         * Navigate to previous image
-         */
-        previousImage() {
-            const totalImages = this.prescription.images.length;
-            
-            if (this.currentImageIndex > 0) {
-                this.currentImageIndex--;
-            } else {
-                this.currentImageIndex = totalImages - 1; // Loop to last
-            }
-        },
-
-        /**
-         * Keyboard navigation for gallery
-         */
-        handleGalleryKeyboard(event) {
-            if (!this.galleryOpen) return;
-
-            switch(event.key) {
-                case 'ArrowRight':
-                    this.previousImage(); // RTL layout
-                    break;
-                case 'ArrowLeft':
-                    this.nextImage(); // RTL layout
-                    break;
-                case 'Escape':
-                    this.closeImageGallery();
-                    break;
-            }
-        },
-
-        // ═══════════════════════════════════════════════════════════
-        // 🔖 BOOKMARK FUNCTIONALITY
-        // ═══════════════════════════════════════════════════════════
-
-        /**
-         * Check if prescription is bookmarked
-         * Currently uses localStorage - ready for API integration
-         */
-        checkBookmarkStatus() {
-            try {
-                const bookmarks = JSON.parse(
-                    localStorage.getItem('bookmarkedPrescriptions') || '[]'
-                );
-                
-                this.isBookmarked = bookmarks.includes(this.prescription?.id);
-                
-                console.log('🔖 Bookmark status:', this.isBookmarked);
-            } catch (error) {
-                console.error('❌ Error checking bookmark:', error);
-                this.isBookmarked = false;
-            }
-        },
-
-        /**
-         * Toggle bookmark status
-         * Shows login prompt if user not authenticated
-         */
-        async toggleBookmark() {
-            const profile = StorageManager.getUserProfile();
-
-            // Require authentication
-            if (!profile) {
-                this.promptLogin('ذخیره نسخه');
-                return;
-            }
-
-            // Toggle state
-            this.isBookmarked = !this.isBookmarked;
-
-            // Update localStorage (temporary - replace with API)
-            this.updateLocalBookmarks();
-
-            // Show feedback
-            this.showToast(
-                'success',
-                this.isBookmarked ? '🔖 نسخه ذخیره شد' : 'نسخه از ذخیره‌ها حذف شد'
-            );
-
-            // TODO: Replace with API call
-            // await this.syncBookmarkWithAPI();
-        },
-
-        /**
-         * Update bookmarks in localStorage
-         */
-        updateLocalBookmarks() {
-            try {
-                let bookmarks = JSON.parse(
-                    localStorage.getItem('bookmarkedPrescriptions') || '[]'
-                );
-
-                if (this.isBookmarked) {
-                    if (!bookmarks.includes(this.prescription.id)) {
-                        bookmarks.push(this.prescription.id);
+            drugs
+                .filter(d => d.is_combination && d.group_number)
+                .forEach(drug => {
+                    if (!groups[drug.group_number]) {
+                        groups[drug.group_number] = [];
                     }
-                } else {
-                    bookmarks = bookmarks.filter(id => id !== this.prescription.id);
-                }
+                    groups[drug.group_number].push(drug);
+                });
 
-                localStorage.setItem('bookmarkedPrescriptions', JSON.stringify(bookmarks));
-                
-                console.log('💾 Bookmarks updated:', bookmarks);
-            } catch (error) {
-                console.error('❌ Error updating bookmarks:', error);
-            }
+            return groups;
         },
 
-        /**
-         * 🔧 API Integration Point for Bookmarks
-         * Uncomment and customize when backend is ready
-         */
-        async syncBookmarkWithAPI() {
-            /*
+        async toggleSave() {
+            // چک لاگین
+            if (!StorageManager.isLoggedIn()) {
+                Auth.showAuthModal();
+                return;
+            }
+        
             try {
-                const token = StorageManager.getAccessToken();
-                const url = `${API.BASE_URL}api/v1/users/bookmarks/`;
-
-                if (this.isBookmarked) {
-                    // Add bookmark
-                    await axios.post(url, {
-                        prescription_id: this.prescription.id
-                    }, {
-                        headers: { 'Authorization': `Bearer ${token}` }
+                console.log('💾 Attempting to save prescription:', this.prescription.slug);
+                
+                // فراخوانی API با endpoint درست
+                const response = await API.post(
+                    `/accounts/profile/prescription/save/${this.prescription.slug}/`,
+                    {} // بدنه خالی
+                );
+                
+                console.log('✅ Save response:', response);
+                
+                // بررسی پاسخ
+                if (response.is_saved !== undefined) {
+                    this.isSaved = response.is_saved;
+                    
+                    const message = this.isSaved ? 'نسخه ذخیره شد ✅' : 'نسخه از لیست حذف شد ❌';
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: message,
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true
                     });
                 } else {
-                    // Remove bookmark
-                    await axios.delete(`${url}${this.prescription.id}/`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
+                    throw new Error('Invalid response format');
                 }
-
-                console.log('✅ Bookmark synced with server');
-
+                
             } catch (error) {
-                console.error('❌ Bookmark sync failed:', error);
+                console.error('❌ Save error:', error);
                 
-                // Revert state on error
-                this.isBookmarked = !this.isBookmarked;
-                this.updateLocalBookmarks();
-                
-                this.showToast('error', 'خطا در همگام‌سازی - لطفاً دوباره تلاش کنید');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطا در ذخیره‌سازی',
+                    text: error.message || 'لطفاً دوباره تلاش کنید',
+                    confirmButtonText: 'باشه',
+                    confirmButtonColor: '#ef4444'
+                });
             }
-            */
+        }
+        ,
+
+        shareLink() {
+            const url = window.location.href;
+            
+            navigator.clipboard.writeText(url).then(() => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'لینک کپی شد',
+                    text: 'لینک این نسخه در کلیپ‌بورد شما کپی شد',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    timerProgressBar: true
+                });
+            }).catch(() => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطا',
+                    text: 'خطا در کپی لینک',
+                    confirmButtonText: 'باشه'
+                });
+            });
         },
 
-        // ═══════════════════════════════════════════════════════════
-        // ❓ Q&A FUNCTIONALITY
-        // ═══════════════════════════════════════════════════════════
+        scrollToQuestion() {
+            const questionBox = document.getElementById('question-section');
+            if (questionBox) {
+                questionBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        },
 
-        /**
-         * Submit user question
-         * Requires premium access
-         */
+        copyDrugCode(code) {
+            navigator.clipboard.writeText(code).then(() => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'کپی شد',
+                    text: `کد ${code} کپی شد`,
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            });
+        },
+
+        showFullDescription(description) {
+            if (description && description.length > 100) {
+                this.fullDescription = description;
+                this.showDescriptionModal = true;
+            }
+        },
+
+        truncateDescription(text, maxLength = 100) {
+            if (!text) return '-';
+            if (text.length <= maxLength) return text;
+            return text.substring(0, maxLength) + '...';
+        },
+
         async submitQuestion() {
-            // Validation
-            if (!this.questionText.trim()) {
-                this.showToast('warning', 'لطفاً متن سوال را وارد کنید');
+            if (!this.isPremiumUser) {
+                this.showUpgradeModal();
                 return;
             }
 
-            // Premium check
-            if (!this.isPremiumUser) {
+            if (!this.questionText.trim()) {
                 Swal.fire({
                     icon: 'warning',
-                    title: '⭐ دسترسی ویژه',
-                    html: `
-                        <p class="mb-4">این قابلیت فقط برای کاربران ویژه فعال است.</p>
-                        <p class="text-sm text-gray-600">با ارتقا به پلن ویژه، از تمام امکانات دکتر کد استفاده کنید.</p>
-                    `,
-                    showCancelButton: true,
-                    confirmButtonText: '🚀 مشاهده پلن‌ها',
-                    cancelButtonText: 'انصراف',
-                    confirmButtonColor: '#0077b6'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = '/plan/';
-                    }
+                    title: 'هشدار',
+                    text: 'لطفاً سوال خود را بنویسید',
+                    confirmButtonText: 'باشه'
                 });
                 return;
             }
 
             try {
                 this.questionSubmitting = true;
+                
+                const questionData = {
+                    question: this.questionText,
+                    prescription_slug: this.prescription.slug,
+                    user_profile: this.userProfile
+                };
 
-                const token = StorageManager.getAccessToken();
-
-                if (!token) {
-                    throw new Error('لطفاً وارد حساب کاربری خود شوید');
-                }
-
-                console.log('📤 Submitting question...');
-
-                // Submit question via API
-                await axios.post(
-                    `${API.BASE_URL}api/v1/prescriptions/${this.slug}/questions/`,
-                    {
-                        question: this.questionText.trim()
-                    },
-                    {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    }
-                );
-
-                // Success feedback
+                await API.prescriptions.submitQuestion(this.prescription.slug, questionData);
+                
                 Swal.fire({
                     icon: 'success',
-                    title: '✅ سوال ارسال شد',
-                    html: `
-                        <p class="mb-2">سوال شما با موفقیت ثبت شد.</p>
-                        <p class="text-sm text-gray-600">پاسخ در بخش پروفایل شما قابل مشاهده خواهد بود.</p>
-                    `,
+                    title: 'سوال ارسال شد',
+                    text: 'سوال شما با موفقیت ثبت شد و به زودی پاسخ داده می‌شود',
                     confirmButtonText: 'باشه',
-                    confirmButtonColor: '#10b981'
+                    confirmButtonColor: '#0077b6'
                 });
 
-                // Clear form
                 this.questionText = '';
-
-                console.log('✅ Question submitted successfully');
-
-            } catch (error) {
-                console.error('❌ Error submitting question:', error);
-
-                let errorMsg = 'خطا در ارسال سوال';
                 
-                if (error.response?.data?.message) {
-                    errorMsg = error.response.data.message;
-                } else if (error.message) {
-                    errorMsg = error.message;
-                }
-
-                this.showToast('error', errorMsg);
-
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطا',
+                    text: 'خطا در ارسال سوال. لطفاً دوباره تلاش کنید',
+                    confirmButtonText: 'باشه'
+                });
             } finally {
                 this.questionSubmitting = false;
             }
         },
 
-        // ═══════════════════════════════════════════════════════════
-        // 🛠️ UTILITY FUNCTIONS
-        // ═══════════════════════════════════════════════════════════
-
-        /**
-         * Show toast notification
-         */
-        showToast(type, title, text = '') {
-            const icons = {
-                success: 'success',
-                error: 'error',
-                warning: 'warning',
-                info: 'info'
-            };
-
+        showUpgradeModal() {
             Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: icons[type] || 'info',
-                title: title,
-                text: text,
-                showConfirmButton: false,
-                timer: 3000,
-                timerProgressBar: true,
-                didOpen: (toast) => {
-                    toast.addEventListener('mouseenter', Swal.stopTimer);
-                    toast.addEventListener('mouseleave', Swal.resumeTimer);
-                }
-            });
-        },
-
-        /**
-         * Prompt user to login
-         */
-        promptLogin(action = 'استفاده از این قابلیت') {
-            Swal.fire({
-                icon: 'warning',
-                title: '🔐 ورود به حساب کاربری',
+                title: 'ویژه کاربران Premium',
                 html: `
-                    <p class="mb-4">برای ${action} ابتدا وارد حساب کاربری خود شوید.</p>
+                    <div class="text-center">
+                        <i class="fas fa-crown text-6xl text-amber-500 mb-4"></i>
+                        <p class="mb-4">برای ارسال سوال نیاز به اشتراک ویژه دارید</p>
+                        <p class="text-sm text-gray-600">با خرید اشتراک ویژه می‌توانید از متخصصین سوال بپرسید</p>
+                    </div>
                 `,
                 showCancelButton: true,
-                confirmButtonText: 'ورود',
-                cancelButtonText: 'انصراف',
-                confirmButtonColor: '#0077b6'
+                confirmButtonText: 'خرید اشتراک ویژه',
+                cancelButtonText: 'بستن',
+                confirmButtonColor: '#f59e0b',
+                cancelButtonColor: '#6b7280'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Store return URL
-                    sessionStorage.setItem('returnUrl', window.location.pathname);
-                    window.location.href = '/login/';
+                    window.location.href = '/plans';
                 }
             });
         },
 
-        /**
-         * Retry loading prescription
-         */
-        async retryLoad() {
-            console.log('🔄 Retrying load...');
-            await this.loadPrescription();
+        getTextColor(bgClass) {
+            if (!bgClass) return '';
+            return bgClass.replace('bg-', 'text-');
         },
 
-        /**
-         * Check if prescription has any media
-         */
-        hasMedia() {
-            return (this.prescription?.images?.length > 0) || 
-                   (this.prescription?.videos?.length > 0);
+        getBorderColor(bgClass) {
+            if (!bgClass) return '';
+            return bgClass.replace('bg-', 'border-');
         },
 
-        /**
-         * Format date to Persian
-         */
-        formatDate(dateString) {
-            if (!dateString) return '-';
-            
-            try {
-                const date = new Date(dateString);
-                return new Intl.DateTimeFormat('fa-IR').format(date);
-            } catch (error) {
-                console.error('Date format error:', error);
-                return dateString;
-            }
+        getBgColorStyle(colorCode) {
+            if (!colorCode) return '';
+            const colorMap = {
+                'bg-red-500': '#ef4444',
+                'bg-blue-500': '#3b82f6',
+                'bg-green-500': '#22c55e',
+                'bg-yellow-500': '#eab308',
+                'bg-purple-500': '#a855f7',
+                'bg-pink-500': '#ec4899',
+                'bg-indigo-500': '#6366f1',
+                'bg-orange-500': '#f97316',
+                'bg-teal-500': '#14b8a6',
+                'bg-cyan-500': '#06b6d4'
+            };
+            return colorMap[colorCode] || '#3b82f6';
+        },
+
+        initSecurityMeasures() {
+            document.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                return false;
+            });
+
+            document.addEventListener('keyup', (e) => {
+                if (e.key === 'PrintScreen') {
+                    navigator.clipboard.writeText('');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'غیرمجاز',
+                        text: 'اسکرین‌شات از این صفحه مجاز نیست',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'غیرمجاز',
+                        text: 'چاپ این صفحه مجاز نیست',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                    return false;
+                }
+            });
+
+            setInterval(() => {
+                const watermark = document.querySelector('.watermark');
+                if (!watermark || watermark.style.display === 'none' || watermark.style.opacity === '0') {
+                    document.body.innerHTML = '<div style="text-align:center;margin-top:100px;"><h1>⚠️ دسترسی غیرمجاز شناسایی شد</h1><p>لطفاً صفحه را بازخوانی کنید</p></div>';
+                }
+            }, 2000);
+        },
+        // در داخل return object، این متد رو اضافه کن یا جایگزین کن:
+
+checkPremiumStatus() {
+    try {
+        // خواندن از localStorage با کلید دقیق
+        const userProfileString = localStorage.getItem('drcode_user_profile');
+        
+        console.log('🔍 Raw localStorage data:', userProfileString);
+        
+        if (!userProfileString) {
+            console.warn('⚠️ No user profile found in localStorage');
+            this.isPremiumUser = false;
+            this.userProfile = null;
+            return false;
         }
-    };
+
+        const userProfile = JSON.parse(userProfileString);
+        console.log('📦 Parsed user profile:', userProfile);
+        
+        // چک کردن role
+        const isPremium = userProfile?.role === 'premium';
+        console.log('👑 Is Premium User?', isPremium);
+        console.log('🎭 User Role:', userProfile?.role);
+        
+        this.isPremiumUser = isPremium;
+        this.userProfile = userProfile;
+        
+        // تست watermark
+        if (userProfile?.medical_code) {
+            this.watermarkText = userProfile.medical_code;
+            console.log('🏷️ Watermark set to:', this.watermarkText);
+        }
+        
+        return isPremium;
+        
+    } catch (error) {
+        console.error('❌ Error checking premium status:', error);
+        this.isPremiumUser = false;
+        this.userProfile = null;
+        return false;
+    }
+},
+
+// تست کامل Premium Status
+testPremiumStatus() {
+    console.log('🧪 Starting Premium Status Test...');
+    console.log('─────────────────────────────────');
+    
+    // تست 1: خواندن مستقیم از localStorage
+    const rawData = localStorage.getItem('drcode_user_profile');
+    console.log('Test 1 - Raw Data:', rawData);
+    
+    // تست 2: Parse کردن
+    try {
+        const parsed = JSON.parse(rawData);
+        console.log('Test 2 - Parsed Data:', parsed);
+        console.log('Test 2 - Role Field:', parsed?.role);
+        console.log('Test 2 - Role Type:', typeof parsed?.role);
+    } catch (e) {
+        console.error('Test 2 - Parse Error:', e);
+    }
+    
+    // تست 3: چک کردن شرط
+    const result = this.checkPremiumStatus();
+    console.log('Test 3 - Final Result:', result);
+    console.log('Test 3 - isPremiumUser:', this.isPremiumUser);
+    
+    console.log('─────────────────────────────────');
+    console.log('🧪 Test Completed!');
+    
+    // نمایش نتیجه در UI
+    if (this.isPremiumUser) {
+        console.log('✅ SUCCESS: Premium User Detected!');
+        alert('✅ شما کاربر Premium هستید!');
+    } else {
+        console.log('❌ FAILED: Not a Premium User');
+        alert('❌ شما کاربر Premium نیستید یا اطلاعات یافت نشد');
+    }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// 🌐 GLOBAL EVENT LISTENERS
-// ═══════════════════════════════════════════════════════════════════
+    }
 
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('🎯 Prescription Detail Page Ready');
-    
-    // Add keyboard listener for gallery
-    document.addEventListener('keydown', (e) => {
-        const app = Alpine.$data(document.querySelector('[x-data="prescriptionDetailApp()"]'));
-        if (app) {
-            app.handleGalleryKeyboard(e);
-        }
-    });
-});
+
+}
+
+
+
+

@@ -4,696 +4,439 @@
 {% block title %}جزئیات نسخه{% endblock %}
 
 {% block content %}
-<div x-data="prescriptionDetailApp()" x-init="init()" class="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
+<style>
+    /* 🔒 Security: جلوگیری از کپی و انتخاب متن */
+    * {
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        -webkit-touch-callout: none !important;
+    }
     
-    <!-- ═══════════════════════════════════════════════════════════ -->
-    <!-- 🔄 LOADING STATE -->
-    <!-- ═══════════════════════════════════════════════════════════ -->
-    <template x-if="loading">
-        <div class="flex items-center justify-center min-h-screen">
-            <div class="text-center">
-                <div class="relative w-24 h-24 mx-auto mb-6">
-                    <div class="absolute top-0 left-0 w-full h-full border-4 border-gray-200 rounded-full"></div>
-                    <div class="absolute top-0 left-0 w-full h-full border-4 border-primary-600 rounded-full border-t-transparent animate-spin"></div>
-                </div>
-                <p class="text-gray-600 font-medium text-lg">در حال بارگذاری...</p>
-            </div>
-        </div>
-    </template>
+    img, a, button {
+        -webkit-user-drag: none !important;
+        user-drag: none !important;
+    }
+    
+    ::selection {
+        background: transparent !important;
+        color: inherit !important;
+    }
+    
+    ::-moz-selection {
+        background: transparent !important;
+        color: inherit !important;
+    }
+    
+    /* Watermark */
+    .watermark {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 9999;
+        opacity: 0.03;
+        font-size: 4rem;
+        font-weight: 900;
+        color: #000;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 6rem;
+        transform: rotate(-35deg);
+    }
+    
+    .watermark::before,
+    .watermark::after {
+        content: attr(data-text);
+    }
+    
+    /* Header Container */
+    .prescription-header {
+        background: white;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        border-bottom: 4px solid #e5e7eb;
+    }
+    
+    /* Category Badge - فقط background داینامیک */
+    .category-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        border-radius: 9999px;
+        font-weight: 700;
+        font-size: 0.9375rem;
+        color: white !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transition: all 0.3s ease;
+    }
+    
+    .category-badge:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    }
+    
+    /* Access Badge */
+    .badge-premium {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 9999px;
+        font-weight: 700;
+        font-size: 0.875rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    }
+    
+    .badge-free {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 9999px;
+        font-weight: 700;
+        font-size: 0.875rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+    
+    /* Action Buttons */
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.9375rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+    
+    .btn-save {
+        background: white;
+        color: #374151;
+        border: 2px solid #e5e7eb;
+    }
+    
+    .btn-save:hover {
+        border-color: #10b981;
+        color: #10b981;
+    }
+    
+    .btn-save.saved {
+        background: #10b981;
+        color: white;
+        border-color: #10b981;
+    }
+    
+    .btn-share,
+    .btn-question {
+        background: white;
+        color: #6b7280;
+        border: 2px solid #e5e7eb;
+    }
+    
+    .btn-share:hover,
+    .btn-question:hover {
+        border-color: #10b981;
+        color: #10b981;
+    }
+    
+    /* Alternative Names */
+    .alt-name {
+        display: inline-block;
+        padding: 0.4rem 0.875rem;
+        background: #f3f4f6;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #6b7280;
+        transition: all 0.2s ease;
+    }
+    
+    .alt-name:hover {
+        background: #e5e7eb;
+        transform: translateY(-1px);
+    }
+    
+    /* Primary Name Badge */
+    .primary-name-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 1.125rem;
+        color: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    /* Back Button */
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.625rem;
+        padding: 0.75rem 1.25rem;
+        background: white;
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        font-weight: 600;
+        color: #374151;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    .btn-back:hover {
+        transform: translateX(6px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border-color: #9ca3af;
+        color: #111827;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .prescription-header {
+            border-bottom-width: 3px;
+        }
+        
+        .btn-action {
+            width: 100%;
+            justify-content: center;
+        }
+    }
 
-    <!-- ═══════════════════════════════════════════════════════════ -->
-    <!-- ❌ ERROR STATE -->
-    <!-- ═══════════════════════════════════════════════════════════ -->
-    <template x-if="error && !loading">
-        <div class="container mx-auto px-4 py-16">
-            <div class="max-w-2xl mx-auto">
-                <div class="bg-white rounded-2xl shadow-xl p-12 text-center border-t-4 border-red-500">
-                    <div class="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <i class="fas fa-exclamation-triangle text-5xl text-red-500"></i>
-                    </div>
-                    <h2 class="text-3xl font-bold text-gray-800 mb-4">خطا در بارگذاری</h2>
-                    <p class="text-gray-600 mb-8 text-lg" x-text="errorMessage"></p>
-                    <div class="flex gap-4 justify-center flex-wrap">
-                        <button @click="retryLoad()" 
-                                class="px-8 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
-                            <i class="fas fa-redo-alt ml-2"></i>
-                            تلاش مجدد
-                        </button>
-                        <a href="/prescriptions/" 
-                           class="px-8 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
-                            <i class="fas fa-arrow-right ml-2"></i>
-                            بازگشت به نسخه‌ها
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </template>
+    /* Warning Box */
+.warning-box {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border-right: 6px solid #dc2626;
+    box-shadow: 0 8px 32px rgba(220, 38, 38, 0.15);
+    animation: warningPulse 3s ease-in-out infinite;
+}
 
-    <!-- ═══════════════════════════════════════════════════════════ -->
-    <!-- ✅ MAIN CONTENT -->
-    <!-- ═══════════════════════════════════════════════════════════ -->
-    <template x-if="prescription && !loading && !error">
-        <div class="container mx-auto px-4 py-6 max-w-[1600px]">
+@keyframes warningPulse {
+    0%, 100% {
+        box-shadow: 0 8px 32px rgba(220, 38, 38, 0.15);
+    }
+    50% {
+        box-shadow: 0 12px 40px rgba(220, 38, 38, 0.25);
+    }
+}
+
+.warning-icon {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    box-shadow: 0 4px 16px rgba(220, 38, 38, 0.3);
+    animation: iconBounce 2s ease-in-out infinite;
+}
+
+@keyframes iconBounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .prescription-header {
+        border-bottom-width: 3px;
+    }
+    
+    .btn-action {
+        width: 100%;
+        justify-content: center;
+    }
+}
+    </style>
+
+<div x-data="prescriptionDetailApp()" x-init="init()" class="min-h-screen pt-20 bg-gray-50">
+    
+    <!-- 🔐 Watermark -->
+    <div class="watermark" :data-text="watermarkText"></div>
+    
+    <!-- ⏳ Loading State -->
+    <div x-show="loading" class="max-w-7xl mx-auto px-4 py-12">
+        <div class="bg-white rounded-3xl shadow-2xl p-16 text-center">
+            <i class="fas fa-spinner fa-spin text-6xl text-blue-500 mb-6"></i>
+            <p class="text-2xl font-bold text-gray-700">در حال بارگذاری...</p>
+        </div>
+    </div>
+
+    <!-- 🎯 MAIN HEADER -->
+    <div x-show="!loading" x-cloak>
+        
+        <!-- Header -->
+        <div class="prescription-header">
             
-            <!-- ═══════════════════════════════════════════════════ -->
-            <!-- 📍 BACK BUTTON -->
-            <!-- ═══════════════════════════════════════════════════ -->
-            <div class="mb-6">
-                <a href="/prescriptions/" 
-                   class="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow group">
-                    <i class="fas fa-arrow-right text-primary-600 group-hover:-translate-x-1 transition-transform"></i>
-                    <span class="font-medium">بازگشت به نسخه‌ها</span>
-                </a>
-            </div>
-
-            <!-- ═══════════════════════════════════════════════════ -->
-            <!-- 📋 HEADER SECTION -->
-            <!-- ═══════════════════════════════════════════════════ -->
-            <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6 border border-gray-100">
-                <!-- Top Color Bar -->
-                <div class="h-1.5" :class="prescription.category?.color_code || 'bg-gray-500'"></div>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 
-                <div class="p-6">
-                    <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                <!-- ردیف اول: دکمه بازگشت + بج‌ها -->
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                    
+                    <!-- دکمه بازگشت -->
+                    <a href="/prescriptions" class="btn-back">
+                        <i class="fas fa-arrow-right"></i>
+                        <span>بازگشت</span>
+                    </a>
+                    
+                    <!-- بج‌ها -->
+                    <div class="flex flex-wrap items-center gap-3">
                         
-                        <!-- Title Section -->
-                        <div class="flex-1">
-                            <!-- Category Badge -->
-                            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg mb-3 text-white shadow-sm text-sm"
-                                 :class="prescription.category?.color_code || 'bg-gray-500'">
-                                <i class="fas fa-folder"></i>
-                                <span class="font-bold" x-text="prescription.category?.title || 'عمومی'"></span>
-                            </div>
-
-                            <!-- Main Title -->
-                            <h1 class="text-3xl md:text-4xl font-black text-gray-900 mb-4 leading-tight" 
-                                x-text="prescription.title">
-                            </h1>
-
-                            <!-- Alternative Names -->
-                            <template x-if="prescription.all_names && prescription.all_names.length > 0">
-                                <div class="mb-4">
-                                    <p class="text-sm text-gray-500 mb-2 font-medium">نام‌های دیگر:</p>
-                                    <div class="flex flex-wrap gap-2">
-                                        <template x-for="name in prescription.all_names" :key="name">
-                                            <span class="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm">
-                                                <i class="fas fa-tag text-gray-400 ml-1.5 text-xs"></i>
-                                                <span x-text="name"></span>
-                                            </span>
-                                        </template>
-                                    </div>
-                                </div>
-                            </template>
-
-                            <!-- Access Badge -->
-                            <div>
-                                <template x-if="prescription.access_level === 'FREE'">
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-800 rounded-lg font-bold text-sm">
-                                        <i class="fas fa-unlock-alt text-xs"></i>
-                                        رایگان
-                                    </span>
-                                </template>
-                                <template x-if="prescription.access_level === 'PREMIUM'">
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg font-bold text-sm shadow-md">
-                                        <i class="fas fa-crown text-xs"></i>
-                                        ویژه
-                                    </span>
-                                </template>
-                            </div>
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="flex flex-row lg:flex-col gap-3 lg:w-48">
-                            <!-- Bookmark -->
-                            <button @click="toggleBookmark()"
-                                    class="flex-1 lg:flex-none px-4 py-3 rounded-lg font-bold transition-all duration-200 transform hover:scale-105"
-                                    :class="isBookmarked 
-                                        ? 'bg-yellow-400 text-gray-900 shadow-md' 
-                                        : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-primary-400'">
-                                <i class="text-lg ml-2" :class="isBookmarked ? 'fas fa-bookmark' : 'far fa-bookmark'"></i>
-                                <span class="hidden sm:inline" x-text="isBookmarked ? 'ذخیره شده' : 'ذخیره'"></span>
-                            </button>
-
-                            <!-- Share -->
-                            <button class="flex-1 lg:flex-none px-4 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-all duration-200 transform hover:scale-105 shadow-md">
-                                <i class="fas fa-share-alt ml-2"></i>
-                                <span class="hidden sm:inline">اشتراک</span>
-                            </button>
-                        </div>
+                        <!-- بج دسته‌بندی - فقط background داینامیک -->
+                        <span 
+                            class="category-badge"
+                            :class="prescription?.category?.color_code">
+                            <i class="fas fa-folder"></i>
+                            <span x-text="prescription?.category?.title"></span>
+                        </span>
+                        
+                        <!-- بج تعداد داروها -->
+                        <span class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full font-bold text-gray-700 text-sm">
+                            <i class="fas fa-pills"></i>
+                            <span x-text="prescription?.prescription_drugs?.length + ' دارو'"></span>
+                        </span>
+                        
+                        <!-- بج سطح دسترسی -->
+                        <span :class="prescription?.access_level === 'PREMIUM' ? 'badge-premium' : 'badge-free'">
+                            <i :class="prescription?.access_level === 'PREMIUM' ? 'fas fa-crown' : 'fas fa-unlock'"></i>
+                            <span x-text="prescription?.access_level === 'PREMIUM' ? 'ویژه' : 'رایگان'"></span>
+                        </span>
+                        
                     </div>
                 </div>
-            </div>
-
-            <!-- ═══════════════════════════════════════════════════ -->
-            <!-- ⚠️ COPYRIGHT WARNING -->
-            <!-- ═══════════════════════════════════════════════════ -->
-            <div class="bg-gradient-to-r from-red-50 to-orange-50 border-r-4 border-red-500 rounded-xl p-4 mb-6">
-                <div class="flex items-start gap-3">
-                    <div class="flex-shrink-0 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center mt-0.5">
-                        <i class="fas fa-exclamation-triangle text-white"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-black text-gray-900 mb-1">⚠️ هشدار مالکیت معنوی</h3>
-                        <p class="text-sm text-gray-700 leading-relaxed">
-                            این نسخه متعلق به <strong class="text-red-600">دکتر کد</strong> است. 
-                            هرگونه کپی‌برداری، اشتراک‌گذاری یا استفاده تجاری بدون مجوز کتبی، پیگرد قانونی دارد.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ═══════════════════════════════════════════════════ -->
-            <!-- 💊 MAIN LAYOUT: TABLE + DESCRIPTION -->
-            <!-- ═══════════════════════════════════════════════════ -->
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 
-                <!-- ═══════════════════════════════════════════════ -->
-                <!-- RIGHT: MEDICATIONS TABLE (2 columns) -->
-                <!-- ═══════════════════════════════════════════════ -->
-                <div class="xl:col-span-2">
-                    <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
-                        
-                        <!-- Table Header -->
-                        <div class="px-6 py-4 border-b border-gray-200"
-                             :class="prescription.category?.color_code ? prescription.category.color_code.replace('bg-', 'bg-opacity-10 bg-') : 'bg-gray-50'">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-lg flex items-center justify-center shadow-sm"
-                                         :class="prescription.category?.color_code || 'bg-gray-500'">
-                                        <i class="fas fa-pills text-lg text-white"></i>
-                                    </div>
-                                    <div>
-                                        <h2 class="text-xl font-black text-gray-900">لیست داروها</h2>
-                                        <p class="text-xs text-gray-500 mt-0.5" 
-                                           x-show="prescription.medications && prescription.medications.length > 0"
-                                           x-text="`${prescription.medications.length} قلم دارو`"></p>
-                                    </div>
-                                </div>
-                                
-                                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-white shadow-sm"
-                                     :class="prescription.category?.color_code || 'bg-gray-500'">
-                                    <i class="fas fa-capsules text-sm"></i>
-                                    <span class="font-bold text-sm" 
-                                          x-text="`${prescription.medications?.length || 0}`"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Table Body -->
-                        <div class="overflow-x-auto">
-                            <!-- Empty State -->
-                            <template x-if="!prescription.medications || prescription.medications.length === 0">
-                                <div class="text-center py-16 px-4">
-                                    <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <i class="fas fa-capsules text-4xl text-gray-300"></i>
-                                    </div>
-                                    <h3 class="text-lg font-bold text-gray-800 mb-1">داروی ثبت شده‌ای وجود ندارد</h3>
-                                    <p class="text-sm text-gray-500">برای این نسخه هنوز دارویی ثبت نشده است</p>
-                                </div>
-                            </template>
-
-                            <!-- Medications Table -->
-                            <template x-if="prescription.medications && prescription.medications.length > 0">
-                                <table class="w-full">
-                                    <thead>
-                                        <tr class="bg-gray-50 border-b-2 border-gray-200">
-                                            <th class="px-4 py-3 text-right text-xs font-black text-gray-700 uppercase tracking-wide w-12">#</th>
-                                            <th class="px-4 py-3 text-right text-xs font-black text-gray-700 uppercase tracking-wide">نام دارو</th>
-                                            <th class="px-4 py-3 text-right text-xs font-black text-gray-700 uppercase tracking-wide hidden md:table-cell">کد دارو</th>
-                                            <th class="px-4 py-3 text-right text-xs font-black text-gray-700 uppercase tracking-wide">دوز</th>
-                                            <th class="px-4 py-3 text-right text-xs font-black text-gray-700 uppercase tracking-wide hidden sm:table-cell">تعداد</th>
-                                            <th class="px-4 py-3 text-right text-xs font-black text-gray-700 uppercase tracking-wide hidden lg:table-cell">توضیحات</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-gray-100">
-                                        <template x-for="(med, index) in prescription.medications" :key="med.id || index">
-                                            <tr class="hover:bg-gray-50 transition-colors duration-150"
-                                                :class="med.is_combination ? 'bg-purple-50/30' : ''">
-                                                
-                                                <!-- Row Number -->
-                                                <td class="px-4 py-4 align-top">
-                                                    <div class="w-7 h-7 rounded-full flex items-center justify-center font-black text-sm text-white shadow-sm"
-                                                         :class="prescription.category?.color_code || 'bg-gray-500'"
-                                                         x-text="index + 1">
-                                                    </div>
-                                                </td>
-
-                                                <!-- Drug Name -->
-                                                <td class="px-4 py-4 align-top">
-                                                    <div class="flex flex-col gap-1">
-                                                        <span class="font-bold text-gray-900 text-base leading-snug" x-text="med.drug_name"></span>
-                                                        
-                                                        <!-- Combination Badge -->
-                                                        <template x-if="med.is_combination">
-                                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-bold rounded w-fit">
-                                                                <i class="fas fa-layer-group text-[10px]"></i>
-                                                                ترکیبی
-                                                            </span>
-                                                        </template>
-
-                                                        <!-- Mobile: Show code here -->
-                                                        <button @click="copyDrugCode(med.drug_code)"
-                                                                class="md:hidden inline-flex items-center gap-1.5 px-2 py-1 bg-gray-100 hover:bg-primary-50 rounded text-xs font-mono font-bold text-gray-600 w-fit mt-1 transition-colors">
-                                                            <i class="fas fa-barcode text-primary-600 text-xs"></i>
-                                                            <span x-text="med.drug_code"></span>
-                                                            <i class="fas fa-copy text-gray-400 text-[10px]"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-
-                                                <!-- Drug Code (Desktop) -->
-                                                <td class="px-4 py-4 align-top hidden md:table-cell">
-                                                    <button @click="copyDrugCode(med.drug_code)"
-                                                            class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-primary-50 rounded-lg transition-colors group/code">
-                                                        <i class="fas fa-barcode text-primary-600"></i>
-                                                        <span class="font-mono font-bold text-gray-700 text-sm" x-text="med.drug_code"></span>
-                                                        <i class="fas fa-copy text-gray-400 group-hover/code:text-primary-600 transition-colors text-xs"></i>
-                                                    </button>
-                                                </td>
-
-                                                <!-- Dosage -->
-                                                <td class="px-4 py-4 align-top">
-                                                    <div class="text-sm text-gray-700 leading-relaxed max-w-xs" x-text="med.dosage || '-'"></div>
-                                                    
-                                                    <!-- Mobile: Show quantity here -->
-                                                    <div class="sm:hidden mt-2 flex items-center gap-2">
-                                                        <span class="text-xs text-gray-500 font-medium">تعداد:</span>
-                                                        <span class="px-2 py-0.5 bg-green-100 text-green-800 rounded font-bold text-sm" x-text="med.quantity"></span>
-                                                    </div>
-                                                </td>
-
-                                                <!-- Quantity (Desktop/Tablet) -->
-                                                <td class="px-4 py-4 align-top hidden sm:table-cell">
-                                                    <span class="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 rounded-lg font-bold" 
-                                                          x-text="med.quantity"></span>
-                                                </td>
-
-                                                <!-- Notes (Desktop) -->
-                                                <td class="px-4 py-4 align-top hidden lg:table-cell">
-                                                    <template x-if="med.notes && med.notes.trim()">
-                                                        <div>
-                                                            <!-- Short notes -->
-                                                            <template x-if="med.notes.length <= 80">
-                                                                <p class="text-sm text-gray-600 leading-relaxed" x-text="med.notes"></p>
-                                                            </template>
-
-                                                            <!-- Long notes with modal -->
-                                                            <template x-if="med.notes.length > 80">
-                                                                <div x-data="{ showModal: false }">
-                                                                    <p class="text-sm text-gray-600 leading-relaxed mb-1" x-text="med.notes.substring(0, 80) + '...'"></p>
-                                                                    <button @click="showModal = true"
-                                                                            class="text-primary-600 hover:text-primary-700 text-xs font-bold inline-flex items-center gap-1">
-                                                                        <span>ادامه</span>
-                                                                        <i class="fas fa-chevron-left text-[10px]"></i>
-                                                                    </button>
-
-                                                                    <!-- Modal -->
-                                                                    <div x-show="showModal" 
-                                                                         x-cloak
-                                                                         @click="showModal = false"
-                                                                         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
-                                                                         x-transition>
-                                                                        <div @click.stop 
-                                                                             class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
-                                                                             x-transition:enter="transition ease-out duration-200"
-                                                                             x-transition:enter-start="opacity-0 scale-95"
-                                                                             x-transition:enter-end="opacity-100 scale-100">
-                                                                            <div class="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between z-10 rounded-t-2xl">
-                                                                                <h3 class="text-lg font-bold text-gray-900">توضیحات دارو</h3>
-                                                                                <button @click="showModal = false" 
-                                                                                        class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
-                                                                                    <i class="fas fa-times text-gray-600"></i>
-                                                                                </button>
-                                                                            </div>
-                                                                            <div class="p-6">
-                                                                                <p class="text-gray-700 leading-relaxed whitespace-pre-wrap" x-text="med.notes"></p>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </template>
-                                                        </div>
-                                                    </template>
-                                                    <template x-if="!med.notes || !med.notes.trim()">
-                                                        <span class="text-sm text-gray-400">-</span>
-                                                    </template>
-                                                </td>
-                                            </tr>
-
-                                            <!-- Mobile: Notes Row (Full Width) -->
-                                            <tr class="lg:hidden" :class="med.notes && med.notes.trim() ? '' : 'hidden'">
-                                                <td colspan="5" class="px-4 py-3 bg-gray-50">
-                                                    <div class="text-xs text-gray-500 font-medium mb-1">توضیحات:</div>
-                                                    <template x-if="med.notes && med.notes.trim()">
-                                                        <div>
-                                                            <template x-if="med.notes.length <= 100">
-                                                                <p class="text-sm text-gray-700 leading-relaxed" x-text="med.notes"></p>
-                                                            </template>
-
-                                                            <template x-if="med.notes.length > 100">
-                                                                <div x-data="{ showModal: false }">
-                                                                    <p class="text-sm text-gray-700 leading-relaxed mb-1" x-text="med.notes.substring(0, 100) + '...'"></p>
-                                                                    <button @click="showModal = true"
-                                                                            class="text-primary-600 text-xs font-bold inline-flex items-center gap-1">
-                                                                        <span>مشاهده کامل</span>
-                                                                        <i class="fas fa-chevron-left text-[10px]"></i>
-                                                                    </button>
-
-                                                                    <!-- Modal (same as desktop) -->
-                                                                    <div x-show="showModal" 
-                                                                         x-cloak
-                                                                         @click="showModal = false"
-                                                                         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
-                                                                         x-transition>
-                                                                        <div @click.stop 
-                                                                             class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto">
-                                                                            <div class="sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-between">
-                                                                                <h3 class="font-bold text-gray-900">توضیحات</h3>
-                                                                                <button @click="showModal = false" 
-                                                                                        class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
-                                                                                    <i class="fas fa-times text-gray-600 text-sm"></i>
-                                                                                </button>
-                                                                            </div>
-                                                                            <div class="p-4">
-                                                                                <p class="text-gray-700 leading-relaxed text-sm whitespace-pre-wrap" x-text="med.notes"></p>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </template>
-                                                        </div>
-                                                    </template>
-                                                </td>
-                                            </tr>
-                                        </template>
-                                    </tbody>
-                                </table>
-                            </template>
-                        </div>
+                <!-- ردیف دوم: عنوان + نام‌های جایگزین -->
+                <div class="mb-6">
+                    <!-- عنوان اصلی -->
+                    <h1 class="text-4xl sm:text-5xl font-black text-gray-900 mb-3" x-text="prescription?.title"></h1>
+                    
+                    <!-- نام اصلی (Primary Name) - فقط background داینامیک -->
+                    <div class="mb-4">
+                        <span 
+                            class="primary-name-badge"
+                            :class="prescription?.category?.color_code">
+                            <i class="fas fa-tag"></i>
+                            <span x-text="prescription?.primary_name"></span>
+                        </span>
                     </div>
-                </div>
-
-                <!-- ═══════════════════════════════════════════════ -->
-                <!-- LEFT: DESCRIPTION SECTION (1 column) -->
-                <!-- ═══════════════════════════════════════════════ -->
-                <div class="xl:col-span-1">
-                    <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 sticky top-6">
-                        
-                        <!-- Header -->
-                        <div class="px-6 py-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center shadow-sm">
-                                    <i class="fas fa-file-medical-alt text-white"></i>
-                                </div>
-                                <h2 class="text-lg font-black text-gray-900">توضیحات نسخه</h2>
-                            </div>
-                        </div>
-
-                        <!-- Content -->
-                        <div class="p-6">
-                            <button @click="openDescriptionModal()" 
-                                    class="w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-[1.02] shadow-lg">
-                                <i class="fas fa-book-open ml-2"></i>
-                                مشاهده توضیحات کامل
-                            </button>
-
-                            <!-- Quick Info -->
-                            <div class="mt-6 space-y-4">
-                                <div class="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                                    <i class="fas fa-info-circle text-blue-600 mt-0.5"></i>
-                                    <div class="text-sm text-gray-700 leading-relaxed">
-                                        <p class="font-bold text-gray-900 mb-1">راهنمای استفاده</p>
-                                        <p>برای مشاهده جزئیات کامل نسخه، دستورالعمل‌ها و نکات مهم، روی دکمه بالا کلیک کنید.</p>
-                                    </div>
-                                </div>
-
-                                <div class="flex items-start gap-3 p-3 bg-amber-50 rounded-lg border border-amber-100">
-                                    <i class="fas fa-lightbulb text-amber-600 mt-0.5"></i>
-                                    <div class="text-sm text-gray-700 leading-relaxed">
-                                        <p class="font-bold text-gray-900 mb-1">نکته مهم</p>
-                                        <p>برای کپی کردن کد دارو، روی آن کلیک کنید.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- ═══════════════════════════════════════════════════ -->
-            <!-- 🖼️ IMAGES & VIDEOS SECTION -->
-            <!-- ═══════════════════════════════════════════════════ -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                
-                <!-- Images -->
-                <template x-if="prescription.images && prescription.images.length > 0">
-                    <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
-                        <div class="px-6 py-4 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-purple-100">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center shadow-sm">
-                                    <i class="fas fa-images text-white"></i>
-                                </div>
-                                <div>
-                                    <h2 class="text-lg font-black text-gray-900">تصاویر</h2>
-                                    <p class="text-xs text-gray-500 mt-0.5" x-text="`${prescription.images.length} تصویر`"></p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="p-4">
-                            <div class="grid grid-cols-3 gap-3">
-                                <template x-for="(image, index) in prescription.images" :key="index">
-                                    <button @click="openImageGallery(index)"
-                                            class="group relative aspect-square rounded-xl overflow-hidden bg-gray-100 hover:shadow-lg transition-all duration-200 transform hover:scale-105">
-                                        <img :src="image.image_url" 
-                                             :alt="image.title"
-                                             class="w-full h-full object-cover">
-                                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                            <i class="fas fa-search-plus text-white text-xl"></i>
-                                        </div>
-                                    </button>
-                                </template>
-                            </div>
-                        </div>
-                    </div>
-                </template>
-
-                <!-- Videos -->
-                <template x-if="prescription.videos && prescription.videos.length > 0">
-                    <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
-                        <div class="px-6 py-4 bg-gradient-to-r from-red-50 to-orange-50 border-b border-red-100">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-500 rounded-lg flex items-center justify-center shadow-sm">
-                                    <i class="fas fa-play-circle text-white"></i>
-                                </div>
-                                <div>
-                                    <h2 class="text-lg font-black text-gray-900">ویدیوها</h2>
-                                    <p class="text-xs text-gray-500 mt-0.5" x-text="`${prescription.videos.length} ویدیو`"></p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="p-4 space-y-4">
-                            <template x-for="(video, index) in prescription.videos" :key="index">
-                                <div class="bg-gray-50 rounded-xl overflow-hidden border border-gray-200">
-                                    <div class="aspect-video bg-gray-900">
-                                        <video :src="video.video_url" 
-                                               controls
-                                               class="w-full h-full"
-                                               :poster="video.thumbnail_url">
-                                        </video>
-                                    </div>
-                                    <div class="p-4">
-                                        <h3 class="font-bold text-gray-900 mb-1 text-sm" x-text="video.title"></h3>
-                                        <p class="text-xs text-gray-600" x-text="video.description"></p>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-                </template>
-
-            </div>
-
-            <!-- ═══════════════════════════════════════════════════ -->
-            <!-- ❓ Q&A SECTION -->
-            <!-- ═══════════════════════════════════════════════════ -->
-            <div class="bg-white rounded-2xl shadow-lg overflow-hidden mt-6 border border-gray-100">
-                <div class="px-6 py-4 bg-gradient-to-r from-teal-50 to-cyan-50 border-b border-teal-100">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-lg flex items-center justify-center shadow-sm">
-                            <i class="fas fa-question-circle text-white"></i>
-                        </div>
+                    
+                    <!-- نام‌های جایگزین -->
+                    <template x-if="prescription?.all_names && prescription.all_names.length > 1">
                         <div>
-                            <h2 class="text-lg font-black text-gray-900">سوال خود را بپرسید</h2>
-                            <p class="text-xs text-gray-500 mt-0.5">پاسخ تخصصی دریافت کنید</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="p-6">
-                    <form @submit.prevent="submitQuestion()" class="space-y-4">
-                        <textarea x-model="questionText"
-                                  rows="4"
-                                  placeholder="سوال خود را بنویسید..."
-                                  class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all resize-none"
-                                  :disabled="questionSubmitting"></textarea>
-
-                        <div class="flex items-center justify-between flex-wrap gap-3">
-                            <p class="text-xs text-gray-500">
-                                <i class="fas fa-info-circle ml-1"></i>
-                                پاسخ در پروفایل نمایش داده می‌شود
+                            <p class="text-sm font-semibold text-gray-500 mb-2 flex items-center gap-2">
+                                <i class="fas fa-tags text-xs"></i>
+                                <span>سایر نام‌ها:</span>
                             </p>
-
-                            <button type="submit"
-                                    :disabled="questionSubmitting || !questionText.trim()"
-                                    class="px-6 py-2.5 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-lg font-bold hover:from-teal-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 shadow-md text-sm">
-                                <template x-if="!questionSubmitting">
-                                    <span class="flex items-center gap-2">
-                                        <i class="fas fa-paper-plane text-sm"></i>
-                                        ارسال
-                                    </span>
+                            <div class="flex flex-wrap gap-2">
+                                <template x-for="(name, idx) in prescription.all_names.filter(n => n !== prescription.title)" :key="idx">
+                                    <span class="alt-name" x-text="name"></span>
                                 </template>
-                                <template x-if="questionSubmitting">
-                                    <span class="flex items-center gap-2">
-                                        <i class="fas fa-spinner fa-spin text-sm"></i>
-                                        در حال ارسال...
-                                    </span>
-                                </template>
-                            </button>
+                            </div>
                         </div>
-                    </form>
+                    </template>
                 </div>
-            </div>
-
-        </div>
-    </template>
-
-    <!-- ═══════════════════════════════════════════════════════════ -->
-    <!-- 🖼️ IMAGE GALLERY MODAL -->
-    <!-- ═══════════════════════════════════════════════════════════ -->
-    <div x-show="galleryOpen" 
-         x-cloak
-         @keydown.escape.window="closeImageGallery()"
-         @keydown.arrow-left.window="nextImage()"
-         @keydown.arrow-right.window="previousImage()"
-         class="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4"
-         x-transition>
-        
-        <button @click="closeImageGallery()"
-                class="absolute top-4 left-4 w-12 h-12 bg-white/10 backdrop-blur-sm hover:bg-white/20 rounded-full flex items-center justify-center transition-all z-10">
-            <i class="fas fa-times text-white text-xl"></i>
-        </button>
-
-        <button @click="previousImage()"
-                class="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 backdrop-blur-sm hover:bg-white/20 rounded-full flex items-center justify-center transition-all z-10">
-            <i class="fas fa-chevron-right text-white text-xl"></i>
-        </button>
-
-        <button @click="nextImage()"
-                class="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 backdrop-blur-sm hover:bg-white/20 rounded-full flex items-center justify-center transition-all z-10">
-            <i class="fas fa-chevron-left text-white text-xl"></i>
-        </button>
-
-        <template x-if="prescription && prescription.images && prescription.images[currentImageIndex]">
-            <div class="max-w-6xl w-full" x-transition>
-                <img :src="prescription.images[currentImageIndex].image_url"
-                     :alt="prescription.images[currentImageIndex].title"
-                     class="w-full h-auto max-h-[85vh] object-contain rounded-xl shadow-2xl">
                 
-                <div class="mt-4 text-center">
-                    <p class="text-white text-lg font-bold" 
-                       x-text="prescription.images[currentImageIndex].title"></p>
-                    <p class="text-gray-300 text-sm mt-1" 
-                       x-text="`${currentImageIndex + 1} از ${prescription.images.length}`"></p>
+                <!-- ردیف سوم: دکمه‌های عملیات -->
+                <div class="flex flex-wrap gap-3">
+                    
+                    <!-- دکمه ذخیره -->
+                    <button 
+                        @click="toggleSave()"
+                        class="btn-action btn-save"
+                        :class="{ 'saved': isSaved }">
+                        <i :class="isSaved ? 'fas fa-bookmark' : 'far fa-bookmark'"></i>
+                        <span x-text="isSaved ? 'ذخیره شده' : 'ذخیره'"></span>
+                    </button>
+                    
+                    <!-- دکمه اشتراک‌گذاری - hover: background داینامیک -->
+                    <button 
+                        @click="shareLink()"
+                        class="btn-action btn-share"
+                        :class="prescription?.category?.color_code"
+                        style="background: white !important;">
+                        <i class="fas fa-share-alt"></i>
+                        <span>اشتراک‌گذاری</span>
+                    </button>
+                    
+                    <!-- دکمه سوال - hover: background داینامیک -->
+                    <button 
+                        @click="scrollToQuestion()"
+                        class="btn-action btn-question"
+                        :class="prescription?.category?.color_code"
+                        style="background: white !important;">
+                        <i class="fas fa-question-circle"></i>
+                        <span>پرسش سوال</span>
+                    </button>
+                    
                 </div>
-            </div>
-        </template>
-    </div>
-
-    <!-- ═══════════════════════════════════════════════════════════ -->
-    <!-- 📖 DESCRIPTION MODAL -->
-    <!-- ═══════════════════════════════════════════════════════════ -->
-    <div x-show="descriptionModalOpen" 
-         x-cloak
-         @click="descriptionModalOpen = false"
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-         x-transition>
-        
-        <div @click.stop 
-             class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            
-            <!-- Header -->
-            <div class="sticky top-0 bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 flex items-center justify-between z-10">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-file-medical-alt text-lg text-white"></i>
-                    </div>
-                    <h2 class="text-xl font-black text-white">توضیحات کامل نسخه</h2>
-                </div>
-                <button @click="descriptionModalOpen = false"
-                        class="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all">
-                    <i class="fas fa-times text-white"></i>
-                </button>
-            </div>
-
-            <!-- Body -->
-            <div class="overflow-y-auto max-h-[calc(90vh-80px)]">
-                <template x-if="descriptionLoading">
-                    <div class="flex items-center justify-center py-20">
-                        <div class="text-center">
-                            <div class="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-                            <p class="text-gray-600 font-medium">در حال بارگذاری...</p>
-                        </div>
-                    </div>
-                </template>
-
-                <template x-if="!descriptionLoading && detailedDescription">
-                    <div class="p-8 prose prose-lg max-w-none" x-html="detailedDescription"></div>
-                </template>
+                
             </div>
         </div>
+        
     </div>
+ <!-- ========== WARNING BOX ========== -->
+ <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            
+    <div class="warning-box rounded-2xl p-6 sm:p-8">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+            
+            <!-- آیکون هشدار -->
+            <div class="warning-icon flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center">
+                <i class="fas fa-exclamation-triangle text-white text-2xl sm:text-3xl"></i>
+            </div>
+            
+            <!-- متن هشدار -->
+            <div class="flex-1">
+                <h3 class="text-lg sm:text-xl font-black text-red-800 mb-3 flex items-center gap-2">
+                    <i class="fas fa-shield-alt text-red-600"></i>
+                    <span>هشدار قانونی و کپی‌رایت</span>
+                </h3>
+                
+                <div class="space-y-2 text-sm sm:text-base text-red-900 leading-relaxed">
+                    <p class="font-bold">
+                        <i class="fas fa-info-circle text-red-600 ml-1"></i>
+                        محتوای این نسخه حاصل ساعت‌ها تلاش و بررسی از منابع مختلف است.
+                    </p>
+                    <p class="font-semibold">
+                        <i class="fas fa-ban text-red-600 ml-1"></i>
+                        انتشار این محتوا شرعاً حرام و از نظر قانونی قابل پیگیری خواهد بود.
+                    </p>
+                    <p class="font-medium text-red-700 mt-3 p-3 bg-red-50 rounded-lg border-r-4 border-red-500">
+                        <i class="fas fa-gavel text-red-600 ml-1"></i>
+                        لطفاً از انتشار محتوا بپرهیزید.
+                    </p>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    
+</div>
 
 </div>
 
-<style>
-/* Prevent text selection on sensitive content */
-.no-select {
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-}
 
-/* Hide print button and other elements during print */
-@media print {
-    body * {
-        visibility: hidden !important;
-    }
-    body::before {
-        content: "چاپ این صفحه مجاز نیست - این نسخه متعلق به دکتر کد است" !important;
-        position: fixed !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        font-size: 24px !important;
-        font-weight: bold !important;
-        color: red !important;
-        visibility: visible !important;
-        z-index: 99999 !important;
-    }
-}
 
-/* Alpine cloak */
-[x-cloak] {
-    display: none !important;
-}
-</style>
-{% endblock %}
 
-{% block extra_js %}
 <script src="{% static 'js/prescription_detail.js' %}"></script>
 {% endblock %}

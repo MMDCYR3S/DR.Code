@@ -1,19 +1,200 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+
 {% load static %}
 
-{% block title %}صفحه اصلی{% endblock title %}
-{% block extra_css %}
-<!-- قسمت css و حتی ایمپورت کردن فایل هات رو اینجا بزار -->
-
-{% endblock extra_css %}
-
 {% block content %}
-<!-- محتوای صفحات اینجاست -->
+<div class="min-h-screen bg-gradient-to-br from-c5 via-white to-c4 py-8" x-data="savedPrescriptionsApp" x-init="init()">
+    <div class="container mx-auto px-4 max-w-7xl">
+        
+        <!-- Page Header -->
+        <div class="bg-gradient-to-l from-c1 to-c2 rounded-2xl shadow-xl p-6 md:p-8 text-white mb-6" data-aos="fade-down">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <a href="/profile/" class="bg-white/20 backdrop-blur-sm p-3 rounded-full hover:bg-white/30 transition-all duration-300">
+                        <i class="fas fa-arrow-right text-2xl"></i>
+                    </a>
+                    <div>
+                        <h1 class="text-2xl md:text-3xl font-bold mb-1">
+                            <i class="fas fa-bookmark ml-2"></i>
+                            نسخه‌های ذخیره شده
+                        </h1>
+                        <p class="text-white/80 text-sm md:text-base">مشاهده و مدیریت نسخه‌های ذخیره شده شما</p>
+                    </div>
+                </div>
+                <template x-if="!loading && totalCount > 0">
+                    <div class="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
+                        <span class="text-lg font-bold" x-text="totalCount"></span>
+                        <span class="text-sm mr-1">نسخه</span>
+                    </div>
+                </template>
+            </div>
+        </div>
 
+        <!-- Loading State -->
+        <template x-if="loading">
+            <div class="flex justify-center items-center min-h-[400px]">
+                <div class="text-center">
+                    <div class="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-c1 mb-4"></div>
+                    <p class="text-c1 text-lg font-semibold">در حال بارگذاری نسخه‌ها...</p>
+                </div>
+            </div>
+        </template>
+
+        <!-- Error State -->
+        <template x-if="!loading && error">
+            <div class="max-w-2xl mx-auto">
+                <div class="bg-white rounded-2xl shadow-lg p-8 text-center border-2 border-red-200" data-aos="fade-up">
+                    <i class="fas fa-exclamation-circle text-6xl text-red-500 mb-4"></i>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-3">خطا در بارگذاری</h3>
+                    <p class="text-gray-600 mb-6" x-text="error"></p>
+                    <button @click="loadSavedPrescriptions(1)" class="bg-c1 hover:bg-c2 text-white px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105">
+                        <i class="fas fa-redo ml-2"></i>
+                        تلاش مجدد
+                    </button>
+                </div>
+            </div>
+        </template>
+
+        <!-- Empty State -->
+        <template x-if="!loading && !error && !hasResults">
+            <div class="max-w-2xl mx-auto">
+                <div class="bg-white rounded-2xl shadow-lg p-8 text-center" data-aos="fade-up">
+                    <div class="bg-c5 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-bookmark text-5xl text-c1"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-3">هنوز نسخه‌ای ذخیره نکرده‌اید</h3>
+                    <p class="text-gray-600 mb-6">با مراجعه به صفحه نسخه‌ها، نسخه‌های مورد نظر خود را ذخیره کنید</p>
+                    <a href="/prescriptions/" class="inline-block bg-c1 hover:bg-c2 text-white px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105">
+                        <i class="fas fa-plus ml-2"></i>
+                        مشاهده نسخه‌ها
+                    </a>
+                </div>
+            </div>
+        </template>
+
+        <!-- Prescriptions Grid -->
+        <template x-if="!loading && !error && hasResults">
+            <div>
+                <!-- Results Info -->
+                <div class="bg-white rounded-xl shadow-md p-4 mb-6 flex items-center justify-between" data-aos="fade-up">
+                    <div class="text-gray-600">
+                        نمایش 
+                        <span class="font-bold text-c1" x-text="((currentPage - 1) * pageSize) + 1"></span>
+                        تا 
+                        <span class="font-bold text-c1" x-text="Math.min(currentPage * pageSize, totalCount)"></span>
+                        از 
+                        <span class="font-bold text-c1" x-text="totalCount"></span>
+                        نسخه
+                    </div>
+                    <div class="text-gray-500 text-sm">
+                        صفحه <span class="font-bold" x-text="currentPage"></span> از <span class="font-bold" x-text="totalPages"></span>
+                    </div>
+                </div>
+
+                <!-- Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <template x-for="(prescription, index) in prescriptions" :key="prescription.id">
+                        <div @click="handlePrescriptionClick(prescription)" 
+                             class="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer overflow-hidden group"
+                             :data-aos="'fade-up'"
+                             :data-aos-delay="index * 100">
+                            
+                            <!-- Card Header with Badge -->
+                            <div class="bg-gradient-to-br from-c1 to-c2 p-6 text-white relative">
+                                <div class="absolute top-4 left-4">
+                                    <span class="text-xs px-3 py-1 rounded-full font-bold shadow-lg"
+                                          :class="prescription.access_level === 'PREMIUM' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : 'bg-gradient-to-r from-green-400 to-green-600'">
+                                        <i :class="prescription.access_level === 'PREMIUM' ? 'fas fa-crown' : 'fas fa-check-circle'" class="ml-1"></i>
+                                        <span x-text="prescription.access_level === 'PREMIUM' ? 'ویژه' : 'رایگان'"></span>
+                                    </span>
+                                </div>
+                                
+                                <div class="mt-8">
+                                    <h3 class="text-xl font-bold mb-2 group-hover:text-yellow-300 transition-colors" x-text="prescription.title"></h3>
+                                    <p class="text-white/80 text-sm flex items-center gap-2">
+                                        <i class="fas fa-folder-open"></i>
+                                        <span x-text="prescription.category_title"></span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Card Body -->
+                            <div class="p-6">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2 text-gray-500 text-sm">
+                                        <i class="fas fa-bookmark text-c1"></i>
+                                        <span>ذخیره شده</span>
+                                    </div>
+                                    <div class="bg-c5 text-c1 px-4 py-2 rounded-lg font-bold group-hover:bg-c1 group-hover:text-white transition-all duration-300">
+                                        <span>مشاهده</span>
+                                        <i class="fas fa-arrow-left mr-2 group-hover:translate-x-1 transition-transform duration-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Hover Effect Overlay -->
+                            <div class="absolute inset-0 bg-gradient-to-t from-c1/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Pagination -->
+                <div class="bg-white rounded-xl shadow-lg p-6" data-aos="fade-up">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                        
+                        <!-- Previous Button -->
+                        <button @click="goToPreviousPage()" 
+                                :disabled="!previousPage"
+                                :class="previousPage ? 'bg-c1 hover:bg-c2 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'"
+                                class="px-6 py-3 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 disabled:transform-none">
+                            <i class="fas fa-chevron-right ml-2"></i>
+                            صفحه قبل
+                        </button>
+
+                        <!-- Page Numbers -->
+                        <div class="flex items-center gap-2 flex-wrap justify-center">
+                            <template x-for="page in visiblePages" :key="page">
+                                <button @click="goToPage(page)"
+                                        :class="page === currentPage ? 'bg-c1 text-white scale-110' : 'bg-white text-gray-700 hover:bg-c5'"
+                                        class="w-10 h-10 rounded-lg font-bold transition-all duration-300 transform hover:scale-110 shadow-md">
+                                    <span x-text="page"></span>
+                                </button>
+                            </template>
+                        </div>
+
+                        <!-- Next Button -->
+                        <button @click="goToNextPage()" 
+                                :disabled="!nextPage"
+                                :class="nextPage ? 'bg-c1 hover:bg-c2 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'"
+                                class="px-6 py-3 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 disabled:transform-none">
+                            صفحه بعد
+                            <i class="fas fa-chevron-left mr-2"></i>
+                        </button>
+
+                    </div>
+
+                    <!-- Page Info -->
+                    <div class="text-center mt-4 text-gray-500 text-sm">
+                        صفحه <span class="font-bold text-c1" x-text="currentPage"></span> از <span class="font-bold text-c1" x-text="totalPages"></span>
+                    </div>
+                </div>
+
+            </div>
+        </template>
+
+    </div>
+</div>
+
+<!-- Initialize AOS -->
+<script>
+    AOS.init({
+        duration: 800,
+        once: true,
+        offset: 50
+    });
+</script>
 {% endblock content %}
 
 {% block extra_js %}
-<!-- قسمت js و حتی ایمپورت کردن فایل هات رو اینجا بزار -->
-
+<script src="{% static '/js/saved-prescriptions.js' %}"></script>
 {% endblock extra_js %}
-    
