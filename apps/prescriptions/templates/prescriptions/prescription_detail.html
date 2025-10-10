@@ -473,7 +473,7 @@ x-show="!loading && prescription"
 class="container mx-auto px-4 py-8"
 >
 <!-- Desktop: Two Column Layout | Mobile: Stacked -->
-<div class="flex flex-col lg:flex-row-reverse gap-6">
+<div class="flex flex-col lg:flex-row-reverse gap-6 order-2 lg:order-1">
     
     <!-- ============ RIGHT COLUMN: DRUGS TABLE (70-80% on Desktop) ============ -->
     <div class="w-full lg:flex-1">
@@ -518,37 +518,59 @@ class="container mx-auto px-4 py-8"
                 <!-- Table Body -->
                 <tbody class="bg-white divide-y divide-gray-200">
                     <template x-for="(drug, index) in prescription?.prescription_drugs" :key="drug.drug.code">
-                        <tr class="hover:bg-gray-50 transition-colors">
+                        <tr class="hover:bg-gray-50 transition-colors relative"        :class="{
+                            'border-r-4': drug.is_combination,
+                            'bg-blue-50/30': drug.is_combination
+                        }"
+                        :style="drug.is_combination ? `border-right-color: ${getBgColorStyle(prescription?.category?.color_code)}` : ''"
+                    >
                             
-                            <!-- Column 1: Row Number -->
-                            <td class="px-4 py-4 text-sm text-gray-700 border-l border-gray-200">
-                                <div class="flex items-center gap-2">
-                                    <span class="font-medium" x-text="index + 1"></span>
-                                    
-                                    <!-- Badge: Combination Group -->
-                                    <template x-if="drug.is_combination">
-                                        <span 
-                                            :class="prescription?.category?.color_code" 
-                                            class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-white"
-                                        >
-                                            <i class="fas fa-layer-group text-[10px]"></i>
-                                            <span>ترکیبی</span>
-                                            <span x-show="drug.group_number" x-text="drug.group_number"></span>
-                                        </span>
-                                    </template>
-                                    
-                                    <!-- Badge: Substitute Drug -->
-                                    <template x-if="drug.is_substitute">
-                                        <span 
-                                            :class="prescription?.category?.color_code" 
-                                            class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-white"
-                                        >
-                                            <i class="fas fa-exchange-alt text-[10px]"></i>
-                                            <span>جایگزین</span>
-                                        </span>
-                                    </template>
-                                </div>
-                            </td>
+<!-- Column 1: Row Number -->
+<td class="px-4 py-4 text-sm text-gray-700 border-l border-gray-200">
+    <div class="flex items-center gap-2">
+        <!-- Row Number -->
+        <span class="font-medium" x-text="index + 1"></span>
+        
+        <!-- Icon: Combination Link (جایگزین Badge اضافی) -->
+        <template x-if="drug.is_combination">
+            <div class="flex items-center gap-1">
+                <i 
+                    class="fas fa-link text-sm"
+                    :style="`color: ${getBgColorStyle(prescription?.category?.color_code)}`"
+                    title="دارو ترکیبی"
+                ></i>
+                <span 
+                    class="text-xs font-bold"
+                    :style="`color: ${getBgColorStyle(prescription?.category?.color_code)}`"
+                    x-text="drug.group_number"
+                ></span>
+            </div>
+        </template>
+        
+        <!-- Badge: Combination Group (همون Badge قبلی) -->
+        <template x-if="drug.is_combination">
+            <span 
+                :class="prescription?.category?.color_code" 
+                class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-white"
+            >
+                <i class="fas fa-layer-group text-[10px]"></i>
+                <span>ترکیبی</span>
+                <span x-show="drug.group_number" x-text="drug.group_number"></span>
+            </span>
+        </template>
+        
+        <!-- Badge: Substitute Drug -->
+        <template x-if="drug.is_substitute">
+            <span 
+                :class="prescription?.category?.color_code" 
+                class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-white"
+            >
+                <i class="fas fa-exchange-alt text-[10px]"></i>
+                <span>جایگزین</span>
+            </span>
+        </template>
+    </div>
+</td>
 
                             <!-- Column 2: Drug Name -->
                             <td class="px-4 py-4 text-sm text-gray-900 font-medium border-l border-gray-200">
@@ -651,7 +673,7 @@ class="container mx-auto px-4 py-8"
 
     <!-- ============ LEFT COLUMN: DESCRIPTION (20-30% on Desktop) ============ -->
     <template x-if="prescription?.description">
-        <aside class="w-full lg:w-80 lg:flex-shrink-0">
+        <aside class="w-full lg:w-80 lg:flex-shrink-0 order-1 lg:order-2">
             <!-- Sticky Container -->
             <div class="lg:sticky lg:top-24">
                 <!-- Card Design -->
@@ -679,13 +701,29 @@ class="container mx-auto px-4 py-8"
                             </div>
                         </template>
 
-                        <!-- Description Text (HTML Content) -->
-                        <template x-if="!descriptionLoading">
-                            <div 
-                                class="prose prose-sm max-w-none text-gray-700 leading-relaxed"
-                                x-html="description"
-                            ></div>
-                        </template>
+<!-- Description Text (HTML Content) -->
+<template x-if="!descriptionLoading">
+    <div>
+        <!-- Check if description has content -->
+        <template x-if="description && description.trim() !== '' && description !== '<p></p>'">
+            <div 
+                class="prose prose-sm max-w-none text-gray-700 leading-relaxed"
+                x-html="description"
+            ></div>
+        </template>
+        
+        <!-- Fallback: No description available -->
+        <template x-if="!description || description.trim() === '' || description === '<p></p>'">
+            <div class="flex flex-col items-center justify-center py-8 text-center">
+                <i class="fas fa-file-alt text-4xl text-gray-300 mb-3"></i>
+                <p class="text-gray-500 text-sm">
+                    توضیحاتی برای این نسخه ثبت نشده است.
+                </p>
+            </div>
+        </template>
+    </div>
+</template>
+
                     </div>
 
                     <!-- Footer: Icon Decoration -->

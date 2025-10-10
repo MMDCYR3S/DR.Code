@@ -30,10 +30,10 @@ function prescriptionDetailApp() {
 
             const userData = StorageManager.getUserData();
             // استفاده از متد جدید برای چک کردن Premium
-    this.checkPremiumStatus();
-    
-    // تست دستی (میتونی بعدا کامنت کنی)
-    console.log('🎯 Premium Status:', this.isPremiumUser);
+            this.checkPremiumStatus();
+            
+            // تست دستی (میتونی بعدا کامنت کنی)
+            console.log('🎯 Premium Status:', this.isPremiumUser);
             this.userProfile = userData;
             
             if (userData?.medical_code) {
@@ -62,7 +62,7 @@ function prescriptionDetailApp() {
                 this.isSaved = response.is_saved || false;
                 
                 const drugs = this.prescription.prescription_drugs || [];
-                
+                const description = this.prescription.description;
                 this.prescription.normalDrugs = drugs.filter(
                     d => !d.is_combination && !d.is_substitute
                 );
@@ -94,14 +94,28 @@ function prescriptionDetailApp() {
             try {
                 this.descriptionLoading = true;
                 const response = await API.prescriptions.getDescription(slug);
-                this.description = response.description || '';
+                
+                // بررسی دقیق محتوای description
+                if (response && response.description) {
+                    const cleanDesc = response.description.trim();
+                    // اگر فقط تگ خالی بود، null قرار بده
+                    this.description = (cleanDesc === '' || cleanDesc === '<p></p>' || cleanDesc === '<p><br></p>') 
+                        ? null 
+                        : cleanDesc;
+                } else {
+                    this.description = null;
+                }
+                
+                console.log('Description loaded:', this.description); // برای debug
+                
             } catch (error) {
                 console.error('Error loading description:', error);
-                this.description = '<p>توضیحاتی برای این نسخه موجود نیست.</p>';
+                this.description = null; // در صورت خطا null بذار تا باکس نمایش نشه
             } finally {
                 this.descriptionLoading = false;
             }
         },
+        
 
         getCombinationGroups(drugs) {
             const groups = {};

@@ -148,16 +148,16 @@ API.prescriptions = {
         }
     },
 
-    // Get prescription detail
-    async getDetail(slug) {
-        try {
-            const response = await axios.get(`${API.BASE_URL}api/v1/prescriptions/${slug}/`);
-            return response.data;
-        } catch (error) {
-            console.error('Error fetching prescription detail:', error);
-            throw error;
-        }
-    },
+    // // Get prescription detail
+    // async getDetail(slug) {
+    //     try {
+    //         const response = await axios.get(`${API.BASE_URL}api/v1/prescriptions/${slug}/`);
+    //         return response.data;
+    //     } catch (error) {
+    //         console.error('Error fetching prescription detail:', error);
+    //         throw error;
+    //     }
+    // },
     // Get prescription detail by slug
     async getDetail(slug) {
         try {
@@ -167,6 +167,7 @@ API.prescriptions = {
                     headers: API.getHeaders(true) // با توکن احراز هویت
                 }
             );
+            console.log(response.data.description);
             return response.data;
         } catch (error) {
             console.error('Error fetching prescription detail:', error);
@@ -183,6 +184,7 @@ API.prescriptions = {
                     headers: API.getHeaders(true)
                 }
             );
+            console.log(response.data.description);
             return response.data;
         } catch (error) {
             console.error('Error fetching prescription description:', error);
