@@ -467,6 +467,291 @@
         
     </div>
 
+    <!-- ==================== DRUGS TABLE & DESCRIPTION SECTION ==================== -->
+<section 
+x-show="!loading && prescription" 
+class="container mx-auto px-4 py-8"
+>
+<!-- Desktop: Two Column Layout | Mobile: Stacked -->
+<div class="flex flex-col lg:flex-row-reverse gap-6">
+    
+    <!-- ============ RIGHT COLUMN: DRUGS TABLE (70-80% on Desktop) ============ -->
+    <div class="w-full lg:flex-1">
+        <!-- Section Title -->
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+                <i class="fas fa-pills text-c1"></i>
+                <span>لیست داروها</span>
+            </h2>
+            <p class="text-sm text-gray-600">
+                جدول زیر شامل تمامی داروهای تجویز شده است. لطفاً به دقت مطالعه کنید.
+            </p>
+        </div>
+
+        <!-- Table Wrapper: Horizontal Scroll on Mobile -->
+        <div class="w-full overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+            <table class="w-full min-w-[800px] border-collapse">
+                <!-- Table Header: Dynamic Background Color -->
+                <thead>
+                    <tr :class="prescription?.category?.color_code" class="text-white">
+                        <th class="px-4 py-3 text-right text-sm font-semibold border-b-2 border-white/20">
+                            ردیف
+                        </th>
+                        <th class="px-4 py-3 text-right text-sm font-semibold border-b-2 border-white/20">
+                            نام دارو
+                        </th>
+                        <th class="px-4 py-3 text-right text-sm font-semibold border-b-2 border-white/20">
+                            کد دارو
+                        </th>
+                        <th class="px-4 py-3 text-right text-sm font-semibold border-b-2 border-white/20">
+                            دوز مصرف
+                        </th>
+                        <th class="px-4 py-3 text-right text-sm font-semibold border-b-2 border-white/20">
+                            تعداد
+                        </th>
+                        <th class="px-4 py-3 text-right text-sm font-semibold border-b-2 border-white/20">
+                            توضیحات
+                        </th>
+                    </tr>
+                </thead>
+
+                <!-- Table Body -->
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <template x-for="(drug, index) in prescription?.prescription_drugs" :key="drug.drug.code">
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            
+                            <!-- Column 1: Row Number -->
+                            <td class="px-4 py-4 text-sm text-gray-700 border-l border-gray-200">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-medium" x-text="index + 1"></span>
+                                    
+                                    <!-- Badge: Combination Group -->
+                                    <template x-if="drug.is_combination">
+                                        <span 
+                                            :class="prescription?.category?.color_code" 
+                                            class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-white"
+                                        >
+                                            <i class="fas fa-layer-group text-[10px]"></i>
+                                            <span>ترکیبی</span>
+                                            <span x-show="drug.group_number" x-text="drug.group_number"></span>
+                                        </span>
+                                    </template>
+                                    
+                                    <!-- Badge: Substitute Drug -->
+                                    <template x-if="drug.is_substitute">
+                                        <span 
+                                            :class="prescription?.category?.color_code" 
+                                            class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-white"
+                                        >
+                                            <i class="fas fa-exchange-alt text-[10px]"></i>
+                                            <span>جایگزین</span>
+                                        </span>
+                                    </template>
+                                </div>
+                            </td>
+
+                            <!-- Column 2: Drug Name -->
+                            <td class="px-4 py-4 text-sm text-gray-900 font-medium border-l border-gray-200">
+                                <span x-text="drug.drug.title"></span>
+                            </td>
+
+                            <!-- Column 3: Drug Code (5 chars + Copy Button) -->
+                            <td 
+                                class="px-4 py-4 text-sm border-l border-gray-200"
+                                :class="drug.is_substitute ? prescription?.category?.color_code : 'bg-transparent'"
+                            >
+                                <div class="flex items-center gap-2">
+                                    <!-- Display: First 5 Characters -->
+                                    <span 
+                                        class="font-mono font-semibold"
+                                        :class="drug.is_substitute ? 'text-white' : 'text-gray-800'"
+                                        x-text="drug.drug.code.substring(0, 5)"
+                                    ></span>
+                                    
+                                    <!-- Copy Button -->
+                                    <button
+                                        @click="copyDrugCode(drug.drug.code)"
+                                        class="p-1.5 rounded hover:bg-gray-100 transition-colors group"
+                                        :class="drug.is_substitute ? 'hover:bg-white/20' : ''"
+                                        title="کپی کد کامل"
+                                    >
+                                        <i 
+                                            class="fas fa-copy text-xs"
+                                            :class="drug.is_substitute ? 'text-white group-hover:text-white' : 'text-gray-500 group-hover:text-gray-700'"
+                                        ></i>
+                                    </button>
+                                </div>
+                            </td>
+
+                            <!-- Column 4: Dosage -->
+                            <td class="px-4 py-4 text-sm text-gray-700 border-l border-gray-200">
+                                <span x-text="drug.dosage || '—'"></span>
+                            </td>
+
+                            <!-- Column 5: Amount -->
+                            <td class="px-4 py-4 text-sm text-gray-700 font-medium border-l border-gray-200">
+                                <span x-text="drug.amount"></span>
+                            </td>
+
+                            <!-- Column 6: Instructions (Truncated with "More" Button) -->
+                            <td class="px-4 py-4 text-sm text-gray-700">
+                                <div class="flex items-start gap-2">
+                                    <!-- Truncated Text (1 line) -->
+                                    <p 
+                                        class="line-clamp-1 flex-1"
+                                        x-text="drug.instructions || '—'"
+                                    ></p>
+                                    
+                                    <!-- "More" Button: Show if text > 100 chars -->
+                                    <template x-if="drug.instructions && drug.instructions.length > 100">
+                                        <button
+                                            @click="showFullDescription(drug.instructions)"
+                                            class="flex-shrink-0 text-c1 hover:text-c2 font-medium text-xs whitespace-nowrap"
+                                        >
+                                            بیشتر
+                                            <i class="fas fa-chevron-left mr-1 text-[10px]"></i>
+                                        </button>
+                                    </template>
+                                </div>
+                            </td>
+
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Info Box: Combination Drugs Explanation -->
+        <template x-if="prescription?.prescription_drugs?.some(d => d.is_combination)">
+            <div class="mt-4 p-4 bg-blue-50 border-r-4 border-blue-500 rounded-lg">
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                    <div class="text-sm text-gray-700">
+                        <p class="font-semibold text-gray-900 mb-1">راهنمای داروهای ترکیبی:</p>
+                        <p>داروهای با نشان "ترکیبی" باید با هم و طبق دستور پزشک مصرف شوند. داروهای یک گروه با رنگ یکسان مشخص شده‌اند.</p>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- Info Box: Substitute Drugs Explanation -->
+        <template x-if="prescription?.prescription_drugs?.some(d => d.is_substitute)">
+            <div class="mt-4 p-4 bg-amber-50 border-r-4 border-amber-500 rounded-lg">
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-exchange-alt text-amber-500 mt-0.5"></i>
+                    <div class="text-sm text-gray-700">
+                        <p class="font-semibold text-gray-900 mb-1">راهنمای داروهای جایگزین:</p>
+                        <p>داروهای با نشان "جایگزین" و کد دارو رنگی، گزینه‌های جایگزین هستند. از بین آنها یکی را انتخاب کنید.</p>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+    </div>
+
+    <!-- ============ LEFT COLUMN: DESCRIPTION (20-30% on Desktop) ============ -->
+    <template x-if="prescription?.description">
+        <aside class="w-full lg:w-80 lg:flex-shrink-0">
+            <!-- Sticky Container -->
+            <div class="lg:sticky lg:top-24">
+                <!-- Card Design -->
+                <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <!-- Header -->
+                    <div 
+                        :class="prescription?.category?.color_code" 
+                        class="px-5 py-4 text-white"
+                    >
+                        <h3 class="text-lg font-bold flex items-center gap-2">
+                            <i class="fas fa-file-medical-alt"></i>
+                            <span>توضیحات نسخه</span>
+                        </h3>
+                    </div>
+
+                    <!-- Description Content -->
+                    <div class="p-5">
+                        <!-- Loading State -->
+                        <template x-if="descriptionLoading">
+                            <div class="flex items-center justify-center py-8">
+                                <div class="flex flex-col items-center gap-3">
+                                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-c1"></div>
+                                    <p class="text-sm text-gray-500">در حال بارگذاری...</p>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Description Text (HTML Content) -->
+                        <template x-if="!descriptionLoading">
+                            <div 
+                                class="prose prose-sm max-w-none text-gray-700 leading-relaxed"
+                                x-html="description"
+                            ></div>
+                        </template>
+                    </div>
+
+                    <!-- Footer: Icon Decoration -->
+                    <div class="px-5 py-3 bg-gray-50 border-t border-gray-100">
+                        <p class="text-xs text-gray-500 flex items-center gap-2">
+                            <i class="fas fa-lightbulb text-amber-500"></i>
+                            <span>این توضیحات توسط متخصصین تهیه شده است</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </template>
+
+</div>
+</section>
+
+<!-- ==================== MODAL: FULL DESCRIPTION ==================== -->
+<template x-if="showDescriptionModal">
+<div 
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+    @click.self="showDescriptionModal = false"
+    x-transition:enter="transition ease-out duration-300"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+>
+    <div 
+        class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
+        @click.stop
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-95"
+    >
+        <!-- Modal Header -->
+        <div 
+            :class="prescription?.category?.color_code" 
+            class="px-6 py-4 text-white flex items-center justify-between"
+        >
+            <h3 class="text-lg font-bold flex items-center gap-2">
+                <i class="fas fa-align-right"></i>
+                <span>توضیحات کامل</span>
+            </h3>
+            <button 
+                @click="showDescriptionModal = false"
+                class="p-2 hover:bg-white/20 rounded-lg transition-colors"
+            >
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Modal Body: Scrollable -->
+        <div class="p-6 overflow-y-auto max-h-[calc(80vh-80px)]">
+            <p 
+                class="text-gray-700 leading-relaxed whitespace-pre-wrap"
+                x-text="fullDescription"
+            ></p>
+        </div>
+    </div>
+</div>
+</template>
 
 </div>
 
