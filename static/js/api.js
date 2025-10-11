@@ -1,7 +1,7 @@
 // log and reg
 // مدیریت ارتباط با API
 const API = {
-    BASE_URL: '/', // آدرس API خودتون
+    BASE_URL: 'http://127.0.0.1:8000/', // آدرس API خودتون
     // تنظیمات پیش‌فرض برای درخواست‌ها
     getHeaders(includeAuth = false) {
         const headers = {

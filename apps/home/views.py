@@ -6,7 +6,6 @@ from django.core.paginator import Paginator
 from .models import Tutorial
 
 # ========== HOME VIEW ========== #
-@method_decorator(cache_page(60 * 1), name='dispatch')
 class HomeView(TemplateView):
     """
     صفحه اصلی وبسایت

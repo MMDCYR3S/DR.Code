@@ -95,7 +95,7 @@ class ParspalPaymentRequestView(APIView):
 
         try:
             # ایجاد اشتراک اولیه
-            subscription = Subscription.objects.create(
+            subscription = Subscription.objects.acreate(
                 user=request.user,
                 plan=plan,
                 payment_amount=payload["amount"],
@@ -105,7 +105,7 @@ class ParspalPaymentRequestView(APIView):
             )
 
             # ایجاد رکورد پرداخت
-            payment = Payment.objects.create(
+            payment = Payment.objects.acreate(
                 user=request.user,
                 subscription=subscription,
                 amount=payload["amount"],

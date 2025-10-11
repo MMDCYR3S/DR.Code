@@ -4,7 +4,6 @@ from django.views.decorators.cache import cache_page
 
 
 # ========= Prescription List View ========= #
-@method_decorator(cache_page(60 * 1), name='dispatch')
 class PrescriptionListView(TemplateView):
     """
     صفحه ارتباط با ما
@@ -12,7 +11,6 @@ class PrescriptionListView(TemplateView):
     template_name = 'prescriptions/prescription_list.html'
     
 # ========= Prescription Detail View ========= #
-@method_decorator(cache_page(60 * 1), name='dispatch')
 class PrescriptionDetailView(TemplateView):
     """
     صفحه ارتباط با ما
@@ -29,7 +27,6 @@ class PrescriptionDetailView(TemplateView):
     
 
 # ========= Prescription Content View ========= #
-@method_decorator(cache_page(60 * 1), name='dispatch')
 class PrescriptionContentView(TemplateView):
     """
     صفحه ارتباط با ما
