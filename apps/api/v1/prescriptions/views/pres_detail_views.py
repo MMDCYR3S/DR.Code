@@ -19,8 +19,8 @@ class PrescriptionDetailView(generics.RetrieveAPIView):
     lookup_field = 'slug'
 
     def get_queryset(self):
-        """کوئری بهینه‌سازی شده برای جزئیات"""
-        return Prescription.objects.filter(
+        """کوئری بهینه‌سازی شده برای جزئیات"""    
+        queryset = Prescription.objects.filter(
             is_active=True
         ).select_related(
             'category'
@@ -30,3 +30,6 @@ class PrescriptionDetailView(generics.RetrieveAPIView):
             'images',
             'videos'
         )
+        
+        return queryset
+        

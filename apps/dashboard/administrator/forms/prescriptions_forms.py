@@ -81,6 +81,36 @@ class PrescriptionForm(forms.ModelForm):
         last_prescription = Prescription.objects.select_related("category").order_by("-created_at").first()
         if last_prescription:
             self.initial["category"] = last_prescription.category
+            
+    def clean_description(self):
+        description_data = self.cleaned_data.get('description')
+        
+        empty_values = [
+            '<p>&nbsp;</p>',
+            '<p></p>',
+            '<p><br></p>',
+            None,
+            ''
+        ]
+        
+        if description_data in empty_values:
+            return ''
+        return description_data
+    
+    def clean_detailed_description(self):
+        detailed_description_data = self.cleaned_data.get('detailed_description')
+        
+        empty_values = [
+            '<p>&nbsp;</p>',
+            '<p></p>',
+            '<p><br></p>',
+            None,
+            ''
+        ]
+        
+        if detailed_description_data in empty_values:
+            return ''
+        return detailed_description_data
 
 # ========== PrescriptionDrug Inline Form ========== #
 class PrescriptionDrugForm(forms.ModelForm):

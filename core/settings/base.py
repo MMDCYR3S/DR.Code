@@ -257,6 +257,8 @@ CKEDITOR_5_CONFIGS = {
                 '|', 'alignment'  # ابزار جهت متن
             ]
         },
+        'autoParagraph': False,
+        'fillEmptyBlocks': False,
         'language': {
             'content': 'fa',  # محتوای فارسی
             'ui': 'fa'        # رابط کاربری فارسی
