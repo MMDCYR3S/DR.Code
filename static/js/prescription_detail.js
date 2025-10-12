@@ -77,6 +77,7 @@ function prescriptionDetailApp() {
                 console.error('Error loading prescription:', error);
                 
                 Swal.fire({
+
                     icon: 'error',
                     title: 'خطا',
                     text: 'خطا در بارگذاری اطلاعات نسخه',
