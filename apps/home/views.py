@@ -21,7 +21,6 @@ class HomeView(TemplateView):
         return context
 
 # ========== CONTACT VIEW ========== #
-@method_decorator(cache_page(60 * 1), name='dispatch') 
 class ContactView(TemplateView):
     """
     صفحه ارتباط با ما
@@ -33,7 +32,7 @@ class ContactView(TemplateView):
         return context
     
 # ========== ABOUT VIEW ========== #
-@method_decorator(cache_page(60 * 1), name='dispatch')
+@method_decorator(cache_page(60 * 10), name='dispatch')
 class AboutView(TemplateView):
     """
     صفحه ارتباط با ما
@@ -41,7 +40,7 @@ class AboutView(TemplateView):
     template_name = 'home/about.html'
 
 # ========== TUTORIAL LIST VIEW ========== #
-@method_decorator(cache_page(60 * 30), name='dispatch')
+@method_decorator(cache_page(60 * 5), name='dispatch')
 class TutorialListView(TemplateView):
     """
     صفحه لیست ویدیوهای آموزشی
@@ -69,3 +68,12 @@ class PlanListView(TemplateView):
     صفحه ارتباط با ما
     """
     template_name = 'home/plan.html'
+    
+    
+# =========== PLAN LIST VIEW =========== #
+@method_decorator(cache_page(60 * 10), name='dispatch')
+class RulesView(TemplateView):
+    """
+    صفحه ارتباط با ما
+    """
+    template_name = 'home/rules.html'
