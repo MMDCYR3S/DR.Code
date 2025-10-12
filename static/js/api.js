@@ -434,4 +434,34 @@ async function testPrescriptionDetailAPI() {
 
 // برای تست در کنسول
 //  test function
-testPrescriptionDetailAPI();
+// testPrescriptionDetailAPI();
+
+// Authentication API
+API.authentication = {
+    // Submit authentication request
+    async submit(formData) {
+        try {
+            const token = StorageManager.getAccessToken();
+            
+            const response = await fetch(`${API.BASE_URL}api/v1/accounts/authentication/`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || data.detail || 'خطا در ارسال درخواست احراز هویت');
+            }
+
+            return data;
+        } catch (error) {
+            console.error('Authentication submit error:', error);
+            throw error;
+        }
+    }
+};
+

@@ -9,6 +9,297 @@
 
 {% block content %}
 <!-- محتوای صفحات اینجاست -->
+<style>
+    /* File Upload Area */
+    .upload-area {
+        transition: all 0.3s ease;
+    }
+    
+    .upload-area.drag-over {
+        background-color: #caf0f8;
+        border-color: #0077b6;
+        transform: scale(1.02);
+    }
+
+    /* File Preview */
+    .file-preview {
+        position: relative;
+        transition: all 0.3s ease;
+    }
+    
+    .file-preview:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    .remove-file-btn {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #ef4444;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+    }
+    
+    .remove-file-btn:hover {
+        background: #dc2626;
+        transform: scale(1.1);
+    }
+
+    /* Loading Overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.5s ease-out;
+    }
+
+    /* Form Input Focus */
+    input:focus, textarea:focus {
+        outline: none;
+        border-color: #0077b6;
+        box-shadow: 0 0 0 3px rgba(0, 119, 182, 0.1);
+    }
+</style>
+
+<!-- Main Container -->
+<div class="container mx-auto px-4 py-8 max-w-4xl" x-data="authenticationForm()">
+        
+    <!-- Header -->
+    <div class="text-center mb-8 animate-fade-in">
+        <div class="inline-block bg-white rounded-full p-4 shadow-lg mb-4">
+            <i class="fas fa-user-shield text-5xl text-c1"></i>
+        </div>
+        <h1 class="text-4xl font-bold text-gray-800 mb-2">احراز هویت حساب کاربری</h1>
+        <p class="text-gray-600">برای دسترسی به امکانات ویژه، لطفاً اطلاعات خود را تکمیل کنید</p>
+    </div>
+
+    <!-- Main Card -->
+    <div class="bg-white rounded-2xl shadow-xl overflow-hidden animate-fade-in">
+        
+        <!-- Form -->
+        <form @submit.prevent="submitForm" class="p-8 space-y-6">
+            
+            <!-- Medical/Student Code Input -->
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2">
+                    <i class="fas fa-id-card text-c1 ml-2"></i>
+                    کد نظام پزشکی یا کد دانشجویی (اختیاری)
+                </label>
+                <input 
+                    type="text" 
+                    x-model="formData.medical_code"
+                    placeholder="مثال: 12345678"
+                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl transition-all"
+                >
+                <p class="text-sm text-gray-500 mt-2">
+                    <i class="fas fa-info-circle ml-1"></i>
+                    در صورت داشتن کد نظام پزشکی یا دانشجویی، وارد کنید
+                </p>
+            </div>
+
+            <!-- Authentication Link Input -->
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2">
+                    <i class="fas fa-link text-c1 ml-2"></i>
+                    لینک نظام پزشکی (اختیاری)
+                </label>
+                <input 
+                    type="url" 
+                    x-model="formData.auth_link"
+                    placeholder="https://example.com/verify"
+                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl transition-all"
+                >
+                <p class="text-sm text-gray-500 mt-2">
+                    <i class="fas fa-info-circle ml-1"></i>
+                    اگر لینک نظام پزشکی دارید، اینجا وارد کنید
+                </p>
+            </div>
+
+            <!-- Referral Code Input -->
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2">
+                    <i class="fas fa-gift text-c1 ml-2"></i>
+                    کد معرف (اختیاری)
+                </label>
+                <input 
+                    type="text" 
+                    x-model="formData.referral_code"
+                    placeholder="کد معرف خود را وارد کنید"
+                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl transition-all"
+                >
+            </div>
+
+            <!-- File Upload Area -->
+            <div>
+                <label class="block text-gray-700 font-semibold mb-3">
+                    <i class="fas fa-cloud-upload-alt text-c1 ml-2"></i>
+                    بارگذاری مدارک (اجباری)
+                    <span class="text-red-500">*</span>
+                </label>
+                
+                <!-- Upload Zone -->
+                <div 
+                    class="upload-area border-3 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer bg-gray-50 hover:bg-gray-100"
+                    @click="$refs.fileInput.click()"
+                    @dragover.prevent="dragOver = true"
+                    @dragleave.prevent="dragOver = false"
+                    @drop.prevent="handleDrop($event)"
+                    :class="{ 'drag-over': dragOver }"
+                >
+                    <i class="fas fa-cloud-upload-alt text-6xl text-c2 mb-4"></i>
+                    <p class="text-gray-700 font-semibold mb-2">فایل‌های خود را اینجا بکشید یا کلیک کنید</p>
+                    <p class="text-sm text-gray-500">
+                        فرمت‌های مجاز: JPG, PNG, PDF | حداکثر مجموع: 5MB
+                    </p>
+                    <input 
+                        type="file" 
+                        ref="fileInput"
+                        @change="handleFileSelect($event)"
+                        accept="image/jpeg,image/png,application/pdf"
+                        multiple
+                        class="hidden"
+                    >
+                </div>
+
+                <!-- Files Preview -->
+                <template x-if="files.length > 0">
+                    <div class="mt-4 space-y-3">
+                        <p class="text-sm font-semibold text-gray-700">
+                            فایل‌های انتخاب شده (<span x-text="files.length"></span>):
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <template x-for="(file, index) in files" :key="index">
+                                <div class="file-preview bg-gray-50 rounded-lg p-3 flex items-center gap-3 border border-gray-200">
+                                    <div class="flex-shrink-0">
+                                        <i class="text-2xl text-c1" 
+                                           :class="file.type.includes('pdf') ? 'fas fa-file-pdf' : 'fas fa-file-image'">
+                                        </i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-800 truncate" x-text="file.name"></p>
+                                        <p class="text-xs text-gray-500" x-text="formatFileSize(file.size)"></p>
+                                    </div>
+                                    <button 
+                                        type="button"
+                                        @click="removeFile(index)"
+                                        class="remove-file-btn"
+                                    >
+                                        <i class="fas fa-times text-xs"></i>
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                        
+                        <!-- Total Size -->
+                        <div class="flex items-center justify-between text-sm bg-blue-50 rounded-lg p-3">
+                            <span class="text-gray-700">مجموع حجم فایل‌ها:</span>
+                            <span class="font-bold" 
+                                  :class="totalSize > maxTotalSize ? 'text-red-500' : 'text-c1'"
+                                  x-text="formatFileSize(totalSize)">
+                            </span>
+                        </div>
+                        
+                        <!-- Size Warning -->
+                        <template x-if="totalSize > maxTotalSize">
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
+                                <i class="fas fa-exclamation-triangle text-red-500 mt-0.5"></i>
+                                <p class="text-sm text-red-700">
+                                    مجموع حجم فایل‌ها بیش از 5 مگابایت است. لطفاً برخی فایل‌ها را حذف کنید.
+                                </p>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-4">
+                <button 
+                    type="submit"
+                    :disabled="isSubmitting || files.length === 0 || totalSize > maxTotalSize"
+                    class="w-full bg-gradient-to-l from-c1 to-c2 text-white font-bold py-4 rounded-xl transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <template x-if="!isSubmitting">
+                        <span>
+                            <i class="fas fa-paper-plane ml-2"></i>
+                            ارسال درخواست احراز هویت
+                        </span>
+                    </template>
+                    <template x-if="isSubmitting">
+                        <span>
+                            <i class="fas fa-spinner fa-spin ml-2"></i>
+                            در حال ارسال...
+                        </span>
+                    </template>
+                </button>
+            </div>
+
+            <!-- Info Box -->
+            <div class="bg-blue-50 border-r-4 border-c1 rounded-lg p-4">
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-info-circle text-c1 text-xl mt-0.5"></i>
+                    <div class="text-sm text-gray-700 space-y-1">
+                        <p class="font-semibold">نکات مهم:</p>
+                        <ul class="list-disc list-inside space-y-1 mr-4">
+                            <li>حداقل یک فایل (کارت نظام پزشکی یا دانشجویی) الزامی است</li>
+                            <li>فایل‌های شما به صورت محرمانه نگهداری می‌شوند</li>
+                            <li>نتیجه بررسی از طریق ایمیل اطلاع‌رسانی خواهد شد</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- Back to Home -->
+    <div class="text-center mt-6">
+        <a href="/" class="inline-flex items-center gap-2 text-gray-700 hover:text-c1 transition-colors font-semibold">
+            <i class="fas fa-arrow-right"></i>
+            بازگشت به صفحه اصلی
+        </a>
+    </div>
+
+</div>
+
+<!-- Loading Overlay -->
+<div x-show="isSubmitting" class="loading-overlay" style="display: none;">
+    <div class="bg-white rounded-2xl p-8 text-center shadow-2xl">
+        <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-c1 mx-auto mb-4"></div>
+        <p class="text-gray-700 font-semibold">در حال ارسال درخواست...</p>
+    </div>
+</div>
+
+
+
+
+<script src="{% static 'js/authentication.js' %}"></script>
+
 
 {% endblock content %}
 
