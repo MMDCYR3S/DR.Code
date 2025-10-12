@@ -179,7 +179,7 @@ API.prescriptions = {
     async getDescription(slug) {
         try {
             const response = await axios.get(
-                `${API.BASE_URL}api/v1/prescriptions/${slug}/description/`,
+                `${API.BASE_URL}api/v1/prescriptions/${slug}`,
                 {
                     headers: API.getHeaders(true)
                 }
@@ -390,7 +390,8 @@ async function testSavedPrescriptionsAPI() {
 async function testPrescriptionDetailAPI() {
     console.log('🧪 Testing Prescription Detail APIs...\n');
 
-    const testSlug = 'drmn-khtll-dwqtby'; // از JSON شما
+    const testSlug = 'tst-tst'; // از JSON شما
+
 
     try {
         // Test 1: Get Detail
