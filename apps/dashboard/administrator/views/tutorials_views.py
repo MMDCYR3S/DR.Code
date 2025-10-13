@@ -44,7 +44,6 @@ class TutorialsListView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPerm
             tutorials_data.append({
                 'id': tutorial.id,
                 'title': tutorial.title,
-                'description': tutorial.description,
                 'aparat_url': tutorial.aparat_url,
                 'shamsi_created_at': tutorial.shamsi_created_at,
                 'shamsi_updated_at': tutorial.shamsi_updated_at,
@@ -73,7 +72,6 @@ class TutorialCreateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPer
             # Create new tutorial
             tutorial = Tutorial(
                 title=data.get('title', '').strip(),
-                description=data.get('description', '').strip(),
                 aparat_url=data.get('aparat_url', '').strip()
             )
             
@@ -93,7 +91,6 @@ class TutorialCreateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPer
             tutorial_data = {
                 'id': tutorial.id,
                 'title': tutorial.title,
-                'description': tutorial.description,
                 'aparat_url': tutorial.aparat_url,
                 'shamsi_created_at': tutorial.shamsi_created_at,
                 'shamsi_updated_at': tutorial.shamsi_updated_at,
@@ -130,7 +127,6 @@ class TutorialUpdateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPer
             
             # Update tutorial fields
             tutorial.title = data.get('title', tutorial.title).strip()
-            tutorial.description = data.get('description', tutorial.description).strip()
             tutorial.aparat_url = data.get('aparat_url', tutorial.aparat_url).strip()
             
             # Validate and save
@@ -149,7 +145,6 @@ class TutorialUpdateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPer
             tutorial_data = {
                 'id': tutorial.id,
                 'title': tutorial.title,
-                'description': tutorial.description,
                 'aparat_url': tutorial.aparat_url,
                 'shamsi_created_at': tutorial.shamsi_created_at,
                 'shamsi_updated_at': tutorial.shamsi_updated_at,

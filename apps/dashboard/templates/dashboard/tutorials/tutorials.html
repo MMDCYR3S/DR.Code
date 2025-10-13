@@ -25,6 +25,37 @@
         align-items: center;
         justify-content: center;
     }
+    
+    /* استایل برای iframe آپارات */
+    .h_iframe-aparat_embed_frame {
+        position: relative;
+        width: 100%;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #000;
+    }
+    .h_iframe-aparat_embed_frame .ratio {
+        display: block;
+        width: 100%;
+        height: auto;
+    }
+    .h_iframe-aparat_embed_frame iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+    
+    /* استایل برای video container */
+    .aparat-video-container {
+        width: 100%;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #000;
+        min-height: 400px;
+    }
 </style>
 {% endblock %}
 
@@ -115,7 +146,7 @@
                     <input type="text" 
                            x-model="searchQuery"
                            @input="performSearch()"
-                           placeholder="جستجو در عنوان یا توضیحات..." 
+                           placeholder="جستجو در عنوان..." 
                            class="w-full sm:w-80 px-4 py-2 pr-10 border border-slate-300 rounded-r-lg text-sm 
                                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <i class="fa-solid fa-search absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
@@ -141,9 +172,6 @@
                         <i class="fa-solid fa-play ml-2"></i>عنوان ویدیو
                     </th>
                     <th scope="col" class="px-6 py-4 text-right font-semibold">
-                        <i class="fa-solid fa-align-right ml-2"></i>توضیحات
-                    </th>
-                    <th scope="col" class="px-6 py-4 text-right font-semibold">
                         <i class="fa-solid fa-clock ml-2"></i>تاریخ
                     </th>
                     <th scope="col" class="px-6 py-4 text-right font-semibold">
@@ -167,9 +195,6 @@
                                 <i class="fa-solid fa-link ml-1"></i>
                                 آپارات
                             </div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="text-sm text-slate-600" x-text="truncateText(tutorial.description, 100)"></div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm text-slate-600">
@@ -202,7 +227,7 @@
                 
                 <!-- Empty State -->
                 <tr x-show="filteredTutorials.length === 0">
-                    <td colspan="5" class="px-6 py-12 text-center">
+                    <td colspan="4" class="px-6 py-12 text-center">
                         <div class="flex flex-col items-center justify-center">
                             <i class="fa-solid fa-play text-4xl text-slate-300 mb-3"></i>
                             <p class="text-slate-500 text-lg">هیچ ویدیویی یافت نشد</p>
@@ -244,11 +269,7 @@
                         </div>
                     </div>
                     
-                    <div class="mb-3">
-                        <p class="text-sm text-slate-600 leading-relaxed" x-text="truncateText(tutorial.description, 120)"></p>
-                    </div>
-                    
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between mt-3">
                         <div class="flex items-center space-x-2 space-x-reverse">
                             <button @click="openPreviewModal(tutorial)"
                                     class="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-800 transition-colors">
@@ -326,42 +347,31 @@
                         </div>
                     </div>
                     
-                    <!-- Description -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">
-                            <i class="fa-solid fa-align-right ml-2"></i>توضیحات
-                        </label>
-                        <textarea x-model="formData.description"
-                                  class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                  rows="4"
-                                  placeholder="توضیحات ویدیو آموزشی را وارد کنید..."
-                                  required></textarea>
-                        <div x-show="errors.description && errors.description.length > 0" class="text-red-500 text-sm mt-1">
-                            <template x-for="error in errors.description" :key="error">
-                                <div x-text="error"></div>
-                            </template>
-                        </div>
-                    </div>
-                    
                     <!-- Aparat URL -->
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-2">
-                            <i class="fa-solid fa-link ml-2"></i>لینک آپارات
+                            <i class="fa-solid fa-link ml-2"></i>کد embed آپارات (iframe یا script)
                         </label>
-                        <input type="url" 
-                               x-model="formData.aparat_url"
-                               class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="https://www.aparat.com/v/..."
-                               required>
+                        <textarea x-model="formData.aparat_url"
+                                  class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-xs"
+                                  rows="6"
+                                  placeholder="کد iframe یا script آپارات را کامل اینجا قرار دهید..."
+                                  required></textarea>
                         <div x-show="errors.aparat_url && errors.aparat_url.length > 0" class="text-red-500 text-sm mt-1">
                             <template x-for="error in errors.aparat_url" :key="error">
                                 <div x-text="error"></div>
                             </template>
                         </div>
-                        <p class="text-xs text-slate-500 mt-1">
+                        <p class="text-xs text-slate-500 mt-2">
                             <i class="fa-solid fa-info-circle ml-1"></i>
-                            لینک معتبر آپارات وارد کنید
+                            کد embed کامل آپارات را وارد کنید (شامل style، div و iframe یا script)
                         </p>
+                        <div class="mt-2 p-3 bg-blue-50 rounded-lg text-xs text-slate-600">
+                            <strong>نمونه قالب iframe:</strong>
+                            <pre class="mt-1 text-xs overflow-x-auto">&lt;style&gt;.h_iframe-aparat_embed_frame{...}&lt;/style&gt;&lt;div class="h_iframe-aparat_embed_frame"&gt;...&lt;/div&gt;</pre>
+                            <strong class="mt-2 block">یا نمونه قالب script:</strong>
+                            <pre class="mt-1 text-xs overflow-x-auto">&lt;div id="..."&gt;&lt;script src="..."&gt;&lt;/script&gt;&lt;/div&gt;</pre>
+                        </div>
                     </div>
                 </div>
                 
@@ -403,7 +413,7 @@
          @click.self="closePreviewModal()"
          style="display: none;" 
          x-cloak>
-        <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+        <div class="bg-white rounded-xl shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto"
              @click.stop>
             <div class="flex items-center justify-between p-6 border-b">
                 <h2 class="text-xl font-bold text-slate-700">
@@ -417,28 +427,12 @@
             <div class="p-6">
                 <template x-if="previewTutorial">
                     <div>
-                        <h3 class="text-lg font-bold text-slate-800 mb-3" x-text="previewTutorial.title"></h3>
+                        <h3 class="text-lg font-bold text-slate-800 mb-4" x-text="previewTutorial.title"></h3>
                         
-                        <!-- Video Preview Placeholder -->
-                        <div class="video-preview mb-4">
-                            <div class="text-center">
-                                <i class="fa-solid fa-play text-4xl text-slate-400 mb-2"></i>
-                                <p class="text-slate-500">پیش‌نمایش ویدیو آپارات</p>
-                                <a :href="previewTutorial.aparat_url" 
-                                   target="_blank"
-                                   class="inline-flex items-center px-4 py-2 mt-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                                    <i class="fa-solid fa-external-link-alt ml-2"></i>
-                                    مشاهده در آپارات
-                                </a>
-                            </div>
-                        </div>
+                        <!-- Video Embed Container -->
+                        <div class="aparat-video-container mb-4" id="video-container"></div>
                         
-                        <div class="bg-slate-50 rounded-lg p-4 mb-4">
-                            <h4 class="font-semibold text-slate-700 mb-2">توضیحات:</h4>
-                            <p class="text-slate-600 leading-relaxed" x-text="previewTutorial.description"></p>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-6">
                             <div class="bg-slate-50 rounded-lg p-3">
                                 <div class="text-slate-500 mb-1">تاریخ ایجاد:</div>
                                 <div class="font-medium" x-text="previewTutorial.shamsi_created_at"></div>
@@ -447,6 +441,22 @@
                                 <div class="text-slate-500 mb-1">آخرین بروزرسانی:</div>
                                 <div class="font-medium" x-text="previewTutorial.shamsi_updated_at"></div>
                             </div>
+                        </div>
+                        
+                        <!-- کد embed برای کپی -->
+                        <div class="mt-4">
+                            <details class="bg-slate-50 rounded-lg">
+                                <summary class="p-3 cursor-pointer text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg">
+                                    <i class="fa-solid fa-code ml-2"></i>مشاهده کد embed
+                                </summary>
+                                <div class="p-3 border-t">
+                                    <pre class="text-xs bg-slate-900 text-green-400 p-3 rounded overflow-x-auto" x-text="previewTutorial.aparat_url"></pre>
+                                    <button @click="copyEmbedCode(previewTutorial.aparat_url)"
+                                            class="mt-2 px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+                                        <i class="fa-solid fa-copy ml-1"></i>کپی کد
+                                    </button>
+                                </div>
+                            </details>
                         </div>
                     </div>
                 </template>
@@ -512,7 +522,7 @@ function tutorialsManager() {
         searchQuery: '',
         sortBy: 'newest',
         
-        // Modal states - اینجا مهم است که false باشند
+        // Modal states
         showModal: false,
         showPreviewModal: false,
         showDeleteModal: false,
@@ -521,7 +531,6 @@ function tutorialsManager() {
         // Form data
         formData: {
             title: '',
-            description: '',
             aparat_url: ''
         },
         
@@ -554,8 +563,7 @@ function tutorialsManager() {
             } else {
                 const query = this.searchQuery.toLowerCase();
                 this.filteredTutorials = this.tutorials.filter(tutorial => 
-                    tutorial.title.toLowerCase().includes(query) ||
-                    tutorial.description.toLowerCase().includes(query)
+                    tutorial.title.toLowerCase().includes(query)
                 );
             }
             this.applySorting();
@@ -595,7 +603,6 @@ function tutorialsManager() {
             this.editingTutorial = tutorial;
             this.formData = {
                 title: tutorial.title,
-                description: tutorial.description,
                 aparat_url: tutorial.aparat_url
             };
             this.errors = {};
@@ -606,6 +613,84 @@ function tutorialsManager() {
             console.log('Opening preview modal for:', tutorial);
             this.previewTutorial = tutorial;
             this.showPreviewModal = true;
+            
+            // بعد از باز شدن modal، ویدیو را render کن
+            this.$nextTick(() => {
+                this.renderVideo(tutorial.aparat_url);
+            });
+        },
+
+        renderVideo(embedCode) {
+            const container = document.getElementById('video-container');
+            if (!container) {
+                console.error('Video container not found');
+                return;
+            }
+
+            // پاک کردن محتوای قبلی
+            container.innerHTML = '';
+
+            try {
+                // بررسی نوع کد embed
+                if (embedCode.includes('<script')) {
+                    // برای script tag باید به صورت خاص handle بشه
+                    this.handleScriptEmbed(container, embedCode);
+                } else {
+                    // برای iframe و HTML معمولی
+                    container.innerHTML = embedCode;
+                }
+                
+                console.log('Video rendered successfully');
+            } catch (error) {
+                console.error('Error rendering video:', error);
+                container.innerHTML = `
+                    <div class="flex items-center justify-center h-full">
+                        <div class="text-center">
+                            <i class="fa-solid fa-exclamation-triangle text-4xl text-red-400 mb-3"></i>
+                            <p class="text-slate-600">خطا در نمایش ویدیو</p>
+                            <p class="text-xs text-slate-500 mt-2">کد embed معتبر نیست</p>
+                        </div>
+                    </div>
+                `;
+            }
+        },
+
+        handleScriptEmbed(container, embedCode) {
+            // استخراج div و script از کد embed
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = embedCode;
+            
+            // پیدا کردن div اصلی
+            const mainDiv = tempDiv.querySelector('div');
+            if (!mainDiv) {
+                throw new Error('Invalid embed code: div not found');
+            }
+
+            // پیدا کردن script tag
+            const scriptTag = tempDiv.querySelector('script');
+            if (!scriptTag) {
+                throw new Error('Invalid embed code: script not found');
+            }
+
+            // اضافه کردن div به container
+            container.appendChild(mainDiv.cloneNode(true));
+
+            // ساخت script جدید و اجرای آن
+            const newScript = document.createElement('script');
+            if (scriptTag.src) {
+                newScript.src = scriptTag.src;
+            } else {
+                newScript.textContent = scriptTag.textContent;
+            }
+            
+            // اضافه کردن attributes
+            Array.from(scriptTag.attributes).forEach(attr => {
+                if (attr.name !== 'src' && attr.name !== 'type') {
+                    newScript.setAttribute(attr.name, attr.value);
+                }
+            });
+
+            container.appendChild(newScript);
         },
 
         openDeleteModal(tutorial) {
@@ -622,6 +707,12 @@ function tutorialsManager() {
         closePreviewModal() {
             this.showPreviewModal = false;
             this.previewTutorial = null;
+            
+            // پاک کردن محتوای ویدیو
+            const container = document.getElementById('video-container');
+            if (container) {
+                container.innerHTML = '';
+            }
         },
 
         closeDeleteModal() {
@@ -632,7 +723,6 @@ function tutorialsManager() {
         resetForm() {
             this.formData = {
                 title: '',
-                description: '',
                 aparat_url: ''
             };
             this.errors = {};
@@ -643,6 +733,16 @@ function tutorialsManager() {
         getCSRFToken() {
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
             return csrfToken ? csrfToken.value : '';
+        },
+
+        // Copy embed code to clipboard
+        copyEmbedCode(code) {
+            navigator.clipboard.writeText(code).then(() => {
+                this.showNotification('success', 'کد embed با موفقیت کپی شد');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                this.showNotification('error', 'خطا در کپی کردن کد');
+            });
         },
 
         // Form submission
@@ -750,12 +850,6 @@ function tutorialsManager() {
             const diffTime = Math.abs(now - date);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             return diffDays <= 7;
-        },
-
-        truncateText(text, maxLength) {
-            if (!text) return '';
-            if (text.length <= maxLength) return text;
-            return text.substr(0, maxLength) + '...';
         },
 
         showNotification(type, message) {
