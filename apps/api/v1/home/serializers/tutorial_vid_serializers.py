@@ -12,7 +12,6 @@ class TutorialSerializer(serializers.ModelSerializer):
         fields = [
             'id', 
             'title', 
-            'description', 
             'aparat_url',
             'created_at', 
             'updated_at'
