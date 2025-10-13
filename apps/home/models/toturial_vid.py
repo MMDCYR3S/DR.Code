@@ -15,14 +15,8 @@ class Tutorial(models.Model):
         max_length=255,
         verbose_name='عنوان ویدیو'
     )
-    description = models.TextField(
-        blank=True,
-        null=True,
-        verbose_name='توضیحات',
-        help_text='توضیح اختیاری از محتوای ویدیو'
-    )
     aparat_url = models.URLField(
-        max_length=255,
+        max_length=600,
         verbose_name='آدرس آپارات',
         help_text='لینک کامل ویدیو در آپارات'
     )
