@@ -445,7 +445,7 @@
                     </button>
 
                     <!-- دکمه سوال - hover: background داینامیک -->
-                    <button @click="scrollToQuestion()" class="btn-action btn-question"
+                    <button @click="scrollToQuestion()" class="btn-action btn-question" id="question"
                         :class="prescription?.category?.color_code" style="background: white !important;">
                         <i class="fas fa-question-circle"></i>
                         <span>پرسش سوال</span>
@@ -455,6 +455,17 @@
 
             </div>
         </div>
+<!-- Floating Question Button (Premium Feature) -->
+<div class="fixed bottom-6 left-6 z-50" x-show="isPremiumUser">
+    <button 
+        @click="scrollToQuestion()"
+        class="group bg-gradient-to-r from-amber-400 to-amber-600 text-white font-bold px-6 py-3 rounded-full shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 flex items-center gap-2"
+    >
+        <i class="fas fa-comment-medical text-lg"></i>
+        <span class="hidden sm:inline">پرسش سوال</span>
+        <i class="fas fa-arrow-down text-sm group-hover:animate-bounce"></i>
+    </button>
+</div>
 
     </div>
 
@@ -739,7 +750,7 @@
 
     <!-- ==================== IMAGE BOX SECTION ==================== -->
     <div x-show="prescription.images && prescription.images.length > 0" 
-    class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+    class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 mx-6">
    <!-- Header -->
    <div class="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-c1 to-c2 flex items-center justify-center">
@@ -784,7 +795,7 @@
 
     <!-- ==================== VIDEO BOX SECTION ==================== -->
     <div x-show="prescription.videos && prescription.videos.length > 0" 
-    class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+    class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 mx-6">
    <!-- Header -->
    <div class="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-c3 to-c4 flex items-center justify-center">
@@ -837,6 +848,141 @@
    </div>
 </div>
 
+<!-- Question Section (Premium Feature) -->
+<div id="question-section" 
+     class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 mx-6"
+     x-data="{ isPremium: false }"
+     x-init="isPremium = checkPremiumStatus()">
+    
+    <!-- Header -->
+    <div class="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+            <i class="fas fa-crown text-white text-lg"></i>
+        </div>
+        <div class="flex-1">
+            <h3 class="text-lg font-bold text-gray-800">پرسش از متخصص</h3>
+            <p class="text-xs text-gray-500 mt-1">سوال خود را از پزشک متخصص بپرسید</p>
+        </div>
+        <span class="bg-gradient-to-r from-amber-100 to-amber-200 text-amber-700 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
+            <i class="fas fa-star text-amber-500"></i>
+            ویژه Premium
+        </span>
+    </div>
+
+    <!-- Premium User Form -->
+    <template x-if="isPremium">
+        <div>
+            <!-- Textarea -->
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-comment-medical text-c1 ml-1"></i>
+                    سوال خود را بنویسید:
+                </label>
+                <textarea 
+                    x-model="questionText"
+                    rows="4"
+                    placeholder="سوال خود را اینجا بنویسید..."
+                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-c2 focus:ring-2 focus:ring-c3/20 transition-all resize-none"
+                    :disabled="questionSubmitting"
+                ></textarea>
+                <div class="flex items-center justify-between mt-2">
+                    <p class="text-xs text-gray-500">
+                        <i class="fas fa-info-circle ml-1"></i>
+                        پاسخ از طریق پروفایل شما ارسال می‌شود
+                    </p>
+                    <span class="text-xs text-gray-400" x-text="(questionText || '').length + ' / 500'"></span>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button 
+                @click="submitQuestion()"
+                :disabled="questionSubmitting || !questionText.trim() || questionText.length > 500"
+                class="w-full bg-gradient-to-r from-c1 to-c2 text-white font-bold py-3 rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
+            >
+                <template x-if="!questionSubmitting">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-paper-plane"></i>
+                        <span>ارسال سوال</span>
+                    </div>
+                </template>
+                <template x-if="questionSubmitting">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>در حال ارسال...</span>
+                    </div>
+                </template>
+            </button>
+
+            <!-- Info Box -->
+            <div class="mt-4 bg-blue-50 border-r-4 border-c1 rounded-lg p-4">
+                <div class="flex gap-3">
+                    <i class="fas fa-lightbulb text-c1 text-xl flex-shrink-0"></i>
+                    <div class="text-sm text-gray-700">
+                        <p class="font-semibold mb-1">نکته مهم:</p>
+                        <ul class="space-y-1 text-xs">
+                            <li>• پاسخ شما حداکثر ظرف 24 ساعت ارسال می‌شود</li>
+                            <li>• سوالات فقط مرتبط با این نسخه باشد</li>
+                            <li>• پاسخ در بخش "پروفایل > سوالات من" قابل مشاهده است</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Non-Premium User Message -->
+    <template x-if="!isPremium">
+        <div class="text-center py-8">
+            <!-- Icon -->
+            <div class="w-20 h-20 bg-gradient-to-br from-amber-100 to-amber-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-lock text-amber-600 text-3xl"></i>
+            </div>
+
+            <!-- Message -->
+            <h4 class="text-xl font-bold text-gray-800 mb-2">این قابلیت ویژه کاربران Premium است</h4>
+            <p class="text-gray-600 mb-6 max-w-md mx-auto">
+                با خرید اشتراک ویژه می‌توانید از پزشکان متخصص سوال بپرسید و پاسخ تخصصی دریافت کنید
+            </p>
+
+            <!-- Features List -->
+            <div class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-6 mb-6 max-w-lg mx-auto">
+                <p class="font-bold text-gray-800 mb-3 flex items-center justify-center gap-2">
+                    <i class="fas fa-gift text-amber-500"></i>
+                    مزایای اشتراک Premium:
+                </p>
+                <ul class="space-y-2 text-sm text-gray-700 text-right">
+                    <li class="flex items-start gap-2">
+                        <i class="fas fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
+                        <span>پرسش نامحدود از پزشکان متخصص</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fas fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
+                        <span>دسترسی به همه نسخه‌ها و داروها</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fas fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
+                        <span>پشتیبانی اختصاصی 24/7</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fas fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
+                        <span>آپدیت‌های اختصاصی و محتوای ویژه</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- CTA Button -->
+            <button 
+                @click="window.location.href = '/plans'"
+                class="bg-gradient-to-r from-amber-400 to-amber-600 text-white font-bold px-8 py-3 rounded-xl hover:shadow-xl hover:scale-105 transition-all duration-300 inline-flex items-center gap-2"
+            >
+                <i class="fas fa-crown"></i>
+                <span>خرید اشتراک Premium</span>
+                <i class="fas fa-arrow-left"></i>
+            </button>
+        </div>
+    </template>
+</div>
 
 
 

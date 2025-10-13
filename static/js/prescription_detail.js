@@ -241,6 +241,7 @@ initGallery() {
             if (questionBox) {
                 questionBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
+            alert('salam')
         },
 
         copyDrugCode(code) {
@@ -490,13 +491,148 @@ testPremiumStatus() {
         console.log('❌ FAILED: Not a Premium User');
         alert('❌ شما کاربر Premium نیستید یا اطلاعات یافت نشد');
     }
-}
+},
+async init() {
+    const slug = this.getSlugFromURL();
+
+    if (!slug) {
+        window.location.href = '/prescriptions';
+        return;
+    }
+
+    const userData = StorageManager.getUserData();
+    
+    // چک کردن وضعیت Premium
+    this.checkPremiumStatus();
+    
+    this.userProfile = userData;
+
+    if (userData?.medical_code) {
+        this.watermarkText = userData.medical_code;
+    }
+
+    await this.loadPrescription(slug);
+    await this.loadDescription(slug);
+
+    this.initSecurityMeasures();
+    this.initGallery();
+},
+
+// Check if user is Premium
+checkPremiumStatus() {
+    try {
+        const userProfile = StorageManager.getUserProfile();
+        
+        if (!userProfile) {
+            console.log('❌ No user profile found');
+            this.isPremiumUser = false;
+            return false;
+        }
+
+        const isPremium = userProfile.role === 'premium';
+        console.log('👑 Premium Status:', isPremium);
+        console.log('🎭 User Role:', userProfile.role);
+
+        this.isPremiumUser = isPremium;
+        this.userProfile = userProfile;
+
+        return isPremium;
+
+    } catch (error) {
+        console.error('❌ Error checking premium status:', error);
+        this.isPremiumUser = false;
+        return false;
+    }
+},
+
+// Scroll to Question Box
+scrollToQuestion() {
+    const questionBox = document.getElementById('question-section');
+    if (questionBox && typeof scroll !== 'undefined') {
+        scroll.animateScroll(questionBox);
+    } else if (questionBox) {
+        // Fallback اگر SmoothScroll لود نشده بود
+        questionBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+},
+
+// Submit Question (فعلاً فقط ساختار)
+async submitQuestion() {
+    if (!this.isPremiumUser) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'دسترسی محدود',
+            text: 'این قابلیت فقط برای کاربران Premium است',
+            confirmButtonText: 'باشه'
+        });
+        return;
+    }
+
+    if (!this.questionText.trim()) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'هشدار',
+            text: 'لطفاً سوال خود را بنویسید',
+            confirmButtonText: 'باشه'
+        });
+        return;
+    }
+
+    if (this.questionText.length > 500) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'هشدار',
+            text: 'حداکثر طول سوال 500 کاراکتر است',
+            confirmButtonText: 'باشه'
+        });
+        return;
+    }
+
+    try {
+        this.questionSubmitting = true;
+
+        // TODO: اینجا بعداً API متد اضافه می‌شه
+        const questionData = {
+            question: this.questionText,
+            prescription_slug: this.prescription.slug,
+            user_profile: this.userProfile
+        };
+
+        console.log('📤 Sending question:', questionData);
+
+        // فعلاً فقط یک تاخیر شبیه‌سازی شده
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // موفقیت
+        Swal.fire({
+            icon: 'success',
+            title: 'سوال ارسال شد',
+            text: 'سوال شما با موفقیت ثبت شد و به زودی پاسخ داده می‌شود',
+            confirmButtonText: 'باشه',
+            confirmButtonColor: '#0077b6'
+        });
+
+        // پاک کردن فیلد
+        this.questionText = '';
+
+    } catch (error) {
+        console.error('❌ Error submitting question:', error);
+        
+        Swal.fire({
+            icon: 'error',
+            title: 'خطا',
+            text: 'خطا در ارسال سوال. لطفاً دوباره تلاش کنید',
+            confirmButtonText: 'باشه'
+        });
+    } finally {
+        this.questionSubmitting = false;
+    }
+},
 
     }
 
 
 }
-
 
 
 
