@@ -465,3 +465,51 @@ API.authentication = {
     }
 };
 
+
+// Tutorial APIs
+API.tutorials = {
+    // Get all tutorials
+    async getAll() {
+        try {
+            const response = await fetch(`${API.BASE_URL}api/v1/home/tutorials/`, {
+                method: 'GET',
+                headers: API.getHeaders(false) // بدون نیاز به Authentication
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'خطا در دریافت آموزش‌ها');
+            }
+
+            return data;
+        } catch (error) {
+            console.error('Tutorials API error:', error);
+            throw error;
+        }
+    }
+};
+
+// Test function (برای Console)
+async function testTutorialsAPI() {
+    console.log('🧪 Testing Tutorials API...\n');
+    
+    try {
+        const response = await API.tutorials.getAll();
+        console.log('✅ Success! Response:', response);
+        console.log('📊 Total Count:', response.count);
+        console.log('📹 Videos:', response.data);
+        
+        if (response.data.length > 0) {
+            console.log('\n🎥 First video:');
+            console.log('  - Title:', response.data[0].title);
+            console.log('  - ID:', response.data[0].id);
+            console.log('  - Created:', response.data[0].created_at);
+        }
+    } catch (error) {
+        console.error('❌ Test Failed:', error.message);
+    }
+}
+
+// برای تست در Console:
+// testTutorialsAPI();
