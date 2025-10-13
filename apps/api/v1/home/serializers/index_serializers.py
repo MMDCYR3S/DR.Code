@@ -19,4 +19,4 @@ class RecentTutorialSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Tutorial
-        fields = ["title", "description", "aparat_url", "created_at"]
+        fields = ["title", "aparat_url", "created_at"]
