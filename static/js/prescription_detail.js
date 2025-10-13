@@ -89,7 +89,35 @@ function prescriptionDetailApp() {
             } finally {
                 this.loading = false;
             }
+            // Initialize gallery after data is loaded
+this.initGallery();
+
         },
+
+        // Initialize GLightbox for images
+initGallery() {
+    if (this.prescription.images && this.prescription.images.length > 0) {
+        // Wait for DOM to update
+        this.$nextTick(() => {
+            const lightbox = GLightbox({
+                selector: '.glightbox',
+                touchNavigation: true,
+                loop: true,
+                autoplayVideos: false,
+                closeButton: true,
+                openEffect: 'zoom',
+                closeEffect: 'fade',
+                slideEffect: 'slide',
+                moreLength: 0,
+                skin: 'clean',
+                cssEfects: {
+                    fade: { in: 'fadeIn', out: 'fadeOut' },
+                    zoom: { in: 'zoomIn', out: 'zoomOut' }
+                }
+            });
+        });
+    }
+},
 
         async loadDescription(slug) {
             try {
