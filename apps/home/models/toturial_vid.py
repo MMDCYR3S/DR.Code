@@ -32,6 +32,7 @@ class Tutorial(models.Model):
     
     @property
     def shamsi_created_at(self):
+        """تاریخ شمسی ایجاد"""
         if self.created_at is None:
             return "—"
         
@@ -40,28 +41,14 @@ class Tutorial(models.Model):
 
     @property
     def shamsi_updated_at(self):
+        """تاریخ شمسی بروزرسانی"""
         if self.updated_at is None:
             return "—"
             
         jdate = jdatetime.datetime.fromgregorian(datetime=self.updated_at)
         return jdate.strftime("%Y/%m/%d - %H:%M")
 
-
-    class Meta:
-        verbose_name = 'ویدیوی آموزشی'
-        verbose_name_plural = 'ویدیوهای آموزشی'
-        ordering = ['-created_at']
-
-    def clean(self):
-        """اعتبارسنجی مدل"""
-        super().clean()
-        
-        # اعتبارسنجی لینک آپارات
-        if self.aparat_url and 'aparat.com' not in self.aparat_url:
-            raise ValidationError({
-                'aparat_url': 'آدرس باید از سایت آپارات (aparat.com) باشد.'
-            })
-            
+    @property
     def is_recent(self):
         """بررسی اینکه آیا ویدیو در 7 روز گذشته ایجاد شده است"""
         if not self.created_at:
@@ -74,25 +61,44 @@ class Tutorial(models.Model):
         now = timezone.now()
         return created_at >= (now - timedelta(days=7))
 
+    class Meta:
+        verbose_name = 'ویدیوی آموزشی'
+        verbose_name_plural = 'ویدیوهای آموزشی'
+        ordering = ['-created_at']
+
+    def clean(self):
+        """اعتبارسنجی مدل"""
+        super().clean()
+        
+        # اعتبارسنجی لینک آپارات (انعطاف‌پذیر برای iframe و script)
+        if self.aparat_url and 'aparat' not in self.aparat_url.lower():
+            raise ValidationError({
+                'aparat_url': 'کد embed باید مربوط به آپارات باشد.'
+            })
+
     def save(self, *args, **kwargs):
         """ذخیره با پاک کردن کش"""
         super().save(*args, **kwargs)
         
         # پاک کردن کش مربوط به ویدیوها
         cache.delete('tutorials_list')
+        cache.delete('api_tutorials_list')
         cache.delete(f'tutorial_detail_{self.id}')
+
+    def delete(self, *args, **kwargs):
+        """حذف با پاک کردن کش"""
+        tutorial_id = self.id
+        super().delete(*args, **kwargs)
+        
+        # پاک کردن کش
+        cache.delete('tutorials_list')
+        cache.delete('api_tutorials_list')
+        cache.delete(f'tutorial_detail_{tutorial_id}')
 
     def __str__(self):
         return self.title
 
     @classmethod
     def get_all_tutorials(cls):
-        """دریافت تمام ویدیوها با کش"""
-        cache_key = 'tutorials_list'
-        tutorials = cache.get(cache_key)
-        
-        if tutorials is None:
-            tutorials = cls.objects.all()
-            cache.set(cache_key, tutorials, timeout=1800)
-        
-        return tutorials
+        """دریافت تمام ویدیوها مستقیم از دیتابیس"""
+        return cls.objects.all().order_by('-created_at')

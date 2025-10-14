@@ -10,7 +10,7 @@ from .views import (
 app_name = 'prescriptions'
 
 urlpatterns = [
-    path('', PrescriptionListView.as_view(), name='contact'),
-    path('<slug:slug>/', PrescriptionDetailView.as_view(), name='about'),
-    path('content/<slug:slug>/', PrescriptionContentView.as_view(), name='index'),
+    path('', PrescriptionListView.as_view(), name='prescription_list'),
+    path('<slug:slug>/', PrescriptionDetailView.as_view(), name='prescription_detail'),
+    path('content/<slug:slug>/', PrescriptionContentView.as_view(), name='prescription_content'),
 ]

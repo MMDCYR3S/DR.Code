@@ -47,7 +47,8 @@ from .tutorials_views import (
     TutorialsListView,
     TutorialCreateView,
     TutorialUpdateView,
-    TutorialDeleteView
+    TutorialDeleteView,
+    TutorialEmbedView
 )
 
 from .drugs_views import *

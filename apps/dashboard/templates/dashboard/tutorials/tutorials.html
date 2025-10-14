@@ -5,506 +5,279 @@
 
 {% block extra_css %}
 <style>
-    .tr-link { 
-        cursor: pointer; 
-    }
-    .tutorial-recent {
-        background-color: rgba(34, 197, 94, 0.05);
-    }
-    .tutorial-recent:hover {
-        background-color: rgba(34, 197, 94, 0.1);
-    }
-    .modal {
-        backdrop-filter: blur(4px);
-    }
-    .video-preview {
-        aspect-ratio: 16 / 9;
-        background: #f1f5f9;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    /* استایل برای iframe آپارات */
-    .h_iframe-aparat_embed_frame {
-        position: relative;
-        width: 100%;
-        border-radius: 8px;
-        overflow: hidden;
-        background: #000;
-    }
-    .h_iframe-aparat_embed_frame .ratio {
-        display: block;
-        width: 100%;
-        height: auto;
-    }
-    .h_iframe-aparat_embed_frame iframe {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        border: none;
-    }
-    
-    /* استایل برای video container */
-    .aparat-video-container {
-        width: 100%;
-        border-radius: 8px;
-        overflow: hidden;
-        background: #000;
-        min-height: 400px;
-    }
+    [x-cloak] { display: none !important; }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- اضافه کردن CSRF Token -->
-{% csrf_token %}
-
-<div class="container mx-auto" x-data="tutorialsManager()" x-init="init()">
-    <!-- Header Section -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-        <div>
-            <h1 class="text-2xl font-bold text-slate-700">
-                مدیریت ویدیوهای آموزشی
-            </h1>
-            <p class="text-slate-500 mt-1">
-                مجموع {{ tutorials_count }} ویدیو آموزشی
-            </p>
-        </div>
-        
-        <!-- Add Tutorial Button -->
-        <div class="mt-4 sm:mt-0">
-            <button @click="openCreateModal()" 
-                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-semibold 
-                           rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-sm">
+<div x-data="tutorialsManager()" x-init="init()">
+    <div class="container mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <h1 class="text-2xl font-bold text-slate-700">مدیریت ویدیوهای آموزشی</h1>
+            
+            <button @click="openAddModal()" 
+                    class="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition-colors">
                 <i class="fa-solid fa-plus ml-2"></i>
-                افزودن ویدیو جدید
+                <span>افزودن ویدیو جدید</span>
             </button>
         </div>
-    </div>
 
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div class="bg-white p-6 rounded-xl shadow-sm border">
-            <div class="flex items-center">
-                <div class="p-2 bg-blue-100 rounded-lg">
-                    <i class="fa-solid fa-play text-blue-600 text-xl"></i>
-                </div>
-                <div class="mr-4">
-                    <div class="text-2xl font-bold text-slate-700">{{ tutorials_count }}</div>
-                    <div class="text-sm text-slate-500">کل ویدیوها</div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="bg-white p-6 rounded-xl shadow-sm border">
-            <div class="flex items-center">
-                <div class="p-2 bg-green-100 rounded-lg">
-                    <i class="fa-solid fa-star text-green-600 text-xl"></i>
-                </div>
-                <div class="mr-4">
-                    <div class="text-2xl font-bold text-slate-700">{{ recent_tutorials_count }}</div>
-                    <div class="text-sm text-slate-500">ویدیوهای اخیر</div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="bg-white p-6 rounded-xl shadow-sm border">
-            <div class="flex items-center">
-                <div class="p-2 bg-purple-100 rounded-lg">
-                    <i class="fa-solid fa-eye text-purple-600 text-xl"></i>
-                </div>
-                <div class="mr-4">
-                    <div class="text-2xl font-bold text-slate-700">{{ total_views|default:0 }}</div>
-                    <div class="text-sm text-slate-500">کل بازدیدها</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Filter and Search Section -->
-    <div class="bg-white p-4 rounded-xl shadow-sm mb-6 border">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            
-            <!-- Sort Options -->
-            <div class="flex items-center space-x-2 space-x-reverse">
-                <label class="text-sm font-medium text-slate-600">مرتب‌سازی:</label>
-                <select x-model="sortBy" @change="applySorting()" 
-                        class="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="newest">جدیدترین</option>
-                    <option value="oldest">قدیمی‌ترین</option>
-                    <option value="title">براساس عنوان</option>
-                </select>
-            </div>
-            
-            <!-- Search Box -->
-            <div class="flex items-center">
-                <div class="relative">
-                    <input type="text" 
-                           x-model="searchQuery"
-                           @input="performSearch()"
-                           placeholder="جستجو در عنوان..." 
-                           class="w-full sm:w-80 px-4 py-2 pr-10 border border-slate-300 rounded-r-lg text-sm 
-                                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    <i class="fa-solid fa-search absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
-                </div>
-                <button @click="clearSearch()" 
-                        x-show="searchQuery.length > 0"
-                        class="px-3 py-2 bg-slate-500 text-white rounded-l-lg hover:bg-slate-600 transition-colors">
-                    <i class="fa-solid fa-times"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Desktop Table -->
-    <div class="hidden lg:block bg-white rounded-xl shadow-sm overflow-hidden border">
-        <table class="min-w-full text-sm">
-            <thead class="bg-slate-50 text-slate-600 border-b">
-                <tr>
-                    <th scope="col" class="p-4 text-right">
-                        <input type="checkbox" class="rounded border-slate-300 text-blue-500 focus:ring-blue-500">
-                    </th>
-                    <th scope="col" class="px-6 py-4 text-right font-semibold">
-                        <i class="fa-solid fa-play ml-2"></i>عنوان ویدیو
-                    </th>
-                    <th scope="col" class="px-6 py-4 text-right font-semibold">
-                        <i class="fa-solid fa-clock ml-2"></i>تاریخ
-                    </th>
-                    <th scope="col" class="px-6 py-4 text-right font-semibold">
-                        <i class="fa-solid fa-cog ml-2"></i>عملیات
-                    </th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-200">
-                <template x-for="tutorial in filteredTutorials" :key="tutorial.id">
-                    <tr class="tr-link hover:bg-slate-50 transition-colors duration-200"
-                        :class="{'tutorial-recent': isRecent(tutorial.created_at)}"
-                        @click="openPreviewModal(tutorial)">
-                        <td class="p-4">
-                            <input type="checkbox" 
-                                   class="rounded border-slate-300 text-blue-500 focus:ring-blue-500"
-                                   @click.stop>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="font-semibold text-slate-900" x-text="tutorial.title"></div>
-                            <div class="text-xs text-slate-500">
-                                <i class="fa-solid fa-link ml-1"></i>
-                                آپارات
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-slate-600">
-                                <i class="fa-solid fa-calendar-alt ml-2"></i>
-                                <span x-text="tutorial.shamsi_created_at"></span>
-                            </div>
-                            <div class="text-xs text-slate-500" x-text="tutorial.shamsi_updated_at"></div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center space-x-2 space-x-reverse">
-                                <button @click.stop="openPreviewModal(tutorial)"
-                                        class="inline-flex items-center px-2 py-1 text-md
-                                               font-medium text-gray-700 transition-colors">
-                                    <i class="fa-solid fa-eye ml-1"></i>
-                                </button>
-                                <button @click.stop="openEditModal(tutorial)"
-                                        class="inline-flex items-center px-2 py-1 text-md 
-                                               font-medium text-gray-700 transition-colors">
-                                    <i class="fa-solid fa-edit ml-1"></i>
-                                </button>
-                                <button @click.stop="openDeleteModal(tutorial)"
-                                        class="inline-flex items-center px-2 py-1 text-md 
-                                               font-medium text-gray-700 transition-colors">
-                                    <i class="fa-solid fa-trash ml-1"></i>
-                                </button>
-                            </div>
-                        </td>
+        <!-- Desktop Table -->
+        <div class="hidden lg:block bg-white rounded-xl shadow-sm overflow-hidden">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 text-slate-600">
+                    <tr>
+                        <th scope="col" class="px-6 py-4 text-right font-medium">عنوان</th>
+                        <th scope="col" class="px-6 py-4 text-center font-medium">تاریخ ایجاد</th>
+                        <th scope="col" class="px-6 py-4 text-center font-medium">آخرین بروزرسانی</th>
+                        <th scope="col" class="px-6 py-4 text-center font-medium">وضعیت</th>
+                        <th scope="col" class="px-6 py-4 text-center font-medium">عملیات</th>
                     </tr>
-                </template>
-                
-                <!-- Empty State -->
-                <tr x-show="filteredTutorials.length === 0">
-                    <td colspan="4" class="px-6 py-12 text-center">
-                        <div class="flex flex-col items-center justify-center">
-                            <i class="fa-solid fa-play text-4xl text-slate-300 mb-3"></i>
-                            <p class="text-slate-500 text-lg">هیچ ویدیویی یافت نشد</p>
-                            <p class="text-slate-400 text-sm mt-1">
-                                <span x-show="searchQuery.length > 0">
-                                    برای عبارت "<span x-text="searchQuery"></span>" نتیجه‌ای پیدا نشد
-                                </span>
-                                <span x-show="searchQuery.length === 0">
-                                    هنوز هیچ ویدیویی ثبت نشده است
-                                </span>
-                            </p>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Mobile Cards -->
-    <div class="grid grid-cols-1 gap-4 lg:hidden">
-        <template x-for="tutorial in filteredTutorials" :key="tutorial.id">
-            <div class="bg-white rounded-xl shadow-sm border"
-                 :class="{'border-r-4 border-r-green-500': isRecent(tutorial.created_at)}">
-                <div class="p-4">
-                    <div class="flex justify-between items-start mb-3">
-                        <div class="flex-1">
-                            <h3 class="font-semibold text-slate-900 text-sm" x-text="tutorial.title"></h3>
-                            <p class="text-xs text-slate-500 mt-1">
-                                <i class="fa-solid fa-calendar-alt ml-1"></i>
-                                <span x-text="tutorial.shamsi_created_at"></span>
-                            </p>
-                        </div>
-                        <div class="flex items-center space-x-1 space-x-reverse">
-                            <template x-if="isRecent(tutorial.created_at)">
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    <i class="fa-solid fa-star ml-1"></i>جدید
-                                </span>
-                            </template>
-                        </div>
-                    </div>
+                </thead>
+                <tbody class="divide-y divide-slate-200">
+                    <template x-if="filteredTutorials.length === 0">
+                        <tr>
+                            <td colspan="5" class="px-6 py-8 text-center text-slate-500">
+                                <div class="flex flex-col items-center">
+                                    <i class="fa-solid fa-video text-4xl mb-4 text-slate-300"></i>
+                                    <p class="text-lg font-medium">هیچ ویدیویی وجود ندارد</p>
+                                    <p class="text-sm">برای شروع، اولین ویدیو آموزشی خود را اضافه کنید.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
                     
-                    <div class="flex items-center justify-between mt-3">
-                        <div class="flex items-center space-x-2 space-x-reverse">
-                            <button @click="openPreviewModal(tutorial)"
-                                    class="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-800 transition-colors">
-                                <i class="fa-solid fa-eye ml-1"></i>
-                            </button>
-                            <button @click="openEditModal(tutorial)"
-                                    class="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-800 transition-colors">
-                                <i class="fa-solid fa-edit ml-1"></i>
-                            </button>
-                            <button @click="openDeleteModal(tutorial)"
-                                    class="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-800 transition-colors">
-                                <i class="fa-solid fa-trash ml-1"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </template>
-        
-        <!-- Mobile Empty State -->
-        <div x-show="filteredTutorials.length === 0" class="text-center py-12 bg-white rounded-xl border">
-            <i class="fa-solid fa-play text-4xl text-slate-300 mb-3"></i>
-            <p class="text-slate-500 text-lg">هیچ ویدیویی یافت نشد</p>
-            <p class="text-slate-400 text-sm mt-1">
-                <span x-show="searchQuery.length > 0">
-                    برای عبارت "<span x-text="searchQuery"></span>" نتیجه‌ای پیدا نشد
-                </span>
-                <span x-show="searchQuery.length === 0">
-                    هنوز هیچ ویدیویی ثبت نشده است
-                </span>
-            </p>
-        </div>
-    </div>
-
-    <!-- Create/Edit Modal -->
-    <div x-show="showModal" 
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 modal p-4"
-         @click.self="closeModal()"
-         style="display: none;" 
-         x-cloak>
-        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-             @click.stop>
-            <div class="flex items-center justify-between p-6 border-b">
-                <h2 class="text-xl font-bold text-slate-700">
-                    <span x-show="modalMode === 'create'">افزودن ویدیو آموزشی جدید</span>
-                    <span x-show="modalMode === 'edit'">ویرایش ویدیو آموزشی</span>
-                </h2>
-                <button @click="closeModal()" class="text-slate-400 hover:text-slate-600">
-                    <i class="fa-solid fa-times text-xl"></i>
-                </button>
-            </div>
-            
-            <form @submit.prevent="submitForm()">
-                <div class="p-6 space-y-4">
-                    <!-- Title -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">
-                            <i class="fa-solid fa-heading ml-2"></i>عنوان ویدیو
-                        </label>
-                        <input type="text" 
-                               x-model="formData.title"
-                               class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="عنوان ویدیو آموزشی را وارد کنید..."
-                               required>
-                        <div x-show="errors.title && errors.title.length > 0" class="text-red-500 text-sm mt-1">
-                            <template x-for="error in errors.title" :key="error">
-                                <div x-text="error"></div>
-                            </template>
-                        </div>
-                    </div>
-                    
-                    <!-- Aparat URL -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">
-                            <i class="fa-solid fa-link ml-2"></i>کد embed آپارات (iframe یا script)
-                        </label>
-                        <textarea x-model="formData.aparat_url"
-                                  class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-xs"
-                                  rows="6"
-                                  placeholder="کد iframe یا script آپارات را کامل اینجا قرار دهید..."
-                                  required></textarea>
-                        <div x-show="errors.aparat_url && errors.aparat_url.length > 0" class="text-red-500 text-sm mt-1">
-                            <template x-for="error in errors.aparat_url" :key="error">
-                                <div x-text="error"></div>
-                            </template>
-                        </div>
-                        <p class="text-xs text-slate-500 mt-2">
-                            <i class="fa-solid fa-info-circle ml-1"></i>
-                            کد embed کامل آپارات را وارد کنید (شامل style، div و iframe یا script)
-                        </p>
-                        <div class="mt-2 p-3 bg-blue-50 rounded-lg text-xs text-slate-600">
-                            <strong>نمونه قالب iframe:</strong>
-                            <pre class="mt-1 text-xs overflow-x-auto">&lt;style&gt;.h_iframe-aparat_embed_frame{...}&lt;/style&gt;&lt;div class="h_iframe-aparat_embed_frame"&gt;...&lt;/div&gt;</pre>
-                            <strong class="mt-2 block">یا نمونه قالب script:</strong>
-                            <pre class="mt-1 text-xs overflow-x-auto">&lt;div id="..."&gt;&lt;script src="..."&gt;&lt;/script&gt;&lt;/div&gt;</pre>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="flex items-center justify-end space-x-3 space-x-reverse p-6 border-t bg-slate-50">
-                    <button type="button" 
-                            @click="closeModal()"
-                            class="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-                        لغو
-                    </button>
-                    <button type="submit" 
-                            :disabled="loading"
-                            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                        <span x-show="!loading">
-                            <span x-show="modalMode === 'create'">
-                                <i class="fa-solid fa-plus ml-2"></i>ایجاد ویدیو
-                            </span>
-                            <span x-show="modalMode === 'edit'">
-                                <i class="fa-solid fa-save ml-2"></i>ذخیره تغییرات
-                            </span>
-                        </span>
-                        <span x-show="loading">
-                            <i class="fa-solid fa-spinner fa-spin ml-2"></i>در حال پردازش...
-                        </span>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Preview Modal -->
-    <div x-show="showPreviewModal" 
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 modal p-4"
-         @click.self="closePreviewModal()"
-         style="display: none;" 
-         x-cloak>
-        <div class="bg-white rounded-xl shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto"
-             @click.stop>
-            <div class="flex items-center justify-between p-6 border-b">
-                <h2 class="text-xl font-bold text-slate-700">
-                    <i class="fa-solid fa-eye ml-2"></i>پیش‌نمایش ویدیو
-                </h2>
-                <button @click="closePreviewModal()" class="text-slate-400 hover:text-slate-600">
-                    <i class="fa-solid fa-times text-xl"></i>
-                </button>
-            </div>
-            
-            <div class="p-6">
-                <template x-if="previewTutorial">
-                    <div>
-                        <h3 class="text-lg font-bold text-slate-800 mb-4" x-text="previewTutorial.title"></h3>
-                        
-                        <!-- Video Embed Container -->
-                        <div class="aparat-video-container mb-4" id="video-container"></div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-6">
-                            <div class="bg-slate-50 rounded-lg p-3">
-                                <div class="text-slate-500 mb-1">تاریخ ایجاد:</div>
-                                <div class="font-medium" x-text="previewTutorial.shamsi_created_at"></div>
-                            </div>
-                            <div class="bg-slate-50 rounded-lg p-3">
-                                <div class="text-slate-500 mb-1">آخرین بروزرسانی:</div>
-                                <div class="font-medium" x-text="previewTutorial.shamsi_updated_at"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- کد embed برای کپی -->
-                        <div class="mt-4">
-                            <details class="bg-slate-50 rounded-lg">
-                                <summary class="p-3 cursor-pointer text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg">
-                                    <i class="fa-solid fa-code ml-2"></i>مشاهده کد embed
-                                </summary>
-                                <div class="p-3 border-t">
-                                    <pre class="text-xs bg-slate-900 text-green-400 p-3 rounded overflow-x-auto" x-text="previewTutorial.aparat_url"></pre>
-                                    <button @click="copyEmbedCode(previewTutorial.aparat_url)"
-                                            class="mt-2 px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
-                                        <i class="fa-solid fa-copy ml-1"></i>کپی کد
+                    <template x-for="tutorial in filteredTutorials" :key="tutorial.id">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-semibold" x-text="tutorial.title"></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm" x-text="tutorial.shamsi_created_at"></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm" x-text="tutorial.shamsi_updated_at"></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <template x-if="isRecent(tutorial.created_at)">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fa-solid fa-star ml-1"></i>
+                                        جدید
+                                    </span>
+                                </template>
+                                <template x-if="!isRecent(tutorial.created_at)">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        <i class="fa-solid fa-check ml-1"></i>
+                                        فعال
+                                    </span>
+                                </template>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <div class="flex justify-center items-center space-x-2 space-x-reverse">
+                                    <button @click="openPreviewModal(tutorial)"
+                                            class="p-2 text-slate-500 hover:text-blue-600 rounded-md hover:bg-slate-200 transition-colors" 
+                                            title="پیش‌نمایش">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </button>
+                                    <button @click="openEditModal(tutorial)" 
+                                            class="p-2 text-slate-500 hover:text-yellow-600 rounded-md hover:bg-slate-200 transition-colors" 
+                                            title="ویرایش">
+                                        <i class="fa-solid fa-edit"></i>
+                                    </button>
+                                    <button @click="deleteTutorial(tutorial.id)" 
+                                            class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-200 transition-colors" 
+                                            title="حذف">
+                                        <i class="fa-solid fa-trash"></i>
                                     </button>
                                 </div>
-                            </details>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile Cards -->
+        <div class="grid grid-cols-1 gap-4 lg:hidden">
+            <template x-if="filteredTutorials.length === 0">
+                <div class="bg-white rounded-xl shadow-sm p-8 text-center">
+                    <i class="fa-solid fa-video text-4xl mb-4 text-slate-300"></i>
+                    <p class="text-lg font-medium text-slate-700 mb-2">هیچ ویدیویی وجود ندارد</p>
+                    <p class="text-sm text-slate-500">برای شروع، اولین ویدیو آموزشی خود را اضافه کنید.</p>
+                </div>
+            </template>
+            
+            <template x-for="tutorial in filteredTutorials" :key="tutorial.id">
+                <div class="bg-white rounded-xl shadow-sm p-4">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex-1">
+                            <h3 class="font-bold text-slate-800 mb-2" x-text="tutorial.title"></h3>
+                            <div class="space-y-2">
+                                <p class="text-sm text-slate-600">
+                                    ایجاد: <span class="font-medium" x-text="tutorial.shamsi_created_at"></span>
+                                </p>
+                                <p class="text-sm text-slate-600">
+                                    بروزرسانی: <span class="font-medium" x-text="tutorial.shamsi_updated_at"></span>
+                                </p>
+                                <div class="flex items-center">
+                                    <template x-if="isRecent(tutorial.created_at)">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fa-solid fa-star ml-1"></i>
+                                            جدید
+                                        </span>
+                                    </template>
+                                    <template x-if="!isRecent(tutorial.created_at)">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            <i class="fa-solid fa-check ml-1"></i>
+                                            فعال
+                                        </span>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-center space-y-2">
+                            <button @click="openPreviewModal(tutorial)"
+                                    class="p-2 text-slate-500 hover:text-blue-600 rounded-md hover:bg-slate-100 transition-colors" 
+                                    title="پیش‌نمایش">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                            <button @click="openEditModal(tutorial)" 
+                                    class="p-2 text-slate-500 hover:text-yellow-600 rounded-md hover:bg-slate-100 transition-colors" 
+                                    title="ویرایش">
+                                <i class="fa-solid fa-edit"></i>
+                            </button>
+                            <button @click="deleteTutorial(tutorial.id)" 
+                                    class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100 transition-colors" 
+                                    title="حذف">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
                         </div>
                     </div>
-                </template>
-            </div>
+                </div>
+            </template>
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div x-show="showDeleteModal" 
+    <!-- Modal -->
+    <div x-show="isModalOpen" 
+         x-cloak 
+         @keydown.escape.window="closeModal()"
          x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"
          x-transition:leave="transition ease-in duration-200"
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
-         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 modal p-4"
-         @click.self="closeDeleteModal()"
-         style="display: none;" 
-         x-cloak>
-        <div class="bg-white rounded-xl shadow-xl max-w-md w-full"
-             @click.stop>
-            <div class="p-6">
-                <div class="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full mx-auto mb-4">
-                    <i class="fa-solid fa-exclamation-triangle text-red-600 text-xl"></i>
+         class="fixed inset-0 z-50 overflow-y-auto">
+        
+        <!-- Backdrop -->
+        <div class="flex min-h-screen items-center justify-center p-4">
+            <div @click="closeModal()" 
+                 class="fixed inset-0 bg-slate-900 bg-opacity-60 backdrop-blur-sm"></div>
+            
+            <!-- Modal Container -->
+            <div x-show="isModalOpen"
+                 @click.stop
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="relative z-10 w-full max-w-md md:max-w-3xl lg:max-w-4xl bg-white rounded-xl shadow-2xl my-8 flex flex-col max-h-[90vh]">
+                
+                <!-- Modal Header -->
+                <div class="flex-shrink-0 p-5 md:p-6 flex justify-between items-center border-b border-slate-200 bg-white rounded-t-xl">
+                    <div class="flex items-center">
+                        <div class="hidden md:block w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center ml-3">
+                            <i class="fa-solid fa-video text-blue-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg md:text-xl font-bold text-slate-800" x-text="modalTitle"></h3>
+                            <p class="text-sm text-slate-500 hidden md:block">مدیریت ویدیوهای آموزشی سیستم</p>
+                        </div>
+                    </div>
+                    <button @click="closeModal()" 
+                            class="p-2 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors">
+                        <i class="fa-solid fa-times text-lg"></i>
+                    </button>
                 </div>
-                
-                <h2 class="text-lg font-bold text-slate-800 text-center mb-2">حذف ویدیو آموزشی</h2>
-                <p class="text-slate-600 text-center mb-6">
-                    آیا از حذف ویدیو 
-                    <span class="font-semibold" x-text="deleteTarget?.title"></span>
-                    اطمینان دارید؟
-                </p>
-                
-                <div class="flex items-center justify-center space-x-3 space-x-reverse">
-                    <button @click="closeDeleteModal()"
-                            class="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-                        لغو
-                    </button>
-                    <button @click="confirmDelete()"
-                            :disabled="loading"
-                            class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                        <span x-show="!loading">
-                            <i class="fa-solid fa-trash ml-2"></i>حذف ویدیو
-                        </span>
-                        <span x-show="loading">
-                            <i class="fa-solid fa-spinner fa-spin ml-2"></i>در حال حذف...
-                        </span>
-                    </button>
+
+                <!-- Modal Body -->
+                <div class="flex-1 overflow-y-auto p-6 md:p-8">
+                    <template x-if="currentModalType === 'form'">
+                        <form @submit.prevent="submitForm()" id="tutorialForm">
+                            <!-- عنوان -->
+                            <div class="form-field mb-6">
+                                <label for="t-title" class="block text-sm font-semibold text-slate-700 mb-3">
+                                    <i class="fa-solid fa-heading ml-2 text-blue-500"></i>
+                                    عنوان ویدیو
+                                </label>
+                                <input type="text" 
+                                       id="t-title" 
+                                       x-model="formData.title" 
+                                       placeholder="عنوان ویدیو آموزشی را وارد کنید" 
+                                       required
+                                       class="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200 hover:border-slate-400">
+                                <template x-if="errors.title">
+                                    <p class="mt-2 text-sm text-red-600" x-text="errors.title[0]"></p>
+                                </template>
+                            </div>
+
+                            <!-- کد Embed آپارات -->
+                            <div class="form-field mb-6">
+                                <label for="t-aparat" class="block text-sm font-semibold text-slate-700 mb-3">
+                                    <i class="fa-solid fa-code ml-2 text-green-500"></i>
+                                    کد Embed آپارات
+                                </label>
+                                <textarea id="t-aparat" 
+                                          x-model="formData.aparat_url" 
+                                          rows="6"
+                                          placeholder='<script type="text/JavaScript" src="https://www.aparat.com/embed/..."></script>'
+                                          required
+                                          class="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent font-mono text-sm transition-all duration-200 hover:border-slate-400"
+                                          dir="ltr"></textarea>
+                                <p class="mt-2 text-xs text-slate-500 flex items-center">
+                                    <i class="fa-solid fa-lightbulb ml-1 text-yellow-500"></i>
+                                    کد embed را از آپارات کپی کرده و اینجا قرار دهید
+                                </p>
+                                <template x-if="errors.aparat_url">
+                                    <p class="mt-2 text-sm text-red-600" x-text="errors.aparat_url[0]"></p>
+                                </template>
+                            </div>
+                        </form>
+                    </template>
+
+                    <!-- Preview -->
+                    <template x-if="currentModalType === 'preview'">
+                        <div>
+                            <div id="preview-video-container" class="relative w-full bg-black rounded-lg overflow-hidden" style="padding-bottom: 56.25%;">
+                                <!-- کد embed اینجا inject می‌شود -->
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="flex-shrink-0 border-t border-slate-200 px-6 md:px-8 py-4 bg-slate-50 rounded-b-xl">
+                    <div class="flex flex-col-reverse md:flex-row justify-end items-center gap-3">
+                        <button type="button" 
+                                @click="closeModal()" 
+                                class="w-full md:w-auto py-3 md:py-2.5 px-6 text-sm font-semibold bg-white border-2 border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-200">
+                            <i class="fa-solid fa-times ml-2"></i>
+                            <span x-text="currentModalType === 'preview' ? 'بستن' : 'انصراف'"></span>
+                        </button>
+                        <template x-if="currentModalType === 'form'">
+                            <button type="submit" 
+                                    form="tutorialForm"
+                                    :disabled="isLoading"
+                                    class="w-full md:w-auto py-3 md:py-2.5 px-8 text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                                <span x-show="!isLoading" class="flex items-center justify-center">
+                                    <i class="fa-solid fa-save ml-2"></i>
+                                    <span x-text="isEditMode ? 'بروزرسانی ویدیو' : 'ایجاد ویدیو'"></span>
+                                </span>
+                                <span x-show="isLoading" class="flex items-center justify-center">
+                                    <i class="fa-solid fa-spinner fa-spin ml-2"></i>
+                                    در حال پردازش...
+                                </span>
+                            </button>
+                        </template>
+                    </div>
                 </div>
             </div>
         </div>
@@ -514,371 +287,272 @@
 
 {% block extra_js %}
 <script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
 function tutorialsManager() {
     return {
-        // Data
+        // State
         tutorials: [],
         filteredTutorials: [],
-        searchQuery: '',
-        sortBy: 'newest',
+        selectedTutorial: null,
+        isModalOpen: false,
+        isEditMode: false,
+        isLoading: false,
+        modalTitle: '',
+        currentModalType: 'form', // 'form' or 'preview'
+        errors: {},
         
-        // Modal states
-        showModal: false,
-        showPreviewModal: false,
-        showDeleteModal: false,
-        modalMode: 'create', // 'create' or 'edit'
-        
-        // Form data
+        // Forms
         formData: {
             title: '',
             aparat_url: ''
         },
         
-        // Other states
-        loading: false,
-        errors: {},
-        editingTutorial: null,
-        previewTutorial: null,
-        deleteTarget: null,
-
         // Initialize
         init() {
-            // Load tutorials data from Django
+            console.log('🚀 Initializing tutorials manager...');
+            
             try {
-                this.tutorials = {{ tutorials_json|safe }};
-                this.filteredTutorials = [...this.tutorials];
-                this.applySorting();
-                console.log('Tutorials loaded:', this.tutorials.length);
+                const tutorialsData = JSON.parse('{{ tutorials_json|escapejs }}');
+                console.log('📦 Raw tutorials data:', tutorialsData);
+                
+                if (Array.isArray(tutorialsData)) {
+                    this.tutorials = tutorialsData;
+                    this.filteredTutorials = [...this.tutorials];
+                    console.log(`✅ Successfully loaded ${this.tutorials.length} tutorials`);
+                } else {
+                    console.error('❌ Tutorials data is not an array:', typeof tutorialsData);
+                    this.tutorials = [];
+                    this.filteredTutorials = [];
+                }
             } catch (error) {
-                console.error('Error loading tutorials:', error);
+                console.error('❌ Error loading tutorials:', error);
                 this.tutorials = [];
                 this.filteredTutorials = [];
             }
         },
-
-        // Search functionality
-        performSearch() {
-            if (this.searchQuery.trim() === '') {
-                this.filteredTutorials = [...this.tutorials];
-            } else {
-                const query = this.searchQuery.toLowerCase();
-                this.filteredTutorials = this.tutorials.filter(tutorial => 
-                    tutorial.title.toLowerCase().includes(query)
-                );
-            }
-            this.applySorting();
+        
+        // Check if tutorial is recent (within last 7 days)
+        isRecent(dateString) {
+            const tutorialDate = new Date(dateString);
+            const now = new Date();
+            const diffTime = Math.abs(now - tutorialDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays <= 7;
         },
-
-        clearSearch() {
-            this.searchQuery = '';
-            this.performSearch();
-        },
-
-        // Sorting functionality
-        applySorting() {
-            switch (this.sortBy) {
-                case 'newest':
-                    this.filteredTutorials.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-                    break;
-                case 'oldest':
-                    this.filteredTutorials.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-                    break;
-                case 'title':
-                    this.filteredTutorials.sort((a, b) => a.title.localeCompare(b.title));
-                    break;
-            }
-        },
-
+        
         // Modal management
-        openCreateModal() {
-            this.modalMode = 'create';
+        openAddModal() {
+            console.log('➕ Opening add modal');
             this.resetForm();
-            this.showModal = true;
-            console.log('Opening create modal');
+            this.isModalOpen = true;
+            this.isEditMode = false;
+            this.currentModalType = 'form';
+            this.modalTitle = 'افزودن ویدیو جدید';
         },
-
-        openEditModal(tutorial) {
-            console.log('Opening edit modal for:', tutorial);
-            this.modalMode = 'edit';
-            this.editingTutorial = tutorial;
+        
+        async openEditModal(tutorial) {
+            console.log('📝 Opening edit modal for:', tutorial);
+            this.selectedTutorial = { ...tutorial };
             this.formData = {
-                title: tutorial.title,
-                aparat_url: tutorial.aparat_url
+                title: tutorial.title || '',
+                aparat_url: ''
             };
             this.errors = {};
-            this.showModal = true;
-        },
-
-        openPreviewModal(tutorial) {
-            console.log('Opening preview modal for:', tutorial);
-            this.previewTutorial = tutorial;
-            this.showPreviewModal = true;
+            this.isEditMode = true;
+            this.currentModalType = 'form';
+            this.modalTitle = 'ویرایش ویدیو';
             
-            // بعد از باز شدن modal، ویدیو را render کن
-            this.$nextTick(() => {
-                this.renderVideo(tutorial.aparat_url);
-            });
-        },
-
-        renderVideo(embedCode) {
-            const container = document.getElementById('video-container');
-            if (!container) {
-                console.error('Video container not found');
-                return;
-            }
-
-            // پاک کردن محتوای قبلی
-            container.innerHTML = '';
-
+            // دریافت کد embed از سرور
             try {
-                // بررسی نوع کد embed
-                if (embedCode.includes('<script')) {
-                    // برای script tag باید به صورت خاص handle بشه
-                    this.handleScriptEmbed(container, embedCode);
-                } else {
-                    // برای iframe و HTML معمولی
-                    container.innerHTML = embedCode;
-                }
+                const response = await fetch(`/dashboard/admin/tutorials/embed/${tutorial.id}/`, {
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
                 
-                console.log('Video rendered successfully');
-            } catch (error) {
-                console.error('Error rendering video:', error);
-                container.innerHTML = `
-                    <div class="flex items-center justify-center h-full">
-                        <div class="text-center">
-                            <i class="fa-solid fa-exclamation-triangle text-4xl text-red-400 mb-3"></i>
-                            <p class="text-slate-600">خطا در نمایش ویدیو</p>
-                            <p class="text-xs text-slate-500 mt-2">کد embed معتبر نیست</p>
-                        </div>
-                    </div>
-                `;
-            }
-        },
-
-        handleScriptEmbed(container, embedCode) {
-            // استخراج div و script از کد embed
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = embedCode;
-            
-            // پیدا کردن div اصلی
-            const mainDiv = tempDiv.querySelector('div');
-            if (!mainDiv) {
-                throw new Error('Invalid embed code: div not found');
-            }
-
-            // پیدا کردن script tag
-            const scriptTag = tempDiv.querySelector('script');
-            if (!scriptTag) {
-                throw new Error('Invalid embed code: script not found');
-            }
-
-            // اضافه کردن div به container
-            container.appendChild(mainDiv.cloneNode(true));
-
-            // ساخت script جدید و اجرای آن
-            const newScript = document.createElement('script');
-            if (scriptTag.src) {
-                newScript.src = scriptTag.src;
-            } else {
-                newScript.textContent = scriptTag.textContent;
-            }
-            
-            // اضافه کردن attributes
-            Array.from(scriptTag.attributes).forEach(attr => {
-                if (attr.name !== 'src' && attr.name !== 'type') {
-                    newScript.setAttribute(attr.name, attr.value);
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.formData.aparat_url = data.aparat_url;
+                    console.log('✅ Embed code loaded successfully');
+                } else {
+                    console.error('❌ Failed to load embed code');
+                    this.showNotification('error', 'خطا در بارگذاری کد embed');
                 }
-            });
-
-            container.appendChild(newScript);
-        },
-
-        openDeleteModal(tutorial) {
-            console.log('Opening delete modal for:', tutorial);
-            this.deleteTarget = tutorial;
-            this.showDeleteModal = true;
-        },
-
-        closeModal() {
-            this.showModal = false;
-            this.resetForm();
-        },
-
-        closePreviewModal() {
-            this.showPreviewModal = false;
-            this.previewTutorial = null;
+            } catch (error) {
+                console.error('❌ Error loading embed code:', error);
+                this.showNotification('error', 'خطا در بارگذاری کد embed');
+            }
             
-            // پاک کردن محتوای ویدیو
-            const container = document.getElementById('video-container');
+            this.isModalOpen = true;
+        },
+        
+        async openPreviewModal(tutorial) {
+            console.log('👁️ Opening preview modal for:', tutorial);
+            this.selectedTutorial = { ...tutorial };
+            this.currentModalType = 'preview';
+            this.modalTitle = tutorial.title;
+            
+            // دریافت کد embed از سرور
+            try {
+                const response = await fetch(`/dashboard/admin/tutorials/embed/${tutorial.id}/`, {
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.isModalOpen = true;
+                    
+                    // بعد از باز شدن مودال، کد embed را inject می‌کنیم
+                    this.$nextTick(() => {
+                        const container = document.getElementById('preview-video-container');
+                        if (container) {
+                            container.innerHTML = data.aparat_url;
+                            console.log('✅ Embed code injected successfully');
+                        }
+                    });
+                } else {
+                    console.error('❌ Failed to load embed code');
+                    this.showNotification('error', 'خطا در بارگذاری ویدیو');
+                }
+            } catch (error) {
+                console.error('❌ Error loading embed code:', error);
+                this.showNotification('error', 'خطا در بارگذاری ویدیو');
+            }
+        },
+        
+        closeModal() {
+            console.log('❌ Closing modal');
+            this.isModalOpen = false;
+            this.selectedTutorial = null;
+            this.errors = {};
+            this.currentModalType = 'form';
+            
+            // پاک کردن video container
+            const container = document.getElementById('preview-video-container');
             if (container) {
                 container.innerHTML = '';
             }
         },
-
-        closeDeleteModal() {
-            this.showDeleteModal = false;
-            this.deleteTarget = null;
-        },
-
+        
         resetForm() {
             this.formData = {
                 title: '',
                 aparat_url: ''
             };
+            this.selectedTutorial = null;
+            this.isLoading = false;
             this.errors = {};
-            this.editingTutorial = null;
         },
-
-        // Helper function to get CSRF token
-        getCSRFToken() {
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
-            return csrfToken ? csrfToken.value : '';
-        },
-
-        // Copy embed code to clipboard
-        copyEmbedCode(code) {
-            navigator.clipboard.writeText(code).then(() => {
-                this.showNotification('success', 'کد embed با موفقیت کپی شد');
-            }).catch(err => {
-                console.error('Failed to copy:', err);
-                this.showNotification('error', 'خطا در کپی کردن کد');
-            });
-        },
-
-        // Form submission
+        
+        // CRUD Operations
         async submitForm() {
-            this.loading = true;
+            console.log('💾 Submitting form...');
+            this.isLoading = true;
             this.errors = {};
-
+            
+            const url = this.isEditMode 
+                ? `/dashboard/admin/tutorials/${this.selectedTutorial.id}/update/`
+                : '/dashboard/admin/tutorials/create/';
+            
+            const method = this.isEditMode ? 'PUT' : 'POST';
+            
             try {
-                console.log('Submitting form:', this.modalMode, this.formData);
-                
-                const url = this.modalMode === 'create' 
-                    ? '{% url "dashboard:tutorials:admin_tutorials_create" %}'
-                    : `{% url "dashboard:tutorials:admin_tutorials_update" 0 %}`.replace('0', this.editingTutorial.id);
-                
-                const method = this.modalMode === 'create' ? 'POST' : 'PUT';
-
                 const response = await fetch(url, {
                     method: method,
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': this.getCSRFToken()
+                        'X-CSRFToken': getCookie('csrftoken')
                     },
                     body: JSON.stringify(this.formData)
                 });
-
-                console.log('Response status:', response.status);
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
                 const data = await response.json();
-                console.log('Response data:', data);
-
+                console.log('📨 Server response:', data);
+                
                 if (data.success) {
-                    if (this.modalMode === 'create') {
-                        this.tutorials.unshift(data.tutorial);
-                    } else {
-                        const index = this.tutorials.findIndex(t => t.id === this.editingTutorial.id);
+                    if (this.isEditMode) {
+                        const index = this.tutorials.findIndex(t => t.id === this.selectedTutorial.id);
                         if (index !== -1) {
                             this.tutorials[index] = data.tutorial;
                         }
+                    } else {
+                        this.tutorials.unshift(data.tutorial);
                     }
-                    
-                    this.performSearch();
+                    this.filteredTutorials = [...this.tutorials];
                     this.closeModal();
                     this.showNotification('success', data.message);
+                    console.log('✅ Operation successful');
                 } else {
                     this.errors = data.errors || {};
-                    if (data.message) {
-                        this.showNotification('error', data.message);
-                    }
+                    this.showNotification('error', data.message || 'خطا در عملیات');
+                    console.error('❌ Operation failed:', data);
                 }
             } catch (error) {
-                console.error('Error:', error);
-                this.showNotification('error', 'خطا در ارسال درخواست: ' + error.message);
+                console.error('❌ Error:', error);
+                this.showNotification('error', 'خطا در ارتباط با سرور');
             } finally {
-                this.loading = false;
+                this.isLoading = false;
             }
         },
+        
+        async deleteTutorial(id) {
+            if (!confirm('آیا از حذف این ویدیو اطمینان دارید؟')) {
+                return;
+            }
 
-        // Delete confirmation
-        async confirmDelete() {
-            this.loading = true;
-
+            console.log('🗑️ Deleting tutorial...');
+            
             try {
-                console.log('Deleting tutorial:', this.deleteTarget.id);
-                
-                const response = await fetch(`{% url "dashboard:tutorials:admin_tutorials_delete" 0 %}`.replace('0', this.deleteTarget.id), {
+                const response = await fetch(`/dashboard/admin/tutorials/${id}/delete/`, {
                     method: 'DELETE',
                     headers: {
-                        'X-CSRFToken': this.getCSRFToken()
+                        'X-CSRFToken': getCookie('csrftoken')
                     }
                 });
-
-                console.log('Delete response status:', response.status);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
+                
                 const data = await response.json();
-                console.log('Delete response data:', data);
-
+                console.log('📨 Server response:', data);
+                
                 if (data.success) {
-                    this.tutorials = this.tutorials.filter(t => t.id !== this.deleteTarget.id);
-                    this.performSearch();
-                    this.closeDeleteModal();
+                    this.tutorials = this.tutorials.filter(t => t.id !== id);
+                    this.filteredTutorials = [...this.tutorials];
                     this.showNotification('success', data.message);
+                    console.log('✅ Tutorial deleted successfully');
                 } else {
-                    this.showNotification('error', data.message);
+                    this.showNotification('error', data.message || 'خطا در حذف ویدیو');
+                    console.error('❌ Failed to delete tutorial:', data);
                 }
             } catch (error) {
-                console.error('Error:', error);
-                this.showNotification('error', 'خطا در حذف ویدیو: ' + error.message);
-            } finally {
-                this.loading = false;
+                console.error('❌ Error deleting tutorial:', error);
+                this.showNotification('error', 'خطا در ارتباط با سرور');
             }
         },
-
-        // Utility functions
-        isRecent(dateString) {
-            const date = new Date(dateString);
-            const now = new Date();
-            const diffTime = Math.abs(now - date);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            return diffDays <= 7;
-        },
-
+        
+        // Notification
         showNotification(type, message) {
-            console.log('Showing notification:', type, message);
-            if (typeof window.showNotification === 'function') {
-                window.showNotification(type, message);
-            } else {
-                window.dispatchEvent(new CustomEvent('notify', {
-                    detail: { type, message }
-                }));
-            }
+            window.dispatchEvent(new CustomEvent('notify', {
+                detail: { type, message }
+            }));
         }
     }
 }
-
-// Handle messages from Django
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded');
-    
-    {% if messages %}
-    {% for message in messages %}
-        window.dispatchEvent(new CustomEvent('notify', {
-            detail: {
-                type: '{{ message.tags }}',
-                message: '{{ message|escapejs }}'
-            }
-        }));
-    {% endfor %}
-    {% endif %}
-});
 </script>
 {% endblock %}

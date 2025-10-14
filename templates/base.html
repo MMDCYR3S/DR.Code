@@ -12,11 +12,16 @@
     {% block extra_css %}
     <!-- این بخش مربوط به Css هایی هست که برای صفحت مختلف ممکنه بزنی. -->
     
+    <!-- GLightbox CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox@3.2.0/dist/css/glightbox.min.css">
     
+    <!-- GLightbox JS -->
+    <script src="https://cdn.jsdelivr.net/npm/glightbox@3.2.0/dist/js/glightbox.min.js"></script>
+
     
     {% endblock extra_css %}
     <link rel="stylesheet" href="{% static 'css/auth.css' %}">
-
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <!-- tailwind css -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
@@ -37,18 +42,26 @@
     <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
 
     <!-- smooth scroll -->
-    <script src="https://cdn.jsdelivr.net/gh/cferdinandi/smooth-scroll@15.0.0/dist/smooth-scroll.polyfills.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/gh/cferdinandi/smooth-scroll@15.0.0/dist/smooth-scroll.polyfills.min.js"></script>
+    <!-- Favicon پایه (.ico برای مرورگرهای دسکتاپ) -->
+    <link rel="icon" type="image/x-icon" href="{% static 'pics/favicon.ico' %}">
 
-<!-- GLightbox CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox@3.2.0/dist/css/glightbox.min.css">
+    <!-- PNG Favicons برای مرورگرهای مدرن -->
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'pics/favicon-16x16.png' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'pics/favicon-32x32.png' %}">
 
-<!-- GLightbox JS -->
-<script src="https://cdn.jsdelivr.net/npm/glightbox@3.2.0/dist/js/glightbox.min.js"></script>
+    <!-- آیکون برای اندروید -->
+    <link rel="icon" type="image/png" sizes="192x192" href="{% static 'pics/android-chrome-192x192.png' %}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{% static 'pics/android-chrome-512x512.png' %}">
 
-<!-- Alpine.js Collapse Plugin -->
-<script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+    <!-- آیکون برای دستگاه‌های اپل -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'pics/apple-touch-icon.png' %}">
 
+    <!-- رنگ نوار آدرس در مرورگرهای موبایل -->
+    <meta name="theme-color" content="#ffffff">
 
+    <!-- Logo اصلی سایت (اختیاری برای سئو و اشتراک لینک) -->
+    <meta property="og:image" content="{% static 'pics/logo.png' %}">
     <!-- font awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
@@ -150,7 +163,7 @@
                             <a href="/prescriptions/" class="text-gray-700 hover:text-c1 transition-colors font-medium">نسخه‌ها</a>
                             <a href="/plan/" class="text-gray-700 hover:text-c1 transition-colors font-medium">پلن‌های
                                 اشتراک</a>
-                            <a href="#" class="text-gray-700 hover:text-c1 transition-colors font-medium">آموزش‌ها</a>
+                            <a href="/tutorials/" class="text-gray-700 hover:text-c1 transition-colors font-medium">آموزش‌ها</a>
                             <a href="/about/" class="text-gray-700 hover:text-c1 transition-colors font-medium">درباره
                                 ما</a>
                             <a href="/contact/" class="text-gray-700 hover:text-c1 transition-colors font-medium">تماس با
@@ -192,7 +205,7 @@
                             <a href="/plan/"
                                 class="block px-4 py-3 rounded-lg hover:bg-c5 text-gray-700 hover:text-c1 transition-all">پلن‌های
                                 اشتراک</a>
-                            <a href="#"
+                            <a href="/tutorials/"
                                 class="block px-4 py-3 rounded-lg hover:bg-c5 text-gray-700 hover:text-c1 transition-all">آموزش‌ها</a>
                             <a href="/about/" @click="mobileMenu = false"
                                 class="block px-4 py-3 rounded-lg hover:bg-c5 text-gray-700 hover:text-c1 transition-all">درباره
@@ -224,8 +237,7 @@
 
         <footer>
             {% block footer %}
-
-
+        
             <!-- Footer -->
             <footer id="contact" class="bg-gray-900 text-white py-16">
                 <div class="container mx-auto px-4 lg:px-8">
@@ -250,7 +262,7 @@
                                 نسخه‌های استاندارد و به‌روز، زمان نسخه‌نویسی را کاهش داده و دقت را افزایش دهید. همراه
                                 همیشگی شما برای ارائه بهترین خدمات درمانی به بیماران.
                             </p>
-
+        
                             <!-- Social Links -->
                             <div class="flex gap-4">
                                 <a href="#"
@@ -279,24 +291,24 @@
                                 </a>
                             </div>
                         </div>
-
+        
                         <!-- Quick Links -->
                         <div>
                             <h4 class="font-bold text-lg mb-6">دسترسی سریع</h4>
                             <ul class="space-y-3">
-                                <li><a href="#" class="text-gray-400 hover:text-white transition-colors">صفحه اصلی</a>
+                                <li><a href="" class="text-gray-400 hover:text-white transition-colors">صفحه اصلی</a>
                                 </li>
-                                <li><a href="#" class="text-gray-400 hover:text-white transition-colors">نسخه‌ها</a>
+                                <li><a href="/prescriptions/" class="text-gray-400 hover:text-white transition-colors">نسخه‌ها</a>
                                 </li>
-                                <li><a href="#" class="text-gray-400 hover:text-white transition-colors">پلن‌های
+                                <li><a href="/plans/" class="text-gray-400 hover:text-white transition-colors">پلن‌های
                                         اشتراک</a></li>
-                                <li><a href="#" class="text-gray-400 hover:text-white transition-colors">آموزش‌ها</a>
+                                <li><a href="/tutorials/" class="text-gray-400 hover:text-white transition-colors">آموزش‌ها</a>
                                 </li>
-                                <li><a href="#" class="text-gray-400 hover:text-white transition-colors">پشتیبانی</a>
+                                <li><a href="/contact/" class="text-gray-400 hover:text-white transition-colors">پشتیبانی</a>
                                 </li>
                             </ul>
                         </div>
-
+        
                         <!-- Contact Info -->
                         <div>
                             <h4 class="font-bold text-lg mb-6">تماس با ما</h4>
@@ -320,7 +332,52 @@
                             </ul>
                         </div>
                     </div>
+                    
+                    <!-- Partner & Trust Logos Section -->
+                        <div class="mt-12 space-y-8">
+                            <!-- Insurance Partners -->
+                            <h5 class="text-center text-gray-500 text-sm mb-4">سازمان‌های بیمه‌گر همکار</h5>
+                            <div class="flex flex-wrap items-center justify-center gap-6 md:gap-8">
+                                <a href="https://account.tamin.ir/auth/login" target="_blank" rel="noopener noreferrer" 
+                                   class="hover:opacity-80 transition-opacity">
+                                    <img src="{% static 'pics/footer/tamin.png' %}" alt="سازمان تامین اجتماعی" 
+                                         class="h-12 md:h-16 w-auto object-contain">
+                                </a>
+                                <a href="https://eservices.ihio.gov.ir/sso/?sourceApp=https://eservices.ihio.gov.ir/ihioerx/" 
+                                   target="_blank" rel="noopener noreferrer" 
+                                   class="hover:opacity-80 transition-opacity">
+                                    <img src="{% static 'pics/footer/salamat.png' %}" alt="بیمه سلامت ایران" 
+                                         class="h-12 md:h-16 w-auto object-contain">
+                                </a>
+                            </div>
 
+        
+                            <!-- Trust & Payment Logos -->
+                            <h5 class="text-center text-gray-500 text-sm mb-4">نمادها و درگاه‌های پرداخت</h5>
+                            <div class="flex flex-wrap items-center justify-center gap-4 md:gap-6">
+                                <!-- E-Namad -->
+                                <a referrerpolicy='origin' target='_blank' 
+                                   href='https://trustseal.enamad.ir/?id=655363&Code=tHCHbGN2o4wC61oXHeB5upZe1wusC9FA'
+                                   class="hover:opacity-80 transition-opacity">
+                                    <img referrerpolicy='origin' 
+                                         src='https://trustseal.enamad.ir/logo.aspx?id=655363&Code=tHCHbGN2o4wC61oXHeB5upZe1wusC9FA' 
+                                         alt='نماد اعتماد الکترونیکی' 
+                                         class="h-20 md:h-24 w-auto"
+                                         code='tHCHbGN2o4wC61oXHeB5upZe1wusC9FA'>
+                                </a>
+                                
+                                <!-- Zarinpal Trust -->
+                                <div id="zarinpal-trust-badge" class="h-20 md:h-24 flex items-center">
+                                    <script src="https://www.zarinpal.com/webservice/TrustCode" type="text/javascript"></script>
+                                </div>
+                                
+                                <!-- Parspal Trust -->
+                                <div id="parspal-trust-badge" class="h-20 md:h-24 flex items-center">
+                                    <script src="https://verify.parspal.com/logo/js?gw=204293&cache=638952554584830000&width=standard&theme=default" type="text/javascript"></script>
+                                </div>
+                            </div>
+                        </div>
+        
                     <!-- Bottom Section -->
                     <div class="border-t border-gray-800 pt-8">
                         <div class="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -332,21 +389,12 @@
                                 <a href="#" class="text-gray-400 hover:text-white transition-colors">حریم خصوصی</a>
                             </div>
                         </div>
-
-                        <!-- Partner Logos -->
-                        <div class="flex items-center justify-center gap-8 mt-8 opacity-50">
-                            <img src="data:image/svg+xml,%3Csvg width='100' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100' height='40' fill='%23ffffff' rx='8'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='10' fill='%23666' text-anchor='middle' dy='.3em'%3Eتامین اجتماعی%3C/text%3E%3C/svg%3E"
-                                alt="سازمان تامین اجتماعی" class="h-10">
-                            <img src="data:image/svg+xml,%3Csvg width='100' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100' height='40' fill='%23ffffff' rx='8'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='10' fill='%23666' text-anchor='middle' dy='.3em'%3Eوزارت بهداشت%3C/text%3E%3C/svg%3E"
-                                alt="وزارت بهداشت" class="h-10">
-                        </div>
                     </div>
                 </div>
             </footer>
-
-
             {% endblock footer %}
         </footer>
+
 
     </div>
     {% block extra_js %}
@@ -492,13 +540,12 @@
         offset: 100
     });
 
- // Initialize SmoothScroll
- const scroll = new SmoothScroll('a[href*="#"]', {
-        speed: 800,
-        speedAsDuration: true,
-        easing: 'easeInOutCubic',
-        offset: 100
-    });
+    // Initialize Smooth Scroll
+    // let scroll = new SmoothScroll('a[href*="#"]', {
+    //     speed: 800,
+    //     speedAsDuration: true,
+    //     easing: 'easeInOutCubic'
+    // });
 
 </script>
 

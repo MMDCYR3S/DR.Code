@@ -23,21 +23,10 @@ class TutorialListView(BaseAPIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
     
-    @method_decorator(cache_page(60 * 30)) 
     def get(self, request, *args, **kwargs):
         """دریافت لیست ویدیوهای آموزشی"""
         try:
-            # بررسی کش
-            cache_key = 'tutorials_list_api'
-            cached_data = cache.get(cache_key)
-            
-            if cached_data:
-                return Response(cached_data, status=status.HTTP_200_OK)
-            
-            # دریافت تمام ویدیوها
-            tutorials = Tutorial.get_all_tutorials()
-            
-            # سریالایز کردن
+            tutorials = Tutorial.objects.all().order_by('-created_at')
             serializer = TutorialSerializer(tutorials, many=True)
             
             response_data = {
@@ -45,8 +34,6 @@ class TutorialListView(BaseAPIView):
                 'count': len(serializer.data),
                 'data': serializer.data
             }
-
-            cache.set(cache_key, response_data, timeout=1800) 
             
             return Response(response_data, status=status.HTTP_200_OK)
             
