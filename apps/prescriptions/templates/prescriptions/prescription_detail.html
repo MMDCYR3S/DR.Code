@@ -594,10 +594,12 @@
                         <!-- Table Body -->
                         <tbody class="bg-white divide-y divide-gray-200">
                             <template x-for="(drug, index) in prescription?.prescription_drugs" :key="drug.drug.code">
-                                <tr class="hover:bg-gray-50 transition-colors relative" :class="{
-                            'border-r-4': drug.is_combination,
-                            'bg-blue-50/30': drug.is_combination
-                        }" :style="drug.is_combination ? `border-right-color: ${getBgColorStyle(prescription?.category?.color_code)}` : ''">
+                                <tr class="hover:bg-gray-50 transition-colors relative" 
+                        :class="{
+                            'border-r-4 border-r-lime-500': drug.is_substitute,
+                            'bg-blue-50/30': drug.is_substitute ,
+                            'border-r-4 border-r-purple-500': drug.is_combination,
+                            'bg-blue-50/30': drug.is_combination    }" >
 
                                     <!-- Column 1: Row Number -->
                                     <td class="px-4 py-4 text-sm text-gray-700 border-l border-gray-200">
@@ -605,22 +607,12 @@
                                             <!-- Row Number -->
                                             <span class="font-medium" x-text="index + 1"></span>
 
-                                            <!-- Icon: Combination Link (جایگزین Badge اضافی) -->
-                                            <template x-if="drug.is_combination">
-                                                <div class="flex items-center gap-1">
-                                                    <i class="fas fa-link text-sm"
-                                                        :style="`color: ${getBgColorStyle(prescription?.category?.color_code)}`"
-                                                        title="دارو ترکیبی"></i>
-                                                    <span class="text-xs font-bold"
-                                                        :style="`color: ${getBgColorStyle(prescription?.category?.color_code)}`"
-                                                        x-text="drug.group_number"></span>
-                                                </div>
-                                            </template>
+                                            
 
                                             <!-- Badge: Combination Group (همون Badge قبلی) -->
                                             <template x-if="drug.is_combination">
-                                                <span :class="prescription?.category?.color_code"
-                                                    class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-white">
+                                                <span 
+                                                    class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-purple-800 border border-purple-600 bg-purple-300">
                                                     <i class="fas fa-layer-group text-[10px]"></i>
                                                     <span>ترکیبی</span>
                                                     <span x-show="drug.group_number" x-text="drug.group_number"></span>
@@ -630,8 +622,8 @@
                                             
                                             <!-- Badge: Substitute Drug -->
                                             <template x-if="drug.is_substitute">
-                                                <span :class="prescription?.category?.color_code"
-                                                    class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-white">
+                                                <span
+                                                    class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-lime-800 border border-lime-600 bg-lime-300">
                                                     <i class="fas fa-exchange-alt text-[10px]"></i>
                                                     <span>جایگزین</span>
                                                     <span x-show="drug.group_number" x-text="drug.group_number"></span>
@@ -647,20 +639,20 @@
 
                                     <!-- Column 3: Drug Code (5 chars + Copy Button) -->
                                     <td class="px-4 py-4 text-sm border-l border-gray-200"
-                                        :class="drug.is_substitute ? prescription?.category?.color_code : 'bg-transparent'">
+                                      >
                                         <div class="flex items-center gap-2">
                                             <!-- Display: First 5 Characters -->
                                             <span class="font-mono font-semibold"
-                                                :class="drug.is_substitute ? 'text-white' : 'text-gray-800'"
+                                                
                                                 x-text="drug.drug.code.substring(0, 5)"></span>
 
                                             <!-- Copy Button -->
                                             <button @click="copyDrugCode(drug.drug.code)"
                                                 class="p-1.5 rounded hover:bg-gray-100 transition-colors group"
-                                                :class="drug.is_substitute ? 'hover:bg-white/20' : ''"
+                                                
                                                 title="کپی کد کامل">
                                                 <i class="fas fa-copy text-xs"
-                                                    :class="drug.is_substitute ? 'text-white group-hover:text-white' : 'text-gray-500 group-hover:text-gray-700'"></i>
+                                                    ></i>
                                             </button>
                                         </div>
                                     </td>
