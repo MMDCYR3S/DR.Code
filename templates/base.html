@@ -41,9 +41,13 @@
     <!-- fuse js -->
     <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
 
-    <!-- smooth scroll -->
-        <script src="https://cdn.jsdelivr.net/gh/cferdinandi/smooth-scroll@15.0.0/dist/smooth-scroll.polyfills.min.js"></script>
-    <!-- Favicon پایه (.ico برای مرورگرهای دسکتاپ) -->
+
+<!-- GLightbox JS -->
+<script src="https://cdn.jsdelivr.net/npm/glightbox@3.2.0/dist/js/glightbox.min.js"></script>
+
+   <!-- smooth scroll -->
+   <script src="https://cdn.jsdelivr.net/gh/cferdinandi/smooth-scroll@15.0.0/dist/smooth-scroll.polyfills.min.js"></script>
+        <!-- Favicon پایه (.ico برای مرورگرهای دسکتاپ) -->
     <link rel="icon" type="image/x-icon" href="{% static 'pics/favicon.ico' %}">
 
     <!-- PNG Favicons برای مرورگرهای مدرن -->
@@ -235,6 +239,25 @@
             </div>
         </main>
 
+
+
+
+<!-- <section id="why-us" class="py-20 bg-white">
+    <div class="container mx-auto px-4 lg:px-8"> -->
+        <!-- Header -->
+        <!-- <div class="max-w-3xl mx-auto text-center mb-16" data-aos="fade-up">
+            <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">چرا دکتر کد؟</h2>
+            <p class="text-lg text-gray-600 leading-relaxed">
+                در دنیای پرمشغله پزشکی امروز، ثانیه‌ها ارزشمندند. دکتر کد به شما کمک می‌کند تا در کوتاه‌ترین زمان، نسخه‌های دقیق، استاندارد و بدون خطا بنویسید.
+            </p>
+            <p class="text-lg text-gray-600 leading-relaxed mt-4">
+                با دکتر کد، دیگر نگران فراموشی یا دوباره‌نویسی نسخه‌ها نیستید؛ هر زمان که بخواهید نسخ آماده و استاندارد در دسترس شماست.
+            </p>
+            <p class="text-lg text-gray-600 font-semibold mt-4">
+                این یعنی تمرکز بیشتر بر درمان، رضایت بیشتر بیماران و آرامش خاطر برای شما.
+            </p>
+        </div> -->
+
         <footer>
             {% block footer %}
         
@@ -290,6 +313,10 @@
                                     </svg>
                                 </a>
                             </div>
+
+                                                        
+
+
                         </div>
         
                         <!-- Quick Links -->
@@ -333,10 +360,28 @@
                         </div>
                     </div>
                     
+
+                    <div class=" mx-auto my-8 text-center" >
+                        <h2 class="text-3xl lg:text-4xl font-bold text-gray-400 mb-6">چرا دکتر کد؟</h2>
+                        <p class="text-lg text-gray-500 leading-relaxed">
+                            در دنیای پرمشغله پزشکی امروز، ثانیه‌ها ارزشمندند. دکتر کد به شما کمک می‌کند تا در کوتاه‌ترین زمان، نسخه‌های دقیق، استاندارد و بدون خطا بنویسید.
+                        </p>
+                        <p class="text-lg text-gray-500 leading-relaxed mt-4">
+                            با دکتر کد، دیگر نگران فراموشی یا دوباره‌نویسی نسخه‌ها نیستید؛ هر زمان که بخواهید نسخ آماده و استاندارد در دسترس شماست.
+                        </p>
+                        <p class="text-lg text-gray-500 font-semibold mt-4">
+                            این یعنی تمرکز بیشتر بر درمان، رضایت بیشتر بیماران و آرامش خاطر برای شما.
+                        </p>
+                    </div>
+
                     <!-- Partner & Trust Logos Section -->
                         <div class="mt-12 space-y-8">
                             <!-- Insurance Partners -->
                             <h5 class="text-center text-gray-500 text-sm mb-4">سازمان‌های بیمه‌گر همکار</h5>
+                            
+                            
+                            
+                            
                             <div class="flex flex-wrap items-center justify-center gap-6 md:gap-8">
                                 <a href="https://account.tamin.ir/auth/login" target="_blank" rel="noopener noreferrer" 
                                    class="hover:opacity-80 transition-opacity">
@@ -350,6 +395,7 @@
                                          class="h-12 md:h-16 w-auto object-contain">
                                 </a>
                             </div>
+
 
         
                             <!-- Trust & Payment Logos -->
@@ -379,7 +425,7 @@
                         </div>
         
                     <!-- Bottom Section -->
-                    <div class="border-t border-gray-800 pt-8">
+                    <div class="border-t border-gray-800 pt-8 mt-8">
                         <div class="flex flex-col md:flex-row justify-between items-center gap-4">
                             <p class="text-gray-400 text-sm text-center md:text-right">
                                 © ۱۴۰۳ دکتر کد. تمامی حقوق محفوظ است.
@@ -540,12 +586,13 @@
         offset: 100
     });
 
-    // Initialize Smooth Scroll
-    // let scroll = new SmoothScroll('a[href*="#"]', {
-    //     speed: 800,
-    //     speedAsDuration: true,
-    //     easing: 'easeInOutCubic'
-    // });
+ // Initialize SmoothScroll
+ const scroll = new SmoothScroll('a[href*="#"]', {
+        speed: 800,
+        speedAsDuration: true,
+        easing: 'easeInOutCubic',
+        offset: 100
+    });
 
 </script>
 

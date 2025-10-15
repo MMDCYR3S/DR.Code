@@ -6,7 +6,7 @@ const StorageManager = {
         ACCESS_TOKEN: 'drcode_access_token',
         REFRESH_TOKEN: 'drcode_refresh_token',
         USER_DATA: 'drcode_user_data',
-        USER_PROFILE: 'drcode_user_profile'
+        USER_PROFILE: 'drcode_user_profile',
     },
 
     saveTokens(tokens) {
@@ -26,6 +26,7 @@ const StorageManager = {
     saveUserProfile(profile) {
         localStorage.setItem(this.KEYS.USER_PROFILE, JSON.stringify(profile));
     },
+
 
     getAccessToken() {
         return localStorage.getItem(this.KEYS.ACCESS_TOKEN);

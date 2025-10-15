@@ -19,6 +19,7 @@ function prescriptionsApp() {
         nextPage: null,
         previousPage: null,
         isSearchMode: false, // برای تشخیص حالت جستجو
+        selectedAccessLevel: 'ALL', // 🆕 پیش‌فرض روی "همه"
 
         // Computed
         get totalPages() {
@@ -79,6 +80,11 @@ function prescriptionsApp() {
                         params.append('category', catId);
                     });
                 }
+                 // 🆕 فیلتر Access Level
+        if (this.selectedAccessLevel && this.selectedAccessLevel !== 'ALL') {
+            params.append('access_level', this.selectedAccessLevel);
+        }
+
 
                 if (params.toString()) {
                     url += '?' + params.toString();
