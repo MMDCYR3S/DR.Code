@@ -444,6 +444,95 @@ API.plans = {
     }
 };
 
+// Orders APIs
+API.orders = {
+    // دریافت جزئیات پلن برای checkout
+    async getPlanDetails(planId) {
+        try {
+            const response = await fetch(`${API.BASE_URL}api/v1/order/purchase/${planId}/`, {
+                method: 'GET',
+                headers: API.getHeaders(true) // نیاز به توکن
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'خطا در دریافت اطلاعات پلن');
+            }
+
+            return {
+                success: true,
+                data: data.data,
+                message: data.message
+            };
+        } catch (error) {
+            console.error('Get plan details error:', error);
+            return {
+                success: false,
+                message: error.message
+            };
+        }
+    },
+
+    // اعمال کد تخفیف/معرف
+    async applyDiscountCode(planId, codes) {
+        try {
+            const response = await fetch(`${API.BASE_URL}api/v1/order/purchase/${planId}/`, {
+                method: 'POST',
+                headers: API.getHeaders(true),
+                body: JSON.stringify(codes)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'خطا در اعمال کد');
+            }
+
+            return {
+                success: true,
+                data: data.data,
+                message: data.message
+            };
+        } catch (error) {
+            console.error('Apply discount error:', error);
+            return {
+                success: false,
+                message: error.message
+            };
+        }
+    },
+
+    // ایجاد سفارش و انتقال به درگاه
+    async createOrder(planId, codes) {
+        try {
+            const response = await fetch(`${API.BASE_URL}api/v1/order/purchase/${planId}/`, {
+                method: 'POST',
+                headers: API.getHeaders(true),
+                body: JSON.stringify(codes)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'خطا در ثبت سفارش');
+            }
+
+            return {
+                success: true,
+                data: data.data,
+                message: data.message
+            };
+        } catch (error) {
+            console.error('Create order error:', error);
+            return {
+                success: false,
+                message: error.message
+            };
+        }
+    }
+};
+
 
 // profile prescription saved
 // Saved Prescriptions API

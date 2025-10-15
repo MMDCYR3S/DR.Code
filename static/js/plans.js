@@ -50,23 +50,10 @@ function plansApp() {
         },
 
         selectPlan(plan) {
-            console.log('🛒 Plan selected:', plan);
+            console.log('🛒 Selected plan:', plan);
             
-            // فعلاً فقط لاگ می‌کنیم
-            // بعداً این قسمت به صفحه خرید یا مودال متصل می‌شود
-            Swal.fire({
-                icon: 'info',
-                title: 'در حال توسعه',
-                html: `
-                    <div class="text-right" dir="rtl">
-                        <p class="mb-3">پلن انتخابی: <strong>${plan.name}</strong></p>
-                        <p class="mb-3">قیمت: <strong>${plan.formatted_price}</strong></p>
-                        <p class="text-gray-600 text-sm">این بخش در حال توسعه است و به زودی به درگاه پرداخت متصل خواهد شد.</p>
-                    </div>
-                `,
-                confirmButtonText: 'متوجه شدم',
-                confirmButtonColor: '#0ea5e9'
-            });
+            // انتقال به صفحه checkout
+            window.location.href = `/order/checkout/${plan.id}/`;
         },
 
         toggleFaq(id) {
