@@ -211,7 +211,34 @@ const API = {
                     return API.handleError(error);
                 }
             }
+        },
+    
+            // Plans API
+    plans: {
+        // دریافت لیست پلن‌ها
+        async getPlans() {
+            try {
+                const url = `${API.BASE_URL}api/v1/subscriptions/plan/`;
+                
+                console.log('📡 GET:', url);
+
+                const response = await axios.get(url);
+
+                console.log('✅ Plans response:', response.data);
+
+                return {
+                    success: true,
+                    data: response.data
+                };
+
+            } catch (error) {
+                console.error('❌ Plans error:', error);
+                return API.handleError(error);
+            }
         }
+    }
+
+    
     };
     
 
@@ -384,6 +411,35 @@ API.profile = {
         } catch (error) {
             console.error('Profile Update API error:', error);
             throw error;
+        }
+    }
+};
+// Plans APIs
+API.plans = {
+    // دریافت لیست پلن‌های اشتراک
+    async getPlans() {
+        try {
+            const response = await fetch(`${API.BASE_URL}api/v1/subscriptions/plan/`, {
+                method: 'GET',
+                headers: API.getHeaders(false) // بدون نیاز به توکن
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'خطا در دریافت پلن‌ها');
+            }
+
+            return {
+                success: true,
+                data: data
+            };
+        } catch (error) {
+            console.error('Plans API error:', error);
+            return {
+                success: false,
+                message: error.message
+            };
         }
     }
 };

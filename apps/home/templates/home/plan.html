@@ -8,7 +8,652 @@
 {% endblock extra_css %}
 
 {% block content %}
-<!-- محتوای صفحات اینجاست -->
+
+<style>
+
+     /* Animation */
+     @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        /* Card Hover Effect */
+        .plan-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .plan-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(14, 165, 233, 0.15);
+        }
+        
+        /* Best Value Badge */
+        .best-value-badge {
+            background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        
+        /* Feature Check Icon */
+        .feature-check {
+            color: #0ea5e9;
+            font-size: 1.25rem;
+        }
+        
+        .feature-cross {
+            color: #ef4444;
+            font-size: 1.25rem;
+        }
+        
+       /* اکوردین اصلاح شده */
+.accordion-content {
+    transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.accordion-content.max-h-0 {
+    max-height: 0;
+    opacity: 0;
+}
+
+.accordion-content.max-h-96 {
+    max-height: 24rem;
+    opacity: 1;
+}
+
+/* انیمیشن چرخش آیکون */
+.rotate-180 {
+    transform: rotate(180deg);
+}
+
+/* هاور افکت‌های اضافی */
+.group:hover .fas.fa-chevron-down {
+    transform: translateY(2px);
+}
+
+.group:hover .rotate-180 {
+    transform: rotate(180deg) translateY(-2px);
+}
+
+/* انیمیشن fade-in-up موجود */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.8s ease-out forwards;
+}
+
+        
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid #e0f2fe;
+            border-top: 3px solid #0ea5e9;;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+</style>
+
+<!-- بخش اول: قلاب اولیه -->
+<section class="text-center mb-16 fade-in-up bg-gradient-to-r from-c1 to-c2 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl md:text-5xl font-bold text-gray-200 mb-6">
+            وقت شما برای بیمار است، نه برای جستجوی کد و دوز دارو
+        </h1>
+        <p class="text-lg md:text-xl text-gray-300 leading-relaxed">
+            با ارتقا به اشتراک ویژه «دکتر کد»، استرس و خطاهای نسخه‌نویسی را حذف کرده 
+            و با اطمینان کامل بر درمان تمرکز کنید
+        </p>
+        <div class="mt-8 flex justify-center gap-4">
+            <div class="bg-white px-6 py-3 rounded-full shadow-md">
+                <i class="fas fa-shield-alt text-green-500 ml-2"></i>
+                <span class="text-gray-700">پرداخت امن</span>
+            </div>
+            <div class="bg-white px-6 py-3 rounded-full shadow-md">
+                <i class="fas fa-bolt text-yellow-500 ml-2"></i>
+                <span class="text-gray-700">فعال‌سازی فوری</span>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- Main Content -->
+<main class="container mx-auto px-4 py-12" x-data="plansApp()" x-init="init()">
+    
+
+    <!-- Loading State -->
+    <div x-show="loading" class="flex justify-center items-center py-20">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- بخش دوم: پلن‌های اشتراک -->
+    <section x-show="!loading" class="mb-20 fade-in-up" style="animation-delay: 0.2s;">
+        <h2 class="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-12">
+            پلن اشتراک ویژه خود را انتخاب کنید
+        </h2>
+        
+        <!-- Plans Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            <template x-for="(plan, index) in plans" :key="plan.id">
+                <div 
+                    class="plan-card bg-white rounded-2xl overflow-hidden shadow-lg relative"
+                    :class="{ 'ring-4 ring-orange-400': plan.is_recommended }"
+                    :style="`animation-delay: ${index * 0.1}s`"
+                >
+                    <!-- Best Value Badge -->
+                    <div 
+                        x-show="plan.is_recommended" 
+                        class="best-value-badge absolute top-4 left-4 px-4 py-2 rounded-full text-white text-sm font-bold"
+                    >
+                        <i class="fas fa-star ml-1"></i>
+                        بهترین انتخاب
+                    </div>
+
+                    <!-- Card Header -->
+                    <div class="bg-gradient-to-br from-c1 to-c2 text-white p-8">
+                        <h3 class="text-2xl font-bold mb-2" x-text="plan.name"></h3>
+                        <p class="text-white/80" x-text="plan.membership_name"></p>
+                        <div class="mt-6">
+                            <span class="text-4xl font-bold" x-text="plan.formatted_price"></span>
+                        </div>
+                        <p class="text-sm text-white/70 mt-2">
+                            <span x-text="plan.duration_months"></span> ماه اشتراک
+                        </p>
+                    </div>
+
+                    <!-- Card Body -->
+                    <div class="p-8">
+                        <!-- Features List -->
+                        <ul class="space-y-4 mb-8">
+                            <li class="flex items-center gap-3">
+                                <i class="fas fa-check-circle feature-check"></i>
+                                <span class="text-gray-700">دسترسی به تمام نسخه‌ها</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <i class="fas fa-check-circle feature-check"></i>
+                                <span class="text-gray-700">مشاهده جزئیات کامل</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <i class="fas fa-check-circle feature-check"></i>
+                                <span class="text-gray-700">پشتیبانی علمی تخصصی</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <i class="fas fa-check-circle feature-check"></i>
+                                <span class="text-gray-700">ویدیوهای آموزشی</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <i class="fas fa-check-circle feature-check"></i>
+                                <span class="text-gray-700">محدودیت نشست همزمان</span>
+                            </li>
+                        </ul>
+
+                        <!-- CTA Button -->
+                        <button 
+                            @click="selectPlan(plan)"
+                            class="w-full bg-gradient-to-r from-c1 to-c2 hover:from-c2 hover:to-c1 text-white font-bold py-4 rounded-xl transition-all duration-300 transform hover:scale-105"
+                        >
+                            <i class="fas fa-shopping-cart ml-2"></i>
+                            خرید اشتراک
+                        </button>
+                    </div>
+
+                    <!-- Discount Badge (if applicable) -->
+                    <div x-show="plan.discount_percent" class="absolute top-4 right-4">
+                        <div class="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold">
+                            <span x-text="plan.discount_percent"></span>٪ تخفیف
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </section>
+
+    <!-- بخش سوم: جدول مقایسه -->
+    <section class="mb-20 fade-in-up" style="animation-delay: 0.4s;">
+        <h2 class="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-12">
+            چرا ارتقا به نسخه ویژه ارزشمند است؟
+        </h2>
+        
+        <div class="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden">
+            <!-- Desktop Table -->
+            <table class="hidden md:table w-full">
+                <thead class="bg-gradient-to-r from-c1 to-c2 text-white">
+                    <tr>
+                        <th class="py-4 px-6 text-right text-lg font-bold">امکانات</th>
+                        <th class="py-4 px-6 text-center text-lg font-bold">کاربر عادی</th>
+                        <th class="py-4 px-6 text-center text-lg font-bold">کاربر ویژه</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="py-4 px-6 text-gray-700">دسترسی به نسخه‌ها</td>
+                        <td class="py-4 px-6 text-center text-gray-500">فقط رایگان</td>
+                        <td class="py-4 px-6 text-center">
+                            <i class="fas fa-check-circle feature-check"></i>
+                            <span class="text-gray-700 mr-2">همه نسخه‌ها</span>
+                        </td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="py-4 px-6 text-gray-700">مشاهده جزئیات کامل نسخه</td>
+                        <td class="py-4 px-6 text-center">
+                            <i class="fas fa-check-circle feature-check"></i>
+                        </td>
+                        <td class="py-4 px-6 text-center">
+                            <i class="fas fa-check-circle feature-check"></i>
+                        </td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="py-4 px-6 text-gray-700">پرسش و پاسخ با تیم علمی</td>
+                        <td class="py-4 px-6 text-center">
+                            <i class="fas fa-times-circle feature-cross"></i>
+                        </td>
+                        <td class="py-4 px-6 text-center">
+                            <i class="fas fa-check-circle feature-check"></i>
+                            <span class="text-gray-700 mr-2">پشتیبانی مستقیم</span>
+                        </td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="py-4 px-6 text-gray-700">مشاهده ویدیوهای آموزشی</td>
+                        <td class="py-4 px-6 text-center">
+                            <i class="fas fa-check-circle feature-check"></i>
+                        </td>
+                        <td class="py-4 px-6 text-center">
+                            <i class="fas fa-check-circle feature-check"></i>
+                        </td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="py-4 px-6 text-gray-700">محدودیت نشست همزمان</td>
+                        <td class="py-4 px-6 text-center">
+                            <i class="fas fa-check-circle feature-check"></i>
+                        </td>
+                        <td class="py-4 px-6 text-center">
+                            <i class="fas fa-check-circle feature-check"></i>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Mobile Cards -->
+            <div class="md:hidden divide-y divide-gray-200">
+                <div class="p-6 bg-gray-50">
+                    <h3 class="font-bold text-lg mb-4 text-gray-800">دسترسی به نسخه‌ها</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">کاربر عادی:</span>
+                            <span class="text-gray-500">فقط رایگان</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">کاربر ویژه:</span>
+                            <span class="flex items-center gap-2">
+                                <i class="fas fa-check-circle feature-check"></i>
+                                <span>همه نسخه‌ها</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <h3 class="font-bold text-lg mb-4 text-gray-800">مشاهده جزئیات کامل نسخه</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">کاربر عادی:</span>
+                            <i class="fas fa-check-circle feature-check"></i>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">کاربر ویژه:</span>
+                            <i class="fas fa-check-circle feature-check"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6 bg-gray-50">
+                    <h3 class="font-bold text-lg mb-4 text-gray-800">پرسش و پاسخ با تیم علمی</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">کاربر عادی:</span>
+                            <i class="fas fa-times-circle feature-cross"></i>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">کاربر ویژه:</span>
+                            <span class="flex items-center gap-2">
+                                <i class="fas fa-check-circle feature-check"></i>
+                                <span>پشتیبانی مستقیم</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <h3 class="font-bold text-lg mb-4 text-gray-800">مشاهده ویدیوهای آموزشی</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">کاربر عادی:</span>
+                            <i class="fas fa-check-circle feature-check"></i>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">کاربر ویژه:</span>
+                            <i class="fas fa-check-circle feature-check"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6 bg-gray-50">
+                    <h3 class="font-bold text-lg mb-4 text-gray-800">محدودیت نشست همزمان</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">کاربر عادی:</span>
+                            <i class="fas fa-check-circle feature-check"></i>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">کاربر ویژه:</span>
+                            <i class="fas fa-check-circle feature-check"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- بخش چهارم: مزایای کلیدی -->
+    <section class="mb-20 fade-in-up" style="animation-delay: 0.6s;">
+        <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Benefit 1 -->
+            <div class="bg-white rounded-2xl p-8 shadow-lg text-center hover:shadow-2xl transition">
+                <div class="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-clock text-4xl text-c1"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-4">صرفه‌جویی در زمان</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    فرآیند نسخه‌نویسی را از ۱۰ دقیقه به کمتر از ۱ دقیقه کاهش دهید
+                </p>
+            </div>
+
+            <!-- Benefit 2 -->
+            <div class="bg-white rounded-2xl p-8 shadow-lg text-center hover:shadow-2xl transition">
+                <div class="w-20 h-20 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-shield-alt text-4xl text-green-600"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-4">افزایش دقت و کاهش خطا</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    با دسترسی به نسخه‌های استاندارد بر اساس آخرین گایدلاین‌ها، خطاهای انسانی را حذف کنید
+                </p>
+            </div>
+
+            <!-- Benefit 3 -->
+            <div class="bg-white rounded-2xl p-8 shadow-lg text-center hover:shadow-2xl transition">
+                <div class="w-20 h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-bullseye text-4xl text-purple-600"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-4">تمرکز کامل بر بیمار</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    با حذف دغدغه‌های نسخه، تمام تمرکز خود را به معاینه و ارتباط با بیمار معطوف کنید
+                </p>
+            </div>
+        </div>
+    </section>
+
+  <!-- بخش پنجم: سوالات متداول -->
+<section class="mb-20 fade-in-up" style="animation-delay: 0.8s;">
+    <h2 class="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-4">
+        سوالات متداول
+    </h2>
+    <p class="text-center text-gray-600 mb-12 text-lg">
+        پاسخ سوالات رایج شما درباره خرید و استفاده از پلن‌های ویژه
+    </p>
+    
+    <div class="max-w-4xl mx-auto space-y-4">
+        <!-- FAQ 1 -->
+        <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden">
+            <button 
+                @click="toggleFaq(1)"
+                class="w-full px-8 py-6 text-right flex justify-between items-center hover:bg-gradient-to-l hover:from-sky-50 hover:to-transparent transition-all duration-300 group"
+            >
+                <span class="font-bold text-gray-800 text-lg group-hover:text-sky-600 transition-colors duration-300">
+                    فرآیند پرداخت چگونه است و آیا امن است؟
+                </span>
+                <div class="bg-sky-100 rounded-full p-2 group-hover:bg-sky-500 transition-colors duration-300">
+                    <i class="fas fa-chevron-down text-sky-600 group-hover:text-white transition-all duration-300" 
+                       :class="{ 'rotate-180': openFaq === 1 }"></i>
+                </div>
+            </button>
+            <div class="accordion-content overflow-hidden transition-all duration-500 ease-in-out" 
+                 :class="{ 'max-h-96 opacity-100': openFaq === 1, 'max-h-0 opacity-0': openFaq !== 1 }">
+                <div class="px-8 pb-6 pt-2">
+                    <div class="bg-gradient-to-br from-sky-50 to-blue-50 rounded-xl p-6 border-r-4 border-sky-500">
+                        <p class="text-gray-700 leading-relaxed text-base">
+                            <i class="fas fa-shield-alt text-sky-500 ml-2"></i>
+                            پرداخت از طریق درگاه امن زرین‌پال انجام می‌شود. اطلاعات بانکی شما با بالاترین استانداردهای امنیتی <strong>SSL 256-bit</strong> محافظت می‌شود و هیچ‌گونه اطلاعات حساسی در سرورهای ما ذخیره نمی‌شود.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ 2 -->
+        <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden">
+            <button 
+                @click="toggleFaq(2)"
+                class="w-full px-8 py-6 text-right flex justify-between items-center hover:bg-gradient-to-l hover:from-green-50 hover:to-transparent transition-all duration-300 group"
+            >
+                <span class="font-bold text-gray-800 text-lg group-hover:text-green-600 transition-colors duration-300">
+                    پس از پرداخت، اشتراک من بلافاصله فعال می‌شود؟
+                </span>
+                <div class="bg-green-100 rounded-full p-2 group-hover:bg-green-500 transition-colors duration-300">
+                    <i class="fas fa-chevron-down text-green-600 group-hover:text-white transition-all duration-300" 
+                       :class="{ 'rotate-180': openFaq === 2 }"></i>
+                </div>
+            </button>
+            <div class="accordion-content overflow-hidden transition-all duration-500 ease-in-out" 
+                 :class="{ 'max-h-96 opacity-100': openFaq === 2, 'max-h-0 opacity-0': openFaq !== 2 }">
+                <div class="px-8 pb-6 pt-2">
+                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border-r-4 border-green-500">
+                        <p class="text-gray-700 leading-relaxed text-base">
+                            <i class="fas fa-bolt text-green-500 ml-2"></i>
+                            بله، بلافاصله پس از پرداخت موفق و تأیید تراکنش، دسترسی ویژه شما به صورت <strong>خودکار</strong> فعال خواهد شد و می‌توانید از تمام امکانات پریمیوم بدون هیچ تأخیری استفاده کنید. معمولاً این فرآیند کمتر از ۳۰ ثانیه طول می‌کشد.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ 3 -->
+        <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden">
+            <button 
+                @click="toggleFaq(3)"
+                class="w-full px-8 py-6 text-right flex justify-between items-center hover:bg-gradient-to-l hover:from-amber-50 hover:to-transparent transition-all duration-300 group"
+            >
+                <span class="font-bold text-gray-800 text-lg group-hover:text-amber-600 transition-colors duration-300">
+                    آیا امکان لغو اشتراک وجود دارد؟
+                </span>
+                <div class="bg-amber-100 rounded-full p-2 group-hover:bg-amber-500 transition-colors duration-300">
+                    <i class="fas fa-chevron-down text-amber-600 group-hover:text-white transition-all duration-300" 
+                       :class="{ 'rotate-180': openFaq === 3 }"></i>
+                </div>
+            </button>
+            <div class="accordion-content overflow-hidden transition-all duration-500 ease-in-out" 
+                 :class="{ 'max-h-96 opacity-100': openFaq === 3, 'max-h-0 opacity-0': openFaq !== 3 }">
+                <div class="px-8 pb-6 pt-2">
+                    <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-6 border-r-4 border-amber-500">
+                        <p class="text-gray-700 leading-relaxed text-base">
+                            <i class="fas fa-info-circle text-amber-500 ml-2"></i>
+                            پس از خرید و فعال‌سازی اشتراک، به دلیل ماهیت دیجیتال خدمات، امکان لغو یا استرداد وجه وجود ندارد. اما تا پایان دوره اشتراک می‌توانید از <strong>تمام امکانات پریمیوم</strong> بهره‌مند شوید. پیشنهاد می‌کنیم قبل از خرید، پلن مناسب خود را با دقت انتخاب کنید.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ 4 -->
+        <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden">
+            <button 
+                @click="toggleFaq(4)"
+                class="w-full px-8 py-6 text-right flex justify-between items-center hover:bg-gradient-to-l hover:from-purple-50 hover:to-transparent transition-all duration-300 group"
+            >
+                <span class="font-bold text-gray-800 text-lg group-hover:text-purple-600 transition-colors duration-300">
+                    چگونه می‌توانم از کد تخفیف استفاده کنم؟
+                </span>
+                <div class="bg-purple-100 rounded-full p-2 group-hover:bg-purple-500 transition-colors duration-300">
+                    <i class="fas fa-chevron-down text-purple-600 group-hover:text-white transition-all duration-300" 
+                       :class="{ 'rotate-180': openFaq === 4 }"></i>
+                </div>
+            </button>
+            <div class="accordion-content overflow-hidden transition-all duration-500 ease-in-out" 
+                 :class="{ 'max-h-96 opacity-100': openFaq === 4, 'max-h-0 opacity-0': openFaq !== 4 }">
+                <div class="px-8 pb-6 pt-2">
+                    <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border-r-4 border-purple-500">
+                        <p class="text-gray-700 leading-relaxed text-base mb-3">
+                            <i class="fas fa-tags text-purple-500 ml-2"></i>
+                            پس از انتخاب پلن مورد نظر، در صفحه پرداخت یک فیلد ویژه برای وارد کردن کد تخفیف وجود دارد. کد خود را وارد کرده و روی دکمه "اعمال تخفیف" کلیک کنید.
+                        </p>
+                        <div class="bg-white rounded-lg p-3 border-2 border-dashed border-purple-300">
+                            <p class="text-sm text-gray-600">
+                                <i class="fas fa-gift text-purple-400 ml-1"></i>
+                                نکته: کدهای تخفیف معمولاً در کمپین‌های ویژه و ایام خاص ارائه می‌شوند. برای اطلاع از جدیدترین تخفیف‌ها، کانال تلگرام ما را دنبال کنید.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ 5 -->
+        <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden">
+            <button 
+                @click="toggleFaq(5)"
+                class="w-full px-8 py-6 text-right flex justify-between items-center hover:bg-gradient-to-l hover:from-rose-50 hover:to-transparent transition-all duration-300 group"
+            >
+                <span class="font-bold text-gray-800 text-lg group-hover:text-rose-600 transition-colors duration-300">
+                    آیا می‌توانم اشتراک خود را تمدید کنم؟
+                </span>
+                <div class="bg-rose-100 rounded-full p-2 group-hover:bg-rose-500 transition-colors duration-300">
+                    <i class="fas fa-chevron-down text-rose-600 group-hover:text-white transition-all duration-300" 
+                       :class="{ 'rotate-180': openFaq === 5 }"></i>
+                </div>
+            </button>
+            <div class="accordion-content overflow-hidden transition-all duration-500 ease-in-out" 
+                 :class="{ 'max-h-96 opacity-100': openFaq === 5, 'max-h-0 opacity-0': openFaq !== 5 }">
+                <div class="px-8 pb-6 pt-2">
+                    <div class="bg-gradient-to-br from-rose-50 to-red-50 rounded-xl p-6 border-r-4 border-rose-500">
+                        <p class="text-gray-700 leading-relaxed text-base mb-3">
+                            <i class="fas fa-sync-alt text-rose-500 ml-2"></i>
+                            بله، در هر زمان می‌توانید نسبت به تمدید اشتراک خود اقدام کنید. سیستم قبل از اتمام اشتراک، یادآوری‌های مناسبی برای شما ارسال می‌کند.
+                        </p>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <div class="flex-1 bg-white rounded-lg p-3 border border-rose-200">
+                                <p class="text-sm text-gray-700">
+                                    <i class="fas fa-level-up-alt text-rose-400 ml-1"></i>
+                                    <strong>ارتقا پلن:</strong> امکان ارتقا به پلن‌های طولانی‌تر با تخفیف ویژه
+                                </p>
+                            </div>
+                            <div class="flex-1 bg-white rounded-lg p-3 border border-rose-200">
+                                <p class="text-sm text-gray-700">
+                                    <i class="fas fa-bell text-rose-400 ml-1"></i>
+                                    <strong>یادآوری:</strong> اعلان ۷ روز قبل از اتمام اشتراک
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ 6 - جدید -->
+        <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden">
+            <button 
+                @click="toggleFaq(6)"
+                class="w-full px-8 py-6 text-right flex justify-between items-center hover:bg-gradient-to-l hover:from-indigo-50 hover:to-transparent transition-all duration-300 group"
+            >
+                <span class="font-bold text-gray-800 text-lg group-hover:text-indigo-600 transition-colors duration-300">
+                    در صورت بروز مشکل، چگونه می‌توانم با پشتیبانی تماس بگیرم؟
+                </span>
+                <div class="bg-indigo-100 rounded-full p-2 group-hover:bg-indigo-500 transition-colors duration-300">
+                    <i class="fas fa-chevron-down text-indigo-600 group-hover:text-white transition-all duration-300" 
+                       :class="{ 'rotate-180': openFaq === 6 }"></i>
+                </div>
+            </button>
+            <div class="accordion-content overflow-hidden transition-all duration-500 ease-in-out" 
+                 :class="{ 'max-h-96 opacity-100': openFaq === 6, 'max-h-0 opacity-0': openFaq !== 6 }">
+                <div class="px-8 pb-6 pt-2">
+                    <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-6 border-r-4 border-indigo-500">
+                        <p class="text-gray-700 leading-relaxed text-base mb-4">
+                            <i class="fas fa-headset text-indigo-500 ml-2"></i>
+                            تیم پشتیبانی ما ۲۴/۷ آماده پاسخگویی به شماست:
+                        </p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="bg-white rounded-lg p-4 border border-indigo-200">
+                                <div class="flex items-center mb-2">
+                                    <i class="fab fa-telegram text-2xl text-indigo-500 ml-2"></i>
+                                    <strong class="text-gray-800">تلگرام</strong>
+                                </div>
+                                <p class="text-sm text-gray-600">پاسخگویی سریع در کمتر از ۱ ساعت</p>
+                            </div>
+                            <div class="bg-white rounded-lg p-4 border border-indigo-200">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-envelope text-2xl text-indigo-500 ml-2"></i>
+                                    <strong class="text-gray-800">ایمیل</strong>
+                                </div>
+                                <p class="text-sm text-gray-600">پاسخ تا ۲۴ ساعت کاری</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  
+</section>
+
+
+    <!-- CTA Final -->
+    <section class="text-center fade-in-up" style="animation-delay: 1s;">
+        <div class="max-w-3xl mx-auto bg-gradient-to-r from-c1 to-c2 rounded-2xl p-12 shadow-2xl">
+            <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">
+                آماده برای شروع هستید؟
+            </h2>
+            <p class="text-white/90 text-lg mb-8">
+                به خانواده پزشکان حرفه‌ای بپیوندید و تجربه نسخه‌نویسی خود را متحول کنید
+            </p>
+            <button 
+                @click="scrollToPlans"
+                class="bg-white text-c1 font-bold py-4 px-12 rounded-xl hover:bg-gray-100 transition-all duration-300 transform hover:scale-105"
+            >
+                <i class="fas fa-arrow-up ml-2"></i>
+                انتخاب پلن اشتراک
+            </button>
+        </div>
+    </section>
+    </main>
+
+<script src="{% static 'js/plans.js' %}"></script>
+
 
 {% endblock content %}
 
