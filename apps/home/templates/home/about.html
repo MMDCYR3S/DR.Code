@@ -84,13 +84,10 @@
             <div class="order-1 lg:order-2" data-aos="fade-right">
                 <div class="relative">
                     <div class="absolute inset-0 bg-gradient-to-br from-c1 to-c3 rounded-3xl opacity-20 blur-2xl shape-blob"></div>
-                    <div class="relative bg-white rounded-3xl shadow-2xl p-8 flex items-center justify-center min-h-[400px] overflow-hidden">
+                    <div class="relative bg-transparent flex items-center justify-center overflow-hidden">
                         <!-- Doctor-Patient Illustration Placeholder -->
                         <div class="text-center">
-                            <svg class="w-64 h-64 mx-auto text-c2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                            </svg>
-                            <p class="text-gray-400 mt-4">تصویر پزشک در حال گفتگو با بیمار</p>
+                            <img src="{% static 'pics/pages/about.jpg' %}" alt="پزشک برای نماد اعتماد" class="scale-[0.8] rounded-xl">
                         </div>
                     </div>
                 </div>
@@ -306,13 +303,13 @@
             
             <!-- CTA Buttons -->
             <div class="flex flex-col sm:flex-row gap-4 justify-center" data-aos="fade-up" data-aos-delay="300">
-                <a href="#" class="inline-flex items-center justify-center px-8 py-4 bg-white text-c1 rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
+                <a href="/prescriptions" class="inline-flex items-center justify-center px-8 py-4 bg-white text-c1 rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
                     <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                     </svg>
                     شروع رایگان
                 </a>
-                <a href="#" class="inline-flex items-center justify-center px-8 py-4 bg-transparent text-white border-2 border-white rounded-2xl font-semibold text-lg hover:bg-white hover:text-c1 transform hover:scale-105 transition-all duration-300">
+                <a href="/" class="inline-flex items-center justify-center px-8 py-4 bg-transparent text-white border-2 border-white rounded-2xl font-semibold text-lg hover:bg-white hover:text-c1 transform hover:scale-105 transition-all duration-300">
                     <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
                     </svg>
