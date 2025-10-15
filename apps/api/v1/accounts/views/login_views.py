@@ -97,6 +97,8 @@ class LoginView(BaseAPIView):
                         'profile': {
                             'role': profile.role,
                             'role_display': profile.get_role_display(),
+                            "auth_status": profile.auth_status,
+                            "medical_code": profile.medical_code,
                         },
                         'tokens': {
                             'access_token': str(access_token),
