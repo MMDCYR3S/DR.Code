@@ -19,7 +19,7 @@ function prescriptionsApp() {
         nextPage: null,
         previousPage: null,
         isSearchMode: false, // برای تشخیص حالت جستجو
-        selectedAccessLevel: 'ALL', // 🆕 پیش‌فرض روی "همه"
+        selectedAccessLevel: 'FREE', // 🆕 پیش‌فرض روی "همه"
 
         // Computed
         get totalPages() {
