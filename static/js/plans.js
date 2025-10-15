@@ -74,7 +74,7 @@ function plansApp() {
         },
 
         scrollToPlans() {
-            const plansSection = document.querySelector('section:nth-of-type(2)');
+            const plansSection = document.querySelector('section:nth-of-type(1)');
             if (plansSection) {
                 plansSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
