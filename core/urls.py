@@ -35,6 +35,7 @@ urlpatterns = [
     path('', include('apps.accounts.urls')),
     path('dashboard/', include('apps.dashboard.urls')),
     path("order/", include("apps.order.urls")),
+    path("payment/", include("apps.payment.urls")),
     
     # === SWAGGERS  === #
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
