@@ -45,13 +45,15 @@
  <main class="container mx-auto px-4 py-8 mt-20" x-data="tutorialsApp">
         
     <!-- Header صفحه -->
-    <div class="mb-8">
-        <h1 class="text-3xl lg:text-4xl font-bold text-gray-800 mb-2">
-            📚 آموزش‌های ویدیویی
-        </h1>
-        <p class="text-gray-600">
-            مجموعه ویدیوهای آموزشی برای استفاده بهتر از سایت
-        </p>
+    <div class="mb-8 ">
+        <div class="text-center">
+            <h1 class="text-3xl lg:text-4xl font-bold text-gray-800 mb-2">
+                آموزش‌های ویدیویی
+            </h1>
+            <p class="text-gray-600">
+                مجموعه ویدیوهای آموزشی برای استفاده بهتر از سایت
+            </p>
+
         <!-- ⭐ دکمه جدید -->
     <div class="mt-4">
         <button 
@@ -63,6 +65,7 @@
             <span>سوالات متداول</span>
         </button>
     </div>
+</div>
     </div>
 
     <!-- Loading State -->
@@ -93,7 +96,7 @@
         </div>
 
         <!-- لیست ویدیوها -->
-        <div x-show="tutorials.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div x-show="tutorials.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <template x-for="(video, index) in tutorials" :key="video.id">
                 <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
                     
@@ -385,12 +388,14 @@
             </div>
         </div>
 
+
+
         <!-- سوال 13 -->
         <div class="border border-gray-200 rounded-lg overflow-hidden">
             <button 
                 @click="activeAccordion = activeAccordion === 13 ? null : 13"
                 class="w-full flex items-center justify-between p-5 text-right hover:bg-gray-50 transition-colors">
-                <span class="font-bold text-gray-800">13. آیا امکان اضافه کردن داروهای خاص به نسخه‌ها وجود دارد؟</span>
+                <span class="font-bold text-gray-800">13. چگونگی استفاده از نسخه‌ها به چه صورت است؟</span>
                 <svg 
                     class="w-5 h-5 text-c1 transition-transform duration-300" 
                     :class="{ 'rotate-180': activeAccordion === 13 }"
@@ -400,27 +405,6 @@
             </button>
             <div 
                 x-show="activeAccordion === 13" 
-                x-collapse
-                class="px-5 pb-5 text-gray-600 leading-relaxed">
-                بله، شما می‌توانید داروهای خاص یا اضافی را به نسخه‌ها اضافه کنید، به‌طوری که نسخه به‌طور کامل با شرایط بیمار شما تطابق داشته باشد.
-            </div>
-        </div>
-
-        <!-- سوال 14 -->
-        <div class="border border-gray-200 rounded-lg overflow-hidden">
-            <button 
-                @click="activeAccordion = activeAccordion === 14 ? null : 14"
-                class="w-full flex items-center justify-between p-5 text-right hover:bg-gray-50 transition-colors">
-                <span class="font-bold text-gray-800">14. چگونگی استفاده از نسخه‌ها به چه صورت است؟</span>
-                <svg 
-                    class="w-5 h-5 text-c1 transition-transform duration-300" 
-                    :class="{ 'rotate-180': activeAccordion === 14 }"
-                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
-            </button>
-            <div 
-                x-show="activeAccordion === 14" 
                 x-collapse
                 class="px-5 pb-5 text-gray-600 leading-relaxed">
                 برای استفاده از نسخه‌ها، به سایت وارد شوید، بیماری مورد نظر خود را جستجو کنید و نسخه‌های مربوطه را مشاهده و کپی کنید. همچنین، ما یک ویدئوی آموزشی جامع آماده کرده‌ایم که نحوه جستجو و استفاده از نسخه‌ها را به طور کامل توضیح می‌دهد. شما می‌توانید این ویدئو را در بخش «آموزش» سایت مشاهده کنید.
