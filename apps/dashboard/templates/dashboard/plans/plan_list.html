@@ -86,7 +86,7 @@
                             <th scope="col" class="px-6 py-4 text-right font-medium">نام پلن</th>
                             <th scope="col" class="px-6 py-4 text-right font-medium">Membership</th>
                             <th scope="col" class="px-6 py-4 text-right font-medium">مدت زمان (روز)</th>
-                            <th scope="col" class="px-6 py-4 text-right font-medium">قیمت (ریال)</th>
+                            <th scope="col" class="px-6 py-4 text-right font-medium">قیمت (تومان)</th>
                             <th scope="col" class="px-6 py-4 text-center font-medium">وضعیت</th>
                             <th scope="col" class="px-6 py-4 text-center font-medium">تاریخ ایجاد</th>
                             <th scope="col" class="px-6 py-4 text-center font-medium">عملیات</th>
@@ -106,7 +106,7 @@
                                 <span class="text-slate-500 text-xs">({{ plan.duration_months }} ماه)</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap font-mono">
-                                {{ plan.price|floatformat:0 }} ریال
+                                {{ plan.price|floatformat:0 }} تومان
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-center">
                                 {% if plan.is_active %}
@@ -172,7 +172,7 @@
                                     مدت: <span class="font-semibold">{{ plan.duration_days }} روز ({{ plan.duration_months }} ماه)</span>
                                 </p>
                                 <p class="text-sm text-slate-600">
-                                    قیمت: <span class="font-mono font-semibold">{{ plan.price|floatformat:0 }} ریال</span>
+                                    قیمت: <span class="font-mono font-semibold">{{ plan.price|floatformat:0 }} تومان</span>
                                 </p>
                                 <div class="flex items-center">
                                     {% if plan.is_active %}

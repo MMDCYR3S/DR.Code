@@ -32,4 +32,4 @@ class PlanPublicSerializer(serializers.ModelSerializer):
     
     def get_formatted_price(self, obj):
         """قیمت را به صورت فرمت شده برگردان (با جداکننده هزارگان)"""
-        return f"{obj.price:,} ریال"
+        return f"{obj.price:,} تومان"
