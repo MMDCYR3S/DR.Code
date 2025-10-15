@@ -414,22 +414,7 @@
                         </span>
                     </div>
 
-                    <!-- نام‌های جایگزین -->
-                    <template x-if="prescription?.all_names && prescription.all_names.length > 1">
-                        <div>
-                            <p class="text-sm font-semibold text-gray-500 mb-2 flex items-center gap-2">
-                                <i class="fas fa-tags text-xs"></i>
-                                <span>سایر نام‌ها:</span>
-                            </p>
-                            <div class="flex flex-wrap gap-2">
-                                <template
-                                    x-for="(name, idx) in prescription.all_names.filter(n => n !== prescription.title)"
-                                    :key="idx">
-                                    <span class="alt-name" x-text="name"></span>
-                                </template>
-                            </div>
-                        </div>
-                    </template>
+                
                 </div>
 
                 <!-- ردیف سوم: دکمه‌های عملیات -->
