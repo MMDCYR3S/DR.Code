@@ -94,12 +94,12 @@ class PurchaseDetailSerializer(serializers.Serializer):
                 discount = DiscountCode.objects.get(code=discount_code)
                 if discount.is_usable:
                     discount_percent = discount.discount_percent
-                    discount_amount = (original_price * discount_percent) / 100
+                    discount_amount = int((original_price * discount_percent) / 100)
             except DiscountCode.DoesNotExist:
                 pass
         
         # محاسبه قیمت نهایی
-        final_price = max(0, original_price - discount_amount)
+        final_price = int(max(0, original_price - discount_amount))
         
         # اضافه کردن اطلاعات محاسبه شده
         attrs.update({
