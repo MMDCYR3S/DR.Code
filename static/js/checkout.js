@@ -21,7 +21,7 @@ document.addEventListener('alpine:init', () => {
             
             if (!this.planId) {
                 this.showError('شناسه پلن یافت نشد');
-                setTimeout(() => window.location.href = '/plans', 2000);
+                setTimeout(() => window.location.href = '/plan', 2000);
                 return;
             }
             
@@ -77,7 +77,7 @@ document.addEventListener('alpine:init', () => {
                     if (result.isConfirmed) {
                         window.location.href = '/profile';
                     } else {
-                        window.location.href = '/plans';
+                        window.location.href = '/plan';
                     }
                 });
                 return false;
@@ -114,7 +114,7 @@ document.addEventListener('alpine:init', () => {
             } catch (error) {
                 console.error('❌ Error loading plan details:', error);
                 this.showError('خطا در بارگذاری اطلاعات پلن');
-                setTimeout(() => window.location.href = '/plans', 2000);
+                setTimeout(() => window.location.href = '/plan', 2000);
             } finally {
                 this.loading = false;
             }
