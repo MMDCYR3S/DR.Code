@@ -4,5 +4,5 @@ from .views import PlanOrderView
 app_name = "order"
 
 urlpatterns = [
-    path("checkout/", PlanOrderView.as_view(), name="checkout")
+    path("checkout/<int:plan_id>/", PlanOrderView.as_view(), name="checkout")
 ]
