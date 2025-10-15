@@ -18,6 +18,38 @@ const API = {
         return headers;
     },
 
+      // 🆕 اضافه کن
+      getAuthHeaders() {
+        const token = StorageManager.getAccessToken();
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        };
+    },
+    
+     // 🆕 اضافه کن
+     handleError(error) {
+        console.error('🔴 API Error:', error);
+        
+        let message = 'خطای ناشناخته رخ داد';
+        
+        if (error.response) {
+            // خطای از سمت سرور
+            message = error.response.data?.message || error.response.data?.detail || 'خطا در ارتباط با سرور';
+        } else if (error.request) {
+            // درخواست ارسال شد ولی پاسخی نیومد
+            message = 'خطا در ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید';
+        } else {
+            // خطای دیگر
+            message = error.message || 'خطای ناشناخته';
+        }
+
+        return {
+            success: false,
+            message: message,
+            error: error
+        };
+    },
     // Refresh Token
     async refreshToken() {
         try {
@@ -129,8 +161,60 @@ const API = {
             // در هر صورت localStorage رو پاک کن
             StorageManager.clearAll();
         }
-    }
-};
+    },
+        // Notifications API
+        notifications: {
+            // دریافت لیست نوتیفیکیشن‌ها
+            async getNotifications(url = null) {
+                try {
+                    const endpoint = url || `${API.BASE_URL}api/v1/notifications/user/`;
+                    
+                    console.log('📡 GET:', endpoint);
+    
+                    const response = await axios.get(endpoint, {
+                        headers: API.getAuthHeaders()
+                    });
+    
+                    console.log('✅ Notifications response:', response.data);
+    
+                    return {
+                        success: true,
+                        data: response.data
+                    };
+    
+                } catch (error) {
+                    console.error('❌ Notifications error:', error);
+                    return API.handleError(error);
+                }
+            },
+    
+            // علامت زدن به عنوان خوانده شده
+            async markAsRead(notificationId) {
+                try {
+                    const url = `${API.BASE_URL}api/v1/notifications/user/${notificationId}/`;
+                    
+                    console.log('📡 POST:', url);
+    
+                    const response = await axios.post(url, {}, {
+                        headers: API.getAuthHeaders()
+                    });
+    
+                    console.log('✅ Mark as read response:', response.data);
+    
+                    return {
+                        success: true,
+                        data: response.data
+                    };
+    
+                } catch (error) {
+                    console.error('❌ Mark as read error:', error);
+                    return API.handleError(error);
+                }
+            }
+        }
+    };
+    
+
 
 // Prescription APIs
 API.prescriptions = {
@@ -488,6 +572,7 @@ API.tutorials = {
             throw error;
         }
     }
+    
 };
 
 // Test function (برای Console)

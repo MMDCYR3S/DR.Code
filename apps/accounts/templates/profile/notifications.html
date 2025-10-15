@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}اعلان‌ها{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-c5 to-white py-8" x-data="notificationsApp()">
+    <div class="container mx-auto px-4">
+        
+        <!-- Header -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-gradient-to-br from-c1 to-c2 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-bell text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800">اعلان‌ها</h1>
+                        <p class="text-sm text-gray-500" x-show="!loading">
+                            <span x-text="totalCount"></span> اعلان
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Mark All as Read Button -->
+                <button 
+                    @click="markAllAsRead"
+                    x-show="unreadCount > 0 && !loading"
+                    class="flex items-center gap-2 px-4 py-2 bg-c1 hover:bg-c2 text-white rounded-lg transition-all duration-300 text-sm font-medium shadow-md hover:shadow-lg"
+                >
+                    <i class="fas fa-check-double"></i>
+                    <span>علامت همه به عنوان خوانده شده</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div x-show="loading" class="space-y-4">
+            <template x-for="i in 5" :key="i">
+                <div class="bg-white rounded-xl shadow-md p-6 animate-pulse">
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 bg-gray-200 rounded-full"></div>
+                        <div class="flex-1 space-y-3">
+                            <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                            <div class="h-3 bg-gray-200 rounded w-1/2"></div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Notifications List -->
+        <div x-show="!loading" class="space-y-4">
+            
+            <!-- Empty State -->
+            <div x-show="notifications.length === 0" class="bg-white rounded-2xl shadow-lg p-12 text-center">
+                <div class="w-24 h-24 bg-gradient-to-br from-c4 to-c5 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-bell-slash text-c1 text-4xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">اعلانی وجود ندارد</h3>
+                <p class="text-gray-500">هنوز هیچ اعلانی دریافت نکرده‌اید</p>
+            </div>
+
+            <!-- Notification Items -->
+            <template x-for="notification in notifications" :key="notification.id">
+                <div 
+                    @click="markAsRead(notification)"
+                    :class="notification.is_read ? 'bg-white' : 'bg-gradient-to-l from-c5 to-white border-r-4 border-c1'"
+                    class="rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-6 cursor-pointer group"
+                >
+                    <div class="flex items-start gap-4">
+                        
+                        <!-- Icon -->
+                        <div 
+                            :class="notification.is_read ? 'bg-gray-100 text-gray-400' : 'bg-gradient-to-br from-c1 to-c2 text-white'"
+                            class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-110"
+                        >
+                            <i class="fas fa-comment-medical"></i>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="flex-1 min-w-0">
+                            <p 
+                                :class="notification.is_read ? 'text-gray-600' : 'text-gray-800 font-semibold'"
+                                class="text-sm sm:text-base mb-2 leading-relaxed"
+                                x-text="notification.message"
+                            ></p>
+                            
+                            <div class="flex items-center gap-4 text-xs text-gray-500">
+                                <span class="flex items-center gap-1">
+                                    <i class="far fa-clock"></i>
+                                    <span x-text="notification.created_at_jalali"></span>
+                                </span>
+                                
+                                <span 
+                                    x-show="!notification.is_read"
+                                    class="flex items-center gap-1 text-c1 font-medium"
+                                >
+                                    <i class="fas fa-circle text-xs"></i>
+                                    <span>خوانده نشده</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Arrow Icon -->
+                        <div class="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <i class="fas fa-chevron-left text-c1"></i>
+                        </div>
+
+                    </div>
+                </div>
+            </template>
+
+        </div>
+
+        <!-- Pagination -->
+        <div 
+            x-show="!loading && (nextPage || previousPage)" 
+            class="mt-8 flex justify-center items-center gap-4"
+        >
+            <button 
+                @click="loadNotifications(previousPage)"
+                x-show="previousPage"
+                :disabled="pageLoading"
+                class="px-6 py-3 bg-white hover:bg-c1 hover:text-white text-c1 rounded-lg border-2 border-c1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md hover:shadow-lg"
+            >
+                <i class="fas fa-chevron-right ml-2"></i>
+                صفحه قبل
+            </button>
+
+            <span class="text-gray-600 font-medium px-4">
+                صفحه <span x-text="currentPage"></span>
+            </span>
+
+            <button 
+                @click="loadNotifications(nextPage)"
+                x-show="nextPage"
+                :disabled="pageLoading"
+                class="px-6 py-3 bg-white hover:bg-c1 hover:text-white text-c1 rounded-lg border-2 border-c1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md hover:shadow-lg"
+            >
+                صفحه بعد
+                <i class="fas fa-chevron-left mr-2"></i>
+            </button>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/notifications.js' %}"></script>
+{% endblock %}
