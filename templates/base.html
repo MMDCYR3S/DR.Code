@@ -129,6 +129,35 @@
         [x-cloak] {
             display: none !important;
         }
+
+        /* 🆕 Auth Warning Bar Styles */
+        #auth-warning-bar {
+            animation: slideDown 0.4s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            #auth-warning-bar .container {
+                padding: 0 1rem;
+            }
+
+            #auth-warning-bar a {
+                width: 100%;
+                justify-content: center;
+            }
+        }
     </style>
 
 
@@ -222,7 +251,7 @@
                     class="lg:hidden fixed top-0 right-0 h-full w-80 max-w-full bg-white shadow-2xl z-50 overflow-y-auto">
 
                     <!-- Sidebar Header -->
-                    <div class="bg-gradient-to-r from-c1 to-c2 p-6 text-white">
+                    <div class="bg-gradient-to-r from-c1 to-c2 p-[1.1rem] text-white">
                         <div class="flex justify-between items-center">
                             <h2 class="text-xl font-bold">منو</h2>
                             <button @click="mobileMenu = false"
@@ -303,13 +332,35 @@
 
                         <!-- Footer Info -->
                         <div class="mt-6 p-4 text-center text-gray-500 text-sm border-t border-t-gray-300">
-                            <p>تمامی حقوق متعلق به 
+                            <p>تمامی حقوق متعلق به
                                 <span class="font-semibold">دکتر کد</span>
                                 است
                             </p>
                         </div>
                     </div>
                 </div>
+            </div>
+            
+            <div class=" pt-16 lg:pt-20">
+                <div class="py-4 bg-red-300">
+                <!-- 🆕 نوار هشدار احراز هویت -->
+                <div id="auth-warning-bar" style="display: none;"
+                    class=" bg-red-50 border-2 border-red-200 border-dashed rounded-xl mx-10 lg:mx-20 py-3 px-4 shadow-sm ">
+                    <div class="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div class="flex items-center gap-2 text-red-700">
+                            <i class="fas fa-exclamation-triangle text-lg"></i>
+                            <span class="text-sm sm:text-base font-medium">
+                                هنوز در سایت احراز هویت نشده‌اید
+                            </span>
+                        </div>
+                        <a href="/authentication/"
+                            class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2">
+                            <i class="fas fa-user-check"></i>
+                            <span>احراز هویت</span>
+                        </a>
+                    </div>
+                </div>
+</div>
             </div>
             {% endblock header %}
         </header>
@@ -760,6 +811,34 @@
             menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
         }
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        function checkAuthWarning() {
+            // بررسی لاگین بودن
+            if (!StorageManager.isLoggedIn()) {
+                return; // اگر لاگین نیست، هیچ کاری نکن
+            }
+
+            try {
+                // دریافت پروفایل از localStorage
+                const profile = StorageManager.getUserProfile();
+
+                // بررسی auth_status
+                if (profile && profile.auth_status === 'REJECTED') {
+                    const warningBar = document.getElementById('auth-warning-bar');
+                    if (warningBar) {
+                        warningBar.style.display = 'block';
+                        console.log('⚠️ Auth warning bar displayed');
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking auth status:', error);
+            }
+        }
+
+        // اجرای چک بعد از لود کامل
+        checkAuthWarning();
+    });
 </script>
 
 
