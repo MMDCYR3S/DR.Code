@@ -9,34 +9,48 @@
 
 {% block content %}
 <style>
-   /* Custom animations */
-   @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
-        }
-        
-        @keyframes pulse-slow {
-            0%, 100% { transform: scale(1); opacity: 0.3; }
-            50% { transform: scale(1.05); opacity: 0.5; }
-        }
-        
-        .float-animation {
-            animation: float 6s ease-in-out infinite;
-        }
-        
-        .pulse-animation {
-            animation: pulse-slow 4s ease-in-out infinite;
-        }
-        
-        /* Gradient text */
-        .gradient-text {
-            background: linear-gradient(135deg, #0077b6 0%, #00b4d8 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
+    /* Custom animations */
+    @keyframes float {
 
+        0%,
+        100% {
+            transform: translateY(0px);
+        }
+
+        50% {
+            transform: translateY(-20px);
+        }
+    }
+
+    @keyframes pulse-slow {
+
+        0%,
+        100% {
+            transform: scale(1);
+            opacity: 0.3;
+        }
+
+        50% {
+            transform: scale(1.05);
+            opacity: 0.5;
+        }
+    }
+
+    .float-animation {
+        animation: float 6s ease-in-out infinite;
+    }
+
+    .pulse-animation {
+        animation: pulse-slow 4s ease-in-out infinite;
+    }
+
+    /* Gradient text */
+    .gradient-text {
+        background: linear-gradient(135deg, #0077b6 0%, #00b4d8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
 </style>
 
 <!-- base div -->
@@ -71,114 +85,89 @@
 
 
 
-<!-- Hero Section -->
-<section class="relative min-h-screen flex items-center pt-20 pb-12">
-    <!-- Clean Background -->
-    <div class="absolute inset-0 bg-gradient-to-br from-c5/20 via-white to-c4/20"></div>
-    
-    <!-- Subtle geometric shapes -->
-    <div class="absolute inset-0 overflow-hidden">
-        <div class="absolute -top-40 -right-40 w-80 h-80 bg-c1/5 rounded-full"></div>
-        <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-c2/5 rounded-full"></div>
-    </div>
+    <!-- Hero Section -->
+    <section class="relative min-h-screen flex items-center pt-20 ">
+        <!-- Clean Background -->
+        <div class="absolute inset-0 bg-gradient-to-br from-c5/20 via-white to-c4/20"></div>
 
-    <div class="container mx-auto px-4 lg:px-8 relative z-10">
-        <div class="grid lg:grid-cols-2 gap-12 items-center">
-            <!-- Content -->
-            <div class="text-center lg:text-right" data-aos="fade-left">
+        <!-- Subtle geometric shapes -->
+        <div class="absolute inset-0 overflow-hidden">
+            <div class="absolute -top-40 -right-40 w-80 h-80 bg-c1/5 rounded-full"></div>
+            <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-c2/5 rounded-full"></div>
+        </div>
 
-                
-                <h1 class="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
-                    دستیار
-                    <span class="relative">
-                        <span class="bg-gradient-to-r from-c1 to-c2 bg-clip-text text-transparent">نسخه‌نویسی دیجیتال</span>
-                        <svg class="absolute -bottom-2 left-0 w-full" height="8" viewBox="0 0 200 8" preserveAspectRatio="none">
-                            <path d="M0,4 Q50,0 100,4 T200,4" fill="none" stroke="url(#gradient)" stroke-width="2" opacity="0.3"></path>
-                            <defs>
-                                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                    <stop offset="0%" stop-color="#0077b6"></stop>
-                                    <stop offset="100%" stop-color="#00b4d8"></stop>
-                                </linearGradient>
-                            </defs>
-                        </svg>
-                    </span>
-                    شما
-                </h1>
-                <p class="text-lg lg:text-xl text-gray-600 mb-8 leading-relaxed max-w-lg mx-auto lg:mx-0">
-                    با دسترسی سریع  به بانک جامع نسخ دکتر کد ، استاندارد ، سریع و بدون استرس نسخه بنویسید
-                </p>
-                
-                <!-- CTA Buttons -->
-                <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
-                    <a href="/prescriptions" class="group inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-c1 to-c2 text-white rounded-2xl font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300">
-                        رایگان امتحان کنید
-                        <svg class="w-5 h-5 mr-2 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                        </svg>
-                    </a>
+        <div class="container mx-auto px-4 lg:px-8 relative z-10">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <!-- Content -->
+                <div class="text-center lg:text-right" data-aos="fade-left">
+
+
+                    <h1 class="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6 mt-12 lg:mt-0">
+                        دستیار
+                        <span class="relative">
+                            <span class="bg-gradient-to-r from-c1 to-c2 bg-clip-text text-transparent">نسخه‌نویسی
+                                دیجیتال</span>
+                            <svg class="absolute -bottom-2 left-0 w-full" height="8" viewBox="0 0 200 8"
+                                preserveAspectRatio="none">
+                                <path d="M0,4 Q50,0 100,4 T200,4" fill="none" stroke="url(#gradient)" stroke-width="2"
+                                    opacity="0.3"></path>
+                                <defs>
+                                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#0077b6"></stop>
+                                        <stop offset="100%" stop-color="#00b4d8"></stop>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </span>
+                        شما
+                    </h1>
+                    <p class="text-lg lg:text-xl text-gray-600 mb-8 leading-relaxed max-w-lg mx-auto lg:mx-0">
+                        با دسترسی سریع به بانک جامع نسخ دکتر کد ، استاندارد ، سریع و بدون استرس نسخه بنویسید
+                    </p>
+
+                    <!-- CTA Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start ">
+                        <a href="/prescriptions"
+                            class="group inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-c1 to-c2 text-white rounded-2xl font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300">
+                            رایگان امتحان کنید
+                            <svg class="w-5 h-5 mr-2 transform group-hover:translate-x-1 transition-transform"
+                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                            </svg>
+                        </a>
+                    </div>
+
+
                 </div>
-                
 
-            </div>
-            
-            <!-- Image Section -->
-            <div data-aos="fade-up" class="flex justify-center">
-                <div class="relative">
-                    <!-- Main image card -->
-                    <div class="relative w-80 sm:w-96 lg:w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden">
-                        <div class="aspect-[4/3] relative">
-                            <img 
-                                src="{% static 'pics/hero.jpg' %}" 
-                                alt="Hero Image"
-                                class="w-full h-full object-cover"
-                                loading="lazy"
-                            >
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                        </div>
-                        
-                        <!-- Status badges -->
-                        <div class="absolute top-4 right-4 flex flex-col gap-2">
-                            <div class="bg-white/90 backdrop-blur px-3 py-1.5 rounded-full shadow-lg flex items-center">
-                                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse ml-2"></div>
-                                <span class="text-sm font-medium text-gray-700">آنلاین</span>
-                            </div>
-                            <div class="bg-white/90 backdrop-blur px-3 py-1.5 rounded-full shadow-lg flex items-center">
-                                <svg class="w-4 h-4 text-c1 ml-2" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd"></path>
-                                </svg>
-                                <span class="text-sm font-medium text-gray-700">هوشمند</span>
-                            </div>
-                        </div>
+                <!-- Image Section -->
+                <div data-aos="fade-up" class="flex justify-center">
+                    <div class="relative">
+                        <!-- Main image card -->
+
+                        <img src="{% static 'pics/pages/index.png' %}" alt="Hero Image" class="h-96 md:h-[40rem] w-full  lg:h-[55rem]"
+                            loading="lazy">
+
                     </div>
-                    
-                    <!-- Floating stats cards -->
-                    
-                    <div class="absolute -bottom-6 -right-6 bg-white rounded-2xl shadow-xl p-4 border border-c5/30">
-                        <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 bg-c2/10 rounded-xl flex items-center justify-center">
-                                <svg class="w-6 h-6 text-c2" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <div class="text-2xl font-bold text-gray-900">98%</div>
-                                <div class="text-sm text-gray-600">رضایت</div>
-                            </div>
-                        </div>
-                    </div>
+
                 </div>
             </div>
         </div>
-    </div>
+</div>
 </section>
 
 <!-- Section 2: Why Dr.Code -->
 <section id="why-us" class="py-20 relative overflow-hidden">
     <!-- Background Elements -->
     <div class="absolute inset-0 bg-gradient-to-br from-c5/5 via-white to-c4/5"></div>
-    <div class="absolute top-0 left-0 w-96 h-96 bg-c1/5 rounded-full filter blur-3xl transform -translate-x-1/2 -translate-y-1/2"></div>
-    <div class="absolute bottom-0 right-0 w-96 h-96 bg-c2/5 rounded-full filter blur-3xl transform translate-x-1/2 translate-y-1/2"></div>
-    
+    <div
+        class="absolute top-0 left-0 w-96 h-96 bg-c1/5 rounded-full filter blur-3xl transform -translate-x-1/2 -translate-y-1/2">
+    </div>
+    <div
+        class="absolute bottom-0 right-0 w-96 h-96 bg-c2/5 rounded-full filter blur-3xl transform translate-x-1/2 translate-y-1/2">
+    </div>
+
     <div class="container mx-auto px-4 lg:px-8 relative z-10">
         <!-- Section Header -->
         <div class="text-center mb-16" data-aos="fade-up">
@@ -189,45 +178,60 @@
                 ابزاری هوشمند برای پزشکان که فرآیند نسخه‌نویسی را ساده‌تر، دقیق‌تر و سریع‌تر می‌کند
             </p>
         </div>
-        
+
         <!-- Feature Cards -->
         <div class="grid md:grid-cols-3 gap-8 lg:gap-12">
             <!-- Card 1 -->
             <div class="group relative" data-aos="fade-up" data-aos-delay="100">
                 <!-- Glow Effect -->
-                <div class="absolute -inset-1 bg-gradient-to-r from-c1 to-c2 rounded-3xl opacity-10 group-hover:opacity-30 blur-xl transition-all duration-500"></div>
-                
+                <div
+                    class="absolute -inset-1 bg-gradient-to-r from-c1 to-c2 rounded-3xl opacity-10 group-hover:opacity-30 blur-xl transition-all duration-500">
+                </div>
+
                 <!-- Card -->
-                <div class="relative bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:-translate-y-2">
+                <div
+                    class="relative bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:-translate-y-2">
                     <!-- Top Pattern -->
-                    <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-c1/10 to-transparent  transition-opacity duration-500">
-                        <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,%3Csvg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%230077b6" fill-opacity="0.1"%3E%3Cpath d="M0 40L40 0H20L0 20M40 40V20L20 40"/%3E%3C/g%3E%3C/svg%3E');"></div>
+                    <div
+                        class="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-c1/10 to-transparent  transition-opacity duration-500">
+                        <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,%3Csvg width="
+                            40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" %3E%3Cg
+                            fill="%230077b6" fill-opacity="0.1" %3E%3Cpath d="M0 40L40 0H20L0 20M40 40V20L20 40"
+                            /%3E%3C/g%3E%3C/svg%3E');"></div>
                     </div>
-                    
+
                     <!-- Content -->
                     <div class="relative p-8 pt-12">
                         <!-- Icon -->
-                        <div class="w-20 h-20 bg-gradient-to-br from-c1 to-c2 rounded-3xl flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                        <div
+                            class="w-20 h-20 bg-gradient-to-br from-c1 to-c2 rounded-3xl flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
                             <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                                </path>
                             </svg>
                         </div>
-                        
+
                         <!-- Title -->
-                        <h3 class="text-2xl font-bold text-gray-900 mb-4 group-hover:text-c1 transition-colors duration-300">
+                        <h3
+                            class="text-2xl font-bold text-gray-900 mb-4 group-hover:text-c1 transition-colors duration-300">
                             بانک جامع نسخ طب عمومی
                         </h3>
-                        
+
                         <!-- Description -->
                         <p class="text-gray-600 leading-relaxed mb-6">
                             شامل نسخه‌های استاندارد و به‌روز بر اساس آخرین گایدلاین‌ها
                         </p>
-                        
+
                         <!-- Bottom Accent -->
                         <div class="flex items-center justify-between">
-                            <div class="h-1 w-16 bg-gradient-to-r from-c1 to-c2 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
-                            <svg class="w-5 h-5 text-c1 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                            <div
+                                class="h-1 w-16 bg-gradient-to-r from-c1 to-c2 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left">
+                            </div>
+                            <svg class="w-5 h-5 text-c1 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300"
+                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                             </svg>
                         </div>
                     </div>
@@ -237,39 +241,53 @@
             <!-- Card 2 -->
             <div class="group relative" data-aos="fade-up" data-aos-delay="200">
                 <!-- Glow Effect -->
-                <div class="absolute -inset-1 bg-gradient-to-r from-c2 to-c3 rounded-3xl opacity-10 group-hover:opacity-30 blur-xl transition-all duration-500"></div>
-                
+                <div
+                    class="absolute -inset-1 bg-gradient-to-r from-c2 to-c3 rounded-3xl opacity-10 group-hover:opacity-30 blur-xl transition-all duration-500">
+                </div>
+
                 <!-- Card -->
-                <div class="relative bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:-translate-y-2">
+                <div
+                    class="relative bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:-translate-y-2">
                     <!-- Top Pattern -->
-                    <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-c2/10 to-transparent  transition-opacity duration-500">
-                        <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,%3Csvg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%2300b4d8" fill-opacity="0.1"%3E%3Cpath d="M0 40L40 0H20L0 20M40 40V20L20 40"/%3E%3C/g%3E%3C/svg%3E');"></div>
+                    <div
+                        class="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-c2/10 to-transparent  transition-opacity duration-500">
+                        <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,%3Csvg width="
+                            40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" %3E%3Cg
+                            fill="%2300b4d8" fill-opacity="0.1" %3E%3Cpath d="M0 40L40 0H20L0 20M40 40V20L20 40"
+                            /%3E%3C/g%3E%3C/svg%3E');"></div>
                     </div>
-                    
+
                     <!-- Content -->
                     <div class="relative p-8 pt-12">
                         <!-- Icon -->
-                        <div class="w-20 h-20 bg-gradient-to-br from-c2 to-c3 rounded-3xl flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                        <div
+                            class="w-20 h-20 bg-gradient-to-br from-c2 to-c3 rounded-3xl flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
                             <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
                             </svg>
                         </div>
-                        
+
                         <!-- Title -->
-                        <h3 class="text-2xl font-bold text-gray-900 mb-4 group-hover:text-c2 transition-colors duration-300">
+                        <h3
+                            class="text-2xl font-bold text-gray-900 mb-4 group-hover:text-c2 transition-colors duration-300">
                             کدهای دقیق و آماده
                         </h3>
-                        
+
                         <!-- Description -->
                         <p class="text-gray-600 leading-relaxed mb-6">
                             دسترسی فوری به کدهای استاندارد بیمه برای تمام داروها با قابلیت کپی با یک کلیک
                         </p>
-                        
+
                         <!-- Bottom Accent -->
                         <div class="flex items-center justify-between">
-                            <div class="h-1 w-16 bg-gradient-to-r from-c2 to-c3 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
-                            <svg class="w-5 h-5 text-c2 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                            <div
+                                class="h-1 w-16 bg-gradient-to-r from-c2 to-c3 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left">
+                            </div>
+                            <svg class="w-5 h-5 text-c2 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300"
+                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                             </svg>
                         </div>
                     </div>
@@ -279,46 +297,61 @@
             <!-- Card 3 -->
             <div class="group relative" data-aos="fade-up" data-aos-delay="300">
                 <!-- Glow Effect -->
-                <div class="absolute -inset-1 bg-gradient-to-r from-c3 to-c1 rounded-3xl opacity-10 group-hover:opacity-30 blur-xl transition-all duration-500"></div>
-                
+                <div
+                    class="absolute -inset-1 bg-gradient-to-r from-c3 to-c1 rounded-3xl opacity-10 group-hover:opacity-30 blur-xl transition-all duration-500">
+                </div>
+
                 <!-- Card -->
-                <div class="relative bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:-translate-y-2">
+                <div
+                    class="relative bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:-translate-y-2">
                     <!-- Top Pattern -->
-                    <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-c3/10 to-transparent  transition-opacity duration-500">
-                        <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,%3Csvg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%2300a896" fill-opacity="0.1"%3E%3Cpath d="M0 40L40 0H20L0 20M40 40V20L20 40"/%3E%3C/g%3E%3C/svg%3E');"></div>
+                    <div
+                        class="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-c3/10 to-transparent  transition-opacity duration-500">
+                        <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,%3Csvg width="
+                            40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" %3E%3Cg
+                            fill="%2300a896" fill-opacity="0.1" %3E%3Cpath d="M0 40L40 0H20L0 20M40 40V20L20 40"
+                            /%3E%3C/g%3E%3C/svg%3E');"></div>
                     </div>
-                    
+
                     <!-- Content -->
                     <div class="relative p-8 pt-12">
                         <!-- Icon -->
-                        <div class="w-20 h-20 bg-gradient-to-br from-c3 to-c1 rounded-3xl flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                        <div
+                            class="w-20 h-20 bg-gradient-to-br from-c3 to-c1 rounded-3xl flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
                             <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4">
+                                </path>
                             </svg>
                         </div>
-                        
+
                         <!-- Title -->
-                        <h3 class="text-2xl font-bold text-gray-900 mb-4 group-hover:text-c3 transition-colors duration-300">
+                        <h3
+                            class="text-2xl font-bold text-gray-900 mb-4 group-hover:text-c3 transition-colors duration-300">
                             جزئیات کامل دارویی
                         </h3>
-                        
+
                         <!-- Description -->
                         <p class="text-gray-600 leading-relaxed mb-6">
-                            نمایش دوز، تعداد، نحوه مصرف، اندیکاسیون‌ها و کنترااندیکاسیون‌ها 
+                            نمایش دوز، تعداد، نحوه مصرف، اندیکاسیون‌ها و کنترااندیکاسیون‌ها
                         </p>
-                        
+
                         <!-- Bottom Accent -->
                         <div class="flex items-center justify-between">
-                            <div class="h-1 w-16 bg-gradient-to-r from-c3 to-c1 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
-                            <svg class="w-5 h-5 text-c3 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                            <div
+                                class="h-1 w-16 bg-gradient-to-r from-c3 to-c1 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left">
+                            </div>
+                            <svg class="w-5 h-5 text-c3 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300"
+                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                             </svg>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        
+
         <!-- Bottom CTA -->
         <!-- <div class="text-center mt-16" data-aos="fade-up" data-aos-delay="400">
             <a href="/prescriptions" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-c1 to-c2 text-white rounded-full font-semibold text-lg shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300">
@@ -337,11 +370,11 @@
     <div class="absolute inset-0 bg-gradient-to-br from-c5/10 via-white to-c4/10"></div>
     <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-c1 to-transparent"></div>
     <div class="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-c2 to-transparent"></div>
-    
+
     <!-- Floating Orbs -->
     <div class="absolute top-20 right-10 w-64 h-64 bg-c1/5 rounded-full filter blur-3xl animate-float"></div>
     <div class="absolute bottom-20 left-10 w-80 h-80 bg-c2/5 rounded-full filter blur-3xl animate-float-reverse"></div>
-    
+
     <div class="container mx-auto px-4 lg:px-8 relative z-10">
         <!-- Quick Access Cards -->
         <div class="mb-24">
@@ -351,34 +384,43 @@
                 </h3>
                 <div class="w-24 h-1 bg-gradient-to-r from-c1 to-c2 rounded-full mx-auto"></div>
             </div>
-            
+
             <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <!-- Card 1 -->
                 <a href="/contact" class="group block" data-aos="fade-up" data-aos-delay="100">
-                    <div class="relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-500 overflow-hidden">
+                    <div
+                        class="relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-500 overflow-hidden">
                         <!-- Background Pattern -->
                         <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                             <div class="absolute inset-0 bg-gradient-to-br from-c1/5 to-transparent"></div>
-                            <div class="absolute top-0 right-0 w-32 h-32 bg-c1/10 rounded-full transform translate-x-16 -translate-y-16"></div>
+                            <div
+                                class="absolute top-0 right-0 w-32 h-32 bg-c1/10 rounded-full transform translate-x-16 -translate-y-16">
+                            </div>
                         </div>
-                        
+
                         <!-- Content -->
                         <div class="relative flex items-center gap-4">
-                            <div class="w-14 h-14 bg-c5 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:bg-gradient-to-br group-hover:from-c1 group-hover:to-c2 transition-all duration-500 shadow-lg">
-                                <svg class="w-7 h-7 text-c1 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            <div
+                                class="w-14 h-14 bg-c5 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:bg-gradient-to-br group-hover:from-c1 group-hover:to-c2 transition-all duration-500 shadow-lg">
+                                <svg class="w-7 h-7 text-c1 group-hover:text-white transition-colors" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
                             </div>
                             <div>
-                                <span class="font-bold text-gray-800 group-hover:text-c1 transition-colors block">ارتباط با ما</span>
+                                <span class="font-bold text-gray-800 group-hover:text-c1 transition-colors block">ارتباط
+                                    با ما</span>
                                 <span class="text-xs text-gray-500">پشتیبانی ۲۴/۷</span>
                             </div>
                         </div>
-                        
+
                         <!-- Arrow -->
-                        <div class="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                        <div
+                            class="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
                             <svg class="w-5 h-5 text-c1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                             </svg>
                         </div>
                     </div>
@@ -386,30 +428,40 @@
 
                 <!-- Card 2 -->
                 <a href="/prescriptions" class="group block" data-aos="fade-up" data-aos-delay="200">
-                    <div class="relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-500 overflow-hidden">
+                    <div
+                        class="relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-500 overflow-hidden">
                         <!-- Background Pattern -->
                         <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                             <div class="absolute inset-0 bg-gradient-to-br from-c2/5 to-transparent"></div>
-                            <div class="absolute top-0 right-0 w-32 h-32 bg-c2/10 rounded-full transform translate-x-16 -translate-y-16"></div>
+                            <div
+                                class="absolute top-0 right-0 w-32 h-32 bg-c2/10 rounded-full transform translate-x-16 -translate-y-16">
+                            </div>
                         </div>
-                        
+
                         <!-- Content -->
                         <div class="relative flex items-center gap-4">
-                            <div class="w-14 h-14 bg-c5 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:bg-gradient-to-br group-hover:from-c2 group-hover:to-c3 transition-all duration-500 shadow-lg">
-                                <svg class="w-7 h-7 text-c2 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                            <div
+                                class="w-14 h-14 bg-c5 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:bg-gradient-to-br group-hover:from-c2 group-hover:to-c3 transition-all duration-500 shadow-lg">
+                                <svg class="w-7 h-7 text-c2 group-hover:text-white transition-colors" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
+                                    </path>
                                 </svg>
                             </div>
                             <div>
-                                <span class="font-bold text-gray-800 group-hover:text-c2 transition-colors block">نسخه های ما</span>
+                                <span class="font-bold text-gray-800 group-hover:text-c2 transition-colors block">نسخه
+                                    های ما</span>
                                 <span class="text-xs text-gray-500">بانک جامع</span>
                             </div>
                         </div>
-                        
+
                         <!-- Arrow -->
-                        <div class="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                        <div
+                            class="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
                             <svg class="w-5 h-5 text-c2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                             </svg>
                         </div>
                     </div>
@@ -417,30 +469,40 @@
 
                 <!-- Card 3 -->
                 <a href="/about" class="group block" data-aos="fade-up" data-aos-delay="300">
-                    <div class="relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-500 overflow-hidden">
+                    <div
+                        class="relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-500 overflow-hidden">
                         <!-- Background Pattern -->
                         <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                             <div class="absolute inset-0 bg-gradient-to-br from-c3/5 to-transparent"></div>
-                            <div class="absolute top-0 right-0 w-32 h-32 bg-c3/10 rounded-full transform translate-x-16 -translate-y-16"></div>
+                            <div
+                                class="absolute top-0 right-0 w-32 h-32 bg-c3/10 rounded-full transform translate-x-16 -translate-y-16">
+                            </div>
                         </div>
-                        
+
                         <!-- Content -->
                         <div class="relative flex items-center gap-4">
-                            <div class="w-14 h-14 bg-c5 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:bg-gradient-to-br group-hover:from-c3 group-hover:to-c4 transition-all duration-500 shadow-lg">
-                                <svg class="w-7 h-7 text-c3 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            <div
+                                class="w-14 h-14 bg-c5 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:bg-gradient-to-br group-hover:from-c3 group-hover:to-c4 transition-all duration-500 shadow-lg">
+                                <svg class="w-7 h-7 text-c3 group-hover:text-white transition-colors" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                    </path>
                                 </svg>
                             </div>
                             <div>
-                                <span class="font-bold text-gray-800 group-hover:text-c3 transition-colors block">دکتر کد چیست</span>
+                                <span class="font-bold text-gray-800 group-hover:text-c3 transition-colors block">دکتر
+                                    کد چیست</span>
                                 <span class="text-xs text-gray-500">درباره ما</span>
                             </div>
                         </div>
-                        
+
                         <!-- Arrow -->
-                        <div class="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                        <div
+                            class="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
                             <svg class="w-5 h-5 text-c3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                             </svg>
                         </div>
                     </div>
@@ -448,30 +510,40 @@
 
                 <!-- Card 4 -->
                 <a href="/tutorials" class="group block" data-aos="fade-up" data-aos-delay="400">
-                    <div class="relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-500 overflow-hidden">
+                    <div
+                        class="relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-500 overflow-hidden">
                         <!-- Background Pattern -->
                         <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                             <div class="absolute inset-0 bg-gradient-to-br from-c4/5 to-transparent"></div>
-                            <div class="absolute top-0 right-0 w-32 h-32 bg-c4/10 rounded-full transform translate-x-16 -translate-y-16"></div>
+                            <div
+                                class="absolute top-0 right-0 w-32 h-32 bg-c4/10 rounded-full transform translate-x-16 -translate-y-16">
+                            </div>
                         </div>
-                        
+
                         <!-- Content -->
                         <div class="relative flex items-center gap-4">
-                            <div class="w-14 h-14 bg-c5 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:bg-gradient-to-br group-hover:from-c4 group-hover:to-c5 transition-all duration-500 shadow-lg">
-                                <svg class="w-7 h-7 text-c4 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            <div
+                                class="w-14 h-14 bg-c5 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:bg-gradient-to-br group-hover:from-c4 group-hover:to-c5 transition-all duration-500 shadow-lg">
+                                <svg class="w-7 h-7 text-c4 group-hover:text-white transition-colors" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                                    </path>
                                 </svg>
                             </div>
                             <div>
-                                <span class="font-bold text-gray-800 group-hover:text-c4 transition-colors block">آموزش کار با سایت</span>
+                                <span class="font-bold text-gray-800 group-hover:text-c4 transition-colors block">آموزش
+                                    کار با سایت</span>
                                 <span class="text-xs text-gray-500">راهنمای کامل</span>
                             </div>
                         </div>
-                        
+
                         <!-- Arrow -->
-                        <div class="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                        <div
+                            class="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
                             <svg class="w-5 h-5 text-c4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                             </svg>
                         </div>
                     </div>
@@ -483,7 +555,8 @@
         <div id="free-prescriptions" class="text-center">
             <div class="mb-16" data-aos="fade-up">
                 <h3 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-                    با نسخه‌های <span class="bg-gradient-to-r from-c1 to-c2 bg-clip-text text-transparent">رایگان</span> ما شروع کنید
+                    با نسخه‌های <span class="bg-gradient-to-r from-c1 to-c2 bg-clip-text text-transparent">رایگان</span>
+                    ما شروع کنید
                 </h3>
                 <p class="text-lg text-gray-600 max-w-2xl mx-auto">
                     قبل از خرید اشتراک، کیفیت نسخه‌های ما را با نمونه‌های رایگان تجربه کنید
@@ -495,7 +568,8 @@
             <div x-show="loading" class="flex justify-center py-12">
                 <div class="relative">
                     <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-c1"></div>
-                    <div class="absolute inset-0 rounded-full h-16 w-16 border-t-2 border-b-2 border-c2 animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+                    <div class="absolute inset-0 rounded-full h-16 w-16 border-t-2 border-b-2 border-c2 animate-spin"
+                        style="animation-direction: reverse; animation-duration: 1.5s;"></div>
                 </div>
             </div>
 
@@ -503,33 +577,42 @@
             <div x-show="!loading && prescriptions.length > 0" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
                 <template x-for="prescription in prescriptions" :key="prescription.id">
                     <a :href="`/prescriptions/${prescription.slug}/`"
-                       class="group relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-500 overflow-hidden"
-                       data-aos="fade-up">
+                        class="group relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-500 overflow-hidden"
+                        data-aos="fade-up">
                         <!-- Background Pattern -->
                         <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                             <div class="absolute inset-0 bg-gradient-to-br from-c1/5 to-transparent"></div>
-                            <div class="absolute top-0 right-0 w-32 h-32 bg-c1/10 rounded-full transform translate-x-16 -translate-y-16"></div>
+                            <div
+                                class="absolute top-0 right-0 w-32 h-32 bg-c1/10 rounded-full transform translate-x-16 -translate-y-16">
+                            </div>
                         </div>
-                        
+
                         <!-- Content -->
                         <div class="relative">
                             <div class="flex items-start justify-between mb-4">
                                 <div class="w-14 h-14 rounded-2xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-500"
-                                     :style="`background-color: ${prescription.category.color_code}20`">
-                                    <svg class="w-7 h-7" :style="`color: ${prescription.category.color_code}`" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    :style="`background-color: ${prescription.category.color_code}20`">
+                                    <svg class="w-7 h-7" :style="`color: ${prescription.category.color_code}`"
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                        </path>
                                     </svg>
                                 </div>
-                                <span class="text-xs font-bold px-3 py-1 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-full shadow-md">رایگان</span>
+                                <span
+                                    class="text-xs font-bold px-3 py-1 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-full shadow-md">رایگان</span>
                             </div>
-                            <h4 class="font-bold text-gray-900 mb-2 text-right group-hover:text-c1 transition-colors" x-text="prescription.title"></h4>
+                            <h4 class="font-bold text-gray-900 mb-2 text-right group-hover:text-c1 transition-colors"
+                                x-text="prescription.title"></h4>
                             <p class="text-sm text-gray-500 text-right" x-text="prescription.category.title"></p>
                         </div>
-                        
+
                         <!-- Arrow -->
-                        <div class="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                        <div
+                            class="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
                             <svg class="w-5 h-5 text-c1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                             </svg>
                         </div>
                     </a>
@@ -542,7 +625,9 @@
                     <div class="absolute inset-0 bg-gradient-to-r from-c1 to-c2 rounded-full blur-xl opacity-20"></div>
                     <div class="relative bg-white rounded-full p-8 shadow-xl">
                         <svg class="w-24 h-24 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                            </path>
                         </svg>
                     </div>
                 </div>
@@ -551,20 +636,27 @@
 
             <!-- CTA Button -->
             <div data-aos="fade-up">
-                <a href="{% url 'prescriptions:prescription_list' %}" class="group relative inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-c1 to-c2 text-white rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-500 overflow-hidden">
+                <a href="{% url 'prescriptions:prescription_list' %}"
+                    class="group relative inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-c1 to-c2 text-white rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-500 overflow-hidden">
                     <span class="relative z-10 flex items-center">
                         مشاهده تمام نسخه‌های رایگان
-                        <svg class="w-5 h-5 mr-2 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                        <svg class="w-5 h-5 mr-2 transform group-hover:translate-x-1 transition-transform" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                         </svg>
                     </span>
-                    <div class="absolute inset-0 bg-gradient-to-r from-c2 to-c3 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                    <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transform translate-y-full group-hover:translate-y-0 transition-transform duration-700"></div>
+                    <div
+                        class="absolute inset-0 bg-gradient-to-r from-c2 to-c3 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                    </div>
+                    <div
+                        class="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transform translate-y-full group-hover:translate-y-0 transition-transform duration-700">
+                    </div>
                 </a>
             </div>
         </div>
     </div>
-    
+
     <!-- Custom Animations -->
     <script>
         const style = document.createElement('style');
@@ -605,78 +697,97 @@
             <!-- Comparison Cards -->
             <div class="grid md:grid-cols-2 gap-8">
                 <!-- Free Plan -->
-                <div class="relative bg-gray-50 rounded-2xl p-8 border-2 border-gray-200" data-aos="fade-up" data-aos-delay="200">
+                <div class="relative bg-gray-50 rounded-2xl p-8 border-2 border-gray-200" data-aos="fade-up"
+                    data-aos-delay="200">
                     <h4 class="text-2xl font-bold text-gray-900 mb-4">کاربر عادی</h4>
                     <p class="text-gray-600 mb-8">دسترسی محدود به امکانات پایه</p>
-                    
+
                     <ul class="space-y-4 mb-8">
                         <li class="flex items-center gap-3">
-                            <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
                             </svg>
                             <span class="text-gray-700">دسترسی به نسخه‌های رایگان</span>
                         </li>
                         <li class="flex items-center gap-3">
-                            <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
                             </svg>
                             <span class="text-gray-700">مشاهده اطلاعات پایه داروها</span>
                         </li>
                         <li class="flex items-center gap-3">
-                            <svg class="w-5 h-5 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            <svg class="w-5 h-5 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                             <span class="text-gray-400">دسترسی به تمام نسخه‌ها</span>
                         </li>
                         <li class="flex items-center gap-3">
-                            <svg class="w-5 h-5 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            <svg class="w-5 h-5 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                             <span class="text-gray-400">پرسش و پاسخ با تیم علمی</span>
                         </li>
                     </ul>
-                    
+
                     <div class="text-center">
                         <span class="text-3xl font-bold text-gray-900">رایگان</span>
                     </div>
                 </div>
 
                 <!-- Premium Plan -->
-                <div class="relative bg-gradient-to-br from-c1 to-c2 rounded-2xl p-8 text-white shadow-xl transform md:scale-105" data-aos="fade-up" data-aos-delay="300">
+                <div class="relative bg-gradient-to-br from-c1 to-c2 rounded-2xl p-8 text-white shadow-xl transform md:scale-105"
+                    data-aos="fade-up" data-aos-delay="300">
                     <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                        <span class="bg-yellow-500 text-gray-900 text-sm font-bold px-4 py-1 rounded-full">پیشنهاد ویژه</span>
+                        <span class="bg-yellow-500 text-gray-900 text-sm font-bold px-4 py-1 rounded-full">پیشنهاد
+                            ویژه</span>
                     </div>
-                    
+
                     <h4 class="text-2xl font-bold mb-4">کاربر ویژه</h4>
                     <p class="text-white/90 mb-8">دسترسی کامل به تمام امکانات</p>
-                    
+
                     <ul class="space-y-4 mb-8">
                         <li class="flex items-center gap-3">
-                            <svg class="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            <svg class="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
                             </svg>
                             <span>دسترسی به تمام نسخه‌ها</span>
                         </li>
                         <li class="flex items-center gap-3">
-                            <svg class="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            <svg class="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
                             </svg>
                             <span>پرسش و پاسخ مستقیم با تیم علمی</span>
                         </li>
                         <li class="flex items-center gap-3">
-                            <svg class="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            <svg class="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
                             </svg>
                             <span>دریافت آپدیت‌های منظم</span>
                         </li>
                         <li class="flex items-center gap-3">
-                            <svg class="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            <svg class="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
                             </svg>
                             <span>دسترسی آفلاین به نسخه‌ها</span>
                         </li>
                     </ul>
-                    
+
                     <div class="text-center">
                         <span class="text-3xl font-bold">از 99,000 تومان</span>
                         <span class="text-sm block mt-1">ماهانه</span>
@@ -686,10 +797,12 @@
 
             <!-- CTA -->
             <div class="text-center mt-12" data-aos="fade-up">
-                <a href="/plan" class="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-c1 to-c2 text-white rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
+                <a href="/plan"
+                    class="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-c1 to-c2 text-white rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
                     مشاهده پلن‌های اشتراک
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                     </svg>
                 </a>
             </div>
@@ -711,20 +824,23 @@
             <!-- Video Thumbnail -->
             <div class="relative group cursor-pointer" data-aos="fade-up" data-aos-delay="200">
                 <div class="relative rounded-2xl overflow-hidden shadow-2xl">
-                    <img src="data:image/svg+xml,%3Csvg width='800' height='450' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='800' height='450' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='24' fill='%239ca3af' text-anchor='middle' dy='.3em'%3EVideo Thumbnail%3C/text%3E%3C/svg%3E" 
-                         alt="آموزش دکتر کد" 
-                         class="w-full h-auto">
-                    
+                    <img src="data:image/svg+xml,%3Csvg width='800' height='450' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='800' height='450' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='24' fill='%239ca3af' text-anchor='middle' dy='.3em'%3EVideo Thumbnail%3C/text%3E%3C/svg%3E"
+                        alt="آموزش دکتر کد" class="w-full h-auto">
+
                     <!-- Play Button Overlay -->
-                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/50 transition-colors">
-                        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-xl transform group-hover:scale-110 transition-transform">
+                    <div
+                        class="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/50 transition-colors">
+                        <div
+                            class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-xl transform group-hover:scale-110 transition-transform">
                             <svg class="w-8 h-8 text-c1 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path>
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                                    clip-rule="evenodd"></path>
                             </svg>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Video Duration Badge -->
                 <div class="absolute bottom-4 right-4 bg-black/80 text-white px-3 py-1 rounded-lg text-sm font-medium">
                     01:23
@@ -733,15 +849,20 @@
 
             <!-- Additional CTAs -->
             <div class="flex flex-col sm:flex-row gap-4 justify-center mt-8" data-aos="fade-up" data-aos-delay="300">
-                <a href="#" class="inline-flex items-center justify-center px-6 py-3 bg-white text-c1 rounded-xl font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 border-2 border-c5">
+                <a href="#"
+                    class="inline-flex items-center justify-center px-6 py-3 bg-white text-c1 rounded-xl font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 border-2 border-c5">
                     <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                        </path>
                     </svg>
                     مشاهده آموزش‌های بیشتر
                 </a>
-                <a href="#" class="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-c1 to-c2 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">
+                <a href="#"
+                    class="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-c1 to-c2 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">
                     <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                     </svg>
                     شروع استفاده رایگان
                 </a>

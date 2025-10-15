@@ -633,12 +633,14 @@
                                                 </span>
                                             </template>
 
+                                            
                                             <!-- Badge: Substitute Drug -->
                                             <template x-if="drug.is_substitute">
                                                 <span :class="prescription?.category?.color_code"
                                                     class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-white">
                                                     <i class="fas fa-exchange-alt text-[10px]"></i>
                                                     <span>جایگزین</span>
+                                                    <span x-show="drug.group_number" x-text="drug.group_number"></span>
                                                 </span>
                                             </template>
                                         </div>
