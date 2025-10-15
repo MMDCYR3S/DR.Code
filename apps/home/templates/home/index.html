@@ -54,38 +54,10 @@
 </style>
 
 <!-- base div -->
-<div class="bg-gray-50 " x-data="{ 
-    prescriptions: [],
-    loading: false,
-    init() {
-        // Fetch prescriptions
-        this.fetchPrescriptions();
-    },
-    async fetchPrescriptions() {
-        this.loading = true;
-        try {
-            const response = await axios.get('/api/v1/prescriptions/');
-            // Filter only FREE prescriptions and take first 4
-            this.prescriptions = response.data.results
-                .filter(p => p.access_level === 'FREE')
-                .slice(0, 4);
-        } catch (error) {
-            console.error('Error fetching prescriptions:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'خطا در دریافت اطلاعات',
-                text: 'لطفا دوباره تلاش کنید',
-                confirmButtonColor: '#0077b6'
-            });
-        } finally {
-            this.loading = false;
-        }
-    }
-}">
+<!-- base div -->
+<div class="bg-gray-50">
 
-
-
-    <!-- Hero Section -->
+ <!-- Hero Section -->
     <section class="relative flex items-center pt-20 ">
         <!-- Clean Background -->
         <div class="absolute inset-0 bg-gradient-to-br from-c5/20 via-white to-c4/20"></div>
@@ -552,111 +524,144 @@
         </div>
 
         <!-- Free Prescriptions -->
-        <div id="free-prescriptions" class="text-center">
+        <div id="free-prescriptions" 
+             class="text-center"
+             x-data="{
+                 prescriptions: [],
+                 loading: false,
+                 error: null,
+                 
+                 init() {
+                     this.fetchPrescriptions();
+                 },
+                 
+                 async fetchPrescriptions() {
+                     this.loading = true;
+                     this.error = null;
+                     try {
+                         console.log('Fetching free prescriptions...');
+                         const response = await axios.get('/api/v1/home/prescriptions/recent/');
+                         console.log('Response:', response.data);
+                         
+                         const prescriptionsData = response.data.results || response.data;
+                         this.prescriptions = prescriptionsData.slice(0, 4);
+                         
+                         console.log('✅ Displaying', this.prescriptions.length, 'prescriptions');
+                     } catch (err) {
+                         console.error('❌ Error:', err);
+                         this.error = 'خطا در دریافت اطلاعات';
+                     } finally {
+                         this.loading = false;
+                     }
+                 }
+             }">
+            
             <div class="mb-16" data-aos="fade-up">
                 <h3 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-                    با نسخه‌های <span class="bg-gradient-to-r from-c1 to-c2 bg-clip-text text-transparent">رایگان</span>
-                    ما شروع کنید
+                    با نسخه‌های <span class="bg-gradient-to-r from-c1 to-c2 bg-clip-text text-transparent">رایگان</span> ما شروع کنید
                 </h3>
                 <p class="text-lg text-gray-600 max-w-2xl mx-auto">
                     قبل از خرید اشتراک، کیفیت نسخه‌های ما را با نمونه‌های رایگان تجربه کنید
                 </p>
                 <div class="w-24 h-1 bg-gradient-to-r from-c1 to-c2 rounded-full mx-auto mt-6"></div>
             </div>
-
+        
             <!-- Loading State -->
             <div x-show="loading" class="flex justify-center py-12">
                 <div class="relative">
                     <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-c1"></div>
-                    <div class="absolute inset-0 rounded-full h-16 w-16 border-t-2 border-b-2 border-c2 animate-spin"
-                        style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+                    <div class="absolute inset-0 rounded-full h-16 w-16 border-t-2 border-b-2 border-c2 animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
                 </div>
             </div>
-
+        
+            <!-- Error State -->
+            <div x-show="!loading && error" class="text-center py-12">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+                    <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </div>
+                <p class="text-red-600 mb-4" x-text="error"></p>
+                <button @click="fetchPrescriptions()"
+                        class="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors">
+                    تلاش مجدد
+                </button>
+            </div>
+        
+            <!-- Empty State -->
+            <div x-show="!loading && !error && prescriptions.length === 0" class="py-12 text-center" data-aos="fade-up">
+                <div class="relative inline-block">
+                    <div class="absolute inset-0 bg-gradient-to-r from-c1 to-c2 rounded-full blur-xl opacity-20"></div>
+                    <div class="relative bg-white rounded-full p-8 shadow-xl">
+                        <svg class="w-24 h-24 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-gray-500 mt-6 text-lg">در حال حاضر نسخه رایگانی موجود نیست</p>
+                <button @click="fetchPrescriptions()"
+                        class="mt-4 px-6 py-3 bg-c1 text-white rounded-xl hover:bg-c2 transition-colors">
+                    تلاش مجدد
+                </button>
+            </div>
+        
             <!-- Prescriptions Grid -->
-            <div x-show="!loading && prescriptions.length > 0" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-                <template x-for="prescription in prescriptions" :key="prescription.id">
+            <div x-show="!loading && !error && prescriptions.length > 0" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+                <template x-for="(prescription, index) in prescriptions" :key="index">
                     <a :href="`/prescriptions/${prescription.slug}/`"
-                        class="group relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-500 overflow-hidden"
-                        data-aos="fade-up">
+                       class="group relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-500 overflow-hidden"
+                       data-aos="fade-up">
                         <!-- Background Pattern -->
                         <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                             <div class="absolute inset-0 bg-gradient-to-br from-c1/5 to-transparent"></div>
-                            <div
-                                class="absolute top-0 right-0 w-32 h-32 bg-c1/10 rounded-full transform translate-x-16 -translate-y-16">
-                            </div>
+                            <div class="absolute top-0 right-0 w-32 h-32 bg-c1/10 rounded-full transform translate-x-16 -translate-y-16"></div>
                         </div>
-
+                        
                         <!-- Content -->
                         <div class="relative">
                             <div class="flex items-start justify-between mb-4">
+                                <!-- Category Icon -->
                                 <div class="w-14 h-14 rounded-2xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-500"
-                                    :style="`background-color: ${prescription.category.color_code}20`">
-                                    <svg class="w-7 h-7" :style="`color: ${prescription.category.color_code}`"
-                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                                        </path>
+                                     :style="prescription.category && prescription.category_color ? `background-color: ${prescription.category_color}20` : 'background-color: #0891b220'">
+                                    <svg class="w-7 h-7" :style="prescription.category && prescription.category_color ? `color: ${prescription.category_color}` : 'color: #0891b2'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                     </svg>
                                 </div>
-                                <span
-                                    class="text-xs font-bold px-3 py-1 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-full shadow-md">رایگان</span>
+                                <!-- Free Badge -->
+                                <span class="text-xs font-bold px-3 py-1 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-full shadow-md">رایگان</span>
                             </div>
-                            <h4 class="font-bold text-gray-900 mb-2 text-right group-hover:text-c1 transition-colors"
-                                x-text="prescription.title"></h4>
-                            <p class="text-sm text-gray-500 text-right" x-text="prescription.category.title"></p>
+                            <!-- Title -->
+                            <h4 class="font-bold text-gray-900 mb-2 text-right group-hover:text-c1 transition-colors" x-text="prescription.title || 'بدون عنوان'"></h4>
+                            <!-- Category Title -->
+                            <p class="text-sm text-gray-500 text-right" x-text="prescription.category ? prescription.category.title : prescription.category_name || 'دسته‌بندی نامشخص'"></p>
                         </div>
-
+                        
                         <!-- Arrow -->
-                        <div
-                            class="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                        <div class="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
                             <svg class="w-5 h-5 text-c1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                             </svg>
                         </div>
                     </a>
                 </template>
             </div>
-
-            <!-- Empty State -->
-            <div x-show="!loading && prescriptions.length === 0" class="py-12 text-center" data-aos="fade-up">
-                <div class="relative inline-block">
-                    <div class="absolute inset-0 bg-gradient-to-r from-c1 to-c2 rounded-full blur-xl opacity-20"></div>
-                    <div class="relative bg-white rounded-full p-8 shadow-xl">
-                        <svg class="w-24 h-24 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                            </path>
-                        </svg>
-                    </div>
-                </div>
-                <p class="text-gray-500 mt-6 text-lg">در حال حاضر نسخه رایگانی موجود نیست</p>
-            </div>
-
+        
             <!-- CTA Button -->
             <div data-aos="fade-up">
-                <a href="{% url 'prescriptions:prescription_list' %}"
-                    class="group relative inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-c1 to-c2 text-white rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-500 overflow-hidden">
+                <a href="{% url 'prescriptions:prescription_list' %}" class="group relative inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-c1 to-c2 text-white rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-500 overflow-hidden">
                     <span class="relative z-10 flex items-center">
                         مشاهده تمام نسخه‌های رایگان
-                        <svg class="w-5 h-5 mr-2 transform group-hover:translate-x-1 transition-transform" fill="none"
-                            stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                        <svg class="w-5 h-5 mr-2 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                         </svg>
                     </span>
-                    <div
-                        class="absolute inset-0 bg-gradient-to-r from-c2 to-c3 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                    </div>
-                    <div
-                        class="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transform translate-y-full group-hover:translate-y-0 transition-transform duration-700">
-                    </div>
+                    <div class="absolute inset-0 bg-gradient-to-r from-c2 to-c3 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transform translate-y-full group-hover:translate-y-0 transition-transform duration-700"></div>
                 </a>
             </div>
         </div>
     </div>
-
+    
     <!-- Custom Animations -->
     <script>
         const style = document.createElement('style');
