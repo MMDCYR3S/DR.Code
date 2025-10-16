@@ -38,7 +38,6 @@ const profileApp = {
             } else {
                 throw new Error(profileResponse.message || 'خطا در دریافت اطلاعات');
             }
-            localStorage.setItem('medical_code', profileResponse.data.medical_code);
 
 
             // دریافت اطلاعات ویرایش
