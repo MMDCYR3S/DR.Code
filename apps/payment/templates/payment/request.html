@@ -3,7 +3,279 @@
 
 {% block title %}صفحه اصلی{% endblock title %}
 {% block content %}
+<style>
+    .gradient-bg {
+            background: linear-gradient(135deg, #0077b6 0%, #00b4d8 100%);
+        }
+        
+        .gateway-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .gateway-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 119, 182, 0.2);
+        }
+        
+        .gateway-card.selected {
+            border: 3px solid #0077b6;
+            box-shadow: 0 0 0 4px rgba(0, 119, 182, 0.1);
+        }
+        
+        .radio-custom {
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border: 2px solid #d1d5db;
+            border-radius: 50%;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .radio-custom:checked {
+            border-color: #0077b6;
+            background: #0077b6;
+        }
+        
+        .radio-custom:checked::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+            height: 10px;
+            background: white;
+            border-radius: 50%;
+        }
+</style>
 
+<div class="bg-gray-50" x-data="paymentGatewayApp()">
 
+    <!-- Loading Screen -->
+    <div x-show="loading" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="text-center">
+            <i class="fas fa-spinner fa-spin text-6xl text-c1 mb-4"></i>
+            <p class="text-xl text-gray-600">در حال بارگذاری...</p>
+        </div>
+    </div>
 
+    <!-- Main Content -->
+    <div x-show="!loading" class="min-h-screen">
+        
+        <!-- Header -->
+        <header class="gradient-bg text-white py-6 px-4 shadow-lg">
+            <div class="container mx-auto max-w-5xl">
+                <div class="flex items-center justify-between">
+                    <h1 class="text-2xl md:text-3xl font-bold">
+                        <i class="fas fa-credit-card ml-2"></i>
+                        انتخاب درگاه پرداخت
+                    </h1>
+                    <a href="/order/checkout" class="text-white hover:text-c5 transition-colors">
+                        <i class="fas fa-arrow-right ml-1"></i>
+                        بازگشت
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Payment Content -->
+        <div class="container mx-auto max-w-5xl px-4 py-8">
+            
+            <!-- Order Summary Card -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 mb-8 border-2 border-c1">
+                <div class="flex items-center justify-between flex-wrap gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-c5 p-3 rounded-xl">
+                            <i class="fas fa-crown text-2xl text-c1"></i>
+                        </div>
+                        <div>
+                            <p class="text-gray-600 text-sm">پلن انتخابی:</p>
+                            <p class="text-xl font-bold text-c1" x-text="orderData?.plan_name || 'در حال بارگذاری...'"></p>
+                        </div>
+                    </div>
+                    <div class="text-left">
+                        <p class="text-gray-600 text-sm">مبلغ قابل پرداخت:</p>
+                        <p class="text-2xl font-bold text-green-600" x-text="orderData?.formatted_price || '...'"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gateway Selection -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                
+                <!-- ZarinPal Card -->
+                <div 
+                    @click="selectGateway('zarinpal')"
+                    class="gateway-card bg-white rounded-2xl shadow-lg overflow-hidden"
+                    :class="selectedGateway === 'zarinpal' ? 'selected' : ''">
+                    
+                    <div class="bg-gradient-to-br from-yellow-400 to-orange-500 p-6 text-white">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-2xl font-bold">زرین‌پال</h3>
+                            <input 
+                                type="radio" 
+                                name="gateway" 
+                                value="zarinpal"
+                                :checked="selectedGateway === 'zarinpal'"
+                                class="radio-custom">
+                        </div>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="flex items-center justify-center mb-4">
+                            <img src="https://www.zarinpal.com/assets/images/logo/white.svg" 
+                                 alt="ZarinPal" 
+                                 class="h-16 opacity-80">
+                        </div>
+                        
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li class="flex items-center">
+                                <i class="fas fa-check-circle text-green-500 ml-2"></i>
+                                پرداخت امن و معتبر
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check-circle text-green-500 ml-2"></i>
+                                پشتیبانی از تمام کارت‌های بانکی
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check-circle text-green-500 ml-2"></i>
+                                بازگشت سریع وجه در صورت لغو
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check-circle text-green-500 ml-2"></i>
+                                نماد اعتماد الکترونیکی
+                            </li>
+                        </ul>
+                        
+                        <div class="mt-4 p-3 bg-yellow-50 rounded-lg text-center">
+                            <p class="text-xs text-yellow-800">
+                                <i class="fas fa-star ml-1"></i>
+                                محبوب‌ترین درگاه پرداخت ایران
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ParsPal Card -->
+                <div 
+                    @click="selectGateway('parspal')"
+                    class="gateway-card bg-white rounded-2xl shadow-lg overflow-hidden"
+                    :class="selectedGateway === 'parspal' ? 'selected' : ''">
+                    
+                    <div class="bg-gradient-to-br from-blue-500 to-purple-600 p-6 text-white">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-2xl font-bold">پارس پال</h3>
+                            <input 
+                                type="radio" 
+                                name="gateway" 
+                                value="parspal"
+                                :checked="selectedGateway === 'parspal'"
+                                class="radio-custom">
+                        </div>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="flex items-center justify-center mb-4">
+                            <div class="text-4xl font-bold text-blue-600">ParsPal</div>
+                        </div>
+                        
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li class="flex items-center">
+                                <i class="fas fa-check-circle text-blue-500 ml-2"></i>
+                                پرداخت سریع و آسان
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check-circle text-blue-500 ml-2"></i>
+                                کارمزد مناسب
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check-circle text-blue-500 ml-2"></i>
+                                امنیت بالا
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check-circle text-blue-500 ml-2"></i>
+                                پشتیبانی ۲۴ ساعته
+                            </li>
+                        </ul>
+                        
+                        <div class="mt-4 p-3 bg-blue-50 rounded-lg text-center">
+                            <p class="text-xs text-blue-800">
+                                <i class="fas fa-shield-alt ml-1"></i>
+                                درگاه پرداخت معتبر و امن
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Discount/Referral Info (if applied) -->
+            <div x-show="orderData?.has_discount" 
+                 class="bg-green-50 border-2 border-green-500 rounded-2xl p-6 mb-8">
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-check-circle text-3xl text-green-600"></i>
+                    <div class="flex-1">
+                        <h3 class="font-bold text-green-800 text-lg mb-2">کد تخفیف اعمال شده</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div x-show="orderData?.discount_code">
+                                <span class="text-gray-600">کد تخفیف: </span>
+                                <span class="font-bold text-green-700" x-text="orderData?.discount_code"></span>
+                            </div>
+                            <div x-show="orderData?.referral_code">
+                                <span class="text-gray-600">کد معرف: </span>
+                                <span class="font-bold text-green-700" x-text="orderData?.referral_code"></span>
+                            </div>
+                            <div x-show="orderData?.discount_amount">
+                                <span class="text-gray-600">مقدار تخفیف: </span>
+                                <span class="font-bold text-green-700" x-text="orderData?.discount_amount"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col md:flex-row gap-4">
+                <button 
+                    @click="proceedToPayment"
+                    :disabled="!selectedGateway || submitting"
+                    class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-4 rounded-xl font-bold text-lg hover:from-green-600 hover:to-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg">
+                    <i class="fas fa-lock ml-2"></i>
+                    <span x-show="!submitting">پرداخت امن</span>
+                    <span x-show="submitting">
+                        <i class="fas fa-spinner fa-spin ml-1"></i>
+                        در حال انتقال به درگاه...
+                    </span>
+                </button>
+                
+                <a 
+                    href="/order/checkout" 
+                    class="flex-none bg-gray-200 text-gray-700 py-4 px-8 rounded-xl font-bold text-lg hover:bg-gray-300 transition-all text-center">
+                    <i class="fas fa-arrow-right ml-2"></i>
+                    بازگشت
+                </a>
+            </div>
+
+            <!-- Security Notice -->
+            <div class="mt-8 bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-shield-alt text-3xl text-blue-600"></i>
+                    <div>
+                        <h4 class="font-bold text-blue-900 mb-2">امنیت پرداخت شما مهم است</h4>
+                        <p class="text-sm text-blue-800 leading-relaxed">
+                            تمامی پرداخت‌ها از طریق درگاه‌های معتبر و دارای نماد اعتماد الکترونیکی انجام می‌شود. 
+                            اطلاعات کارت بانکی شما به صورت رمزنگاری شده و کاملاً امن است.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+<script src="{% static '/js/payment_gateway.js' %}"></script>
 {% endblock %}

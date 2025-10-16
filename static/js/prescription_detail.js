@@ -627,38 +627,64 @@ async submitQuestion() {
 
 
 }
-
-
-
-// واترمارک محافظت شده با MutationObserver - نسخه بهبود یافته
+// نسخه بهبود یافته برای Alpine.js
 function createProtectedWatermark() {
+    let watermarkAdded = false;
+    
     function addWatermark() {
-        // حذف واترمارک قبلی اگر وجود داشت
-        const existing = document.getElementById('protected-watermark');
-        if (existing) return;
+        const targetSection = document.getElementById('prescription__section');
+        
+        // بررسی دقیق‌تر وضعیت نمایش سکشن
+        if (!targetSection) {
+            console.log('Section not found');
+            return;
+        }
+        
+        const style = getComputedStyle(targetSection);
+        if (style.display === 'none' || style.visibility === 'hidden' || targetSection.offsetHeight === 0) {
+            console.log('Section is hidden');
+            return;
+        }
+        
+        const existing = targetSection.querySelector('#protected-watermark');
+        if (existing) {
+            console.log('Watermark already exists');
+            return;
+        }
+        
+        console.log('Adding watermark...');
         
         const watermark = document.createElement('div');
         watermark.id = 'protected-watermark';
         watermark.style.cssText = `
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             pointer-events: none;
-            z-index:1;
+            z-index: 10;
             overflow: hidden;
         `;
         
-        // محاسبه تعداد ردیف و ستون بر اساس اندازه صفحه
+        // اطمینان از position: relative
+        const computedStyle = getComputedStyle(targetSection);
+        if (computedStyle.position === 'static') {
+            targetSection.style.position = 'relative';
+        }
+        
+        // محاسبه اندازه واقعی سکشن
+        const sectionRect = targetSection.getBoundingClientRect();
         const isMobile = window.innerWidth < 768;
-        const textWidth = isMobile ? 200 : 300;
-        const textHeight = isMobile ? 80 : 120;
         
-        const cols = Math.ceil(window.innerWidth / textWidth) + 2;
-        const rows = Math.ceil(window.innerHeight / textHeight) + 2;
+        // تعداد ثابت: 3 ردیف و 4 ستون
+        const cols = 4;
+        const rows = 3;
         
-        // ایجاد container برای متن‌ها
+        // محاسبه فاصله بین هر واترمارک
+        const colSpacing = sectionRect.width / (cols + 1);
+        const rowSpacing = sectionRect.height / (rows + 1);
+        
         const container = document.createElement('div');
         container.style.cssText = `
             position: relative;
@@ -666,19 +692,18 @@ function createProtectedWatermark() {
             height: 100%;
         `;
         
-        // اضافه کردن متن‌های واترمارک به صورت grid دستی
-        for (let row = 0; row < rows; row++) {
-            for (let col = 0; col < cols; col++) {
+        for (let row = 1; row <= rows; row++) {
+            for (let col = 1; col <= cols; col++) {
                 const text = document.createElement('div');
                 text.textContent = 'drcode-med.ir';
                 text.style.cssText = `
                     position: absolute;
-                    top: ${row * textHeight}px;
-                    left: ${col * textWidth}px;
-                    transform: rotate(-45deg);
-                    font-size: ${isMobile ? '20px' : '30px'};
+                    top: ${row * rowSpacing}px;
+                    left: ${col * colSpacing}px;
+                    transform: translate(-50%, -50%) rotate(-45deg);
+                    font-size: ${isMobile ? '34px' : '40px'};
                     font-weight: bold;
-                    color: rgba(0, 0, 0, 0.2);
+                    color: rgba(0, 0, 0, 0.15);
                     white-space: nowrap;
                     user-select: none;
                     font-family: Arial, sans-serif;
@@ -688,51 +713,111 @@ function createProtectedWatermark() {
         }
         
         watermark.appendChild(container);
-        document.body.appendChild(watermark);
+        targetSection.insertBefore(watermark, targetSection.firstChild);
+        watermarkAdded = true;
+        console.log('Watermark added successfully');
     }
     
-    // اضافه کردن واترمارک اولیه
-    addWatermark();
+    // تلاش مداوم برای اضافه کردن واترمارک
+    function keepTrying() {
+        const targetSection = document.getElementById('prescription__section');
+        if (targetSection) {
+            const style = getComputedStyle(targetSection);
+            if (style.display !== 'none' && style.visibility !== 'hidden' && targetSection.offsetHeight > 0) {
+                if (!targetSection.querySelector('#protected-watermark')) {
+                    addWatermark();
+                }
+            }
+        }
+    }
     
-    // محافظت در برابر حذف با MutationObserver
-    const observer = new MutationObserver(function(mutations) {
+    // تلاش‌های متعدد با فواصل زمانی مختلف
+    setTimeout(keepTrying, 100);
+    setTimeout(keepTrying, 300);
+    setTimeout(keepTrying, 500);
+    setTimeout(keepTrying, 800);
+    setTimeout(keepTrying, 1000);
+    setTimeout(keepTrying, 1500);
+    setTimeout(keepTrying, 2000);
+    
+    // رصد تغییرات DOM برای تشخیص زمان لود شدن سکشن
+    const bodyObserver = new MutationObserver(function(mutations) {
+        keepTrying();
+    });
+    
+    bodyObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['style', 'x-show', 'class']
+    });
+    
+    // محافظت در برابر حذف
+    const sectionObserver = new MutationObserver(function(mutations) {
         mutations.forEach(function(mutation) {
             mutation.removedNodes.forEach(function(node) {
                 if (node.id === 'protected-watermark') {
-                    addWatermark();
+                    console.log('Watermark removed, re-adding...');
+                    setTimeout(addWatermark, 50);
                 }
             });
         });
     });
     
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
+    // شروع observer برای سکشن با تلاش مداوم
+    let observerStarted = false;
+    const startSectionObserver = setInterval(function() {
+        const targetSection = document.getElementById('prescription__section');
+        if (targetSection && !observerStarted) {
+            sectionObserver.observe(targetSection, {
+                childList: true,
+                subtree: true
+            });
+            observerStarted = true;
+            keepTrying();
+            console.log('Section observer started');
+        }
+    }, 50);
     
-    // اضافه کردن دوباره هنگام تغییر اندازه
+    // توقف بعد از 5 ثانیه
+    setTimeout(function() {
+        clearInterval(startSectionObserver);
+    }, 5000);
+    
+    // مدیریت resize
     let resizeTimeout;
     window.addEventListener('resize', function() {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(function() {
-            const existing = document.getElementById('protected-watermark');
-            if (existing) {
-                existing.remove();
-            }
+            const targetSection = document.getElementById('prescription__section');
+            if (!targetSection) return;
+            
+            const existing = targetSection.querySelector('#protected-watermark');
+            if (existing) existing.remove();
             addWatermark();
-        }, 200);
+        }, 300);
     });
     
-    // محافظت اضافی: بازسازی واترمارک هر 5 ثانیه
+    // بررسی دوره‌ای هر 2 ثانیه
     setInterval(function() {
-        const existing = document.getElementById('protected-watermark');
-        if (!existing) {
-            addWatermark();
-        }
-    }, 5000);
+        keepTrying();
+    }, 2000);
+    
+    // رویداد Alpine.js (اگر در دسترس باشد)
+    document.addEventListener('alpine:initialized', function() {
+        console.log('Alpine initialized');
+        setTimeout(keepTrying, 200);
+        setTimeout(keepTrying, 500);
+    });
+    
+    // رویداد scroll (گاهی Alpine با scroll فعال می‌شود)
+    let scrollTimeout;
+    window.addEventListener('scroll', function() {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(keepTrying, 100);
+    }, { passive: true });
 }
 
-// اجرای بعد از بارگذاری کامل صفحه
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', createProtectedWatermark);
 } else {
