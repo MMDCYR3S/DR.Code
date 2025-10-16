@@ -28,70 +28,67 @@ function paymentVerifyApp() {
         
                 const urlParams = new URLSearchParams(window.location.search);
                 
-                // ✅ اگه gateway نبود، از Authority تشخیص بده
-                let gateway = urlParams.get('gateway');
+                // دریافت پارامترها
                 const authority = urlParams.get('Authority');
                 const status = urlParams.get('Status');
         
-                // ✅ اگه Authority داره و gateway نداره = حتماً زرین‌پاله
-                if (!gateway && authority) {
-                    gateway = 'zarinpal';
-                    console.log('✅ Gateway detected from Authority: zarinpal');
+                console.log('🔍 Payment verification started:', { authority, status });
+        
+                if (!authority) {
+                    throw new Error('کد Authority یافت نشد');
                 }
         
-                console.log('🔍 Payment verification started:', { gateway, authority, status });
-        
-                // Zarinpal
-                if (gateway === 'zarinpal') {
-                    if (!authority) {
-                        throw new Error('کد Authority یافت نشد');
-                    }
-        
-                    if (status === 'NOK') {
-                        this.success = false;
-                        this.errorMessage = 'پرداخت توسط کاربر لغو شد';
-                        this.loading = false;
-                        this.cleanup();
-                        return;
-                    }
-        
-                    // ✅ مستقیم با fetch
-                    const token = StorageManager.getAccessToken();
-                    const url = `http://127.0.0.1:8000/api/v1/payment/zarinpal/verify/?Authority=${authority}&Status=${status}`;
-                    
-                    console.log('🔗 Verify URL:', url);
-        
-                    const response = await fetch(url, {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        }
-                    });
-        
-                    console.log('📊 Response Status:', response.status);
-        
-                    const data = await response.json();
-                    console.log('📦 Response Data:', data);
-        
-                    if (!response.ok) {
-                        throw new Error(data.message || data.detail || 'خطا در تایید پرداخت');
-                    }
-        
-                    // ✅ موفقیت!
-                    this.success = true;
-                    this.paymentData = data;
-                    this.refId = data.ref_id || '';
-                    this.paymentDate = this.formatDate(new Date());
-        
-                    console.log('✅ Payment verified successfully!');
-        
-                    // به‌روزرسانی پروفایل
-                    await this.updateUserProfile();
-        
-                } else {
-                    throw new Error('درگاه پرداخت نامعتبر است');
+                if (status === 'NOK') {
+                    this.success = false;
+                    this.errorMessage = 'پرداخت توسط کاربر لغو شد';
+                    this.loading = false;
+                    this.cleanup();
+                    return;
                 }
+        
+                // ✅ ارسال درخواست POST با body
+                const token = StorageManager.getAccessToken();
+                
+                // ✅ استفاده از URL نسبی (بدون localhost)
+                const url = '/api/v1/payment/zarinpal/verify/';
+                
+                console.log('🔗 Verify URL:', url);
+        
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    // ✅ ارسال داده‌ها در body
+                    body: JSON.stringify({
+                        authority: authority,
+                        status: status
+                    })
+                });
+        
+                console.log('📊 Response Status:', response.status);
+        
+                const data = await response.json();
+                console.log('📦 Response Data:', data);
+        
+                if (!response.ok) {
+                    throw new Error(data.error || data.message || data.detail || 'خطا در تایید پرداخت');
+                }
+        
+                // ✅ موفقیت!
+                this.success = true;
+                this.paymentData = data;
+                this.refId = data.ref_id || '';
+                this.paymentDate = this.formatDate(new Date());
+        
+                console.log('✅ Payment verified successfully!');
+        
+                // نمایش confetti
+                this.showConfetti();
+        
+                // به‌روزرسانی پروفایل
+                await this.updateUserProfile();
         
             } catch (error) {
                 console.error('❌ Payment verification error:', error);
@@ -101,10 +98,7 @@ function paymentVerifyApp() {
                 this.loading = false;
                 this.cleanup();
             }
-        }
-        
-        ,
-        
+        },
 
         async updateUserProfile() {
             try {
@@ -113,12 +107,13 @@ function paymentVerifyApp() {
                 // فراخوانی API پروفایل برای بروزرسانی نقش کاربر
                 const profile = await API.profile.getProfile();
                 
-                // ذخیره اطلاعات جدید با استفاده از متد موجود
+                // ذخیره اطلاعات جدید
                 const currentData = StorageManager.getUserData();
                 StorageManager.saveUserData({
                     ...currentData,
                     role: profile.role,
-                    subscription_status: profile.subscription_status
+                    subscription_status: profile.subscription_status,
+                    subscription_end_date: profile.subscription_end_date
                 });
                 
                 console.log('✅ Profile updated successfully');
@@ -129,7 +124,7 @@ function paymentVerifyApp() {
         },
 
         cleanup() {
-            // پاکسازی localStorage با استفاده مستقیم از localStorage
+            // پاکسازی localStorage
             localStorage.removeItem('drcode_pending_order');
             localStorage.removeItem('drcode_payment_gateway');
             console.log('🧹 Cleanup completed');
@@ -139,7 +134,6 @@ function paymentVerifyApp() {
             if (!this.refId) return;
 
             navigator.clipboard.writeText(this.refId).then(() => {
-                // نمایش پیام موفقیت
                 Swal.fire({
                     icon: 'success',
                     title: 'کپی شد!',
@@ -168,16 +162,13 @@ function paymentVerifyApp() {
         },
 
         showConfetti() {
-            // بررسی وجود کتابخانه confetti
             if (typeof confetti === 'undefined') {
                 console.warn('Confetti library not loaded');
                 return;
             }
 
-            // انیمیشن کانفتی
             const duration = 3000;
             const end = Date.now() + duration;
-
             const colors = ['#0077b6', '#00b4d8', '#90e0ef'];
 
             (function frame() {

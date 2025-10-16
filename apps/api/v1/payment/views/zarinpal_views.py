@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView
 from rest_framework.response import Response
@@ -10,6 +12,7 @@ from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth import get_user_model
+from django.db import transaction
 
 User = get_user_model()
 
@@ -106,18 +109,21 @@ class PaymentCreateView(CreateAPIView):
         else:
             ip = request.META.get('REMOTE_ADDR')
         return ip
-    
+
 # ====== Payment Verify View ====== #
 class PaymentVerifyView(APIView):
     """
     تایید پرداخت از زرین‌پال (Callback)
     """
     
-    permission_classes = []
+    permission_classes = [IsAuthenticated]
     
-    def get(self, request):
-        authority = request.GET.get('Authority')
-        status_param = request.GET.get('Status')
+    def post(self, request):
+        """
+        دریافت داده‌ها از body و تایید پرداخت
+        """
+        authority = request.data.get('authority')
+        status_param = request.data.get('status')
         
         if not authority:
             return Response({
@@ -128,13 +134,31 @@ class PaymentVerifyView(APIView):
         try:
             payment = get_object_or_404(Payment, authority=authority)
             
+            # بررسی مالکیت
+            if payment.user != request.user:
+                return Response({
+                    'success': False,
+                    'error': 'دسترسی غیرمجاز'
+                }, status=status.HTTP_403_FORBIDDEN)
+            
+            # جلوگیری از تایید مکرر
+            if payment.status == PaymentStatus.COMPLETED:
+                return Response({
+                    'success': True,
+                    'message': 'این پرداخت قبلاً تایید شده است',
+                    'payment_id': payment.id,
+                    'ref_id': payment.ref_id
+                }, status=status.HTTP_200_OK)
+            
+            # بررسی لغو شدن
             if status_param != 'OK':
-                # کاربر پرداخت را لغو کرده
-                payment.status = PaymentStatus.CANCELLED
-                payment.save()
-                
-                payment.subscription.status = SubscriptionStatusChoicesModel.canceled
-                payment.subscription.save()
+                with transaction.atomic():
+                    payment.status = PaymentStatus.CANCELLED
+                    payment.save()
+                    
+                    if payment.subscription:
+                        payment.subscription.status = SubscriptionStatusChoicesModel.canceled
+                        payment.subscription.save()
                 
                 return Response({
                     'success': False,
@@ -146,41 +170,41 @@ class PaymentVerifyView(APIView):
             zarinpal = ZarinpalService()
             verify_result = zarinpal.verify_payment(
                 authority=authority,
-                amount=payment.final_amount
+                amount=int(payment.final_amount)
             )
             
             if verify_result['success']:
-                # پرداخت موفق
-                payment.status = PaymentStatus.COMPLETED
-                payment.ref_id = verify_result['ref_id']
-                payment.paid_at = timezone.now()
-                payment.save()
-                
-                # فعال‌سازی اشتراک
-                if payment.subscription:
-                    sub=  payment.subscription
-                    sub.status = SubscriptionStatusChoicesModel.active.value
-                    sub.start_date = timezone.now()
-                    sub.end_date = timezone.now() + timezone.timedelta(days=sub.plan.duration_days)
-                    sub.save()
+                with transaction.atomic():
+                    # پرداخت موفق
+                    payment.status = PaymentStatus.COMPLETED
+                    payment.ref_id = verify_result['ref_id']
+                    payment.paid_at = timezone.now()
+                    payment.save()
                     
-                    profile = sub.user.profile
-                    profile.role = 'premium'
-                    profile.subscription_end_date = sub.end_date
-                    profile.save()
-                    
-                    cache_key = f"purchase_summary:{payment.user.id}:{payment.subscription.plan.id}"
-                    
-                    purchase_data = cache.get(cache_key)
-                    if purchase_data and purchase_data.get('referral_code'):
-                        referral_code = purchase_data.get('referral_code')
-                        try:
-                            referrer_user = User.objects.get(profile__referral_code=referral_code)
-                            profile = payment.user.profile
-                            profile.referred_by = referrer_user
-                            profile.save()
-                        except User.DoesNotExist:
-                            pass
+                    # ✅ فعال‌سازی یا تمدید اشتراک
+                    if payment.subscription:
+                        sub = payment.subscription
+                        
+                        # 🔍 بررسی اشتراک فعال قبلی
+                        active_subscription = self._get_active_subscription(request.user)
+                        
+                        if active_subscription and active_subscription.id != sub.id:
+                            # ✅ کاربر اشتراک فعال دیگری دارد - تمدید می‌کنیم
+                            self._extend_subscription(
+                                active_subscription=active_subscription,
+                                new_subscription=sub,
+                                payment=payment
+                            )
+                        else:
+                            # ✅ اولین اشتراک یا فعال‌سازی همین اشتراک
+                            self._activate_subscription(sub)
+                        
+                        # به‌روزرسانی پروفایل
+                        self._update_user_profile(
+                            user=request.user,
+                            subscription=active_subscription or sub,
+                            payment=payment
+                        )
                                     
                 return Response({
                     'success': True,
@@ -189,17 +213,17 @@ class PaymentVerifyView(APIView):
                     'ref_id': verify_result['ref_id']
                 }, status=status.HTTP_200_OK)
             else:
-                # پرداخت ناموفق
-                payment.status = PaymentStatus.FAILED
-                payment.save()
-                
-                if payment.subscription:
-                    payment.subscription.status = SubscriptionStatusChoicesModel.canceled
-                    payment.subscription.save()
+                with transaction.atomic():
+                    payment.status = PaymentStatus.FAILED
+                    payment.save()
+                    
+                    if payment.subscription:
+                        payment.subscription.status = SubscriptionStatusChoicesModel.canceled
+                        payment.subscription.save()
                 
                 return Response({
                     'success': False,
-                    'error': verify_result['error'],
+                    'error': verify_result.get('error', 'خطای نامشخص در تایید پرداخت'),
                     'payment_id': payment.id
                 }, status=status.HTTP_400_BAD_REQUEST)
                 
@@ -208,4 +232,93 @@ class PaymentVerifyView(APIView):
                 'success': False,
                 'error': f'خطا در تایید پرداخت: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
+    
+    # ====== Helper Methods ====== #
+    
+    def _get_active_subscription(self, user):
+        """
+        پیدا کردن اشتراک فعال کاربر
+        """
+        now = timezone.now()
+        
+        # اشتراکی که فعال است و تاریخ انقضایش نگذشته
+        return Subscription.objects.filter(
+            user=user,
+            status=SubscriptionStatusChoicesModel.active,
+            end_date__gt=now  # تاریخ انقضا در آینده است
+        ).order_by('-end_date').first()
+    
+    def _extend_subscription(self, active_subscription, new_subscription, payment):
+        """
+        تمدید اشتراک فعال با اضافه کردن زمان اشتراک جدید
+        
+        Args:
+            active_subscription: اشتراک فعلی فعال
+            new_subscription: اشتراک جدید خریداری شده
+            payment: پرداخت جدید
+        """
+        # محاسبه روزهای جدید
+        additional_days = new_subscription.plan.duration_days
+        
+        # اضافه کردن به تاریخ انقضای فعلی
+        active_subscription.end_date = active_subscription.end_date + timedelta(days=additional_days)
+        active_subscription.save()
+        
+        # ✅ اشتراک جدید را به عنوان "merged" علامت‌گذاری می‌کنیم
+        new_subscription.status = SubscriptionStatusChoicesModel.expired  # یا یک status جدید مثل MERGED
+        new_subscription.start_date = timezone.now()
+        new_subscription.end_date = active_subscription.end_date  # همان تاریخ نهایی
+        new_subscription.save()
+        
+        # ثبت log
+        print(f"✅ Subscription extended: User {active_subscription.user.id} | "
+              f"Added {additional_days} days | New end date: {active_subscription.end_date}")
+    
+    def _activate_subscription(self, subscription):
+        """
+        فعال‌سازی اشتراک جدید
+        
+        Args:
+            subscription: اشتراک جدید
+        """
+        now = timezone.now()
+        
+        subscription.status = SubscriptionStatusChoicesModel.active
+        subscription.start_date = now
+        subscription.end_date = now + timedelta(days=subscription.plan.duration_days)
+        subscription.save()
+        
+        print(f"✅ Subscription activated: User {subscription.user.id} | "
+              f"End date: {subscription.end_date}")
+    
+    def _update_user_profile(self, user, subscription, payment):
+        """
+        به‌روزرسانی پروفایل کاربر
+        
+        Args:
+            user: کاربر
+            subscription: اشتراک فعال
+            payment: پرداخت
+        """
+        profile = user.profile
+        profile.role = 'premium'
+        profile.subscription_end_date = subscription.end_date
+        
+        # بررسی کد معرف از کش
+        ref_cache_key = f"payment_referral:{payment.id}"
+        referral_code = cache.get(ref_cache_key)
+        
+        if referral_code and not profile.referred_by:  # فقط اگر قبلاً معرف نداشته
+            try:
+                referrer_user = User.objects.get(profile__referral_code=referral_code)
+                profile.referred_by = referrer_user
+                cache.delete(ref_cache_key)
+                
+                print(f"✅ Referral applied: User {user.id} referred by {referrer_user.id}")
+            except User.DoesNotExist:
+                pass
+        
+        profile.save()
+        
+        print(f"✅ Profile updated: User {user.id} | Role: {profile.role} | "
+              f"End date: {profile.subscription_end_date}")
