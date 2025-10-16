@@ -179,45 +179,40 @@ document.addEventListener('alpine:init', () => {
         async proceedToPayment() {
             try {
                 this.submitting = true;
-                console.log('💳 Proceeding to payment...');
-
-                const response = await API.orders.createOrder(this.planId, {
+                console.log('🛒 Preparing order data...');
+        
+                // آماده‌سازی اطلاعات سفارش برای صفحه بعد
+                const orderData = {
+                    plan_id: this.planId,
+                    plan_name: this.planData?.plan_info?.name,
+                    formatted_price: this.planData?.pricing_info?.formatted_final_price,
                     discount_code: this.discountCode || '',
-                    referral_code: this.referralCode || ''
-                });
-
-                if (response.success) {
-                    console.log('✅ Order created successfully');
-                    
-                    // اگر URL پرداخت داشتیم، کاربر رو redirect می‌کنیم
-                    if (response.data?.payment_url) {
-                        window.location.href = response.data.payment_url;
-                    } else {
-                        // فعلاً فقط پیام موفقیت
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'سفارش ثبت شد',
-                            text: 'سفارش شما با موفقیت ثبت شد. در حال انتقال به درگاه پرداخت...',
-                            confirmButtonText: 'باشه',
-                            confirmButtonColor: '#0077b6'
-                        });
-                    }
-                } else {
-                    throw new Error(response.message || 'خطا در ثبت سفارش');
-                }
-
+                    referral_code: this.referralCode || '',
+                    has_discount: this.planData?.discount_info?.is_discounted || false,
+                    discount_amount: this.planData?.pricing_info?.formatted_savings || ''
+                };
+        
+                // ذخیره در localStorage
+                localStorage.setItem('drcode_pending_order', JSON.stringify(orderData));
+                
+                console.log('✅ Order data saved:', orderData);
+        
+                // انتقال به صفحه انتخاب درگاه
+                window.location.href = '/payment/request/';
+        
             } catch (error) {
-                console.error('❌ Error creating order:', error);
+                console.error('❌ Error preparing order:', error);
                 Swal.fire({
                     icon: 'error',
-                    title: 'خطا در ثبت سفارش',
-                    text: error.message || 'لطفاً دوباره تلاش کنید',
+                    title: 'خطا',
+                    text: 'خطا در آماده‌سازی سفارش. لطفاً دوباره تلاش کنید',
                     confirmButtonText: 'باشه'
                 });
             } finally {
                 this.submitting = false;
             }
-        },
+        }
+        ,
 
         showError(message) {
             Swal.fire({

@@ -743,3 +743,123 @@ async function testTutorialsAPI() {
 
 // برای تست در Console:
 // testTutorialsAPI();
+
+
+// Payment APIs
+API.payment = {
+    // ایجاد پرداخت با زرین‌پال
+    async createZarinpalPayment(paymentData) {
+        try {
+            const response = await fetch(`${API.BASE_URL}api/v1/payment/zarinpal/create/`, {
+                method: 'POST',
+                headers: API.getHeaders(true),
+                body: JSON.stringify(paymentData)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'خطا در ایجاد درخواست پرداخت');
+            }
+
+            return {
+                success: data.success || true,
+                payment_id: data.payment_id,
+                payment_url: data.payment_url,
+                message: data.message
+            };
+        } catch (error) {
+            console.error('ZarinPal payment error:', error);
+            return {
+                success: false,
+                message: error.message
+            };
+        }
+    },
+
+    // ایجاد پرداخت با پارس پال
+    async createParspalPayment(paymentData) {
+        try {
+            const response = await fetch(`${API.BASE_URL}api/v1/payment/parspal/request/`, {
+                method: 'POST',
+                headers: API.getHeaders(true),
+                body: JSON.stringify(paymentData)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'خطا در ایجاد درخواست پرداخت');
+            }
+
+            return {
+                success: data.success || true,
+                payment_id: data.payment_id,
+                payment_url: data.payment_url,
+                message: data.message
+            };
+        } catch (error) {
+            console.error('ParsPal payment error:', error);
+            return {
+                success: false,
+                message: error.message
+            };
+        }
+    },
+
+    // تایید پرداخت زرین‌پال (برای صفحه callback)
+    async verifyZarinpalPayment(authority) {
+        try {
+            const response = await fetch(`${API.BASE_URL}api/v1/payment/zarinpal/verify/`, {
+                method: 'POST',
+                headers: API.getHeaders(true),
+                body: JSON.stringify({ authority })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'خطا در تایید پرداخت');
+            }
+
+            return {
+                success: true,
+                data: data
+            };
+        } catch (error) {
+            console.error('ZarinPal verify error:', error);
+            return {
+                success: false,
+                message: error.message
+            };
+        }
+    },
+
+    // تایید پرداخت پارس پال (برای صفحه callback)
+    async verifyParspalPayment(token) {
+        try {
+            const response = await fetch(`${API.BASE_URL}api/v1/payment/parspal/verify/`, {
+                method: 'POST',
+                headers: API.getHeaders(true),
+                body: JSON.stringify({ token })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'خطا در تایید پرداخت');
+            }
+
+            return {
+                success: true,
+                data: data
+            };
+        } catch (error) {
+            console.error('ParsPal verify error:', error);
+            return {
+                success: false,
+                message: error.message
+            };
+        }
+    }
+};
