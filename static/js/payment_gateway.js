@@ -123,6 +123,8 @@ document.addEventListener('alpine:init', () => {
                 if (response.success) {
                     console.log('✅ Payment created:', response);
                     
+
+
                     // ذخیره payment_id در localStorage
                     localStorage.setItem('drcode_payment_id', response.payment_id);
                     
