@@ -11,6 +11,7 @@ from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.views import APIView
+from rest_framework.generics import CreateAPIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
@@ -65,14 +66,15 @@ def prepare_cached_payment_data(cached_data, plan_id, user):
 
 
 # ======= PARSPAL PAYMENT REQUEST VIEW ======= #
-class ParspalPaymentRequestView(APIView):
+class ParspalPaymentRequestView(CreateAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = PaymentCreateSerializer
 
     def post(self, request):
-        serializer = PaymentCreateSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        
         plan_id = serializer.validated_data['plan_id']
-
         plan = get_object_or_404(Plan, id=plan_id)
 
         cache_key = f"purchase_summary:{request.user.id}:{plan_id}"

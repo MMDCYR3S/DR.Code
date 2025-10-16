@@ -1,4 +1,5 @@
 from rest_framework.views import APIView
+from rest_framework.generics import CreateAPIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -18,16 +19,17 @@ from ..serializers import PaymentCreateSerializer, PaymentSerializer
 from apps.subscriptions.models import Subscription, SubscriptionStatusChoicesModel, Plan
 
 # ====== Payment Create View ====== #
-class PaymentCreateView(APIView):
+class PaymentCreateView(CreateAPIView):
     """
     ایجاد درخواست پرداخت نهایی بر اساس اطلاعات خلاصه خرید.
     """
     permission_classes = [IsAuthenticated]
+    serializer_class = PaymentCreateSerializer
     
     def post(self, request):
-        serializer = PaymentCreateSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-            
+
         plan_id = serializer.validated_data['plan_id']
         
         # === تغییر کلیدی: خواندن اطلاعات از کش === #
@@ -42,8 +44,6 @@ class PaymentCreateView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         plan = get_object_or_404(Plan, id=plan_id)
-
-        # مقادیر را از داده‌های کش‌شده و اعتبارسنجی شده می‌خوانیم
         amount = purchase_data['original_price']
         discount_amount = purchase_data['discount_amount']
         final_amount = purchase_data['final_price']
