@@ -179,9 +179,24 @@ document.addEventListener('alpine:init', () => {
         async proceedToPayment() {
             try {
                 this.submitting = true;
-                console.log('🛒 Preparing order data...');
-        
-                // آماده‌سازی اطلاعات سفارش برای صفحه بعد
+                console.log('🛒 Creating order...');
+
+                // آماده‌سازی داده‌های کد تخفیف و ارجاع
+                const codes = {
+                    discount_code: this.discountCode || '',
+                    referral_code: this.referralCode || ''
+                };
+
+                // فراخوانی API برای ایجاد سفارش
+                const result = await API.orders.createOrder(this.planId, codes);
+
+                if (!result.success) {
+                    throw new Error(result.message || 'خطا در ثبت سفارش');
+                }
+
+                console.log('✅ Order created successfully:', result.data);
+
+                // ذخیره اطلاعات سفارش برای استفاده در صفحه پرداخت
                 const orderData = {
                     plan_id: this.planId,
                     plan_name: this.planData?.plan_info?.name,
@@ -189,30 +204,29 @@ document.addEventListener('alpine:init', () => {
                     discount_code: this.discountCode || '',
                     referral_code: this.referralCode || '',
                     has_discount: this.planData?.discount_info?.is_discounted || false,
-                    discount_amount: this.planData?.pricing_info?.formatted_savings || ''
+                    discount_amount: this.planData?.pricing_info?.formatted_savings || '',
+                    order_id: result.data?.id || null, // اضافه: شناسه سفارش از سرور
                 };
-        
-                // ذخیره در localStorage
+
                 localStorage.setItem('drcode_pending_order', JSON.stringify(orderData));
-                
-                console.log('✅ Order data saved:', orderData);
-        
-                // انتقال به صفحه انتخاب درگاه
+
+                console.log('✅ Order data saved to localStorage:', orderData);
+
+                // هدایت به صفحه پرداخت
                 window.location.href = '/payment/request/';
-        
+
             } catch (error) {
                 console.error('❌ Error preparing order:', error);
                 Swal.fire({
                     icon: 'error',
                     title: 'خطا',
-                    text: 'خطا در آماده‌سازی سفارش. لطفاً دوباره تلاش کنید',
+                    text: error.message || 'خطا در آماده‌سازی سفارش. لطفاً دوباره تلاش کنید',
                     confirmButtonText: 'باشه'
                 });
             } finally {
                 this.submitting = false;
             }
-        }
-        ,
+        },
 
         showError(message) {
             Swal.fire({

@@ -9,6 +9,13 @@ DATABASES = {
     }
 }
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-dev-cache',
+    }
+}
+
 # ========= ZarinPal Sandbox Settings ========= #
 ZARINPAL_CONFIG = {
     'MERCHANT_ID': env("ZARINPAL_MERCHANT_ID", default="faeddedf-558c-4cd6-9f18-63d0c6088477"),
