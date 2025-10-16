@@ -23,7 +23,7 @@ ZARINPAL_CONFIG = {
     'REQUEST_URL': 'https://sandbox.zarinpal.com/pg/v4/payment/request.json',
     'START_PAY_URL': 'https://sandbox.zarinpal.com/pg/StartPay/',
     'VERIFY_URL': 'https://sandbox.zarinpal.com/pg/v4/payment/verify.json',
-    'CALLBACK_URL': env("ZARINPAL_CALLBACK_URL", default='http://localhost:8000/payment/status/'),
+    'CALLBACK_URL': 'http://localhost:8000/payment/status/',
 }
 
 

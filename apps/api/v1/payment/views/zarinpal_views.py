@@ -69,7 +69,7 @@ class PaymentCreateView(CreateAPIView):
         
         zarinpal = ZarinpalService()
         callback_url = request.build_absolute_uri(
-            reverse('api:v1:payments:verify')
+            reverse('payment:payment-callback')
         )
         
         result = zarinpal.create_payment_request(

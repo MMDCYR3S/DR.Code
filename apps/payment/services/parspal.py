@@ -55,6 +55,7 @@ class ParspalService:
             "amount": amount,
             "return_url": return_url or self.callback_url,
             "order_id": str(uuid.uuid4()),
+            "currency": "IRT",
         }
         
         try:

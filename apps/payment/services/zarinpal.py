@@ -42,7 +42,7 @@ class ZarinpalService:
             "amount": int(amount),  # زرین‌پال مبلغ را به صورت integer می‌پذیرد
             "description": description,
             "callback_url": callback_url,
-            "currency": "IRR"
+            "currency": "IRT"
         }
         if metadata:
             request_data["metadata"] = metadata

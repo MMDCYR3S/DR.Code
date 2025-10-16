@@ -26,7 +26,7 @@ env = environ.Env(
 
 # Take environment variables from .env file
 # Use different .env files based on the environment
-env_file = os.path.join(BASE_DIR, 'env\\.env.prod')  # Default to development
+env_file = os.path.join(BASE_DIR, 'env\\.env.dev')  # Default to development
 environ.Env.read_env(env_file)
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -393,6 +393,6 @@ LOGGING = {
 # ========= Parspal Settings ========= #
 PARSPAL_CONFIG = {
     'API_KEY': env('PARSPAL_API_KEY', default='00000000aaaabbbbcccc000000000000'),
-    'CALLBACK_URL': env('PARSPAL_CALLBACK_URL', default='localhost:8000/payment/status/'),
+    'CALLBACK_URL': env('PARSPAL_CALLBACK_URL', default='http://localhost:8000/payment/status/'),
     'SANDBOX': env.bool('PARSPAL_SANDBOX', default=True),
 }
