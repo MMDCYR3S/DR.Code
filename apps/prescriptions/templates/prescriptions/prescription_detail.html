@@ -5,6 +5,23 @@
 
 {% block content %}
 <style>
+/* استایل برای جلوگیری از چاپ */
+@media print {
+    body {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    
+    body::before {
+        content: "چاپ این محتوا مجاز نیست";
+        display: block;
+        text-align: center;
+        font-size: 24px;
+        padding: 50px;
+    }
+}
+
+
     /* 🔒 Security: جلوگیری از کپی و انتخاب متن */
     * {
         user-select: none !important;
@@ -349,7 +366,7 @@
 <div x-data="prescriptionDetailApp()" x-init="init()" class="min-h-screen pt-16 bg-gray-50">
 
     <!-- 🔐 Watermark -->
-    <div class="watermark" :data-text="watermarkText"></div>
+    <!-- <div class="watermark" :data-text="watermarkText"></div> -->
 
     <!-- ⏳ Loading State -->
     <div x-show="loading" class="max-w-7xl mx-auto px-4 py-12">

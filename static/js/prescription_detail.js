@@ -406,12 +406,6 @@ initGallery() {
                 }
             });
 
-            setInterval(() => {
-                const watermark = document.querySelector('.watermark');
-                if (!watermark || watermark.style.display === 'none' || watermark.style.opacity === '0') {
-                    document.body.innerHTML = '<div style="text-align:center;margin-top:100px;"><h1>⚠️ دسترسی غیرمجاز شناسایی شد</h1><p>لطفاً صفحه را بازخوانی کنید</p></div>';
-                }
-            }, 2000);
         },
         // در داخل return object، این متد رو اضافه کن یا جایگزین کن:
 
@@ -636,3 +630,111 @@ async submitQuestion() {
 
 
 
+// واترمارک محافظت شده با MutationObserver - نسخه بهبود یافته
+function createProtectedWatermark() {
+    function addWatermark() {
+        // حذف واترمارک قبلی اگر وجود داشت
+        const existing = document.getElementById('protected-watermark');
+        if (existing) return;
+        
+        const watermark = document.createElement('div');
+        watermark.id = 'protected-watermark';
+        watermark.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999999;
+            overflow: hidden;
+        `;
+        
+        // محاسبه تعداد ردیف و ستون بر اساس اندازه صفحه
+        const isMobile = window.innerWidth < 768;
+        const textWidth = isMobile ? 200 : 300;
+        const textHeight = isMobile ? 80 : 120;
+        
+        const cols = Math.ceil(window.innerWidth / textWidth) + 2;
+        const rows = Math.ceil(window.innerHeight / textHeight) + 2;
+        
+        // ایجاد container برای متن‌ها
+        const container = document.createElement('div');
+        container.style.cssText = `
+            position: relative;
+            width: 100%;
+            height: 100%;
+        `;
+        
+        // اضافه کردن متن‌های واترمارک به صورت grid دستی
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const text = document.createElement('div');
+                text.textContent = 'drcode-med.ir';
+                text.style.cssText = `
+                    position: absolute;
+                    top: ${row * textHeight}px;
+                    left: ${col * textWidth}px;
+                    transform: rotate(-45deg);
+                    font-size: ${isMobile ? '20px' : '30px'};
+                    font-weight: bold;
+                    color: rgba(0, 0, 0, 0.2);
+                    white-space: nowrap;
+                    user-select: none;
+                    font-family: Arial, sans-serif;
+                `;
+                container.appendChild(text);
+            }
+        }
+        
+        watermark.appendChild(container);
+        document.body.appendChild(watermark);
+    }
+    
+    // اضافه کردن واترمارک اولیه
+    addWatermark();
+    
+    // محافظت در برابر حذف با MutationObserver
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            mutation.removedNodes.forEach(function(node) {
+                if (node.id === 'protected-watermark') {
+                    addWatermark();
+                }
+            });
+        });
+    });
+    
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+    
+    // اضافه کردن دوباره هنگام تغییر اندازه
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            const existing = document.getElementById('protected-watermark');
+            if (existing) {
+                existing.remove();
+            }
+            addWatermark();
+        }, 200);
+    });
+    
+    // محافظت اضافی: بازسازی واترمارک هر 5 ثانیه
+    setInterval(function() {
+        const existing = document.getElementById('protected-watermark');
+        if (!existing) {
+            addWatermark();
+        }
+    }, 5000);
+}
+
+// اجرای بعد از بارگذاری کامل صفحه
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', createProtectedWatermark);
+} else {
+    createProtectedWatermark();
+}
