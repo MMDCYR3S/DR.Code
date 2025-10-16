@@ -392,7 +392,7 @@ LOGGING = {
 
 # ========= Parspal Settings ========= #
 PARSPAL_CONFIG = {
-    'API_KEY': env('PARSPAL_API_KEY', default=''),
-    'CALLBACK_URL': env('PARSPAL_CALLBACK_URL'),
-    'SANDBOX': env.bool('PARSPAL_SANDBOX'),
+    'API_KEY': env('PARSPAL_API_KEY', default='00000000aaaabbbbcccc000000000000'),
+    'CALLBACK_URL': env('PARSPAL_CALLBACK_URL', default='localhost:8000/payment/status/'),
+    'SANDBOX': env.bool('PARSPAL_SANDBOX', default=True),
 }
