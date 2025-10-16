@@ -273,10 +273,9 @@ class LoginStatusView(BaseAPIView):
                         'id': user.id,
                         'full_name': user.full_name,
                         'phone_number': user.phone_number,
-                        'is_active': user.is_active,
+                        'active_jti': user.active_jti,
                         'last_login': user.last_login,
                         'last_login_ip': user.last_login_ip,
-                        'current_session_active': bool(user.current_session_key),
                     },
                     'profile': {
                         'auth_status': profile.auth_status,
@@ -285,13 +284,6 @@ class LoginStatusView(BaseAPIView):
                             profile.subscription_end_date and 
                             profile.subscription_end_date > timezone.now()
                         ),
-                    },
-                    'session_info': {
-                        'current_ip': self.get_client_ip(request),
-                        'current_device': self.get_user_agent(request),
-                        'session_matches': (
-                            user.current_session_key == request.session.session_key
-                        )
                     }
                 }
             }, status=status.HTTP_200_OK)

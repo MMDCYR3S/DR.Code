@@ -78,7 +78,7 @@ class LoginSerializer(serializers.Serializer):
         """دریافت کاربر احراز هویت شده"""
         return self.user
 
-
+# ======== Refresh Token Serializer ======== #
 class RefreshTokenSerializer(serializers.Serializer):
     """
     Serializer برای refresh token
