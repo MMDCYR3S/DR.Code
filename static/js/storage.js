@@ -7,6 +7,7 @@ const StorageManager = {
         REFRESH_TOKEN: 'drcode_refresh_token',
         USER_DATA: 'drcode_user_data',
         USER_PROFILE: 'drcode_user_profile',
+        USER_JTI: 'drcode_user_jti',
     },
 
     saveTokens(tokens) {
@@ -16,6 +17,9 @@ const StorageManager = {
         }
         if (tokens.refresh_token || tokens.refresh) {
             localStorage.setItem(this.KEYS.REFRESH_TOKEN, tokens.refresh_token || tokens.refresh);
+        }
+        if (tokens.jti || tokens.active_jti) {
+            localStorage.setItem(this.KEYS.USER_JTI, tokens.jti || tokens.active_jti);
         }
     },
 
