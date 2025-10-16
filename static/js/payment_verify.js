@@ -81,6 +81,8 @@ function paymentVerifyApp() {
                     // ✅ موفقیت!
                     this.success = true;
                     this.paymentData = data;
+                    this.refId = data.ref_id || '';
+                    this.paymentDate = this.formatDate(new Date());
         
                     console.log('✅ Payment verified successfully!');
         
@@ -209,7 +211,7 @@ function paymentVerifyApp() {
         },
 
         goToPlans() {
-            window.location.href = '/plans';
+            window.location.href = '/plan';
         },
 
         goToHome() {

@@ -79,7 +79,7 @@ document.addEventListener('alpine:init', () => {
                     confirmButtonText: 'باشه',
                     confirmButtonColor: '#0077b6'
                 }).then(() => {
-                    window.location.href = '/plans';
+                    window.location.href = '/plan/';
                 });
             }
         },
