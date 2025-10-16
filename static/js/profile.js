@@ -88,7 +88,8 @@ const profileApp = {
             const formData = {
                 first_name: document.getElementById('edit-first-name').value,
                 last_name: document.getElementById('edit-last-name').value,
-                email: document.getElementById('edit-email').value
+                email: document.getElementById('edit-email').value,
+                phone_number: document.getElementById('phone__number').value
             };
 
             const response = await API.profile.updateProfile(formData);
