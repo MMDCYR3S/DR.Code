@@ -26,8 +26,8 @@ class PrescriptionDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Prescription
         fields = [
-            'id', 'title', 'all_names',
-            'description',
+            'id', 'title', 'slug',
+            'all_names', 'description',
             'category', 'prescription_drugs',
             'images', 'videos', 'access_level',
             'primary_name', "description_url",
