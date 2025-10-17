@@ -50,8 +50,8 @@ def prepare_cached_payment_data(cached_data, plan_id, user):
     order_id = generate_order_id(plan_id, user.id)
 
     return {
-        "amount": 10000,
-        "currency": "IRR",
+        "amount": final_price,
+        "currency": "IRT",
         "return_url": PARSPAL_CALLBACK_URL,
         "reserve_id": str(uuid.uuid4()),
         "order_id": order_id,

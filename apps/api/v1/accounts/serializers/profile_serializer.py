@@ -49,6 +49,11 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
         allow_blank=True,
         help_text="ایمیل"
     )
+    phone_number = serializers.CharField(
+        max_length=11,
+        required=False,
+        help_text="شماره تلفن همراه"
+    )
     profile_image = serializers.ImageField(
         required=False,
         help_text="عکس پروفایل"
@@ -56,7 +61,7 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'profile_image']
+        fields = ['first_name', 'last_name', 'email', 'phone_number','profile_image']
 
     def validate_first_name(self, value):
         """اعتبارسنجی نام"""
@@ -128,7 +133,7 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         """بروزرسانی اطلاعات کاربر"""
         # فیلدهای مربوط به User model
-        user_fields = ['first_name', 'last_name', 'email']
+        user_fields = ['first_name', 'last_name', 'email', 'phone_number']
         profile_fields = ['profile_image']
         
         updated_fields = []
