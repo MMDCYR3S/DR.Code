@@ -619,7 +619,7 @@ async function testSavedPrescriptionsAPI() {
 async function testPrescriptionDetailAPI() {
     console.log('🧪 Testing Prescription Detail APIs...\n');
 
-    const testSlug = 'tst-tst'; // از JSON شما
+    const testSlug = 'drmn-khtll-dwqtby'; // از JSON شما
 
 
     try {
@@ -663,7 +663,7 @@ async function testPrescriptionDetailAPI() {
 
 // برای تست در کنسول
 //  test function
-// testPrescriptionDetailAPI();
+testPrescriptionDetailAPI();
 
 // Authentication API
 API.authentication = {

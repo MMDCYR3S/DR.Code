@@ -176,7 +176,7 @@ initGallery() {
                     `/accounts/profile/prescription/save/${this.prescription.slug}/`,
                     {} // بدنه خالی
                 );
-                
+                alert(this.prescription.slug)
                 console.log('✅ Save response:', response);
                 
                 // بررسی پاسخ
@@ -407,7 +407,55 @@ initGallery() {
             });
 
         },
+
         // در داخل return object، این متد رو اضافه کن یا جایگزین کن:
+
+        // در فایل prescription_detail.js - اضافه کردن این متد به return object
+
+groupDrugsByGroupNumber() {
+    if (!this.prescription?.prescription_drugs) return {};
+    
+    const groups = {};
+    const ungrouped = [];
+    
+    this.prescription.prescription_drugs.forEach(drug => {
+        if (drug.group_number) {
+            if (!groups[drug.group_number]) {
+                groups[drug.group_number] = [];
+            }
+            groups[drug.group_number].push(drug);
+        } else {
+            ungrouped.push(drug);
+        }
+    });
+    
+    // اگر داروی بدون گروه وجود دارد، آن را به عنوان گروه 0 اضافه کن
+    if (ungrouped.length > 0) {
+        groups[0] = ungrouped;
+    }
+    
+    return groups;
+},
+
+getGroupTitle(groupNumber) {
+    if (groupNumber == 0) return 'داروهای بدون گروه';
+    return `گروه ${groupNumber}`;
+},
+
+getBorderClasses(drug) {
+    let classes = [];
+    
+    if (drug.is_combination) {
+        classes.push('border-r-4 border-r-purple-600');
+    }
+    
+    if (drug.is_substitute) {
+        classes.push('border-l-4 border-l-lime-600');
+    }
+    
+    return classes.join(' ');
+}
+,
 
 checkPremiumStatus() {
     try {
