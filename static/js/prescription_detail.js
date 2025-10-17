@@ -171,12 +171,10 @@ initGallery() {
             try {
                 console.log('💾 Attempting to save prescription:', this.prescription.slug);
                 
-                // فراخوانی API با endpoint درست
-                const response = await API.post(
-                    `/accounts/profile/prescription/save/${this.prescription.slug}/`,
-                    {} // بدنه خالی
-                );
-                alert(this.prescription.slug)
+                // >>> این خط را اصلاح کنید <<<
+                // به جای API.post از متد صحیح استفاده کنید
+                const response = await API.prescriptions.toggleSave(this.prescription.slug);
+                
                 console.log('✅ Save response:', response);
                 
                 // بررسی پاسخ
@@ -450,7 +448,7 @@ getBorderClasses(drug) {
     }
     
     if (drug.is_substitute) {
-        classes.push('border-l-4 border-l-lime-600');
+        classes.push('border-r-4 border-r-lime-600');
     }
     
     return classes.join(' ');
