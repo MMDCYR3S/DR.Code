@@ -84,7 +84,10 @@ function prescriptionDetailApp() {
                     confirmButtonText: 'بازگشت',
                     confirmButtonColor: '#0077b6'
                 }).then(() => {
-                    window.location.href = '/prescriptions';
+                    setTimeout(() => {
+                        console.log('Redirecting to /prescriptions after 5 seconds...');
+                        window.location.href = '/prescriptions';
+                    }, 2000);
                 });
             } finally {
                 this.loading = false;
@@ -207,8 +210,7 @@ initGallery() {
                     confirmButtonColor: '#ef4444'
                 });
             }
-        }
-        ,
+        },
 
         shareLink() {
             const url = window.location.href;
@@ -335,7 +337,7 @@ initGallery() {
                 cancelButtonColor: '#6b7280'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = '/plans';
+                    window.location.href = '/plan';
                 }
             });
         },
@@ -569,7 +571,7 @@ checkPremiumStatus() {
             return false;
         }
 
-        const isPremium = userProfile.role === 'premium';
+        const isPremium = userProfile.role === 'premium' || userProfile.role === 'admin';
         console.log('👑 Premium Status:', isPremium);
         console.log('🎭 User Role:', userProfile.role);
 
@@ -596,74 +598,70 @@ scrollToQuestion() {
     }
 },
 
-// Submit Question (فعلاً فقط ساختار)
+// Submit Question 
 async submitQuestion() {
+
     if (!this.isPremiumUser) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'دسترسی محدود',
-            text: 'این قابلیت فقط برای کاربران Premium است',
-            confirmButtonText: 'باشه'
-        });
+        this.showUpgradeModal(); 
         return;
     }
 
-    if (!this.questionText.trim()) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'هشدار',
-            text: 'لطفاً سوال خود را بنویسید',
-            confirmButtonText: 'باشه'
-        });
+    const trimmedQuestion = this.questionText.trim();
+
+    if (!trimmedQuestion) {
+        Swal.fire({ icon: 'warning', title: 'هشدار', text: 'لطفاً سوال خود را بنویسید', confirmButtonText: 'باشه' });
         return;
     }
 
-    if (this.questionText.length > 500) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'هشدار',
-            text: 'حداکثر طول سوال 500 کاراکتر است',
-            confirmButtonText: 'باشه'
-        });
+    if (trimmedQuestion.length < 10) {
+        Swal.fire({ icon: 'warning', title: 'هشدار', text: 'سوال شما باید حداقل ۱۰ کاراکتر باشد.', confirmButtonText: 'باشه' });
         return;
     }
 
+    if (trimmedQuestion.length > 1000) {
+        Swal.fire({ icon: 'warning', title: 'هشدار', text: 'حداکثر طول سوال ۱۰۰۰ کاراکتر است.', confirmButtonText: 'باشه' });
+        return;
+    }
     try {
-        this.questionSubmitting = true;
+        this.questionSubmitting = true; 
 
-        // TODO: اینجا بعداً API متد اضافه می‌شه
-        const questionData = {
-            question: this.questionText,
-            prescription_slug: this.prescription.slug,
-            user_profile: this.userProfile
-        };
 
-        console.log('📤 Sending question:', questionData);
+        const responseData = await API.prescriptions.submitQuestion(this.prescription.id, this.questionText);
 
-        // فعلاً فقط یک تاخیر شبیه‌سازی شده
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // موفقیت
         Swal.fire({
             icon: 'success',
-            title: 'سوال ارسال شد',
-            text: 'سوال شما با موفقیت ثبت شد و به زودی پاسخ داده می‌شود',
+            title: 'سوال شما ارسال شد',
+            text: responseData.message || 'سوال شما با موفقیت ثبت شد و به زودی پاسخ داده می‌شود.',
             confirmButtonText: 'باشه',
             confirmButtonColor: '#0077b6'
         });
 
-        // پاک کردن فیلد
-        this.questionText = '';
+        this.questionText = ''; 
 
     } catch (error) {
-        console.error('❌ Error submitting question:', error);
+
+        let errorMessage = 'خطا در ارسال سوال. لطفاً دوباره تلاش کنید.';
         
+        if (error.response && error.response.data) {
+            const errorData = error.response.data;
+            if (errorData.detail) {
+                errorMessage = errorData.detail; 
+            } else if (errorData.question_text) {
+                errorMessage = errorData.question_text[0];
+            } else if (typeof errorData === 'object') {
+                // تلاش برای یافتن اولین پیام خطا در آبجکت
+                const firstErrorKey = Object.keys(errorData)[0];
+                errorMessage = `${firstErrorKey}: ${errorData[firstErrorKey][0]}`;
+            }
+        }
+
         Swal.fire({
             icon: 'error',
             title: 'خطا',
-            text: 'خطا در ارسال سوال. لطفاً دوباره تلاش کنید',
+            text: errorMessage,
             confirmButtonText: 'باشه'
         });
+
     } finally {
         this.questionSubmitting = false;
     }
