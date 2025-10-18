@@ -20,31 +20,32 @@ class PrescriptionSaveToggleView(APIView):
     
     def post(self, request, slug):
         """
-        دریافت نسخه مورد نظر و کاربری که میخواد اون رو سیو کنه.
-        بعد از اینکه شناسه نسخه پیدا شد، وقتی که کاربر روی دکمه سیو کلیک کرد،
-        به صورت خودکار، خاصیت is_save که در اکانت کاربر تعبیه شده، به حالت True
-        در میاد.
+        نسخه را بر اساس اسلاگ پیدا کرده و وضعیت ذخیره آن را برای کاربر فعلی تغییر می‌دهد (toggle).
         """
         prescription = get_object_or_404(Prescription, slug=slug)
         user = request.user
-        
+        slug = request.data.get('slug')
         is_saved = user.saved_prescriptions.filter(pk=prescription.pk).exists()
         
         if is_saved:
             user.saved_prescriptions.remove(prescription)
-            
-            return Response(
-                {"detail": "نسخه با موفقیت از حالت ذخیره‌شده خارج شد.", "saved": False},
-                status=status.HTTP_200_OK
-            )
+            message = "نسخه با موفقیت از لیست حذف شد."
+            new_saved_status = False
+            response_status = status.HTTP_200_OK
             
         else:
             user.saved_prescriptions.add(prescription)
-            
-            return Response(
-                {"detail": "نسخه با موفقیت ذخیره شد.", "saved": True},
-                status=status.HTTP_201_CREATED # استفاده از 201 برای عملیات ایجاد
-            )
+            message = "نسخه با موفقیت ذخیره شد."
+            new_saved_status = True
+            response_status = status.HTTP_201_CREATED
+
+        return Response(
+            {
+                "detail": message,
+                "is_saved": new_saved_status 
+            },
+            status=response_status
+        )
             
 # ============= SAVED PRESCRIPTION LIST VIEW ============= #
 class SavedPrescriptionListView(ListAPIView):
