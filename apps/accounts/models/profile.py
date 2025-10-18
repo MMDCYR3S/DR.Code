@@ -79,7 +79,8 @@ class Profile(models.Model):
         max_length=50,
         blank=True,
         null=True,
-        verbose_name=_("کد نظام پزشکی / دانشجویی")
+        verbose_name=_("کد نظام پزشکی / دانشجویی"),
+        default="DR-CODE"
     )
     
     auth_link = models.URLField(

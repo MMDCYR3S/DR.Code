@@ -50,6 +50,9 @@ class RegisterView(CreateAPIView, BaseAPIView):
                     access_token = str(refresh.access_token)
                     user.active_jti = uuid_jti
                     
+                    user.profile.medical_code = "DR-CODE"
+                    user.profile.save()
+                    
                     send_welcome_email(user=user)
                     
                     logger.info(f"کاربر جدید ثبت‌نام شد: {user.phone_number}")
