@@ -306,39 +306,46 @@ API.prescriptions = {
     // Save/Unsave prescription to favorites
     async toggleSave(slug) {
         try {
+            const url = `${API.BASE_URL}api/v1/accounts/profile/prescription/save/${slug}/`;
+
+            const data = { slug: slug };
+
             const response = await axios.post(
-                `${API.BASE_URL}api/v1/accounts/profile/prescription/save/${slug}/`,
-                {},
+                url,
+                data,
                 {
-                    headers: API.getHeaders(true)
+                    headers: API.getHeaders(true) 
                 }
             );
             return response.data;
         } catch (error) {
-            console.error('Error toggling save prescription:', error);
+            console.error('Error toggling save prescription in API module:', error);
             throw error;
         }
     },
 
-    // Submit question for premium users (برای آینده)
-    async submitQuestion(slug, questionText) {
+    // Submit question for premium users
+    async submitQuestion(prescriptionId, questionText) {
         try {
-            const userData = StorageManager.getUserData();
-            const response = await axios.post(
-                `${API.BASE_URL}api/v1/prescriptions/${slug}/question/`, // URL فرضی
-                {
-                    question: questionText,
-                    user_id: userData?.user_id,
-                    prescription_slug: slug
-                },
-                {
-                    headers: API.getHeaders(true)
-                }
-            );
+            const url = `${API.BASE_URL}api/v1/questions/create/`;
+            console.log('📡 POST to:', url);
+            const payload = {
+                prescription: prescriptionId,  
+                question_text: questionText.trim()
+            };
+
+            console.log('📤 Sending payload:', payload);
+
+            const response = await axios.post(url, payload, {
+                headers: API.getHeaders(true) 
+            });
+
+            console.log('✅ Question submission successful:', response.data);
             return response.data;
+
         } catch (error) {
-            console.error('Error submitting question:', error);
-            throw error;
+            console.error('❌ Error submitting question in API layer:', error);
+            throw error; 
         }
     }
 };
