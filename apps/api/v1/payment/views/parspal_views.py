@@ -131,7 +131,7 @@ class ParspalPaymentRequestView(CreateAPIView):
                     "data": {
                         "order_id": payload["order_id"],
                         "amount": payload["amount"],
-                        "redirect_url": data.get("link"),
+                        "redirect_url": "http://localhost:8000/payment/status/",
                         "payment_info": data
                     }
                 }, status=status.HTTP_200_OK)

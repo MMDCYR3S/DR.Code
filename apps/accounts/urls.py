@@ -10,8 +10,6 @@ app_name = 'accounts'
 
 urlpatterns = [
     path('authentication/', AuthenticationView.as_view(), name='authentication'),
-    
-    # صفحات کاربری (نیاز به احراز هویت)
     path('profile/', ProfileView.as_view(), name='profile'),
     path('profile/saved/', ProfileSavedPrescriptionsView.as_view(), name='profile_saved_prescriptions'),
     path('profile/messages/', ProfileMessagesView.as_view(), name='profile_messages'),
