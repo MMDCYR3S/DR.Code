@@ -241,7 +241,6 @@ initGallery() {
             if (questionBox) {
                 questionBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
-            alert('salam')
         },
 
         copyDrugCode(code) {
@@ -737,7 +736,7 @@ function createProtectedWatermark() {
             `;
             let medi = localStorage.getItem('drcode_user_profile')
             let mediObject = JSON.parse(medi);
-            // alert(!!null)
+
         for (let row = 1; row <= rows; row++) {
             for (let col = 1; col <= cols; col++) {
                 const text = document.createElement('div');
