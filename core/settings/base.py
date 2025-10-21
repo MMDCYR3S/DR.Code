@@ -26,7 +26,7 @@ env = environ.Env(
 
 # Take environment variables from .env file
 # Use different .env files based on the environment
-env_file = os.path.join(BASE_DIR, 'env/.env.prod')  # Default to development
+env_file = os.path.join(BASE_DIR, 'env\\.env.dev')  # Default to development
 environ.Env.read_env(env_file)
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -133,11 +133,15 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-STATIC_URL = "/static/"
-STATIC_ROOT = "/home/drcodeme/public_html/static"
+STATIC_URL = "static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
-MEDIA_ROOT = "/home/drcodeme/public_html/media"
-MEDIA_URL = "/media/"
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]
+
+MEDIA_URL = "media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -389,7 +393,8 @@ LOGGING = {
 
 # ========= Parspal Settings ========= #
 PARSPAL_CONFIG = {
-    'API_KEY': env('PARSPAL_API_KEY', default='9c455ad8e3b34ede9d1613cdfede7767'),
-    'CALLBACK_URL': env('PARSPAL_CALLBACK_URL', default='https://drcode-med.ir/'),
-    'SANDBOX': env.bool('PARSPAL_SANDBOX', default=False),
+    # 9c455ad8e3b34ede9d1613cdfede7767
+    'API_KEY': env('PARSPAL_API_KEY', default='00000000aaaabbbbcccc000000000000'),
+    'CALLBACK_URL': env('PARSPAL_CALLBACK_URL', default='http://127.0.0.1:8000/payment/status/'),
+    'SANDBOX': env.bool('PARSPAL_SANDBOX', default=True),
 }
