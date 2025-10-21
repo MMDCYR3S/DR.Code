@@ -328,23 +328,17 @@ API.prescriptions = {
     async submitQuestion(prescriptionId, questionText) {
         try {
             const url = `${API.BASE_URL}api/v1/questions/create/`;
-            console.log('📡 POST to:', url);
             const payload = {
                 prescription: prescriptionId,  
                 question_text: questionText.trim()
             };
 
-            console.log('📤 Sending payload:', payload);
-
             const response = await axios.post(url, payload, {
                 headers: API.getHeaders(true) 
             });
-
-            console.log('✅ Question submission successful:', response.data);
             return response.data;
 
         } catch (error) {
-            console.error('❌ Error submitting question in API layer:', error);
             throw error; 
         }
     }

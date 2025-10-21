@@ -50,4 +50,11 @@ class HasAdminAccessPermission(UserPassesTestMixin):
     """ بررسی اینکه آیا کاربر ادمین هست یا خیر """
     
     def test_func(self):
-        return self.request.user.is_staff or self.request.user.is_superuser
+        user = self.request.user
+        return (
+            user.is_authenticated and (
+                user.is_staff or
+                user.is_superuser or
+                getattr(user.profile, "role", None) == "admin"
+            )
+        )

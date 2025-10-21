@@ -1,4 +1,5 @@
 {% extends 'dashboard/base.html' %}
+{% load humanize %}
 
 {% block title %}مدیریت پلن‌ها و Membershipها{% endblock %}
 
@@ -106,7 +107,7 @@
                                 <span class="text-slate-500 text-xs">({{ plan.duration_months }} ماه)</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap font-mono">
-                                {{ plan.price|floatformat:0 }} تومان
+                                {{ plan.price|intcomma }} تومان
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-center">
                                 {% if plan.is_active %}
@@ -172,7 +173,7 @@
                                     مدت: <span class="font-semibold">{{ plan.duration_days }} روز ({{ plan.duration_months }} ماه)</span>
                                 </p>
                                 <p class="text-sm text-slate-600">
-                                    قیمت: <span class="font-mono font-semibold">{{ plan.price|floatformat:0 }} تومان</span>
+                                    قیمت: <span class="font-mono font-semibold">{{plan.price|intcomma }} تومان</span>
                                 </p>
                                 <div class="flex items-center">
                                     {% if plan.is_active %}

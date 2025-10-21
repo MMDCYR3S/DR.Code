@@ -3,11 +3,12 @@
 
 {% block title %}صفحه اصلی{% endblock title %}
 {% block extra_css %}
+<!-- قسمت css و حتی ایمپورت کردن فایل هات رو اینجا بزار -->
 
 {% endblock extra_css %}
 
 {% block content %}
-
+<!-- محتوای صفحات اینجاست -->
 <style>
     /* Custom animations */
     @keyframes float {
@@ -284,8 +285,6 @@
                 به هزاران متخصص سلامت بپیوندید و کیفیت خدمات درمانی خود را ارتقا دهید.
             </p>
             
-        
-            
             <!-- CTA Buttons -->
             <div class="flex flex-col sm:flex-row gap-4 justify-center" data-aos="fade-up" data-aos-delay="300">
                 <a href="/prescriptions" class="inline-flex items-center justify-center px-8 py-4 bg-white text-c1 rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
@@ -294,7 +293,7 @@
                     </svg>
                     شروع رایگان
                 </a>
-                <a  onclick="Auth.showAuthModal()" class="inline-flex items-center justify-center px-8 py-4 bg-transparent text-white border-2 border-white rounded-2xl font-semibold text-lg hover:bg-white hover:text-c1 transform hover:scale-105 transition-all duration-300">
+                <a onclick="Auth.showAuthModal()" class="inline-flex items-center justify-center px-8 py-4 bg-transparent text-white border-2 border-white rounded-2xl font-semibold text-lg hover:bg-white hover:text-c1 transform hover:scale-105 transition-all duration-300">
                     <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
                     </svg>

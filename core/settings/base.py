@@ -26,7 +26,7 @@ env = environ.Env(
 
 # Take environment variables from .env file
 # Use different .env files based on the environment
-env_file = os.path.join(BASE_DIR, 'env\\.env.dev')  # Default to development
+env_file = os.path.join(BASE_DIR, 'env/.env.prod')  # Default to development
 environ.Env.read_env(env_file)
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -91,6 +91,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "apps.accounts.context_processors.auth_status_processor"
             ],
         },
     },
@@ -132,16 +133,11 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-STATIC_URL = "static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATIC_URL = "/static/"
+STATIC_ROOT = "/home/drcodeme/public_html/static"
 
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static"),
-]
-
-MEDIA_URL = "media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
-
+MEDIA_ROOT = "/home/drcodeme/public_html/media"
+MEDIA_URL = "/media/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -154,6 +150,9 @@ REST_FRAMEWORK = {
         # 'rest_framework.authentication.TokenAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
+    
+    'LOGIN_URL': '/',
+    'LOGOUT_URL': '/',
 
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 
@@ -166,12 +165,12 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle'
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '10000/min',
-        'user': '60000/min',
+        'anon': '500/hour',
+        'user': '5000/hour',
         'login_attempts': '5/min',
         'login_attempts_ip': '10/hour',
-        'prescription_list': '30000/hour',
-        'prescription_detail': '50000/hour',
+        'prescription_list': '300/hour',
+        'prescription_detail': '500/hour',
     },
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
@@ -257,8 +256,6 @@ CKEDITOR_5_CONFIGS = {
                 '|', 'alignment'  # ابزار جهت متن
             ]
         },
-        'autoParagraph': False,
-        'fillEmptyBlocks': False,
         'language': {
             'content': 'fa',  # محتوای فارسی
             'ui': 'fa'        # رابط کاربری فارسی
@@ -392,7 +389,7 @@ LOGGING = {
 
 # ========= Parspal Settings ========= #
 PARSPAL_CONFIG = {
-    'API_KEY': env('PARSPAL_API_KEY', default='00000000aaaabbbbcccc000000000000'),
-    'CALLBACK_URL': env('PARSPAL_CALLBACK_URL', default='http://localhost:8000/payment/status/'),
-    'SANDBOX': env.bool('PARSPAL_SANDBOX', default=True),
+    'API_KEY': env('PARSPAL_API_KEY', default='9c455ad8e3b34ede9d1613cdfede7767'),
+    'CALLBACK_URL': env('PARSPAL_CALLBACK_URL', default='https://drcode-med.ir/'),
+    'SANDBOX': env.bool('PARSPAL_SANDBOX', default=False),
 }

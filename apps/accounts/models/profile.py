@@ -23,7 +23,7 @@ def get_auth_document_path(instance, filename):
 
 # ========== Authentication Document ========== #
 class AuthenticationDocument(models.Model):
-    """ مدلی برای نگهداری مدارک ارسالی جهت احراز هویت کاربران """
+    """ مدلی برای نگهداری مدارک ارسالی جهت احراز هویت """
     profile = models.ForeignKey(
         'Profile', 
         on_delete=models.CASCADE, 
@@ -79,8 +79,7 @@ class Profile(models.Model):
         max_length=50,
         blank=True,
         null=True,
-        verbose_name=_("کد نظام پزشکی / دانشجویی"),
-        default="DR-CODE"
+        verbose_name=_("کد نظام پزشکی / دانشجویی")
     )
     
     auth_link = models.URLField(

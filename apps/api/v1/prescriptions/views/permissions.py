@@ -28,6 +28,9 @@ class IsPrescriptionAccessible(permissions.BasePermission):
                 self.message = "حساب کاربری شما هنوز تایید نشده است. لطفا منتظر بمانید."
                 return False
             
+            if user.profile.role == "admin":
+                return True
+            
             if user.profile.role == "regular":
                 self.message = "برای دسترسی به محتوای ویژه باید اشتراک بخرِید"
                 return False

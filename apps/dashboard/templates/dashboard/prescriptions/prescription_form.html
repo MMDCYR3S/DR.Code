@@ -507,8 +507,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const filteredDrugs = allDrugs.filter(drug => 
             drug.title.includes(searchTerm) || 
             (drug.code && drug.code.includes(searchTerm))
-        ).filter(drug => 
-            !selectedDrugs.some(selected => selected.drug_id === drug.id)
         );
         
         displaySearchResults(filteredDrugs);

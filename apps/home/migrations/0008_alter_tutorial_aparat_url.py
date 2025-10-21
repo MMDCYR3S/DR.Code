@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("home", "0007_remove_tutorial_description"),
+        ("home", "0006_alter_tutorial_aparat_url"),
     ]
 
     operations = [
