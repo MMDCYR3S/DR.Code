@@ -149,20 +149,34 @@ initGallery() {
         },
         
 
-        getCombinationGroups(drugs) {
-            const groups = {};
+getCombinationGroups(drugs) {
+    const groups = {};
+    
+    drugs
+        .filter(d => d.is_combination && d.group_number)
+        .forEach(drug => {
+            if (!groups[drug.group_number]) {
+                groups[drug.group_number] = [];
+            }
             
-            drugs
-                .filter(d => d.is_combination && d.group_number)
-                .forEach(drug => {
-                    if (!groups[drug.group_number]) {
-                        groups[drug.group_number] = [];
-                    }
-                    groups[drug.group_number].push(drug);
-                });
+            // بررسی آیا دارو با این کد قبلاً در گروه اضافه شده است
+            const existingDrugIndex = groups[drug.group_number].findIndex(d => d.code === drug.code);
+            
+            if (existingDrugIndex === -1) {
+                // اگر دارو با این کد وجود ندارد، آن را اضافه کن
+                groups[drug.group_number].push(drug);
+            } else {
+                // اگر دارو با این کد وجود دارد، تعداد آن را افزایش بده
+                if (!groups[drug.group_number][existingDrugIndex].quantity) {
+                    groups[drug.group_number][existingDrugIndex].quantity = 1;
+                }
+                groups[drug.group_number][existingDrugIndex].quantity += 1;
+            }
+        });
 
-            return groups;
-        },
+    return groups;
+}
+        ,
 
         async toggleSave() {
             // چک لاگین

@@ -616,7 +616,7 @@
 
                     <!-- Table Body -->
                     <tbody class="bg-white divide-y divide-gray-200">
-                        <template x-for="(drug, index) in drugs" :key="drug.drug.code">
+                        <template x-for="(drug, index) in drugs" :key="drug.drug.code + '-' + index">
                             <tr class="hover:bg-gray-50 transition-colors relative" 
                                 :class="getBorderClasses(drug) + (drug.is_combination ? ' bg-purple-50/30' : '') + (drug.is_substitute ? ' bg-lime-50/30' : '')">
 

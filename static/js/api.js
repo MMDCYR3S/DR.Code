@@ -620,8 +620,8 @@ async function testSavedPrescriptionsAPI() {
 async function testPrescriptionDetailAPI() {
     console.log('🧪 Testing Prescription Detail APIs...\n');
 
-    const testSlug = 'drmn-khtll-dwqtby'; // از JSON شما
-
+    // const testSlug = 'drmn-khtll-dwqtby'; // از JSON شما
+    const testSlug = 'bh-b-b-bh-bh'; // از JSON شما
 
     try {
         // Test 1: Get Detail
