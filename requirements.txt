@@ -19,17 +19,11 @@ jsonschema-specifications
 Markdown
 pillow
 PyJWT
-python-memcached
 python-slugify
-PyYAML
 referencing
 requests
-rpds-py
-sqlparse
 text-unidecode
 typing_extensions
 tzdata
 uritemplate
 urllib3
-mysqlclient
-django-redis
