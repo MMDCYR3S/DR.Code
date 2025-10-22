@@ -3,6 +3,9 @@ import threading
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -141,5 +144,35 @@ def send_email_to_answered_question(user):
         subject=subject,
         to_email=user.email,
         template_name='email/question_answered.html',
+        context=context
+    )
+
+def send_password_reset_email(user, site_domain, protocol):
+    """
+    ایمیل بازیابی رمز عبور را برای کاربر ارسال می‌کند.
+    این ایمیل حاوی یک لینک یکبار مصرف برای تنظیم مجدد رمز عبور است.
+    """
+    if not user.email:
+        logger.warning(f"کاربر {user.id} ایمیلی برای ارسال لینک بازیابی رمز عبور ندارد.")
+        return
+    
+    token_generator = PasswordResetTokenGenerator()
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = token_generator.make_token(user)
+    
+    reset_path = f'/password-reset-confirm/{uid}/{token}/'
+    reset_url = f"{protocol}://{site_domain}{reset_path}"
+    
+    subject = "بازیابی رمز عبور - دکتر کد"
+    context = {
+        'user': user,
+        'site_name': 'دکتر کد',
+        'reset_url': reset_url,
+    }
+    
+    send_email_in_background(
+        subject=subject,
+        to_email=user.email,
+        template_name='email/password_reset_email.html',
         context=context
     )
