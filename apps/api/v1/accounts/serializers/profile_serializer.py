@@ -1,6 +1,7 @@
 import re
 
 from rest_framework import serializers
+from django.utils import timezone
 from django.contrib.auth import get_user_model
 
 from apps.prescriptions.models import Prescription
@@ -28,6 +29,17 @@ class ProfileSerializer(serializers.ModelSerializer):
             'role', 'auth_status', 'rejection_reason', 
             'subscription_end_date', 'created_at', 'updated_at'
         )
+        
+    def to_representation(self, instance):
+        """تبدیل تاریخ پایان اشتراک به تعداد روز باقی‌مانده"""
+        data = super().to_representation(instance)
+        if instance.subscription_end_date:
+            remaining = instance.subscription_end_date - timezone.now()
+            data['subscription_end_date'] = max(remaining.days, 0)
+        else:
+            data['subscription_end_date'] = None
+        return data
+        
 
 # =============== UPDATE PROFILE SERIALIZER =============== #
 class UpdateProfileSerializer(serializers.ModelSerializer):
@@ -49,126 +61,96 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
         allow_blank=True,
         help_text="ایمیل"
     )
+    # <<< تغییر: چون این یک آپدیت جزئی (PATCH) است، بهتر است این فیلد الزامی نباشد
     phone_number = serializers.CharField(
+        required=False, 
         max_length=11,
-        required=False,
-        help_text="شماره تلفن همراه"
+        help_text="شماره تلفن"
     )
+    # <<< تغییر: افزودن write_only=True برای امنیت
     password = serializers.CharField(
         max_length=128,
         required=False,
-        help_text="رمز عبور"
+        write_only=True,
+        allow_blank=True,
+        help_text="در صورت تمایل به تغییر، رمز عبور جدید را وارد کنید. در غیر این صورت، آن را خالی بگذارید."
     )
     profile_image = serializers.ImageField(
         required=False,
-        help_text="عکس پروفایل"
+        help_text="عکس پروفایل",
     )
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'phone_number','profile_image', "password"]
+        fields = ['first_name', 'last_name', 'email', 'phone_number', 'profile_image', 'password']
+        extra_kwargs = {
+            'phone_number': {'validators': []}, # اگر ولیدیتور یونیک در مدل دارید، اینجا غیرفعالش کنید تا در آپدیت خطا ندهد
+        }
 
+    # ... (متدهای validate شما بدون تغییر باقی می‌مانند) ...
     def validate_first_name(self, value):
-        """اعتبارسنجی نام"""
         if value and len(value.strip()) < 2:
             raise serializers.ValidationError("نام باید حداقل ۲ کاراکتر باشد.")
-        
-        # بررسی فقط حروف فارسی و انگلیسی
         if value and not re.match(r'^[a-zA-Zآ-ی\s]+$', value.strip()):
             raise serializers.ValidationError("نام فقط می‌تواند شامل حروف فارسی و انگلیسی باشد.")
-        
         return value.strip() if value else value
 
     def validate_last_name(self, value):
-        """اعتبارسنجی نام خانوادگی"""
         if value and len(value.strip()) < 2:
             raise serializers.ValidationError("نام خانوادگی باید حداقل ۲ کاراکتر باشد.")
-        
-        # بررسی فقط حروف فارسی و انگلیسی
         if value and not re.match(r'^[a-zA-Zآ-ی\s]+$', value.strip()):
             raise serializers.ValidationError("نام خانوادگی فقط می‌تواند شامل حروف فارسی و انگلیسی باشد.")
-        
         return value.strip() if value else value
 
     def validate_email(self, value):
-        """اعتبارسنجی ایمیل"""
-        if not value:  # اگر خالی باشد مشکلی نیست
+        if not value:
             return value
-        
-        # بررسی تکراری نبودن ایمیل
         user = self.context.get('request').user
         if User.objects.filter(email=value).exclude(id=user.id).exists():
             raise serializers.ValidationError("این ایمیل قبلاً استفاده شده است.")
-        
         return value
 
     def validate_profile_image(self, value):
-        """اعتبارسنجی عکس پروفایل"""
         if not value:
             return value
-        
-        # بررسی اندازه فایل (حداکثر 5MB)
         if value.size > 5 * 1024 * 1024:
             raise serializers.ValidationError("حجم عکس نباید بیشتر از ۵ مگابایت باشد.")
-        
-        # بررسی فرمت فایل
         allowed_formats = ['image/jpeg', 'image/png', 'image/jpg']
         if value.content_type not in allowed_formats:
             raise serializers.ValidationError("فرمت عکس باید JPG، JPEG یا PNG باشد.")
-        
-        # بررسی ابعاد تصویر
-        from PIL import Image
         try:
             img = Image.open(value)
             width, height = img.size
-            
-            # حداقل ابعاد
             if width < 100 or height < 100:
                 raise serializers.ValidationError("ابعاد عکس باید حداقل ۱۰۰×۱۰۰ پیکسل باشد.")
-            
-            # حداکثر ابعاد
             if width > 2000 or height > 2000:
                 raise serializers.ValidationError("ابعاد عکس نباید بیشتر از ۲۰۰۰×۲۰۰۰ پیکسل باشد.")
-                
-        except Exception as e:
+        except Exception:
             raise serializers.ValidationError("فایل آپلود شده معتبر نیست.")
-        
         return value
 
+    # <<< تغییر اصلی: بازنویسی کامل متد update
     def update(self, instance, validated_data):
-        """بروزرسانی اطلاعات کاربر"""
-        # فیلدهای مربوط به User model
-        user_fields = ['first_name', 'last_name', 'email', 'phone_number', 'password']
-        profile_fields = ['profile_image']
+        """بروزرسانی اطلاعات کاربر و پروفایل او"""
         
-        updated_fields = []
-        
-        # بروزرسانی فیلدهای User
-        for field in user_fields:
-            if field in validated_data:
-                setattr(instance, field, validated_data[field])
-                updated_fields.append(field)
-        
-        # بروزرسانی فیلدهای Profile
-        profile_data = {}
-        for field in profile_fields:
-            if field in validated_data:
-                profile_data[field] = validated_data[field]
-                updated_fields.append(field)
-        
-        # ذخیره User
-        if any(field in validated_data for field in user_fields):
-            instance.save(update_fields=[f for f in user_fields if f in validated_data])
-        
-        # ذخیره Profile
-        if profile_data:
-            profile = instance.profile
-            for field, value in profile_data.items():
-                setattr(profile, field, value)
-            profile.save(update_fields=list(profile_data.keys()))
-        
-        return instance
 
+        profile_image_data = validated_data.pop('profile_image', None)
+        password = validated_data.pop('password', None)
+        
+        instance = super().update(instance, validated_data)
+        
+        if password:
+            instance.set_password(password)
+            instance.save(update_fields=['password'])
+
+        # بروزرسانی عکس پروفایل در مدل Profile
+        if profile_image_data is not None:
+            profile = instance.profile
+            profile.profile_image = profile_image_data
+            profile.save(update_fields=['profile_image'])
+
+        return instance
+        
 # ========== SAVED PRESCRIPTION LIST SERIALIZER ========== #
 class SavedPrescriptionListSerializer(serializers.ModelSerializer):
     """

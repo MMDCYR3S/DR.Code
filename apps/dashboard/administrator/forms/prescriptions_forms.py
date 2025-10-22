@@ -7,7 +7,8 @@ from apps.prescriptions.models import(
     PrescriptionAlias,
     PrescriptionImage,
     PrescriptionVideo,
-    PrescriptionDrug
+    PrescriptionDrug,
+    AccessChoices
 )
 
 # ========== Prescription Filter Form ========== #
@@ -81,6 +82,8 @@ class PrescriptionForm(forms.ModelForm):
         last_prescription = Prescription.objects.select_related("category").order_by("-created_at").first()
         if last_prescription:
             self.initial["category"] = last_prescription.category
+            
+        self.initial['access_level'] = AccessChoices.premium.value
             
     def clean_description(self):
         description_data = self.cleaned_data.get('description')

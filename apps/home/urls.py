@@ -2,7 +2,7 @@
 
 from django.urls import path
 from .views import (
-    HomeView, ContactView, TutorialListView, AboutView, PlanListView, RulesView
+    HomeView, ContactView, TutorialListView, AboutView, PlanListView
 )
 
 app_name = 'home'
@@ -16,5 +16,4 @@ urlpatterns = [
     path('contact/', ContactView.as_view(), name='contact'),
     path('tutorials/', TutorialListView.as_view(), name='tutorials'),
     path('plan/', PlanListView.as_view(), name='plan'),
-    path('rules/', RulesView.as_view(), name='rules'),
 ]

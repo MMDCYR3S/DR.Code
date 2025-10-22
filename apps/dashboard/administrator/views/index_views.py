@@ -13,6 +13,7 @@ from decimal import Decimal
 from apps.accounts.models import Profile, AuthStatusChoices
 from apps.subscriptions.models import Subscription, SubscriptionStatusChoicesModel
 from apps.questions.models import Question
+from apps.payment.models import Payment, PaymentStatus
 from apps.home.models import Contact
 
 User = get_user_model()
@@ -22,7 +23,7 @@ def admin_dashboard_view(request):
     """
     ویو داشبورد ادمین با نمایش آمارهای کلیدی
     """
-    if not (request.user.is_staff or request.user.is_superuser):
+    if not (request.user.is_staff or request.user.is_superuser or getattr(request.user.profile, "role", None) == "admin"):
         return render(request, '403.html', status=403)
     
     cache_key = 'admin_dashboard_stats'
@@ -44,21 +45,30 @@ def _calculate_dashboard_stats():
     current_month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     last_month_start = (current_month_start - timedelta(days=1)).replace(day=1)
     
-    current_month_revenue = Subscription.objects.filter(
-        status=SubscriptionStatusChoicesModel.active.value,
-        start_date__gte=current_month_start
-    ).aggregate(
-        total=Sum('payment_amount')
-    )['total'] or Decimal('0')
+    current_month_revenue = (
+        Payment.objects
+        .filter(
+            status=PaymentStatus.COMPLETED,
+            paid_at__gte=current_month_start
+        )
+        .aggregate(
+            total=Sum('final_amount')
+        )['total'] or Decimal('0')
+    )
     
-    last_month_revenue = Subscription.objects.filter(
-        status=SubscriptionStatusChoicesModel.active.value,
-        start_date__gte=last_month_start,
-        start_date__lt=current_month_start
-    ).aggregate(
-        total=Sum('payment_amount')
-    )['total'] or Decimal('0')
-    
+    last_month_revenue = (
+        Payment.objects
+        .filter(
+            status=PaymentStatus.COMPLETED,
+            paid_at__gte=last_month_start,
+            paid_at__lt=current_month_start,
+            subscription__status=SubscriptionStatusChoicesModel.active.value
+        )
+        .aggregate(
+            total=Sum('final_amount')
+        )['total'] or Decimal('0')
+    )
+        
     # محاسبه درصد رشد
     growth_percentage = 0
     if last_month_revenue > 0:

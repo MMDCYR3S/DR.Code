@@ -81,7 +81,7 @@ class ZarinpalService:
         except requests.exceptions.RequestException as e:
             return {
                 'success': False,
-                'error': f"خطای ارتباط با درگاه پرداخت: {str(e)}",
+                'error': f"خطای ارتباط با درگاه پرداخت: {str(e)} - {response.text}",
                 'authority': None,
                 'payment_url': None
             }

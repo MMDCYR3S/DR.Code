@@ -38,6 +38,7 @@ class RegisterView(CreateAPIView, BaseAPIView):
 
                     user.last_login_ip = self.get_client_ip(request)
                     user.last_login_device = self.get_user_agent(request)
+                    
                     user.save(update_fields=['last_login_ip', 'last_login_device'])
                     
                     refresh = RefreshToken.for_user(user)

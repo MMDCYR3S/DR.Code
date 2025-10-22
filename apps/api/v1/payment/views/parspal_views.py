@@ -50,7 +50,7 @@ def prepare_cached_payment_data(cached_data, plan_id, user):
     order_id = generate_order_id(plan_id, user.id)
 
     return {
-        "amount": final_price,
+        "amount": 80000,
         "currency": "IRT",
         "return_url": PARSPAL_CALLBACK_URL,
         "reserve_id": str(uuid.uuid4()),
@@ -131,7 +131,7 @@ class ParspalPaymentRequestView(CreateAPIView):
                     "data": {
                         "order_id": payload["order_id"],
                         "amount": payload["amount"],
-                        "redirect_url": data.get("link"),
+                        "redirect_url": "http://localhost:8000/payment/status/",
                         "payment_info": data
                     }
                 }, status=status.HTTP_200_OK)

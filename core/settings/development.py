@@ -9,13 +9,6 @@ DATABASES = {
     }
 }
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-dev-cache',
-    }
-}
-
 # ========= ZarinPal Sandbox Settings ========= #
 ZARINPAL_CONFIG = {
     'MERCHANT_ID': env("ZARINPAL_MERCHANT_ID", default="faeddedf-558c-4cd6-9f18-63d0c6088477"),
@@ -23,7 +16,7 @@ ZARINPAL_CONFIG = {
     'REQUEST_URL': 'https://sandbox.zarinpal.com/pg/v4/payment/request.json',
     'START_PAY_URL': 'https://sandbox.zarinpal.com/pg/StartPay/',
     'VERIFY_URL': 'https://sandbox.zarinpal.com/pg/v4/payment/verify.json',
-    'CALLBACK_URL': 'http://localhost:8000/payment/status/',
+    'CALLBACK_URL': env("ZARINPAL_CALLBACK_URL", default='http://localhost:8000/api/v1/payments/verify/'),
 }
 
 
@@ -61,3 +54,9 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default=EMAIL_HOST_USER)
 #         'DB': env.int("REDIS_DB", default=0),
 #     }
 # }
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-suffix',
+    }
+}

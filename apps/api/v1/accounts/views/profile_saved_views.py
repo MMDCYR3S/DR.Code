@@ -18,6 +18,13 @@ class PrescriptionSaveToggleView(APIView):
     
     permission_classes = [IsAuthenticated]
     
+class PrescriptionSaveToggleView(APIView):
+    """
+    برای ذخیره (Bookmark) کردن یا حذف ذخیره‌سازی یک نسخه توسط کاربر لاگین شده.
+    """
+    
+    permission_classes = [IsAuthenticated]
+    
     def post(self, request, slug):
         """
         نسخه را بر اساس اسلاگ پیدا کرده و وضعیت ذخیره آن را برای کاربر فعلی تغییر می‌دهد (toggle).
@@ -25,6 +32,7 @@ class PrescriptionSaveToggleView(APIView):
         prescription = get_object_or_404(Prescription, slug=slug)
         user = request.user
         slug = request.data.get('slug')
+        
         is_saved = user.saved_prescriptions.filter(pk=prescription.pk).exists()
         
         if is_saved:
@@ -46,6 +54,7 @@ class PrescriptionSaveToggleView(APIView):
             },
             status=response_status
         )
+            
             
 # ============= SAVED PRESCRIPTION LIST VIEW ============= #
 class SavedPrescriptionListView(ListAPIView):

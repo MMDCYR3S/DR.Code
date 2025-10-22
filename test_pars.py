@@ -1,23 +1,45 @@
-import requests
-import json
+from dataclasses import dataclass
+import inspect
 
-merchant_id = "45209320-b090-4116-a1bd-8abd770d7787"  
-callback_url = "https://drcode-med.ir/payment/status/"  
+@dataclass
+class User:
+    """ Define a user """
+    id: int
+    username: str
+    get_full_name: str
+    email: str
+    is_staff: bool
+    is_superuser: bool
+    is_active: bool
+    last_login: str
+    
+    def validate(self):
+        """
+        Validate the instance based on field annotations
+        """
+        annotations = self.__annotations__
+        for field_name, expected_type in annotations.items():
+            value = getattr(self, field_name)
+            if not isinstance(value, expected_type):
+                raise TypeError(f"Field {field_name} should be of type {expected_type}, got {type(value)}")
+        return True
+    
+    def __post_init__(self):
+        """
+        Automatically validate after initialization
+        """
+        self.validate()
 
-request_data = {
-    "merchant_id": merchant_id,
-    "amount": 10000 * 10,  
-    "callback_url": callback_url,
-    "description": "تست پرداخت زرین‌پال",
-}
+# Test with valid data
+try:
+    a = User(1, 'test', "hi", 'test@example.com', True, True, True, '2020-01-01')
+    print("Valid user:", a)
+except TypeError as e:
+    print("Validation error:", e)
 
-print("🔹 REQUEST DATA:\n", json.dumps(request_data, indent=2))
-
-response = requests.post(
-    "https://api.zarinpal.com/pg/v4/payment/request.json",
-    json=request_data,
-    headers={"Content-Type": "application/json"}
-)
-
-print("\n🔸 STATUS:", response.status_code)
-print("🔸 RESPONSE TEXT:\n", response.text)
+# Test with invalid data
+try:
+    b = User("not_an_int", 'test', "hi", 'test@example.com', True, True, True, '2020-01-01')
+    print("Valid user:", b)
+except TypeError as e:
+    print("Validation error:", e)

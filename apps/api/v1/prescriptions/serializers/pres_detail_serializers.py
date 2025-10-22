@@ -22,6 +22,7 @@ class PrescriptionDetailSerializer(serializers.ModelSerializer):
     videos = PrescriptionVideoSerializer(many=True, read_only=True)
     primary_name = serializers.SerializerMethodField()
     description_url = serializers.SerializerMethodField()
+    is_saved = serializers.SerializerMethodField()
     
     class Meta:
         model = Prescription
@@ -31,7 +32,7 @@ class PrescriptionDetailSerializer(serializers.ModelSerializer):
             'category', 'prescription_drugs',
             'images', 'videos', 'access_level',
             'primary_name', "description_url",
-            'created_at',
+            'created_at', 'is_saved',
         ]
     
     def get_description_url(self, obj):
@@ -42,6 +43,14 @@ class PrescriptionDetailSerializer(serializers.ModelSerializer):
                 reverse('api:v1:prescriptions_api:prescription-description', kwargs={'slug': obj.slug})
             )
         return None
+    
+    def get_is_saved(self, obj):
+        """مشخص کردن آیا نسخه ذخیره شده است یا خیر"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            if request.user.saved_prescriptions.filter(id=obj.id).exists():
+                return True
+        return False
     
     def get_all_names(self, obj):
         return obj.get_all_names()

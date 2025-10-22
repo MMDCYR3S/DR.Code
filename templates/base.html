@@ -335,27 +335,30 @@
                 </div>
             </div>
             
+            {% if show_auth_warning %}
             <div class=" pt-16 lg:pt-20" id="auth-warning-bar" style="display: none;">
                 <div class="py-4 bg-red-300">
-                <!-- 🆕 نوار هشدار احراز هویت -->
-                <div 
-                    class=" bg-red-50 border-2 border-red-200 border-dashed rounded-xl mx-10 lg:mx-20 py-3 px-4 shadow-sm ">
-                    <div class="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-                        <div class="flex items-center gap-2 text-red-700">
-                            <i class="fas fa-exclamation-triangle text-lg"></i>
-                            <span class="text-sm sm:text-base font-medium">
-                                هنوز در سایت احراز هویت نشده‌اید
-                            </span>
+                    <!-- 🆕 نوار هشدار احراز هویت -->
+                    <div 
+                        class=" bg-red-50 border-2 border-red-200 border-dashed rounded-xl mx-10 lg:mx-20 py-3 px-4 shadow-sm ">
+                        <div class="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+                            <div class="flex items-center gap-2 text-red-700">
+                                <i class="fas fa-exclamation-triangle text-lg"></i>
+                                <span class="text-sm sm:text-base font-medium">
+                                    هنوز در سایت احراز هویت نشده‌اید
+                                </span>
+                            </div>
+                            <a href="/authentication/"
+                                class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2">
+                                <i class="fas fa-user-check"></i>
+                                <span>احراز هویت</span>
+                            </a>
                         </div>
-                        <a href="/authentication/"
-                            class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2">
-                            <i class="fas fa-user-check"></i>
-                            <span>احراز هویت</span>
-                        </a>
                     </div>
                 </div>
-</div>
             </div>
+            {% endif %}
+            
             {% endblock header %}
         </header>
 
@@ -854,7 +857,7 @@
                 const profile = StorageManager.getUserProfile();
 
                 // بررسی auth_status
-                if (profile && profile.auth_status === 'REJECTED') {
+                if (profile && profile.auth_status === 'PENDING' || profile.auth_status === 'REJECTED') {
                     const warningBar = document.getElementById('auth-warning-bar');
                     if (warningBar) {
                         warningBar.style.display = 'block';
