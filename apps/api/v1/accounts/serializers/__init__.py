@@ -14,3 +14,8 @@ from .login_serializer import (
     LoginSerializer,
     RefreshTokenSerializer
 )
+
+from .password_serializer import (
+    PasswordResetRequestSerializer,
+    PasswordResetConfirmSerializer
+)
