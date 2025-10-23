@@ -1,12 +1,15 @@
 import re
+from PIL import Image
 
 from rest_framework import serializers
 from django.utils import timezone
 from django.contrib.auth import get_user_model
+from django.urls import reverse
 
 from apps.prescriptions.models import Prescription
 from apps.accounts.models import Profile
 from apps.questions.models import Question
+from apps.prescriptions.models import Prescription
 
 User = get_user_model()
 
@@ -178,7 +181,16 @@ class QuestionListSerializer(serializers.ModelSerializer):
     prescription_title = serializers.StringRelatedField(source="prescription.title", read_only=True)
     category_title = serializers.StringRelatedField(source="prescription.category.title", read_only=True)
     answerer_name = serializers.CharField(source="answered_by.full_name", read_only=True)
-    
+    prescription_url = serializers.SerializerMethodField()
     class Meta:
         model = Question
-        fields = ["prescription_title", "category_title", "question_text", "answerer_name", "answer_text", "answered_at"]
+        fields = ["prescription_title", "category_title", "question_text", "answerer_name", "answer_text", "answered_at", 'prescription_url',]
+        
+    def get_prescription_url(self, obj):
+        """ایجاد hyperlink به جزئیات نسخه مربوط به اعلان"""
+        if not obj.prescription:
+            return None
+
+        request = self.context.get('request')
+        url = reverse('prescriptions:prescription_detail', kwargs={'slug': obj.prescription.slug})
+        return request.build_absolute_uri(url) if request else url

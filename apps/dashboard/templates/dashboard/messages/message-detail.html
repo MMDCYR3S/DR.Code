@@ -30,7 +30,7 @@
 
     <!-- Header with Navigation and Actions -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <a href="{{ back_url }}" 
+        <a href="{% url 'dashboard:questions:questions_list' %}" 
            class="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors">
             <i class="fa-solid fa-arrow-right ml-2"></i>
             <span>بازگشت به لیست سوالات</span>
@@ -137,13 +137,6 @@
                 <div class="question-content text-slate-700">
                     {{ question.answer_text|linebreaks }}
                 </div>
-            </div>
-            <div class="px-6 py-4 bg-slate-50 rounded-b-xl">
-                <button onclick="editAnswer()" 
-                        class="inline-flex items-center px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 transition-colors">
-                    <i class="fa-solid fa-edit ml-2"></i>
-                    ویرایش پاسخ
-                </button>
             </div>
         </div>
         
@@ -375,13 +368,6 @@
                 }));
             }
         });
-    }
-
-    function editAnswer() {
-        // Implementation for editing existing answer
-        window.dispatchEvent(new CustomEvent('notify', {
-            detail: { type: 'info', message: 'ویرایش پاسخ به زودی اضافه خواهد شد' }
-        }));
     }
 </script>
 {% endblock %}

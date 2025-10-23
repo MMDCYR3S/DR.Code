@@ -39,6 +39,13 @@ class AuthenticationView(TemplateView):
         context['page_title'] = 'احراز هویت'
         context['page_description'] = 'تایید هویت پزشکی برای دسترسی کامل'
         return context
+    
+# ========== PASSWORD RESET CONFIRM VIEW ========== #
+class PasswordResetConfirmView(TemplateView):
+    """
+    صفحه احراز هویت دو مرحله‌ای
+    """
+    template_name = 'accounts/password_reset_confirm.html'
 
 # ========== PROFILE VIEW ========== #
 class ProfileView(LoginRequiredMixin, TemplateView):
