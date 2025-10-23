@@ -635,10 +635,7 @@
 
                 <div class="form-group">
 <div class="flex items-center justify-between mb-4">
-    <label class="flex items-center gap-2 text-sm text-gray-600">
-        <input type="checkbox" id="remember-me" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-        <span>مرا به خاطر بسپار</span>
-    </label>
+
     <button 
         type="button" 
         onclick="openForgotPasswordModal()" 
@@ -724,7 +721,7 @@
 
 
     <!-- مودال فراموشی رمز عبور -->
-<div id="forgot-password-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+<div id="forgot-password-modal" class="fixed inset-0 bg-black/10 bg-opacity-50 hidden items-center justify-center z-[1000] p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative animate-fade-in-up">
         <!-- دکمه بستن -->
         <button onclick="closeForgotPasswordModal()" class="absolute left-4 top-4 text-gray-400 hover:text-gray-600 transition-colors">
@@ -783,16 +780,27 @@
 <script>
 // باز کردن مودال فراموشی رمز عبور
 function openForgotPasswordModal() {
-    // بستن مودال لاگین
-    document.getElementById('login-modal').classList.add('hidden');
+    // بستن مودال لاگین (اگر وجود داشت)
+    const loginModal = document.getElementById('login-modal') || document.querySelector('[x-ref="loginModal"]') || document.querySelector('.auth-modal.login');
+    if (loginModal) {
+        loginModal.classList.add('hidden');
+        loginModal.classList.remove('flex');
+    }
     
     // باز کردن مودال فراموشی
-    document.getElementById('forgot-password-modal').classList.remove('hidden');
-    document.getElementById('forgot-password-modal').classList.add('flex');
+    const forgotModal = document.getElementById('forgot-password-modal');
+    forgotModal.classList.remove('hidden');
+    forgotModal.classList.add('flex');
     
     // ریست فرم
     document.getElementById('forgot-password-form').reset();
+    
+    // فوکوس روی اینپوت
+    setTimeout(() => {
+        document.getElementById('forgot-email').focus();
+    }, 100);
 }
+
 
 // بستن مودال فراموشی رمز عبور
 function closeForgotPasswordModal() {
