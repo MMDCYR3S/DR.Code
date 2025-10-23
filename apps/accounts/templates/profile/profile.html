@@ -1,321 +1,490 @@
 {% extends 'base.html' %}
-{% load static %}
+ {% load static %}
+  {% block title %}پروفایل{% endblock title %}
+ {% block content %}
 
-{% block title %}پروفایل{% endblock title %}
+<div
+  class="min-h-screen bg-gradient-to-br from-c5 via-white to-c4 py-8 pt-28"
+  x-data="profileApp"
+  x-init="init()"
+>
+  <div class="container mx-auto px-4 max-w-7xl">
+    <!-- Loading State -->
+    <template x-if="loading">
+      <div class="flex justify-center items-center min-h-[500px]">
+        <div class="text-center">
+          <div
+            class="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-c1 mb-4"
+          ></div>
+          <p class="text-c1 text-lg font-semibold">
+            در حال بارگذاری اطلاعات...
+          </p>
+        </div>
+      </div>
+    </template>
 
-{% block content %}
+    <!-- Error State -->
+    <template x-if="!loading && error">
+      <div class="max-w-2xl mx-auto mt-20">
+        <div
+          class="bg-white rounded-2xl shadow-lg p-8 text-center border-2 border-red-200"
+        >
+          <i class="fas fa-exclamation-circle text-6xl text-red-500 mb-4"></i>
+          <h3 class="text-2xl font-bold text-gray-800 mb-3">
+            خطا در بارگذاری اطلاعات
+          </h3>
+          <p class="text-gray-600 mb-6" x-text="error"></p>
+          <button
+            @click="loadProfileData()"
+            class="bg-c1 hover:bg-c2 text-white px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105"
+          >
+            <i class="fas fa-redo ml-2"></i>
+            تلاش مجدد
+          </button>
+        </div>
+      </div>
+    </template>
 
-
-<div class="min-h-screen bg-gradient-to-br from-c5 via-white to-c4 py-8 pt-28" x-data="profileApp" x-init="init()">
-    <div class="container mx-auto px-4 max-w-7xl">
-        
-        <!-- Loading State -->
-        <template x-if="loading">
-            <div class="flex justify-center items-center min-h-[500px]">
-                <div class="text-center">
-                    <div class="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-c1 mb-4"></div>
-                    <p class="text-c1 text-lg font-semibold">در حال بارگذاری اطلاعات...</p>
-                </div>
+    <!-- Main Content -->
+    <template x-if="!loading && !error && profileData">
+      <div class="space-y-6">
+        <!-- Page Header with Welcome Message -->
+        <div
+          class="bg-gradient-to-l from-c1 to-c2 rounded-2xl shadow-xl p-6 md:p-8 text-white"
+          data-aos="fade-down"
+        >
+          <div
+            class="flex flex-col md:flex-row items-center justify-between gap-4"
+          >
+            <div class="flex items-center gap-4">
+              <div class="bg-white/20 backdrop-blur-sm p-4 rounded-full">
+                <i class="fas fa-user-circle text-4xl"></i>
+              </div>
+              <div>
+                <h1 class="text-2xl md:text-3xl font-bold mb-1">
+                  سلام، <span x-text="profileData.user_full_name"></span> 👋
+                </h1>
+                <p class="text-white/80 text-sm md:text-base">
+                  خوش آمدید به داشبورد شخصی دکتر کد
+                </p>
+              </div>
             </div>
-        </template>
-
-        <!-- Error State -->
-        <template x-if="!loading && error">
-            <div class="max-w-2xl mx-auto mt-20">
-                <div class="bg-white rounded-2xl shadow-lg p-8 text-center border-2 border-red-200">
-                    <i class="fas fa-exclamation-circle text-6xl text-red-500 mb-4"></i>
-                    <h3 class="text-2xl font-bold text-gray-800 mb-3">خطا در بارگذاری اطلاعات</h3>
-                    <p class="text-gray-600 mb-6" x-text="error"></p>
-                    <button @click="loadProfileData()" class="bg-c1 hover:bg-c2 text-white px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105">
-                        <i class="fas fa-redo ml-2"></i>
-                        تلاش مجدد
-                    </button>
-                </div>
+            <div class="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg">
+              <i class="fas fa-phone ml-2"></i>
+              <span x-text="profileData.user_phone"></span>
             </div>
-        </template>
+          </div>
+        </div>
 
-        <!-- Main Content -->
-        <template x-if="!loading && !error && profileData">
-            <div class="space-y-6">
-                
-                <!-- Page Header with Welcome Message -->
-                <div class="bg-gradient-to-l from-c1 to-c2 rounded-2xl shadow-xl p-6 md:p-8 text-white" data-aos="fade-down">
-                    <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-                        <div class="flex items-center gap-4">
-                            <div class="bg-white/20 backdrop-blur-sm p-4 rounded-full">
-                                <i class="fas fa-user-circle text-4xl"></i>
-                            </div>
-                            <div>
-                                <h1 class="text-2xl md:text-3xl font-bold mb-1">
-                                    سلام، <span x-text="profileData.user_full_name"></span> 👋
-                                </h1>
-                                <p class="text-white/80 text-sm md:text-base">خوش آمدید به داشبورد شخصی دکتر کد</p>
-                            </div>
-                        </div>
-                        <div class="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg">
-                            <i class="fas fa-phone ml-2"></i>
-                            <span x-text="profileData.user_phone"></span>
-                        </div>
-                    </div>
-                </div>
+        <!-- Overview Cards Grid -->
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
+        >
+          <!-- نوع اکانت -->
+          <div
+            class="bg-white rounded-xl shadow-lg p-6 border-t-4 border-c1 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+            data-aos="fade-up"
+            data-aos-delay="100"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <div class="bg-c5 p-3 rounded-lg">
+                <i class="fas fa-crown text-2xl text-c1"></i>
+              </div>
+              <template x-if="profileData.role === 'premium'">
+                <span
+                  class="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-xs px-3 py-1 rounded-full font-bold"
+                >
+                  <i class="fas fa-star ml-1"></i>
+                  ویژه
+                </span>
+              </template>
+            </div>
+            <h3 class="text-gray-500 text-sm font-semibold mb-2">نوع اکانت</h3>
+            <p
+              class="text-2xl font-bold text-gray-800"
+              x-text="profileData.role === 'premium' ? 'اشتراک ویژه' : 'رایگان'"
+            ></p>
+          </div>
 
-                <!-- Overview Cards Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                    
-                    <!-- نوع اکانت -->
-                    <div class="bg-white rounded-xl shadow-lg p-6 border-t-4 border-c1 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1" data-aos="fade-up" data-aos-delay="100">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="bg-c5 p-3 rounded-lg">
-                                <i class="fas fa-crown text-2xl text-c1"></i>
-                            </div>
-                            <template x-if="profileData.role === 'premium'">
-                                <span class="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-xs px-3 py-1 rounded-full font-bold">
-                                    <i class="fas fa-star ml-1"></i>
-                                    ویژه
-                                </span>
-                            </template>
-                        </div>
-                        <h3 class="text-gray-500 text-sm font-semibold mb-2">نوع اکانت</h3>
-                        <p class="text-2xl font-bold text-gray-800" x-text="profileData.role === 'premium' ? 'اشتراک ویژه' : 'رایگان'"></p>
-                    </div>
-
-                    <!-- وضعیت احراز هویت -->
-                    <div class="bg-white rounded-xl shadow-lg p-6 border-t-4 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1" 
-                         :class="profileData.auth_status === 'APPROVED' ? 'border-green-500' : profileData.auth_status === 'PENDING' ? 'border-yellow-500' : 'border-red-500'"
-                         data-aos="fade-up" data-aos-delay="200">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="p-3 rounded-lg" 
-                                 :class="profileData.auth_status === 'APPROVED' ? 'bg-green-100' : profileData.auth_status === 'PENDING' ? 'bg-yellow-100' : 'bg-red-100'">
-                                <i class="text-2xl" 
-                                   :class="[
+          <!-- وضعیت احراز هویت -->
+          <div
+            class="bg-white rounded-xl shadow-lg p-6 border-t-4 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+            :class="profileData.auth_status === 'APPROVED' ? 'border-green-500' : profileData.auth_status === 'PENDING' ? 'border-yellow-500' : 'border-red-500'"
+            data-aos="fade-up"
+            data-aos-delay="200"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <div
+                class="p-3 rounded-lg"
+                :class="profileData.auth_status === 'APPROVED' ? 'bg-green-100' : profileData.auth_status === 'PENDING' ? 'bg-yellow-100' : 'bg-red-100'"
+              >
+                <i
+                  class="text-2xl"
+                  :class="[
                                        profileData.auth_status === 'APPROVED' ? 'fas fa-check-circle text-green-600' : 
                                        profileData.auth_status === 'PENDING' ? 'fas fa-clock text-yellow-600' : 
                                        'fas fa-times-circle text-red-600'
-                                   ]"></i>
-                            </div>
-                            <span class="text-xs px-3 py-1 rounded-full font-bold"
-                                  :class="profileData.auth_status === 'APPROVED' ? 'bg-green-100 text-green-700' : profileData.auth_status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'"
-                                  x-text="profileData.auth_status_display"></span>
-                        </div>
-                        <h3 class="text-gray-500 text-sm font-semibold mb-2">وضعیت احراز هویت</h3>
-                        <p class="text-sm text-gray-600" x-text="profileData.auth_status === 'APPROVED' ? 'هویت شما تایید شده است' : profileData.auth_status === 'PENDING' ? 'در انتظار بررسی' : 'نیاز به بررسی مجدد'"></p>
-                    </div>
-
-                    <!-- زمان اشتراک -->
-                    <div class="bg-white rounded-xl shadow-lg p-6 border-t-4 border-c2 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1" data-aos="fade-up" data-aos-delay="300">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="bg-c5 p-3 rounded-lg">
-                                <i class="fas fa-calendar-alt text-2xl text-c2"></i>
-                            </div>
-                        </div>
-                        <h3 class="text-gray-500 text-sm font-semibold mb-2">زمان اشتراک</h3>
-                        <template x-if="profileData.subscription_end_date">
-                            <p class="text-2xl font-bold text-gray-800" x-text="profileData.subscription_end_date"></p>
-                        </template>
-                        <template x-if="!profileData.subscription_end_date">
-                            <p class="text-lg text-gray-500">اشتراک فعال ندارید</p>
-                        </template>
-                    </div>
-
-                    <!-- تاریخ عضویت -->
-                    <div class="bg-white rounded-xl shadow-lg p-6 border-t-4 border-c3 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1" data-aos="fade-up" data-aos-delay="400">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="bg-c5 p-3 rounded-lg">
-                                <i class="fas fa-user-plus text-2xl text-c3"></i>
-                            </div>
-                        </div>
-                        <h3 class="text-gray-500 text-sm font-semibold mb-2">عضویت از</h3>
-                        <p class="text-lg font-bold text-gray-800" x-text="new Date(profileData.created_at).toLocaleDateString('fa-IR')"></p>
-                    </div>
-
-                </div>
-
-                <!-- اطلاعات کاربری با قابلیت ویرایش -->
-                <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8" data-aos="fade-up" data-aos-delay="500">
-                    <div class="flex items-center justify-between mb-6 pb-4 border-b-2 border-gray-100">
-                        <div class="flex items-center gap-3">
-                            <div class="bg-c5 p-3 rounded-lg">
-                                <i class="fas fa-id-card text-2xl text-c1"></i>
-                            </div>
-                            <h2 class="text-2xl font-bold text-gray-800">اطلاعات کاربری</h2>
-                        </div>
-                        <template x-if="!editMode">
-                            <button @click="enableEditMode()" class="bg-c1 hover:bg-c2 text-white px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105">
-                                <i class="fas fa-edit ml-2"></i>
-                                ویرایش اطلاعات
-                            </button>
-                        </template>
-                    </div>
-
-                    <!-- نمایش اطلاعات -->
-                    <template x-if="!editMode && profileUpdateData">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="bg-gradient-to-br from-c5 to-white p-5 rounded-xl border border-c4">
-                                <label class="text-gray-500 text-sm font-semibold block mb-2">نام</label>
-                                <p class="text-lg font-bold text-gray-800" x-text="profileUpdateData.user.first_name || 'وارد نشده'"></p>
-                            </div>
-                            <div class="bg-gradient-to-br from-c5 to-white p-5 rounded-xl border border-c4">
-                                <label class="text-gray-500 text-sm font-semibold block mb-2">نام خانوادگی</label>
-                                <p class="text-lg font-bold text-gray-800" x-text="profileUpdateData.user.last_name || 'وارد نشده'"></p>
-                            </div>
-                            <div class="bg-gradient-to-br from-c5 to-white p-5 rounded-xl border border-c4">
-                                <label class="text-gray-500 text-sm font-semibold block mb-2">ایمیل</label>
-                                <p class="text-lg font-bold text-gray-800" x-text="profileUpdateData.user.email || 'وارد نشده'"></p>
-                            </div>
-                            <div class="bg-gradient-to-br from-c5 to-white p-5 rounded-xl border border-c4">
-                                <label class="text-gray-500 text-sm font-semibold block mb-2">کد پزشکی</label>
-                                <p class="text-lg font-bold text-gray-800" x-text="profileUpdateData.profile.medical_code || 'ثبت نشده'"></p>
-                            </div>
-                            <div class="bg-gradient-to-br from-c5 to-white p-5 rounded-xl border border-c4">
-                                <label class="text-gray-500 text-sm font-semibold block mb-2">کد معرف</label>
-                                <p class="text-lg font-bold text-gray-800" x-text="profileUpdateData.profile.referral_code"></p>
-                            </div>
-                            <div class="bg-gradient-to-br from-c5 to-white p-5 rounded-xl border border-c4">
-                                <label class="text-gray-500 text-sm font-semibold block mb-2">نقش کاربری</label>
-                                <p class="text-lg font-bold text-gray-800" x-text="profileUpdateData.profile.role_display"></p>
-                            </div>
-                        </div>
-                    </template>
-
-                    <!-- فرم ویرایش -->
-                    <template x-if="editMode && profileUpdateData">
-                        <form @submit.prevent="saveProfile()" class="space-y-6">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="block text-gray-700 font-semibold mb-2">نام</label>
-                                    <input type="text" 
-                                           id="edit-first-name"
-                                           :value="profileUpdateData.user.first_name"
-                                           class="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-c1 focus:outline-none transition-colors"
-                                           placeholder="نام خود را وارد کنید">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 font-semibold mb-2">نام خانوادگی</label>
-                                    <input type="text" 
-                                           id="edit-last-name"
-                                           :value="profileUpdateData.user.last_name"
-                                           class="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-c1 focus:outline-none transition-colors"
-                                           placeholder="نام خانوادگی خود را وارد کنید">
-                                </div>
-                                <div class="md:col-span-2">
-                                    <label class="block text-gray-700 font-semibold mb-2">ایمیل</label>
-                                    <input type="email" 
-                                           id="edit-email"
-                                           :value="profileUpdateData.user.email"
-                                           class="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-c1 focus:outline-none transition-colors"
-                                           placeholder="ایمیل خود را وارد کنید">
-                                </div>
-                                <div class="md:col-span-2">
-                                    <label class="block text-gray-700 font-semibold mb-2">شماره تماس</label>
-                                    <input type="number" 
-                                           id="phone__number"
-                                           :value="profileUpdateData.user.phone_number"
-                                           class="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-c1 focus:outline-none transition-colors"
-                                           placeholder="شماره تماس خود را وارد کنید">
-                                </div>
-                                <div class="md:col-span-2">
-                                    <label class="block text-gray-700 font-semibold mb-2">رمز عبور</label>
-                                    <input type="password" 
-                                           id="password"
-                                           :value="profileUpdateData.user.password"
-                                           class="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-c1 focus:outline-none transition-colors"
-                                           placeholder="رمز عبور جدید را وارد کنید(در صورت عدم تغییر، خالی بگذارید)">
-                                </div>
-                            </div>
-                            
-                            <div class="flex gap-3 pt-4">
-                                <button type="submit" class="flex-1 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-bold transition-all duration-300 transform hover:scale-105">
-                                    <i class="fas fa-save ml-2"></i>
-                                    ذخیره تغییرات
-                                </button>
-                                <button type="button" @click="cancelEdit()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-bold transition-all duration-300 transform hover:scale-105">
-                                    <i class="fas fa-times ml-2"></i>
-                                    انصراف
-                                </button>
-                            </div>
-                        </form>
-                    </template>
-                </div>
-
-                <!-- دسترسی سریع به بخش‌های دیگر -->
-                <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8" data-aos="fade-up" data-aos-delay="600">
-                    <div class="flex items-center gap-3 mb-6 pb-4 border-b-2 border-gray-100">
-                        <div class="bg-c5 p-3 rounded-lg">
-                            <i class="fas fa-th-large text-2xl text-c1"></i>
-                        </div>
-                        <h2 class="text-2xl font-bold text-gray-800">دسترسی سریع</h2>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        
-                        <!-- نسخه‌های ذخیره شده -->
-                        <a href="/profile/saved/" class="group bg-gradient-to-br from-c1 to-c2 hover:from-c2 hover:to-c1 text-white rounded-xl p-6 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl">
-                            <div class="flex flex-col items-center text-center space-y-3">
-                                <div class="bg-white/20 backdrop-blur-sm p-4 rounded-full group-hover:bg-white/30 transition-all duration-300">
-                                    <i class="fas fa-bookmark text-3xl"></i>
-                                </div>
-                                <h3 class="font-bold text-lg">نسخه‌های ذخیره شده</h3>
-                                <p class="text-sm text-white/80">مشاهده نسخه‌های ذخیره شده</p>
-                                <div class="pt-2">
-                                    <i class="fas fa-arrow-left text-xl group-hover:translate-x-1 transition-transform duration-300"></i>
-                                </div>
-                            </div>
-                        </a>
-
-                        <!-- پاسخ‌ها و سوالات -->
-                        <a href="/contact/" class="group bg-gradient-to-br from-c3 to-c2 hover:from-c2 hover:to-c3 text-white rounded-xl p-6 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl">
-                            <div class="flex flex-col items-center text-center space-y-3">
-                                <div class="bg-white/20 backdrop-blur-sm p-4 rounded-full group-hover:bg-white/30 transition-all duration-300">
-                                    <i class="fas fa-comments text-3xl"></i>
-                                </div>
-                                <h3 class="font-bold text-lg">پاسخ‌ها و سوالات</h3>
-                                <p class="text-sm text-white/80">مشاهده گفتگوها و پیام‌ها</p>
-                                <div class="pt-2">
-                                    <i class="fas fa-arrow-left text-xl group-hover:translate-x-1 transition-transform duration-300"></i>
-                                </div>
-                            </div>
-                        </a>
-
-                        <!-- اعلان‌ها -->
-                        <a href="/profile/notifications/" class="group bg-gradient-to-br from-yellow-400 to-orange-500 hover:from-orange-500 hover:to-yellow-400 text-white rounded-xl p-6 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl relative">
-                            <div class="flex flex-col items-center text-center space-y-3">
-                                <div class="bg-white/20 backdrop-blur-sm p-4 rounded-full group-hover:bg-white/30 transition-all duration-300">
-                                    <i class="fas fa-bell text-3xl"></i>
-                                </div>
-                                <h3 class="font-bold text-lg">اعلان‌ها</h3>
-                                <p class="text-sm text-white/80">پیام‌ها و به‌روزرسانی‌ها</p>
-                                <div class="pt-2">
-                                    <i class="fas fa-arrow-left text-xl group-hover:translate-x-1 transition-transform duration-300"></i>
-                                </div>
-                            </div>
-                            <!-- Badge نمونه -->
-                            <span class="absolute top-4 left-4 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">3</span>
-                        </a>
-
-                        <!-- پشتیبانی -->
-                        <a href="/contact/" class="group bg-gradient-to-br from-purple-500 to-pink-500 hover:from-pink-500 hover:to-purple-500 text-white rounded-xl p-6 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl">
-                            <div class="flex flex-col items-center text-center space-y-3">
-                                <div class="bg-white/20 backdrop-blur-sm p-4 rounded-full group-hover:bg-white/30 transition-all duration-300">
-                                    <i class="fas fa-headset text-3xl"></i>
-                                </div>
-                                <h3 class="font-bold text-lg">پشتیبانی</h3>
-                                <p class="text-sm text-white/80">تماس با پشتیبانی</p>
-                                <div class="pt-2">
-                                    <i class="fas fa-arrow-left text-xl group-hover:translate-x-1 transition-transform duration-300"></i>
-                                </div>
-                            </div>
-                        </a>
-
-                    </div>
-                </div>
-
+                                   ]"
+                ></i>
+              </div>
+              <span
+                class="text-xs px-3 py-1 rounded-full font-bold"
+                :class="profileData.auth_status === 'APPROVED' ? 'bg-green-100 text-green-700' : profileData.auth_status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'"
+                x-text="profileData.auth_status_display"
+              ></span>
             </div>
-        </template>
+            <h3 class="text-gray-500 text-sm font-semibold mb-2">
+              وضعیت احراز هویت
+            </h3>
+            <p
+              class="text-sm text-gray-600"
+              x-text="profileData.auth_status === 'APPROVED' ? 'هویت شما تایید شده است' : profileData.auth_status === 'PENDING' ? 'در انتظار بررسی' : 'نیاز به بررسی مجدد'"
+            ></p>
+          </div>
 
-    </div>
+          <!-- زمان اشتراک -->
+          <div
+            class="bg-white rounded-xl shadow-lg p-6 border-t-4 border-c2 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+            data-aos="fade-up"
+            data-aos-delay="300"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <div class="bg-c5 p-3 rounded-lg">
+                <i class="fas fa-calendar-alt text-2xl text-c2"></i>
+              </div>
+            </div>
+            <h3 class="text-gray-500 text-sm font-semibold mb-2">
+              زمان اشتراک
+            </h3>
+            <template x-if="profileData.subscription_end_date">
+              <p
+                class="text-2xl font-bold text-gray-800"
+                x-text="profileData.subscription_end_date + 'روز'  "
+              ></p>
+            </template>
+            <template x-if="!profileData.subscription_end_date">
+              <p class="text-lg text-gray-500">اشتراک فعال ندارید</p>
+            </template>
+          </div>
+
+          <!-- تاریخ عضویت -->
+          <div
+            class="bg-white rounded-xl shadow-lg p-6 border-t-4 border-c3 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+            data-aos="fade-up"
+            data-aos-delay="400"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <div class="bg-c5 p-3 rounded-lg">
+                <i class="fas fa-user-plus text-2xl text-c3"></i>
+              </div>
+            </div>
+            <h3 class="text-gray-500 text-sm font-semibold mb-2">عضویت از</h3>
+            <p
+              class="text-lg font-bold text-gray-800"
+              x-text="new Date(profileData.created_at).toLocaleDateString('fa-IR')"
+            ></p>
+          </div>
+        </div>
+
+        <!-- اطلاعات کاربری با قابلیت ویرایش -->
+        <div
+          class="bg-white rounded-2xl shadow-xl p-6 md:p-8"
+          data-aos="fade-up"
+          data-aos-delay="500"
+        >
+          <div
+            class="flex items-center justify-between mb-6 pb-4 border-b-2 border-gray-100"
+          >
+            <div class="flex items-center gap-3">
+              <div class="bg-c5 p-3 rounded-lg">
+                <i class="fas fa-id-card text-2xl text-c1"></i>
+              </div>
+              <h2 class="text-2xl font-bold text-gray-800">اطلاعات کاربری</h2>
+            </div>
+            <template x-if="!editMode">
+              <button
+                @click="enableEditMode()"
+                class="bg-c1 hover:bg-c2 text-white px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105"
+              >
+                <i class="fas fa-edit ml-2"></i>
+                ویرایش اطلاعات
+              </button>
+            </template>
+          </div>
+
+          <!-- نمایش اطلاعات -->
+          <template x-if="!editMode && profileUpdateData">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div
+                class="bg-gradient-to-br from-c5 to-white p-5 rounded-xl border border-c4"
+              >
+                <label class="text-gray-500 text-sm font-semibold block mb-2"
+                  >نام</label
+                >
+                <p
+                  class="text-lg font-bold text-gray-800"
+                  x-text="profileUpdateData.user.first_name || 'وارد نشده'"
+                ></p>
+              </div>
+              <div
+                class="bg-gradient-to-br from-c5 to-white p-5 rounded-xl border border-c4"
+              >
+                <label class="text-gray-500 text-sm font-semibold block mb-2"
+                  >نام خانوادگی</label
+                >
+                <p
+                  class="text-lg font-bold text-gray-800"
+                  x-text="profileUpdateData.user.last_name || 'وارد نشده'"
+                ></p>
+              </div>
+              <div
+                class="bg-gradient-to-br from-c5 to-white p-5 rounded-xl border border-c4"
+              >
+                <label class="text-gray-500 text-sm font-semibold block mb-2"
+                  >ایمیل</label
+                >
+                <p
+                  class="text-lg font-bold text-gray-800"
+                  x-text="profileUpdateData.user.email || 'وارد نشده'"
+                ></p>
+              </div>
+              <div
+                class="bg-gradient-to-br from-c5 to-white p-5 rounded-xl border border-c4"
+              >
+                <label class="text-gray-500 text-sm font-semibold block mb-2"
+                  >کد پزشکی</label
+                >
+                <p
+                  class="text-lg font-bold text-gray-800"
+                  x-text="profileUpdateData.profile.medical_code || 'ثبت نشده'"
+                ></p>
+              </div>
+              <div
+                class="bg-gradient-to-br from-c5 to-white p-5 rounded-xl border border-c4"
+              >
+                <label class="text-gray-500 text-sm font-semibold block mb-2"
+                  >کد معرف</label
+                >
+                <p
+                  class="text-lg font-bold text-gray-800"
+                  x-text="profileUpdateData.profile.referral_code"
+                ></p>
+              </div>
+              <div
+                class="bg-gradient-to-br from-c5 to-white p-5 rounded-xl border border-c4"
+              >
+                <label class="text-gray-500 text-sm font-semibold block mb-2"
+                  >نقش کاربری</label
+                >
+                <p
+                  class="text-lg font-bold text-gray-800"
+                  x-text="profileUpdateData.profile.role_display"
+                ></p>
+              </div>
+            </div>
+          </template>
+
+          <!-- فرم ویرایش -->
+          <template x-if="editMode && profileUpdateData">
+            <form @submit.prevent="saveProfile()" class="space-y-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label class="block text-gray-700 font-semibold mb-2"
+                    >نام</label
+                  >
+                  <input
+                    type="text"
+                    id="edit-first-name"
+                    :value="profileUpdateData.user.first_name"
+                    class="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-c1 focus:outline-none transition-colors"
+                    placeholder="نام خود را وارد کنید"
+                  />
+                </div>
+                <div>
+                  <label class="block text-gray-700 font-semibold mb-2"
+                    >نام خانوادگی</label
+                  >
+                  <input
+                    type="text"
+                    id="edit-last-name"
+                    :value="profileUpdateData.user.last_name"
+                    class="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-c1 focus:outline-none transition-colors"
+                    placeholder="نام خانوادگی خود را وارد کنید"
+                  />
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-gray-700 font-semibold mb-2"
+                    >ایمیل</label
+                  >
+                  <input
+                    type="email"
+                    id="edit-email"
+                    :value="profileUpdateData.user.email"
+                    class="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-c1 focus:outline-none transition-colors"
+                    placeholder="ایمیل خود را وارد کنید"
+                  />
+                </div>
+                <div class="md:col-span-2">
+                  ُ
+                  <label class="block text-gray-700 font-semibold mb-2"
+                    >شماره تماس</label
+                  >
+                  <input
+                    type="number"
+                    id="phone__number"
+                    :value="profileUpdateData.user.phone_number"
+                    class="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-c1 focus:outline-none transition-colors"
+                    placeholder="شماره تماس خود را وارد کنید"
+                  />
+                </div>
+
+                <div class="info-item">
+                  <label>رمز عبور</label>
+                  <div class="flex items-center gap-3">
+                    <p>********</p>
+                    <button
+                      type="button"
+                      onclick="profileApp.requestPasswordReset()"
+                      class="px-4 py-1.5 text-sm font-medium text-blue-600 hover:text-white border border-blue-600 hover:bg-blue-600 rounded-lg transition-colors duration-200"
+                    >
+                      تغییر رمز عبور
+                    </button>
+                  </div>
+                </div>
+                T
+              </div>
+
+              <div class="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  class="flex-1 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-bold transition-all duration-300 transform hover:scale-105"
+                >
+                  <i class="fas fa-save ml-2"></i>
+                  ذخیره تغییرات
+                </button>
+                <button
+                  type="button"
+                  @click="cancelEdit()"
+                  class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-bold transition-all duration-300 transform hover:scale-105"
+                >
+                  <i class="fas fa-times ml-2"></i>
+                  انصراف
+                </button>
+              </div>
+            </form>
+          </template>
+        </div>
+
+        <!-- دسترسی سریع به بخش‌های دیگر -->
+        <div
+          class="bg-white rounded-2xl shadow-xl p-6 md:p-8"
+          data-aos="fade-up"
+          data-aos-delay="600"
+        >
+          <div
+            class="flex items-center gap-3 mb-6 pb-4 border-b-2 border-gray-100"
+          >
+            <div class="bg-c5 p-3 rounded-lg">
+              <i class="fas fa-th-large text-2xl text-c1"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800">دسترسی سریع</h2>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- نسخه‌های ذخیره شده -->
+            <a
+              href="/profile/saved/"
+              class="group bg-gradient-to-br from-c1 to-c2 hover:from-c2 hover:to-c1 text-white rounded-xl p-6 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
+            >
+              <div class="flex flex-col items-center text-center space-y-3">
+                <div
+                  class="bg-white/20 backdrop-blur-sm p-4 rounded-full group-hover:bg-white/30 transition-all duration-300"
+                >
+                  <i class="fas fa-bookmark text-3xl"></i>
+                </div>
+                <h3 class="font-bold text-lg">نسخه‌های ذخیره شده</h3>
+                <p class="text-sm text-white/80">مشاهده نسخه‌های ذخیره شده</p>
+                <div class="pt-2">
+                  <i
+                    class="fas fa-arrow-left text-xl group-hover:translate-x-1 transition-transform duration-300"
+                  ></i>
+                </div>
+              </div>
+            </a>
+
+            <!-- پاسخ‌ها و سوالات -->
+            <a
+              href="messages/"
+              class="group bg-gradient-to-br from-c3 to-c2 hover:from-c2 hover:to-c3 text-white rounded-xl p-6 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
+            >
+              <div class="flex flex-col items-center text-center space-y-3">
+                <div
+                  class="bg-white/20 backdrop-blur-sm p-4 rounded-full group-hover:bg-white/30 transition-all duration-300"
+                >
+                  <i class="fas fa-comments text-3xl"></i>
+                </div>
+                <h3 class="font-bold text-lg">پاسخ‌ها و سوالات</h3>
+                <p class="text-sm text-white/80">مشاهده گفتگوها و پیام‌ها</p>
+                <div class="pt-2">
+                  <i
+                    class="fas fa-arrow-left text-xl group-hover:translate-x-1 transition-transform duration-300"
+                  ></i>
+                </div>
+              </div>
+            </a>
+
+            <!-- اعلان‌ها -->
+            <a
+              href="/profile/notifications/"
+              class="group bg-gradient-to-br from-yellow-400 to-orange-500 hover:from-orange-500 hover:to-yellow-400 text-white rounded-xl p-6 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl relative"
+            >
+              <div class="flex flex-col items-center text-center space-y-3">
+                <div
+                  class="bg-white/20 backdrop-blur-sm p-4 rounded-full group-hover:bg-white/30 transition-all duration-300"
+                >
+                  <i class="fas fa-bell text-3xl"></i>
+                </div>
+                <h3 class="font-bold text-lg">اعلان‌ها</h3>
+                <p class="text-sm text-white/80">پیام‌ها و به‌روزرسانی‌ها</p>
+                <div class="pt-2">
+                  <i
+                    class="fas fa-arrow-left text-xl group-hover:translate-x-1 transition-transform duration-300"
+                  ></i>
+                </div>
+              </div>
+              <!-- Badge نمونه -->
+              <span
+                class="absolute top-4 left-4 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full"
+                >3</span
+              >
+            </a>
+
+            <!-- پشتیبانی -->
+            <a
+              href="/contact/"
+              class="group bg-gradient-to-br from-purple-500 to-pink-500 hover:from-pink-500 hover:to-purple-500 text-white rounded-xl p-6 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
+            >
+              <div class="flex flex-col items-center text-center space-y-3">
+                <div
+                  class="bg-white/20 backdrop-blur-sm p-4 rounded-full group-hover:bg-white/30 transition-all duration-300"
+                >
+                  <i class="fas fa-headset text-3xl"></i>
+                </div>
+                <h3 class="font-bold text-lg">پشتیبانی</h3>
+                <p class="text-sm text-white/80">تماس با پشتیبانی</p>
+                <div class="pt-2">
+                  <i
+                    class="fas fa-arrow-left text-xl group-hover:translate-x-1 transition-transform duration-300"
+                  ></i>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
 </div>
-
 
 <script src="{% static 'js/profile.js' %}"></script>
 {% endblock%}
-

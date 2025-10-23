@@ -141,12 +141,7 @@ async logout() {
                             <i class="fas fa-user"></i>
                             پروفایل من
                         </a>
-                        ${profile?.role === 'premium' ? `
-                            <a href="/premium">
-                                <i class="fas fa-crown"></i>
-                                پنل ویژه
-                            </a>
-                        ` : ''}
+
                         <hr>
                         <a href="#" onclick="Auth.logout(); return false;">
                             <i class="fas fa-sign-out-alt"></i>
@@ -168,7 +163,6 @@ async logout() {
                 <div id="mobile-user-menu" class="mobile-dropdown-menu absolute px-8" style="display: none;">
                     <a href="/profile"><i class="fas fa-user"></i> پروفایل</a>
                     ${profile?.role === 'premium' ? `
-                        <a href="/premium"><i class="fas fa-crown"></i> پنل ویژه</a>
                     ` : ''}
                     <a href="#" onclick="Auth.logout(); return false;">
                         <i class="fas fa-sign-out-alt"></i> خروج

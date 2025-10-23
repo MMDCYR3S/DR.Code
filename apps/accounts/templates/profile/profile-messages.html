@@ -2,18 +2,315 @@
 {% load static %}
 
 {% block title %}صفحه اصلی{% endblock title %}
-{% block extra_css %}
-<!-- قسمت css و حتی ایمپورت کردن فایل هات رو اینجا بزار -->
-
-{% endblock extra_css %}
 
 {% block content %}
-<!-- محتوای صفحات اینجاست -->
+<style>
+        /* Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
-{% endblock content %}
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
 
-{% block extra_js %}
-<!-- قسمت js و حتی ایمپورت کردن فایل هات رو اینجا بزار -->
+        /* Question Card Hover Effect */
+        .question-card {
+            transition: all 0.3s ease;
+        }
 
-{% endblock extra_js %}
-    
+        .question-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0, 119, 182, 0.15);
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            backdrop-filter: blur(4px);
+        }
+    </style>
+
+<div class="bg-gray-50 pt-24" x-data="userQuestionsApp()">
+
+    <!-- Navbar (اگه داری از قبل) -->
+    <!-- اینجا navbar رو import کن -->
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        
+        <!-- Header -->
+        <div class="bg-white rounded-2xl shadow-md p-6 mb-6 fade-in">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="bg-blue-100 p-3 rounded-2xl">
+                        <i class="fas fa-question-circle text-3xl text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800">سوالات و پاسخ‌های من</h1>
+                        <p class="text-gray-600 text-sm mt-1">پاسخ‌های متخصصین به سوالات شما</p>
+                    </div>
+                </div>
+                
+                <!-- Stats -->
+                <div class="text-center bg-blue-50 px-6 py-3 rounded-2xl" x-show="!loading">
+                    <div class="text-3xl font-bold text-blue-600" x-text="totalCount"></div>
+                    <div class="text-xs text-gray-600">سوال ثبت شده</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div x-show="loading" class="text-center py-20 fade-in">
+            <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600"></div>
+            <p class="text-gray-600 mt-4">در حال بارگذاری...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div x-show="!loading && questions.length === 0" class="text-center py-20 fade-in">
+            <div class="bg-white rounded-2xl shadow-md p-12">
+                <i class="fas fa-inbox text-gray-300 text-6xl mb-4"></i>
+                <h3 class="text-xl font-bold text-gray-700 mb-2">هنوز سوالی ثبت نشده</h3>
+                <p class="text-gray-500 mb-6">از بخش نسخه‌ها می‌توانید سوال خود را بپرسید</p>
+                <a href="/prescriptions" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-2xl hover:bg-blue-700 transition">
+                    <i class="fas fa-prescription ml-2"></i>
+                    مشاهده نسخه‌ها
+                </a>
+            </div>
+        </div>
+
+        <!-- Questions Grid -->
+        <div x-show="!loading && questions.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <template x-for="(question, index) in questions" :key="index">
+                <div class="question-card bg-white rounded-2xl shadow-md overflow-hidden fade-in hover:cursor-pointer"
+                     @click="openModal(question)">
+                    
+                    <!-- Card Header -->
+                    <div class="bg-gradient-to-r from-blue-600 to-blue-700 p-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-prescription text-white text-lg"></i>
+                                <h3 class="text-white font-bold text-sm" x-text="question.prescription_title"></h3>
+                            </div>
+                            <span class="bg-white/20 text-white text-xs px-3 py-1 rounded-full" x-text="question.category_title"></span>
+                        </div>
+                    </div>
+
+                    <!-- Card Body -->
+                    <div class="p-5">
+                        <!-- Question -->
+                        <div class="mb-4">
+                            <div class="flex items-start gap-2 mb-2">
+                                <i class="fas fa-user-circle text-blue-600 text-xl mt-1"></i>
+                                <div class="flex-1">
+                                    <div class="text-xs text-gray-500 mb-1">سوال شما:</div>
+                                    <p class="text-gray-800 text-sm leading-relaxed" 
+                                       x-text="truncateText(question.question_text, 100)"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Answer -->
+                        <div class="bg-green-50 rounded-2xl p-3 border-r-4 border-green-500">
+                            <div class="flex items-start gap-2">
+                                <i class="fas fa-user-md text-green-600 text-lg mt-1"></i>
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-xs font-bold text-green-700" x-text="question.answerer_name"></span>
+                                        <span class="text-xs text-gray-500" x-text="formatDate(question.answered_at)"></span>
+                                    </div>
+                                    <p class="text-gray-700 text-sm leading-relaxed" 
+                                       x-text="truncateText(question.answer_text, 80)"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- View Details Button -->
+                        <div class="mt-4 text-left">
+                            <button class="text-blue-600 text-sm font-bold hover:text-blue-700 transition flex items-center gap-2">
+                                <span>مشاهده جزئیات</span>
+                                <i class="fas fa-arrow-left"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Pagination -->
+        <div x-show="!loading && totalPages > 1" class="mt-8 fade-in">
+            <div class="bg-white rounded-2xl shadow-md p-4">
+                <div class="flex items-center justify-between">
+                    
+                    <!-- Previous Button -->
+                    <button @click="loadPage(currentPage - 1)"
+                            :disabled="currentPage === 1"
+                            :class="currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-600 hover:text-white'"
+                            class="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-2xl transition">
+                        <i class="fas fa-chevron-right"></i>
+                        <span>قبلی</span>
+                    </button>
+
+                    <!-- Page Numbers -->
+                    <div class="flex items-center gap-2">
+                        <template x-for="page in totalPages" :key="page">
+                            <button @click="loadPage(page)"
+                                    :class="page === currentPage ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-blue-100'"
+                                    class="w-10 h-10 rounded-2xl font-bold transition"
+                                    x-text="page"></button>
+                        </template>
+                    </div>
+
+                    <!-- Next Button -->
+                    <button @click="loadPage(currentPage + 1)"
+                            :disabled="currentPage === totalPages"
+                            :class="currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-600 hover:text-white'"
+                            class="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-2xl transition">
+                        <span>بعدی</span>
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                </div>
+
+                <!-- Page Info -->
+                <div class="text-center mt-3 text-sm text-gray-600">
+                    صفحه <span class="font-bold text-blue-600" x-text="currentPage"></span> از <span class="font-bold" x-text="totalPages"></span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Detail Modal -->
+    <div x-show="showModal" 
+         x-cloak
+         @click.self="closeModal()"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay bg-black/50"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        
+        <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+             @click.stop
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 transform scale-95"
+             x-transition:enter-end="opacity-100 transform scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 transform scale-100"
+             x-transition:leave-end="opacity-0 transform scale-95">
+            
+            <template x-if="selectedQuestion">
+                <div>
+                    <!-- Modal Header -->
+                    <div class="bg-gradient-to-r from-blue-600 to-blue-700 p-6 flex items-center justify-between sticky top-0 z-10">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-comments text-white text-2xl"></i>
+                            <div>
+                                <h2 class="text-xl font-bold text-white">جزئیات سوال و پاسخ</h2>
+                                <p class="text-blue-100 text-sm mt-1" x-text="selectedQuestion.prescription_title"></p>
+                            </div>
+                        </div>
+                        <button @click="closeModal()" class="text-white hover:bg-white/20 p-2 rounded-2xl transition">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="p-6 space-y-6">
+                        
+                        <!-- Prescription Info -->
+                        <div class="bg-gray-50 rounded-2xl p-4 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-prescription text-blue-600 text-xl"></i>
+                                <div>
+                                    <div class="text-xs text-gray-500">نسخه مربوطه:</div>
+                                    <div class="font-bold text-gray-800" x-text="selectedQuestion.prescription_title"></div>
+                                </div>
+                            </div>
+                            <span class="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full" 
+                                  x-text="selectedQuestion.category_title"></span>
+                        </div>
+
+                        <!-- Question Section -->
+                        <div class="bg-white border-2 border-blue-200 rounded-2xl p-5">
+                            <div class="flex items-start gap-3">
+                                <div class="bg-blue-100 p-3 rounded-full">
+                                    <i class="fas fa-user-circle text-blue-600 text-xl"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-3">
+                                        <span class="text-sm font-bold text-gray-700">سوال شما</span>
+                                        <div class="h-px flex-1 bg-gray-200"></div>
+                                    </div>
+                                    <p class="text-gray-800 leading-relaxed whitespace-pre-wrap" 
+                                       x-text="selectedQuestion.question_text"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Answer Section -->
+                        <div class="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-5">
+                            <div class="flex items-start gap-3">
+                                <div class="bg-green-100 p-3 rounded-full">
+                                    <i class="fas fa-user-md text-green-600 text-xl"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-sm font-bold text-gray-700">پاسخ متخصص</span>
+                                            <span class="bg-green-200 text-green-800 text-xs px-2 py-1 rounded-full" 
+                                                  x-text="selectedQuestion.answerer_name"></span>
+                                        </div>
+                                        <span class="text-xs text-gray-500" x-text="formatDateFull(selectedQuestion.answered_at)"></span>
+                                    </div>
+                                    <div class="h-px bg-green-200 mb-3"></div>
+                                    <p class="text-gray-800 leading-relaxed whitespace-pre-wrap" 
+                                       x-text="selectedQuestion.answer_text"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Info Box -->
+                        <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-start gap-3">
+                            <i class="fas fa-info-circle text-blue-600 text-lg mt-1"></i>
+                            <p class="text-sm text-gray-700 leading-relaxed">
+                                این پاسخ توسط متخصصین ما بررسی و تایید شده است. در صورت داشتن سوال بیشتر می‌توانید از بخش نسخه‌ها سوال جدید ثبت کنید.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="bg-gray-50 p-4 flex justify-end gap-3 border-t sticky bottom-0">
+                        <button @click="closeModal()" 
+                                class="px-6 py-2 bg-gray-200 text-gray-700 rounded-2xl hover:bg-gray-300 transition">
+                            <i class="fas fa-times ml-2"></i>
+                            بستن
+                        </button>
+                        <a :href="'/prescriptions/' + selectedQuestion.prescription_slug" 
+                           class="px-6 py-2 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition inline-flex items-center gap-2">
+                            <i class="fas fa-prescription"></i>
+                            <span>مشاهده نسخه</span>
+                        </a>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/user_questions.js' %}"></script>
+
+
+
+
+{% endblock %}
+

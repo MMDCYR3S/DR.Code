@@ -864,3 +864,73 @@ API.payment = {
         }
     }
 };
+
+
+// در انتهای فایل api.js اضافه کن:
+
+// User Questions API
+API.userQuestions = {
+    /**
+     * دریافت لیست سوالات و پاسخ‌های کاربر
+     * @param {number} page - شماره صفحه (پیش‌فرض 1)
+     * @returns {Promise} - لیست سوالات با pagination
+     */
+    async getQuestions(page = 1) {
+        try {
+            const token = StorageManager.getAccessToken();
+            if (!token) {
+                throw new Error('لطفاً ابتدا وارد حساب کاربری خود شوید');
+            }
+
+            const url = `${API.BASE_URL}api/v1/accounts/profile/questions/${page > 1 ? '?page=' + page : ''}`;
+            
+            console.log('📡 GET:', url);
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'خطا در دریافت سوالات');
+            }
+
+            console.log('✅ Questions Response:', data);
+            return data;
+
+        } catch (error) {
+            console.error('❌ Error fetching questions:', error);
+            throw error;
+        }
+    }
+};
+
+// تست API (برای کنسول - بعداً کامنت کن)
+async function testUserQuestionsAPI() {
+    console.log('🧪 Testing User Questions API...\n');
+    
+    try {
+        const page1 = await API.userQuestions.getQuestions(1);
+        console.log('✅ Success! Response:', page1);
+        console.log('📊 Total Count:', page1.count);
+        console.log('📋 Results:', page1.results);
+        
+        if (page1.results.length > 0) {
+            console.log('\n💬 First question:');
+            console.log('  - Prescription:', page1.results[0].prescription_title);
+            console.log('  - Question:', page1.results[0].question_text);
+            console.log('  - Answer:', page1.results[0].answer_text);
+            console.log('  - Answerer:', page1.results[0].answerer_name);
+        }
+    } catch (error) {
+        console.error('❌ Test Failed:', error.message);
+    }
+}
+
+// برای تست:
+// testUserQuestionsAPI();

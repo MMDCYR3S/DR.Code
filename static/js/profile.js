@@ -7,6 +7,7 @@ const profileApp = {
     loading: true,
     error: null,
     editMode: false,
+    
 
     async init() {
         console.log('🟢 Profile app initializing...');
@@ -111,7 +112,71 @@ const profileApp = {
                 text: error.message
             });
         }
+    },
+    async requestPasswordReset() {
+    try {
+        // نمایش تایید
+        const result = await Swal.fire({
+            icon: 'question',
+            title: 'تغییر رمز عبور',
+            text: 'یک لینک بازیابی به ایمیل شما ارسال خواهد شد',
+            showCancelButton: true,
+            confirmButtonText: 'ارسال لینک',
+            cancelButtonText: 'انصراف',
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33'
+        });
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        // نمایش لودینگ
+        Swal.fire({
+            title: 'در حال ارسال...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        // ارسال درخواست
+        const email = this.profileUpdateData?.user?.email;
+        
+        if (!email) {
+            throw new Error('ایمیل کاربر یافت نشد');
+        }
+
+        const response = await fetch('/api/v1/accounts/password/reset/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email: email })
+        });
+
+        const data = await response.json();
+
+        // نمایش نتیجه
+        await Swal.fire({
+            icon: 'success',
+            title: 'ارسال شد',
+            text: 'لینک بازیابی رمز عبور به ایمیل شما ارسال شد. لطفاً ایمیل خود را بررسی کنید.',
+            confirmButtonText: 'متوجه شدم'
+        });
+
+    } catch (error) {
+        console.error('❌ Password reset error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'خطا',
+            text: error.message || 'خطا در ارسال لینک بازیابی',
+            confirmButtonText: 'باشه'
+        });
     }
+},
+
+
 };
 
 // فقط اگه توی صفحه profile هستیم، init کن
