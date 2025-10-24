@@ -1,4 +1,3 @@
-// Payment Verification Page Logic
 function paymentVerifyApp() {
     return {
         loading: true,
@@ -22,74 +21,37 @@ function paymentVerifyApp() {
         },
 
         async verifyPayment() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // 🔍 تشخیص درگاه
+            const gateway = urlParams.get('gateway');
+            const authority = urlParams.get('Authority');
+            const order_id = urlParams.get('order_id');
+            const status = urlParams.get('Status') || urlParams.get('status');
+
+            console.log('🔎 Payment Parameters:', { 
+                gateway, 
+                authority, 
+                order_id, 
+                status 
+            });
+
             try {
                 this.loading = true;
-                this.error = null;
-        
-                const urlParams = new URLSearchParams(window.location.search);
-                
-                // دریافت پارامترها
-                const authority = urlParams.get('Authority');
-                const status = urlParams.get('Status');
-        
-                console.log('🔍 Payment verification started:', { authority, status });
-        
-                if (!authority) {
-                    throw new Error('کد Authority یافت نشد');
+
+                // ✅ زرین‌پال
+                if (authority || gateway === 'zarinpal') {
+                    await this.verifyZarinpal(authority, status);
                 }
-        
-                if (status === 'NOK') {
-                    this.success = false;
-                    this.errorMessage = 'پرداخت توسط کاربر لغو شد';
-                    this.loading = false;
-                    this.cleanup();
-                    return;
+                // ✅ پارس‌پال
+                else if (order_id || gateway === 'parspal') {
+                    await this.verifyParspal(order_id, status);
                 }
-        
-                // ✅ ارسال درخواست POST با body
-                const token = StorageManager.getAccessToken();
-                
-                // ✅ استفاده از URL نسبی (بدون localhost)
-                const url = '/api/v1/payment/zarinpal/verify/';
-                
-                console.log('🔗 Verify URL:', url);
-        
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    // ✅ ارسال داده‌ها در body
-                    body: JSON.stringify({
-                        authority: authority,
-                        status: status
-                    })
-                });
-        
-                console.log('📊 Response Status:', response.status);
-        
-                const data = await response.json();
-                console.log('📦 Response Data:', data);
-        
-                if (!response.ok) {
-                    throw new Error(data.error || data.message || data.detail || 'خطا در تایید پرداخت');
+                // ❌ درگاه نامشخص
+                else {
+                    throw new Error('اطلاعات پرداخت نامعتبر است');
                 }
-        
-                // ✅ موفقیت!
-                this.success = true;
-                this.paymentData = data;
-                this.refId = data.ref_id || '';
-                this.paymentDate = this.formatDate(new Date());
-        
-                console.log('✅ Payment verified successfully!');
-        
-                // نمایش confetti
-                this.showConfetti();
-        
-                // به‌روزرسانی پروفایل
-                await this.updateUserProfile();
-        
+
             } catch (error) {
                 console.error('❌ Payment verification error:', error);
                 this.success = false;
@@ -100,14 +62,125 @@ function paymentVerifyApp() {
             }
         },
 
+        // ========== زرین‌پال ========== //
+        async verifyZarinpal(authority, status) {
+            console.log('🟢 Verifying ZarinPal...');
+
+            if (!authority) {
+                throw new Error('کد Authority یافت نشد');
+            }
+
+            if (status === 'NOK') {
+                throw new Error('پرداخت توسط کاربر لغو شد');
+            }
+
+            const token = StorageManager.getAccessToken();
+            const url = '/api/v1/payment/zarinpal/verify/';
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    authority: authority,
+                    status: status
+                })
+            });
+
+            console.log('📊 ZarinPal Response Status:', response.status);
+
+            const data = await response.json();
+            console.log('📦 ZarinPal Response Data:', data);
+
+            if (!response.ok) {
+                throw new Error(data.error || data.message || data.detail || 'خطا در تایید پرداخت');
+            }
+
+            // ✅ موفقیت!
+            this.success = true;
+            this.paymentGateway = 'zarinpal';
+            this.paymentData = data;
+            this.refId = data.ref_id || '';
+            this.paymentDate = this.formatDate(new Date());
+
+            console.log('✅ ZarinPal payment verified successfully!');
+
+            this.showConfetti();
+            await this.updateUserProfile();
+        },
+
+        // ========== پارس‌پال ========== //
+        async verifyParspal(order_id, status_code) {
+            console.log('🟣 Verifying ParsPal...');
+
+            if (!order_id) {
+                throw new Error('شناسه سفارش یافت نشد');
+            }
+
+            // بررسی وضعیت
+            if (status_code !== '100') {
+                const messages = {
+                    '99': 'انصراف کاربر از پرداخت',
+                    '88': 'پرداخت ناموفق',
+                    '77': 'لغو پرداخت توسط کاربر'
+                };
+                throw new Error(messages[status_code] || 'پرداخت ناموفق');
+            }
+
+            const token = StorageManager.getAccessToken();
+            const url = '/api/v1/payment/parspal/verify/';
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    order_id: order_id
+                })
+            });
+
+            console.log('📊 ParsPal Response Status:', response.status);
+
+            const data = await response.json();
+            console.log('📦 ParsPal Response Data:', data);
+
+            if (!response.ok) {
+                throw new Error(data.message || data.error || data.detail || 'خطا در تایید پرداخت');
+            }
+
+            if (!data.success) {
+                throw new Error(data.message || 'تایید پرداخت ناموفق بود');
+            }
+
+            // ✅ موفقیت!
+            this.success = true;
+            this.paymentGateway = 'parspal';
+            this.paymentData = data.data || data;
+            
+            // استخراج شماره مرجع
+            this.refId = data.data?.reference_number || 
+                         data.data?.transaction_id || 
+                         data.data?.receipt_number || 
+                         order_id;
+            
+            this.paymentDate = this.formatDate(new Date());
+
+            console.log('✅ ParsPal payment verified successfully!');
+
+            this.showConfetti();
+            await this.updateUserProfile();
+        },
+
         async updateUserProfile() {
             try {
                 console.log('🔄 Updating user profile...');
                 
-                // فراخوانی API پروفایل برای بروزرسانی نقش کاربر
                 const profile = await API.profile.getProfile();
                 
-                // ذخیره اطلاعات جدید
                 const currentData = StorageManager.getUserData();
                 StorageManager.saveUserData({
                     ...currentData,
@@ -119,7 +192,6 @@ function paymentVerifyApp() {
                 console.log('✅ Profile updated successfully');
             } catch (error) {
                 console.error('⚠️ Error updating profile:', error);
-                // در صورت خطا، باز هم ادامه بده (چون پرداخت موفق بوده)
             }
         },
 

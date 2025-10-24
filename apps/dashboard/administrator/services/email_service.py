@@ -8,7 +8,7 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 
 logger = logging.getLogger(__name__)
-
+print(f"The name of the email service logger is: {__name__}")
 # SEND EMAIL TASK
 def _send_email_task(subject, to_email, template_name, context=None):
     """
