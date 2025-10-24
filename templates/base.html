@@ -723,8 +723,8 @@
     </div>
 
 
-    <!-- مودال فراموشی رمز عبور -->
-<div id="forgot-password-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+<!-- مودال فراموشی رمز عبور -->
+<div id="forgot-password-modal" class="fixed inset-0 bg-black/70 bg-opacity-50 hidden items-center justify-center z-50 p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative animate-fade-in-up">
         <!-- دکمه بستن -->
         <button onclick="closeForgotPasswordModal()" class="absolute left-4 top-4 text-gray-400 hover:text-gray-600 transition-colors">
@@ -746,13 +746,13 @@
             </div>
 
             <!-- فرم -->
-            <form id="forgot-password-form" onsubmit="handleForgotPassword(event)" class="space-y-6">
+            <form id="forgot-password-form" onsubmit="handleForgotPasswordBase(event)" class="space-y-6">
                 <!-- ایمیل -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">ایمیل</label>
                     <input 
                         type="email" 
-                        id="forgot-email" 
+                        id="forgot-email-base" 
                         required 
                         placeholder="example@email.com"
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
@@ -760,9 +760,14 @@
 
                 <!-- دکمه ارسال -->
                 <button 
-                    type="submit" 
-                    class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transform hover:scale-[1.02] transition-all duration-200 shadow-lg">
-                    ارسال لینک بازیابی
+                    type="submit"
+                    id="forgot-password-submit-btn" 
+                    class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transform hover:scale-[1.02] transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span id="forgot-password-btn-text">ارسال لینک بازیابی</span>
+                    <span id="forgot-password-btn-loading" class="hidden">
+                        <i class="fas fa-spinner fa-spin ml-2"></i>
+                        در حال ارسال...
+                    </span>
                 </button>
 
                 <!-- بازگشت به لاگین -->
@@ -779,16 +784,16 @@
     </div>
 </div>
 
-
 <script>
 // باز کردن مودال فراموشی رمز عبور
 function openForgotPasswordModal() {
-    // بستن مودال لاگین
-    document.getElementById('login-modal').classList.add('hidden');
+    // بستن مودال Auth
+    Auth.closeAuthModal();
     
     // باز کردن مودال فراموشی
-    document.getElementById('forgot-password-modal').classList.remove('hidden');
-    document.getElementById('forgot-password-modal').classList.add('flex');
+    const modal = document.getElementById('forgot-password-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
     
     // ریست فرم
     document.getElementById('forgot-password-form').reset();
@@ -796,46 +801,34 @@ function openForgotPasswordModal() {
 
 // بستن مودال فراموشی رمز عبور
 function closeForgotPasswordModal() {
-    document.getElementById('forgot-password-modal').classList.add('hidden');
-    document.getElementById('forgot-password-modal').classList.remove('flex');
+    const modal = document.getElementById('forgot-password-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
 }
 
 // بازگشت به لاگین
 function backToLogin() {
     closeForgotPasswordModal();
-    openLoginModal();
+    Auth.openAuthModal('login');
 }
 
-// هندل کردن فرم فراموشی رمز عبور
-async function handleForgotPassword(event) {
+// هندل کردن فرم فراموشی رمز عبور - استفاده از API.profile.requestPasswordReset
+async function handleForgotPasswordBase(event) {
     event.preventDefault();
     
-    const email = document.getElementById('forgot-email').value;
+    const email = document.getElementById('forgot-email-base').value;
+    const submitBtn = document.getElementById('forgot-password-submit-btn');
+    const btnText = document.getElementById('forgot-password-btn-text');
+    const btnLoading = document.getElementById('forgot-password-btn-loading');
     
     try {
         // نمایش لودینگ
-        Swal.fire({
-            title: 'در حال ارسال...',
-            text: 'لطفاً صبر کنید',
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
+        submitBtn.disabled = true;
+        btnText.classList.add('hidden');
+        btnLoading.classList.remove('hidden');
 
-        // ارسال درخواست
-        const response = await fetch('/api/v1/accounts/password/reset/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email: email })
-        });
-
-        const data = await response.json();
-
-        // بستن لودینگ
-        Swal.close();
+        // ارسال درخواست با استفاده از API.profile.requestPasswordReset
+        const data = await API.profile.requestPasswordReset(email);
 
         // بستن مودال
         closeForgotPasswordModal();
@@ -845,7 +838,7 @@ async function handleForgotPassword(event) {
             icon: 'success',
             title: 'ارسال شد!',
             html: `
-                <p class="text-gray-700 mb-2">لینک بازیابی رمز عبور به ایمیل شما ارسال شد.</p>
+                <p class="text-gray-700 mb-2">لینک بازیابی رمز عبور به ایمیل <strong>${email}</strong> ارسال شد.</p>
                 <p class="text-sm text-gray-500">لطفاً صندوق ورودی و پوشه اسپم خود را بررسی کنید.</p>
             `,
             confirmButtonText: 'متوجه شدم',
@@ -858,10 +851,15 @@ async function handleForgotPassword(event) {
         Swal.fire({
             icon: 'error',
             title: 'خطا',
-            text: error.message || 'خطا در ارسال لینک بازیابی. لطفاً دوباره تلاش کنید.',
+            text: error.email?.[0] || error.detail || error.message || 'خطا در ارسال لینک بازیابی. لطفاً دوباره تلاش کنید.',
             confirmButtonText: 'باشه',
             confirmButtonColor: '#ef4444'
         });
+    } finally {
+        // بازگشت به حالت عادی
+        submitBtn.disabled = false;
+        btnText.classList.remove('hidden');
+        btnLoading.classList.add('hidden');
     }
 }
 
@@ -872,7 +870,6 @@ document.getElementById('forgot-password-modal')?.addEventListener('click', func
     }
 });
 </script>
-
 
 </body>
 <script src="{% static 'js/storage.js' %}"></script>

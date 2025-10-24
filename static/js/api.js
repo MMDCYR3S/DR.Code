@@ -413,6 +413,38 @@ API.profile = {
             console.error('Profile Update API error:', error);
             throw error;
         }
+    },
+    requestPasswordReset: async (email) => {
+        const response = await fetch(`${API.BASE_URL}api/v1/accounts/password/reset/`, {
+            method: 'POST',
+            headers: API.getHeaders(true),
+            body: JSON.stringify({email})
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw error;
+        }
+        
+        return await response.json();
+    },
+    // تایید بازنشانی رمز عبور
+    async confirmPasswordReset(data) {
+        const response = await fetch(`${API.BASE_URL}api/v1/accounts/password/reset/confirm/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': this.csrfToken
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw error;
+        }
+
+        return await response.json();
     }
 };
 // Plans APIs

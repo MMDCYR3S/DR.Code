@@ -7,6 +7,9 @@ const profileApp = {
     loading: true,
     error: null,
     editMode: false,
+    showPasswordResetModal: false,
+    resetPasswordEmail: '',
+    passwordResetLoading: false,
     
 
     async init() {
@@ -47,6 +50,7 @@ const profileApp = {
 
             if (updateResponse.success) {
                 this.profileUpdateData = updateResponse.data;
+                this.resetPasswordEmail = updateResponse.data.user.email;
             }
 
             console.log('✅ Profile loaded successfully');
@@ -113,69 +117,60 @@ const profileApp = {
             });
         }
     },
+
     async requestPasswordReset() {
-    try {
-        // نمایش تایید
-        const result = await Swal.fire({
-            icon: 'question',
-            title: 'تغییر رمز عبور',
-            text: 'یک لینک بازیابی به ایمیل شما ارسال خواهد شد',
-            showCancelButton: true,
-            confirmButtonText: 'ارسال لینک',
-            cancelButtonText: 'انصراف',
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33'
-        });
-
-        if (!result.isConfirmed) {
-            return;
-        }
-
-        // نمایش لودینگ
-        Swal.fire({
-            title: 'در حال ارسال...',
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
+        try {
+            const email = this.resetPasswordEmail || this.profileUpdateData?.user?.email;
+            
+            if (!email) {
+                throw new Error('ایمیل یافت نشد');
             }
-        });
 
-        // ارسال درخواست
-        const email = this.profileUpdateData?.user?.email;
-        
-        if (!email) {
-            throw new Error('ایمیل کاربر یافت نشد');
+            // نمایش تایید
+            const result = await Swal.fire({
+                icon: 'question',
+                title: 'تغییر رمز عبور',
+                html: `لینک بازیابی رمز عبور به ایمیل<br/><strong>${email}</strong><br/>ارسال خواهد شد`,
+                showCancelButton: true,
+                confirmButtonText: 'ارسال لینک',
+                cancelButtonText: 'انصراف',
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33'
+            });
+
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            this.passwordResetLoading = true;
+
+            // استفاده از API.profile.requestPasswordReset
+            const data = await API.profile.requestPasswordReset(email);
+
+            // بستن مودال
+            this.showPasswordResetModal = false;
+            
+            // نمایش پیام موفقیت
+            await Swal.fire({
+                icon: 'success',
+                title: 'ارسال شد!',
+                html: `لینک بازیابی رمز عبور به ایمیل <strong>${email}</strong> ارسال شد.<br/><br/>لطفاً ایمیل خود را بررسی کنید.`,
+                confirmButtonText: 'متوجه شدم',
+                confirmButtonColor: '#3085d6'
+            });
+
+        } catch (error) {
+            console.error('❌ Password reset error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'خطا',
+                text: error.email?.[0] || error.detail || error.message || 'خطا در ارسال لینک بازیابی',
+                confirmButtonText: 'باشه'
+            });
+        } finally {
+            this.passwordResetLoading = false;
         }
-
-        const response = await fetch('/api/v1/accounts/password/reset/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email: email })
-        });
-
-        const data = await response.json();
-
-        // نمایش نتیجه
-        await Swal.fire({
-            icon: 'success',
-            title: 'ارسال شد',
-            text: 'لینک بازیابی رمز عبور به ایمیل شما ارسال شد. لطفاً ایمیل خود را بررسی کنید.',
-            confirmButtonText: 'متوجه شدم'
-        });
-
-    } catch (error) {
-        console.error('❌ Password reset error:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'خطا',
-            text: error.message || 'خطا در ارسال لینک بازیابی',
-            confirmButtonText: 'باشه'
-        });
     }
-},
-
 
 };
 
@@ -200,46 +195,158 @@ document.addEventListener('DOMContentLoaded', () => {
 
 console.log('✅ Profile.js loaded');
 
-// UserApi response
-// این خروجی هست که بهت گفتم
-// {
-//     "success": true,
-//     "data": {
-//         "user_full_name": "محمد امین غلامی",
-//         "user_phone": "09137555555",
-//         "role": "regular",
-//         "medical_code": null,
-//         "auth_status": "APPROVED",
-//         "auth_status_display": "تایید شده",
-//         "rejection_reason": "",
-//         "subscription_end_date": null,
-//         "created_at": "2025-09-25T08:35:04.315036Z",
-//         "updated_at": "2025-09-26T10:41:01.728978Z"
-//     }
-// }
+// ========================================
+// Password Reset Confirm App
+// ========================================
+document.addEventListener('alpine:init', () => {
+    Alpine.data('passwordResetApp', () => ({
+        formData: {
+            password: '',
+            password_confirm: '',
+            uidb64: '',
+            token: ''
+        },
+        loading: false,
+        passwordVisible: {
+            new: false,
+            confirm: false
+        },
 
-// UserApi Update response
-// {
-//     "success": true,
-//     "data": {
-//         "user": {
-//             "id": 1,
-//             "first_name": "محمد امین",
-//             "last_name": "غلامی",
-//             "full_name": "محمد امین غلامی",
-//             "phone_number": "09137555555",
-//             "email": "amingholami06@gmail.com",
-//             "profile_image": null,
-//             "date_joined": "2025-09-25T08:35:03.411977+00:00",
-//             "last_login": "2025-10-07T14:28:12.705209+00:00"
-//         },
-//         "profile": {
-//             "auth_status": "APPROVED",
-//             "auth_status_display": "تایید شده",
-//             "role": "regular",
-//             "role_display": "کاربر عادی",
-//             "medical_code": null,
-//             "referral_code": "168233F9"
-//         }
-//     }
-// }
+        init() {
+            console.log('🔄 Initializing password reset confirm...');
+            
+            // استخراج uidb64 و token از URL
+            const pathParts = window.location.pathname.split('/').filter(part => part);
+            // URL format: /password/reset/confirm/MQ/cy6dq3-xxx/
+            
+            if (pathParts.length >= 5) {
+                this.formData.uidb64 = pathParts[3]; // MQ
+                this.formData.token = pathParts[4];  // cy6dq3-xxx
+                
+                console.log('✅ Password reset params extracted:', {
+                    uidb64: this.formData.uidb64,
+                    token: this.formData.token
+                });
+            } else {
+                console.error('❌ Invalid password reset URL format');
+                this.showInvalidLinkError();
+            }
+        },
+
+        togglePasswordVisibility(field) {
+            this.passwordVisible[field] = !this.passwordVisible[field];
+        },
+
+        validatePassword() {
+            // بررسی تطابق رمزها
+            if (this.formData.password !== this.formData.password_confirm) {
+                throw new Error('رمز عبور و تکرار آن باید یکسان باشند');
+            }
+
+            // بررسی طول رمز عبور
+            if (this.formData.password.length < 8) {
+                throw new Error('رمز عبور باید حداقل 8 کاراکتر باشد');
+            }
+
+            // بررسی وجود uidb64 و token
+            if (!this.formData.uidb64 || !this.formData.token) {
+                throw new Error('لینک بازیابی نامعتبر است');
+            }
+        },
+
+        async handleSubmit() {
+            try {
+                // اعتبارسنجی
+                this.validatePassword();
+
+                // نمایش تایید
+                const result = await Swal.fire({
+                    icon: 'question',
+                    title: 'تایید تغییر رمز عبور',
+                    text: 'آیا از تغییر رمز عبور خود اطمینان دارید؟',
+                    showCancelButton: true,
+                    confirmButtonText: 'بله، تغییر کن',
+                    cancelButtonText: 'انصراف',
+                    confirmButtonColor: '#10b981',
+                    cancelButtonColor: '#6b7280'
+                });
+
+                if (!result.isConfirmed) {
+                    return;
+                }
+
+                this.loading = true;
+                console.log('🔄 Submitting password reset confirm...');
+
+                // ارسال درخواست به API
+                const response = await API.profile.confirmPasswordReset(this.formData);
+                
+                console.log('✅ Password reset successful:', response);
+
+                // نمایش پیام موفقیت و هدایت
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'موفقیت!',
+                    html: 'رمز عبور شما با موفقیت تغییر کرد.<br/><br/>اکنون می‌توانید با رمز عبور جدید وارد شوید.',
+                    confirmButtonText: 'ورود به حساب',
+                    confirmButtonColor: '#10b981',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                });
+
+                // هدایت به صفحه اصلی
+                window.location.href = '/';
+
+            } catch (error) {
+                console.error('❌ Password reset confirm error:', error);
+                
+                let errorMessage = 'خطا در تغییر رمز عبور. لطفاً دوباره تلاش کنید.';
+                
+                // پردازش خطاهای مختلف
+                if (error.message) {
+                    errorMessage = error.message;
+                } else if (error.detail) {
+                    errorMessage = error.detail;
+                } else if (error.password) {
+                    errorMessage = Array.isArray(error.password) 
+                        ? error.password[0] 
+                        : error.password;
+                } else if (error.password_confirm) {
+                    errorMessage = Array.isArray(error.password_confirm)
+                        ? error.password_confirm[0]
+                        : error.password_confirm;
+                } else if (error.token) {
+                    errorMessage = 'لینک بازیابی نامعتبر یا منقضی شده است';
+                } else if (error.uidb64) {
+                    errorMessage = 'لینک بازیابی نامعتبر است';
+                }
+
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'خطا',
+                    text: errorMessage,
+                    confirmButtonText: 'باشه',
+                    confirmButtonColor: '#ef4444'
+                });
+
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async showInvalidLinkError() {
+            await Swal.fire({
+                icon: 'error',
+                title: 'لینک نامعتبر',
+                html: 'لینک بازیابی نامعتبر یا منقضی شده است.<br/><br/>لطفاً دوباره درخواست بازیابی رمز عبور دهید.',
+                confirmButtonText: 'بازگشت به صفحه اصلی',
+                confirmButtonColor: '#ef4444',
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            });
+            
+            window.location.href = '/';
+        }
+    }));
+});
+

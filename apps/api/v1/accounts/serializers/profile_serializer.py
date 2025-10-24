@@ -64,19 +64,10 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
         allow_blank=True,
         help_text="ایمیل"
     )
-    # <<< تغییر: چون این یک آپدیت جزئی (PATCH) است، بهتر است این فیلد الزامی نباشد
     phone_number = serializers.CharField(
         required=False, 
         max_length=11,
         help_text="شماره تلفن"
-    )
-    # <<< تغییر: افزودن write_only=True برای امنیت
-    password = serializers.CharField(
-        max_length=128,
-        required=False,
-        write_only=True,
-        allow_blank=True,
-        help_text="در صورت تمایل به تغییر، رمز عبور جدید را وارد کنید. در غیر این صورت، آن را خالی بگذارید."
     )
     profile_image = serializers.ImageField(
         required=False,
@@ -85,12 +76,11 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'phone_number', 'profile_image', 'password']
+        fields = ['first_name', 'last_name', 'email', 'phone_number', 'profile_image']
         extra_kwargs = {
-            'phone_number': {'validators': []}, # اگر ولیدیتور یونیک در مدل دارید، اینجا غیرفعالش کنید تا در آپدیت خطا ندهد
+            'phone_number': {'validators': []},
         }
 
-    # ... (متدهای validate شما بدون تغییر باقی می‌مانند) ...
     def validate_first_name(self, value):
         if value and len(value.strip()) < 2:
             raise serializers.ValidationError("نام باید حداقل ۲ کاراکتر باشد.")
@@ -132,19 +122,12 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("فایل آپلود شده معتبر نیست.")
         return value
 
-    # <<< تغییر اصلی: بازنویسی کامل متد update
     def update(self, instance, validated_data):
         """بروزرسانی اطلاعات کاربر و پروفایل او"""
         
-
         profile_image_data = validated_data.pop('profile_image', None)
-        password = validated_data.pop('password', None)
         
         instance = super().update(instance, validated_data)
-        
-        if password:
-            instance.set_password(password)
-            instance.save(update_fields=['password'])
 
         # بروزرسانی عکس پروفایل در مدل Profile
         if profile_image_data is not None:
@@ -153,6 +136,7 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
             profile.save(update_fields=['profile_image'])
 
         return instance
+
         
 # ========== SAVED PRESCRIPTION LIST SERIALIZER ========== #
 class SavedPrescriptionListSerializer(serializers.ModelSerializer):
