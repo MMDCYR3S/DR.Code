@@ -272,7 +272,7 @@ getCombinationGroups(drugs) {
         },
 
         showFullDescription(description) {
-            if (description && description.length > 100) {
+            if (description && description.length > 30) {
                 this.fullDescription = description;
                 this.showDescriptionModal = true;
             }

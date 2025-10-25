@@ -672,7 +672,7 @@
                                 <td class="px-4 py-4 text-sm text-gray-700">
                                     <div class="flex items-start gap-2">
                                         <p class="line-clamp-1 flex-1" x-text="drug.instructions || '—'"></p>
-                                        <template x-if="drug.instructions && drug.instructions.length > 100">
+                                        <template x-if="drug.instructions && drug.instructions.length > 30">
                                             <button @click="showFullDescription(drug.instructions)"
                                                 class="flex-shrink-0 text-c1 hover:text-c2 font-medium text-xs whitespace-nowrap">
                                                 بیشتر
