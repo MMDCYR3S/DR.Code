@@ -4,7 +4,8 @@ from .views import (
     ProfileView, ProfileMessagesView,
     ProfileSavedPrescriptionsView,
     CheckAuthStatusView,
-    ProfileNotificationsView
+    ProfileNotificationsView,
+    PasswordResetConfirmView
 )
 app_name = 'accounts'
 
@@ -15,4 +16,5 @@ urlpatterns = [
     path('profile/messages/', ProfileMessagesView.as_view(), name='profile_messages'),
     path('profile/notifications/', ProfileNotificationsView.as_view(), name='profile_notifications'),
     path('check-auth-status/', CheckAuthStatusView.as_view(), name='check_auth_status'),
+    path('password/reset/confirm/<str:uuid64>/<str:token>/', PasswordResetConfirmView.as_view(), name='check_auth_status'),
 ]

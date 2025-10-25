@@ -413,6 +413,38 @@ API.profile = {
             console.error('Profile Update API error:', error);
             throw error;
         }
+    },
+    requestPasswordReset: async (email) => {
+        const response = await fetch(`${API.BASE_URL}api/v1/accounts/password/reset/`, {
+            method: 'POST',
+            headers: API.getHeaders(true),
+            body: JSON.stringify({email})
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw error;
+        }
+        
+        return await response.json();
+    },
+    // تایید بازنشانی رمز عبور
+    async confirmPasswordReset(data) {
+        const response = await fetch(`${API.BASE_URL}api/v1/accounts/password/reset/confirm/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': this.csrfToken
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw error;
+        }
+
+        return await response.json();
     }
 };
 // Plans APIs
@@ -747,6 +779,7 @@ async function testTutorialsAPI() {
 
 
 // Payment APIs
+// قسمت API.payment در api.js
 API.payment = {
     // ایجاد پرداخت با زرین‌پال
     async createZarinpalPayment(paymentData) {
@@ -770,7 +803,7 @@ API.payment = {
                 message: data.message
             };
         } catch (error) {
-            console.error('ZarinPal payment error:', error);
+            console.error('❌ ZarinPal payment error:', error);
             return {
                 success: false,
                 message: error.message
@@ -793,14 +826,18 @@ API.payment = {
                 throw new Error(data.message || 'خطا در ایجاد درخواست پرداخت');
             }
 
+            // ⭐ تفاوت کلیدی: ساختار پاسخ پارس‌پال متفاوت است
+            console.log('✅ ParsPal Response:', data);
+
             return {
                 success: data.success || true,
-                payment_id: data.payment_id,
-                payment_url: data.payment_url,
-                message: data.message
+                payment_id: data.data?.payment_info?.payment_id || data.data?.order_id,
+                payment_url: data.data?.payment_info?.link, // ⭐ لینک در مسیر متفاوت
+                order_id: data.data?.order_id,
+                message: data.message || data.data?.payment_info?.message
             };
         } catch (error) {
-            console.error('ParsPal payment error:', error);
+            console.error('❌ ParsPal payment error:', error);
             return {
                 success: false,
                 message: error.message
@@ -828,7 +865,7 @@ API.payment = {
                 data: data
             };
         } catch (error) {
-            console.error('ZarinPal verify error:', error);
+            console.error('❌ ZarinPal verify error:', error);
             return {
                 success: false,
                 message: error.message
@@ -837,12 +874,12 @@ API.payment = {
     },
 
     // تایید پرداخت پارس پال (برای صفحه callback)
-    async verifyParspalPayment(token) {
+    async verifyParspalPayment(order_id) {
         try {
             const response = await fetch(`${API.BASE_URL}api/v1/payment/parspal/verify/`, {
                 method: 'POST',
                 headers: API.getHeaders(true),
-                body: JSON.stringify({ token })
+                body: JSON.stringify({ order_id })  // ⭐ فقط order_id
             });
 
             const data = await response.json();
@@ -853,10 +890,10 @@ API.payment = {
 
             return {
                 success: true,
-                data: data
+                data: data.data
             };
         } catch (error) {
-            console.error('ParsPal verify error:', error);
+            console.error('❌ ParsPal verify error:', error);
             return {
                 success: false,
                 message: error.message
@@ -864,6 +901,7 @@ API.payment = {
         }
     }
 };
+
 
 
 // در انتهای فایل api.js اضافه کن:

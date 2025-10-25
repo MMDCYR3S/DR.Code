@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from django.urls import reverse
+
 from apps.notifications.models import Notification
 
 class UserNotificationSerializer(serializers.ModelSerializer):
@@ -30,4 +32,4 @@ class UserNotificationSerializer(serializers.ModelSerializer):
             'content_type',
             'object_id',
         ]
-    
+                    

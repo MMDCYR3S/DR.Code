@@ -8,7 +8,9 @@ import random
 from django.conf import settings
 from django.utils import timezone
 from django.core.cache import cache
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView
@@ -50,8 +52,7 @@ def prepare_cached_payment_data(cached_data, plan_id, user):
     order_id = generate_order_id(plan_id, user.id)
 
     return {
-        "amount": 80000,
-        "currency": "IRT",
+        "amount": int(80000) * 10,
         "return_url": PARSPAL_CALLBACK_URL,
         "reserve_id": str(uuid.uuid4()),
         "order_id": order_id,
@@ -97,7 +98,7 @@ class ParspalPaymentRequestView(CreateAPIView):
 
         try:
             # ایجاد اشتراک اولیه
-            subscription = Subscription.objects.acreate(
+            subscription = Subscription.objects.create(
                 user=request.user,
                 plan=plan,
                 payment_amount=payload["amount"],
@@ -107,7 +108,7 @@ class ParspalPaymentRequestView(CreateAPIView):
             )
 
             # ایجاد رکورد پرداخت
-            payment = Payment.objects.acreate(
+            payment = Payment.objects.create(
                 user=request.user,
                 subscription=subscription,
                 amount=payload["amount"],
@@ -157,122 +158,271 @@ class ParspalPaymentRequestView(CreateAPIView):
                 "error": str(e)
             }, status=status.HTTP_502_BAD_GATEWAY)
 
-# ======= PARSPAL VERIFY VIEW ======= #
+# ======= PARSPAL CALLBACK VIEW (دریافت POST از پارس‌پال) ======= #
+@method_decorator(csrf_exempt, name='dispatch')
+class ParspalCallbackView(APIView):
+    """
+    این view داده‌های POST شده از پارس‌پال را دریافت می‌کند
+    و کاربر را به صفحه verify هدایت می‌کند
+    """
+    permission_classes = []
+
+    def post(self, request):
+        status_code = request.POST.get('status') or request.data.get('status')
+        receipt_number = request.POST.get('receipt_number') or request.data.get('receipt_number')
+        payment_id = request.POST.get('payment_id') or request.data.get('payment_id')
+        reserve_id = request.POST.get('reserve_id') or request.data.get('reserve_id')
+        order_id = request.POST.get('order_id') or request.data.get('order_id')
+
+        logger.info(f"📥 ParsPal Callback received: status={status_code}, receipt={receipt_number}, order_id={order_id}")
+
+        # ذخیره موقت در کش
+        if order_id:
+            cache_key = f"parspal_callback:{order_id}"
+            cache.set(cache_key, {
+                'status': status_code,
+                'receipt_number': receipt_number,
+                'payment_id': payment_id,
+                'reserve_id': reserve_id,
+                'order_id': order_id
+            }, timeout=600)
+
+        # ریدایرکت به صفحه status
+        redirect_url = f"/payment/status/?gateway=parspal&order_id={order_id}&status={status_code}"
+        if receipt_number:
+            redirect_url += f"&receipt={receipt_number}"
+
+        return redirect(redirect_url)
+
+    def get(self, request):
+        return Response({
+            "message": "این آدرس فقط برای callback پارس‌پال است"
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ======= PARSPAL VERIFY VIEW (اصلاح شده با چک کردن وضعیت قبلی) ======= #
 class ParspalVerifyView(APIView):
-    """تأیید پرداخت پس از بازگشت از درگاه"""
+    """تأیید پرداخت با استفاده از داده‌های callback"""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         order_id = request.data.get("order_id")
-        ref_id = request.data.get("ref_id")
 
-        if not order_id or not ref_id:
+        if not order_id:
             return Response({
                 "success": False,
-                "message": "پارامترهای لازم (order_id یا ref_id) ارسال نشده‌اند."
+                "message": "order_id ارسال نشده است."
             }, status=status.HTTP_400_BAD_REQUEST)
 
+        logger.info(f"🔍 Verifying payment for order_id: {order_id}")
+
+        # 1️⃣ یافتن پرداخت
+        try:
+            payment = Payment.objects.select_related(
+                'subscription',
+                'subscription__plan',
+                'user'
+            ).get(authority=order_id, user=request.user)
+            logger.info(f"✅ Payment found: {payment.id}, Status: {payment.status}")
+        except Payment.DoesNotExist:
+            logger.error(f"❌ Payment not found for order_id: {order_id}")
+            return Response({
+                "success": False,
+                "message": "تراکنش مورد نظر یافت نشد."
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # 2️⃣ ✅ بررسی اینکه قبلاً verify شده یا نه
+        if payment.status == PaymentStatus.COMPLETED:
+            logger.warning(f"⚠️ Payment already verified: {payment.id}")
+            
+            # اطلاعات اشتراک رو برمی‌گردونیم (بدون Verify دوباره)
+            return Response({
+                "success": True,
+                "message": "این تراکنش قبلاً تأیید شده است.",
+                "data": {
+                    "amount": str(payment.amount),
+                    "receipt_number": payment.ref_id,  # شماره رسید از قبل ذخیره شده
+                    "order_id": order_id,
+                    "subscription_start": payment.subscription.start_date.isoformat(),
+                    "subscription_end": payment.subscription.end_date.isoformat(),
+                    "already_verified": True  # 🔥 فلگ مهم
+                }
+            }, status=status.HTTP_200_OK)
+
+        # 3️⃣ دریافت داده‌های callback از کش
+        cache_key = f"parspal_callback:{order_id}"
+        callback_data = cache.get(cache_key)
+
+        if not callback_data:
+            logger.warning(f"⚠️ No callback data found for order_id: {order_id}")
+            return Response({
+                "success": False,
+                "message": "داده‌های callback یافت نشد. لطفاً دوباره تلاش کنید."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        status_code = callback_data.get('status')
+        receipt_number = callback_data.get('receipt_number')
+
+        logger.info(f"📊 Callback data: status={status_code}, receipt={receipt_number}")
+
+        # 4️⃣ بررسی وضعیت
+        if status_code != '100':
+            status_messages = {
+                '99': 'انصراف کاربر از پرداخت',
+                '88': 'پرداخت ناموفق',
+                '77': 'لغو پرداخت توسط کاربر'
+            }
+            
+            # ✅ وضعیت پرداخت رو Failed می‌کنیم
+            payment.status = PaymentStatus.FAILED
+            payment.save(update_fields=['status'])
+            
+            return Response({
+                "success": False,
+                "message": status_messages.get(status_code, 'پرداخت ناموفق')
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # 5️⃣ وضعیت 100 = کاربر پرداخت کرده، حالا باید verify کنیم
+        if not receipt_number:
+            return Response({
+                "success": False,
+                "message": "شماره رسید یافت نشد."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # 6️⃣ فراخوانی API تایید پارس‌پال
         headers = {
             "ApiKey": PARSPAL_API_KEY,
             "Content-Type": "application/json",
             "Accept": "application/json"
         }
 
-        payment = Payment.objects.filter(authority=order_id, user=request.user).first()
-        if not payment:
-            return Response({
-                "success": False,
-                "message": "تراکنش مورد نظر یافت نشد."
-            }, status=status.HTTP_404_NOT_FOUND)
-
         payload = {
             "amount": int(payment.amount),
-            "order_id": order_id,
-            "ref_id": ref_id
+            "receipt_number": receipt_number
         }
 
+        logger.info(f"🔄 Sending verify request to ParsPal: {payload}")
+
         try:
-            response = requests.post(f"{BASE_URL}/verify", json=payload, headers=headers, timeout=10)
-            logger.info(f"Verify Response [{response.status_code}]: {response.text}")
+            response = requests.post(
+                f"{BASE_URL}/verify",
+                json=payload,
+                headers=headers,
+                timeout=10
+            )
+            logger.info(f"📡 Verify Response [{response.status_code}]: {response.text}")
 
             if response.status_code == 200:
                 data = response.json()
 
-                if data.get("status"):
-                    # --- پرداخت تأیید شد ---
-                    payment.status = PaymentStatus.COMPLETED.value
-                    payment.ref_id = ref_id
+                # 7️⃣ بررسی status از پاسخ
+                if data.get("status") == "SUCCESSFUL":
+                    logger.info(f"✅ Payment verified successfully!")
+
+                    # ✅ پرداخت تأیید شد
+                    payment.status = PaymentStatus.COMPLETED
+                    payment.ref_id = receipt_number
                     payment.paid_at = timezone.now()
                     payment.save(update_fields=["status", "ref_id", "paid_at"])
 
                     plan = payment.subscription.plan
 
-                    # بررسی اشتراک فعلی کاربر
+                    # 8️⃣ بررسی اشتراک فعلی
                     active_sub = Subscription.objects.filter(
                         user=request.user,
                         status=SubscriptionStatusChoicesModel.active,
                         end_date__gt=timezone.now()
                     ).order_by('-end_date').first()
-
+                    
+                    profile = request.user.profile
+                    if active_sub.end_date > timezone.now():
+                        profile.subscription_end_date = active_sub.end_date
+                        profile.save()
+                    
                     if active_sub:
-                        # اگر اشتراک فعالی دارد، تمدید می‌کنیم از انتهای قبلی
                         new_start = active_sub.end_date
                         new_end = new_start + timezone.timedelta(days=plan.duration_days)
+                        logger.info(f"📅 Extending existing subscription until: {new_end}")
                     else:
-                        # اگر اشتراک فعال ندارد، اشتراک از الان شروع شود
                         new_start = timezone.now()
                         new_end = new_start + timezone.timedelta(days=plan.duration_days)
+                        logger.info(f"📅 Creating new subscription until: {new_end}")
 
-                    # ایجاد اشتراک جدید
-                    new_subscription = Subscription.objects.create(
-                        user=request.user,
-                        plan=plan,
-                        payment_amount=payment.amount,
-                        status=SubscriptionStatusChoicesModel.active,
-                        start_date=new_start,
-                        end_date=new_end
-                    )
+                    # 9️⃣ بروزرسانی اشتراک
+                    payment.subscription.status = SubscriptionStatusChoicesModel.active
+                    payment.subscription.start_date = new_start
+                    payment.subscription.end_date = new_end
+                    payment.subscription.save(update_fields=['status', 'start_date', 'end_date'])
 
-                    # لینک دادن پرداخت به اشتراک جدید
-                    payment.subscription = new_subscription
-                    payment.save(update_fields=["subscription"])
+                    # 🔟 پاک کردن کش
+                    cache.delete(cache_key)
 
                     return Response({
                         "success": True,
                         "message": "پرداخت با موفقیت تأیید و اشتراک فعال شد.",
                         "data": {
                             "amount": data.get("amount"),
-                            "ref_id": ref_id,
+                            "receipt_number": receipt_number,
+                            "reference_number": data.get("reference_number"),
+                            "transaction_id": data.get("transaction_id"),
                             "order_id": order_id,
-                            "subscription_start": new_start,
-                            "subscription_end": new_end
+                            "subscription_start": new_start.isoformat(),
+                            "subscription_end": new_end.isoformat(),
+                            "already_verified": False
                         }
                     }, status=status.HTTP_200_OK)
 
-                # وضعیت ناموفق از پارس‌پال
+                # ❌ اگر status برابر "VERIFIED" بود (قبلاً تأیید شده)
+                elif data.get("status") == "VERIFIED":
+                    logger.warning(f"⚠️ Receipt already verified by ParsPal: {receipt_number}")
+                    
+                    # ✅ پرداخت رو Completed می‌کنیم (اگر نشده بود)
+                    if payment.status != PaymentStatus.COMPLETED:
+                        payment.status = PaymentStatus.COMPLETED
+                        payment.ref_id = receipt_number
+                        payment.paid_at = timezone.now()
+                        payment.save(update_fields=["status", "ref_id", "paid_at"])
+                    
+                    return Response({
+                        "success": True,
+                        "message": "این رسید قبلاً تأیید شده است.",
+                        "data": {
+                            "amount": data.get("paid_amount"),
+                            "receipt_number": receipt_number,
+                            "order_id": order_id,
+                            "subscription_start": payment.subscription.start_date.isoformat(),
+                            "subscription_end": payment.subscription.end_date.isoformat(),
+                            "already_verified": True
+                        }
+                    }, status=status.HTTP_200_OK)
+
+                # ❌ وضعیت ناموفق
+                logger.warning(f"⚠️ Verification failed: {data}")
+                payment.status = PaymentStatus.FAILED
+                payment.save(update_fields=['status'])
+
                 return Response({
                     "success": False,
                     "message": data.get("message", "تأیید پرداخت ناموفق بود."),
                     "data": data
                 }, status=status.HTTP_400_BAD_REQUEST)
 
+            logger.error(f"❌ Invalid response from ParsPal: {response.status_code}")
             return Response({
                 "success": False,
-                "message": "پاسخ نامعتبر از پارس‌پال دریافت شد.",
-                "status_code": response.status_code
+                "message": "پاسخ نامعتبر از پارس‌پال.",
+                "status_code": response.status_code,
+                "response": response.text
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        except requests.exceptions.Timeout:
-            return Response({
-                "success": False,
-                "message": "مهلت پاسخ پارس‌پال به پایان رسید."
-            }, status=status.HTTP_504_GATEWAY_TIMEOUT)
-
         except requests.exceptions.RequestException as e:
-            logger.error(f"خطا در verify: {e}")
+            logger.error(f"❌ خطا در verify: {e}")
+            payment.status = PaymentStatus.FAILED
+            payment.save(update_fields=['status'])
+
             return Response({
                 "success": False,
-                "message": "خطا در برقراری ارتباط با پارس‌پال.",
+                "message": "خطا در ارتباط با پارس‌پال.",
                 "error": str(e)
             }, status=status.HTTP_502_BAD_GATEWAY)
 

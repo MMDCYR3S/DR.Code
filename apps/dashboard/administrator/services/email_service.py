@@ -8,7 +8,7 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 
 logger = logging.getLogger(__name__)
-
+print(f"The name of the email service logger is: {__name__}")
 # SEND EMAIL TASK
 def _send_email_task(subject, to_email, template_name, context=None):
     """
@@ -160,7 +160,7 @@ def send_password_reset_email(user, site_domain, protocol):
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = token_generator.make_token(user)
     
-    reset_path = f'/password-reset-confirm/{uid}/{token}/'
+    reset_path = f'/password/reset/confirm/{uid}/{token}/'
     reset_url = f"{protocol}://{site_domain}{reset_path}"
     
     subject = "بازیابی رمز عبور - دکتر کد"

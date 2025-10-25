@@ -1,12 +1,15 @@
 import re
+from PIL import Image
 
 from rest_framework import serializers
 from django.utils import timezone
 from django.contrib.auth import get_user_model
+from django.urls import reverse
 
 from apps.prescriptions.models import Prescription
 from apps.accounts.models import Profile
 from apps.questions.models import Question
+from apps.prescriptions.models import Prescription
 
 User = get_user_model()
 
@@ -61,19 +64,10 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
         allow_blank=True,
         help_text="ایمیل"
     )
-    # <<< تغییر: چون این یک آپدیت جزئی (PATCH) است، بهتر است این فیلد الزامی نباشد
     phone_number = serializers.CharField(
         required=False, 
         max_length=11,
         help_text="شماره تلفن"
-    )
-    # <<< تغییر: افزودن write_only=True برای امنیت
-    password = serializers.CharField(
-        max_length=128,
-        required=False,
-        write_only=True,
-        allow_blank=True,
-        help_text="در صورت تمایل به تغییر، رمز عبور جدید را وارد کنید. در غیر این صورت، آن را خالی بگذارید."
     )
     profile_image = serializers.ImageField(
         required=False,
@@ -82,12 +76,11 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'phone_number', 'profile_image', 'password']
+        fields = ['first_name', 'last_name', 'email', 'phone_number', 'profile_image']
         extra_kwargs = {
-            'phone_number': {'validators': []}, # اگر ولیدیتور یونیک در مدل دارید، اینجا غیرفعالش کنید تا در آپدیت خطا ندهد
+            'phone_number': {'validators': []},
         }
 
-    # ... (متدهای validate شما بدون تغییر باقی می‌مانند) ...
     def validate_first_name(self, value):
         if value and len(value.strip()) < 2:
             raise serializers.ValidationError("نام باید حداقل ۲ کاراکتر باشد.")
@@ -129,19 +122,12 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("فایل آپلود شده معتبر نیست.")
         return value
 
-    # <<< تغییر اصلی: بازنویسی کامل متد update
     def update(self, instance, validated_data):
         """بروزرسانی اطلاعات کاربر و پروفایل او"""
         
-
         profile_image_data = validated_data.pop('profile_image', None)
-        password = validated_data.pop('password', None)
         
         instance = super().update(instance, validated_data)
-        
-        if password:
-            instance.set_password(password)
-            instance.save(update_fields=['password'])
 
         # بروزرسانی عکس پروفایل در مدل Profile
         if profile_image_data is not None:
@@ -150,6 +136,7 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
             profile.save(update_fields=['profile_image'])
 
         return instance
+
         
 # ========== SAVED PRESCRIPTION LIST SERIALIZER ========== #
 class SavedPrescriptionListSerializer(serializers.ModelSerializer):
@@ -178,7 +165,16 @@ class QuestionListSerializer(serializers.ModelSerializer):
     prescription_title = serializers.StringRelatedField(source="prescription.title", read_only=True)
     category_title = serializers.StringRelatedField(source="prescription.category.title", read_only=True)
     answerer_name = serializers.CharField(source="answered_by.full_name", read_only=True)
-    
+    prescription_url = serializers.SerializerMethodField()
     class Meta:
         model = Question
-        fields = ["prescription_title", "category_title", "question_text", "answerer_name", "answer_text", "answered_at"]
+        fields = ["prescription_title", "category_title", "question_text", "answerer_name", "answer_text", "answered_at", 'prescription_url',]
+        
+    def get_prescription_url(self, obj):
+        """ایجاد hyperlink به جزئیات نسخه مربوط به اعلان"""
+        if not obj.prescription:
+            return None
+
+        request = self.context.get('request')
+        url = reverse('prescriptions:prescription_detail', kwargs={'slug': obj.prescription.slug})
+        return request.build_absolute_uri(url) if request else url

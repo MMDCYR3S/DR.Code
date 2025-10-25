@@ -1,3 +1,7 @@
+import logging
+from io import BytesIO
+from PIL import Image
+
 from rest_framework import status, permissions
 from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
@@ -12,11 +16,6 @@ from django.core.files.base import ContentFile
 
 from apps.accounts.models import Profile, AuthStatusChoices
 from ..serializers import ProfileSerializer, UpdateProfileSerializer
-
-from PIL import Image
-
-import logging
-
 from .base_view import BaseAPIView
 
 User = get_user_model()
@@ -57,7 +56,6 @@ class UpdateProfileView(BaseAPIView):
     - نام و نام خانوادگی
     - ایمیل
     - عکس پروفایل
-    - رمز عبور
     """
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = UpdateProfileSerializer
@@ -67,7 +65,6 @@ class UpdateProfileView(BaseAPIView):
             with transaction.atomic():
                 user = request.user
                 
-                # <<< بهینه‌سازی: مسیر عکس قدیمی را قبل از هر تغییری ذخیره می‌کنیم
                 old_image_path = user.profile.profile_image.name if user.profile.profile_image else None
                 
                 serializer = self.serializer_class(
@@ -78,16 +75,11 @@ class UpdateProfileView(BaseAPIView):
                 )
                 
                 if serializer.is_valid():
-                    # <<< بهینه‌سازی: تشخیص فیلدهای تغییر یافته از داده‌های معتبر شده
-                    # این روش برای پسورد و فایل‌ها بسیار مطمئن‌تر است
                     changed_fields = list(serializer.validated_data.keys())
                     
-                    # بروزرسانی اطلاعات از طریق سریالایزر
                     updated_user = serializer.save()
                     
-                    # پردازش تصویر پروفایل در صورت آپلود جدید
                     if 'profile_image' in changed_fields and updated_user.profile.profile_image:
-                        # حذف تصویر قدیمی تنها در صورتی که تصویر جدید با موفقیت ذخیره شده باشد
                         if old_image_path and old_image_path != updated_user.profile.profile_image.name:
                             self._delete_old_image(old_image_path)
                         
@@ -95,7 +87,6 @@ class UpdateProfileView(BaseAPIView):
                     
                     logger.info(f"پروفایل بروزرسانی شد: {user.phone_number} - فیلدها: {changed_fields}")
                     
-                    # آماده‌سازی پاسخ
                     response_data = {
                         'success': True,
                         'message': 'اطلاعات با موفقیت بروزرسانی شد.',
@@ -117,7 +108,6 @@ class UpdateProfileView(BaseAPIView):
                     
                     return Response(response_data, status=status.HTTP_200_OK)
                 
-                # ... (بخش مدیریت خطا بدون تغییر باقی می‌ماند) ...
                 return Response({
                     'success': False,
                     'message': 'خطا در اطلاعات ارسالی',
@@ -149,19 +139,15 @@ class UpdateProfileView(BaseAPIView):
             image.save(output, format='JPEG', quality=85, optimize=True)
             output.seek(0)
             
-            # مستقیماً روی همان فایل بازنویسی می‌کنیم تا مسیر تغییر نکند
-            # این روش ساده‌تر است و نیاز به حذف و ساخت مجدد ندارد
             profile.profile_image.save(
                 profile.profile_image.name,
                 ContentFile(output.getvalue()),
-                save=True # ذخیره مجدد مدل پروفایل
+                save=True
             )
             
             logger.info(f"تصویر پروفایل بهینه‌سازی شد: {profile.user.phone_number}")
             
         except Exception as e:
-            # مهم: اگر پردازش تصویر با خطا مواجه شد، کاربر نباید دچار مشکل شود
-            # فقط لاگ می‌گیریم
             logger.error(f"خطا در پردازش تصویر پروفایل برای کاربر {profile.user.phone_number}: {str(e)}")
     
     def _delete_old_image(self, old_image_path):
