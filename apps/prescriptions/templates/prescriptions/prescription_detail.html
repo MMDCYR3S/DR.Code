@@ -647,16 +647,29 @@
                                 </td>
 
                                 <!-- Column 3: Drug Code -->
-                                <td class="px-4 py-4 text-sm border-l border-gray-200">
-                                    <div class="flex items-center gap-2">
-                                        <span class="font-mono font-semibold" x-text="drug.drug.code.substring(0, 5)"></span>
-                                        <button @click="copyDrugCode(drug.drug.code)"
-                                            class="p-1.5 rounded hover:bg-gray-100 transition-colors group"
-                                            title="کپی کد کامل">
-                                            <i class="fas fa-copy text-xs"></i>
-                                        </button>
-                                    </div>
-                                </td>
+
+<td class="px-4 py-4 text-sm border-l border-gray-200">
+    <div class="flex items-center gap-2">
+        <!-- نمایش کد یا "بدون کد" -->
+        <template x-if="drug.drug.code && drug.drug.code.trim() !== ''">
+            <span class="font-mono font-semibold text-slate-700 px-1 bg-slate-200 rounded-md" x-text="drug.drug.code.substring(0, 5)"></span>
+        </template>
+        
+        <template x-if="!drug.drug.code || drug.drug.code.trim() === ''">
+            <span class="text-gray-400 text-xs">بدون کد</span>
+        </template>
+        
+        <!-- نمایش دکمه کپی فقط اگر کد وجود داشته باشد -->
+        <template x-if="drug.drug.code && drug.drug.code.trim() !== ''">
+            <button @click="copyDrugCode(drug.drug.code)"
+                class="cursor-pointer py-[0.1rem] px-1 rounded hover:bg-gray-100 transition-colors group text-slate-700 bg-slate-200 rounded-full"
+                title="کپی کد کامل">
+                <i class="fas fa-copy text-xs"></i>
+            </button>
+        </template>
+    </div>
+</td>
+
 
                                 <!-- Column 4: Dosage -->
                                 <td class="px-4 py-4 text-sm text-gray-700 border-l border-gray-200">
