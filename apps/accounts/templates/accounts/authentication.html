@@ -172,6 +172,7 @@
                     class="upload-area border-3 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer bg-gray-50 hover:bg-gray-100"
                     @click="$refs.fileInput.click()"
                     @dragover.prevent="dragOver = true"
+                    @dragover.prevent="dragOver = true"
                     @dragleave.prevent="dragOver = false"
                     @drop.prevent="handleDrop($event)"
                     :class="{ 'drag-over': dragOver }"
@@ -183,7 +184,7 @@
                     </p>
                     <input 
                         type="file" 
-                        ref="fileInput"
+                        x-ref="fileInput"
                         @change="handleFileSelect($event)"
                         accept="image/jpeg,image/png,application/pdf"
                         multiple

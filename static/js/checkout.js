@@ -75,7 +75,7 @@ document.addEventListener('alpine:init', () => {
                     cancelButtonText: 'بازگشت'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        window.location.href = '/profile';
+                        window.location.href = '/authentication';
                     } else {
                         window.location.href = '/plan';
                     }
