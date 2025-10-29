@@ -15,7 +15,7 @@ class UserNotificationListView(generics.ListAPIView):
     """
     serializer_class = UserNotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
-
+    
     def get_queryset(self):
         """
         فقط اعلان‌های مربوط به کاربر فعلی را برمی‌گرداند.
@@ -23,6 +23,19 @@ class UserNotificationListView(generics.ListAPIView):
         """
         user = self.request.user
         return Notification.objects.filter(recipient=user).order_by('is_read', '-created_at')
+    
+    def list(self, request, *args, **kwargs):
+        """افزودن تعداد نوتیف‌های خوانده‌نشده در پاسخ"""
+        
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+
+        unread_count = queryset.filter(is_read=False).count()
+
+        return Response({
+            "unread_count": unread_count,
+            "notifications": serializer.data
+        })
 
 # ================================================== #
 # ======== NOTIFICATION MARK AS READ VIEW ======== #
