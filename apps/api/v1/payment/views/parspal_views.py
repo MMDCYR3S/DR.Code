@@ -1,4 +1,3 @@
-# apps/payment/views/parspal_dynamic_view.py
 import uuid
 import json
 import logging
@@ -52,7 +51,7 @@ def prepare_cached_payment_data(cached_data, plan_id, user):
     order_id = generate_order_id(plan_id, user.id)
 
     return {
-        "amount": int(80000) * 10,
+        "amount": int(final_price) * 10,
         "return_url": PARSPAL_CALLBACK_URL,
         "reserve_id": str(uuid.uuid4()),
         "order_id": order_id,
@@ -158,6 +157,7 @@ class ParspalPaymentRequestView(CreateAPIView):
                 "error": str(e)
             }, status=status.HTTP_502_BAD_GATEWAY)
 
+
 # ======= PARSPAL CALLBACK VIEW (دریافت POST از پارس‌پال) ======= #
 @method_decorator(csrf_exempt, name='dispatch')
 class ParspalCallbackView(APIView):
@@ -174,7 +174,7 @@ class ParspalCallbackView(APIView):
         reserve_id = request.POST.get('reserve_id') or request.data.get('reserve_id')
         order_id = request.POST.get('order_id') or request.data.get('order_id')
 
-        logger.info(f"📥 ParsPal Callback received: status={status_code}, receipt={receipt_number}, order_id={order_id}")
+        logger.info(f"[PARSPAL_CALLBACK] Received: status={status_code}, receipt={receipt_number}, order_id={order_id}")
 
         # ذخیره موقت در کش
         if order_id:
@@ -214,7 +214,7 @@ class ParspalVerifyView(APIView):
                 "message": "order_id ارسال نشده است."
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        logger.info(f"🔍 Verifying payment for order_id: {order_id}")
+        logger.info(f"[PARSPAL_VERIFY] Starting verification for order_id: {order_id}")
 
         # 1️⃣ یافتن پرداخت
         try:
@@ -223,17 +223,17 @@ class ParspalVerifyView(APIView):
                 'subscription__plan',
                 'user'
             ).get(authority=order_id, user=request.user)
-            logger.info(f"✅ Payment found: {payment.id}, Status: {payment.status}")
+            logger.info(f"[PARSPAL_VERIFY] Payment found: ID={payment.id}, Status={payment.status}")
         except Payment.DoesNotExist:
-            logger.error(f"❌ Payment not found for order_id: {order_id}")
+            logger.error(f"[PARSPAL_VERIFY] Payment not found for order_id: {order_id}")
             return Response({
                 "success": False,
                 "message": "تراکنش مورد نظر یافت نشد."
             }, status=status.HTTP_404_NOT_FOUND)
 
-        # 2️⃣ ✅ بررسی اینکه قبلاً verify شده یا نه
+        # 2️⃣ بررسی اینکه قبلاً verify شده یا نه
         if payment.status == PaymentStatus.COMPLETED:
-            logger.warning(f"⚠️ Payment already verified: {payment.id}")
+            logger.warning(f"[PARSPAL_VERIFY] Payment already verified: ID={payment.id}")
             
             # اطلاعات اشتراک رو برمی‌گردونیم (بدون Verify دوباره)
             return Response({
@@ -241,11 +241,11 @@ class ParspalVerifyView(APIView):
                 "message": "این تراکنش قبلاً تأیید شده است.",
                 "data": {
                     "amount": str(payment.amount),
-                    "receipt_number": payment.ref_id,  # شماره رسید از قبل ذخیره شده
+                    "receipt_number": payment.ref_id,
                     "order_id": order_id,
                     "subscription_start": payment.subscription.start_date.isoformat(),
                     "subscription_end": payment.subscription.end_date.isoformat(),
-                    "already_verified": True  # 🔥 فلگ مهم
+                    "already_verified": True
                 }
             }, status=status.HTTP_200_OK)
 
@@ -254,7 +254,7 @@ class ParspalVerifyView(APIView):
         callback_data = cache.get(cache_key)
 
         if not callback_data:
-            logger.warning(f"⚠️ No callback data found for order_id: {order_id}")
+            logger.warning(f"[PARSPAL_VERIFY] No callback data found for order_id: {order_id}")
             return Response({
                 "success": False,
                 "message": "داده‌های callback یافت نشد. لطفاً دوباره تلاش کنید."
@@ -263,7 +263,7 @@ class ParspalVerifyView(APIView):
         status_code = callback_data.get('status')
         receipt_number = callback_data.get('receipt_number')
 
-        logger.info(f"📊 Callback data: status={status_code}, receipt={receipt_number}")
+        logger.info(f"[PARSPAL_VERIFY] Callback data: status={status_code}, receipt={receipt_number}")
 
         # 4️⃣ بررسی وضعیت
         if status_code != '100':
@@ -273,9 +273,10 @@ class ParspalVerifyView(APIView):
                 '77': 'لغو پرداخت توسط کاربر'
             }
             
-            # ✅ وضعیت پرداخت رو Failed می‌کنیم
             payment.status = PaymentStatus.FAILED
             payment.save(update_fields=['status'])
+            
+            logger.warning(f"[PARSPAL_VERIFY] Payment failed with status: {status_code}")
             
             return Response({
                 "success": False,
@@ -301,7 +302,7 @@ class ParspalVerifyView(APIView):
             "receipt_number": receipt_number
         }
 
-        logger.info(f"🔄 Sending verify request to ParsPal: {payload}")
+        logger.info(f"[PARSPAL_VERIFY] Sending verify request to ParsPal: {payload}")
 
         try:
             response = requests.post(
@@ -310,16 +311,16 @@ class ParspalVerifyView(APIView):
                 headers=headers,
                 timeout=10
             )
-            logger.info(f"📡 Verify Response [{response.status_code}]: {response.text}")
+            logger.info(f"[PARSPAL_VERIFY] Verify Response [{response.status_code}]: {response.text}")
 
             if response.status_code == 200:
                 data = response.json()
 
                 # 7️⃣ بررسی status از پاسخ
                 if data.get("status") == "SUCCESSFUL":
-                    logger.info(f"✅ Payment verified successfully!")
+                    logger.info(f"[PARSPAL_VERIFY] Payment verified successfully! Receipt: {receipt_number}")
 
-                    # ✅ پرداخت تأیید شد
+                    # پرداخت تأیید شد
                     payment.status = PaymentStatus.COMPLETED
                     payment.ref_id = receipt_number
                     payment.paid_at = timezone.now()
@@ -334,25 +335,30 @@ class ParspalVerifyView(APIView):
                         end_date__gt=timezone.now()
                     ).order_by('-end_date').first()
                     
-                    profile = request.user.profile
-                    if active_sub.end_date > timezone.now():
-                        profile.subscription_end_date = active_sub.end_date
-                        profile.save()
                     
                     if active_sub:
                         new_start = active_sub.end_date
                         new_end = new_start + timezone.timedelta(days=plan.duration_days)
-                        logger.info(f"📅 Extending existing subscription until: {new_end}")
+                        logger.info(f"[PARSPAL_VERIFY] Extending subscription. New end date: {new_end}")
                     else:
                         new_start = timezone.now()
                         new_end = new_start + timezone.timedelta(days=plan.duration_days)
-                        logger.info(f"📅 Creating new subscription until: {new_end}")
+                        logger.info(f"[PARSPAL_VERIFY] Creating new subscription. End date: {new_end}")
+
 
                     # 9️⃣ بروزرسانی اشتراک
                     payment.subscription.status = SubscriptionStatusChoicesModel.active
                     payment.subscription.start_date = new_start
                     payment.subscription.end_date = new_end
                     payment.subscription.save(update_fields=['status', 'start_date', 'end_date'])
+                        
+                    profile = payment.user.profile
+                    if profile.role == "admin":
+                        pass
+                    profile.role = 'premium'
+                    profile.subscription_end_date = new_end
+                    profile.save(update_fields=['role', 'subscription_end_date'])
+                    logger.info(f"[PARSPAL_VERIFY] User profile updated: ID={profile.id}, Role=premium, SubEnd={new_end}")
 
                     # 🔟 پاک کردن کش
                     cache.delete(cache_key)
@@ -372,11 +378,11 @@ class ParspalVerifyView(APIView):
                         }
                     }, status=status.HTTP_200_OK)
 
-                # ❌ اگر status برابر "VERIFIED" بود (قبلاً تأیید شده)
+                # اگر status برابر "VERIFIED" بود (قبلاً تأیید شده)
                 elif data.get("status") == "VERIFIED":
-                    logger.warning(f"⚠️ Receipt already verified by ParsPal: {receipt_number}")
+                    logger.warning(f"[PARSPAL_VERIFY] Receipt already verified by ParsPal: {receipt_number}")
                     
-                    # ✅ پرداخت رو Completed می‌کنیم (اگر نشده بود)
+                    # پرداخت رو Completed می‌کنیم (اگر نشده بود)
                     if payment.status != PaymentStatus.COMPLETED:
                         payment.status = PaymentStatus.COMPLETED
                         payment.ref_id = receipt_number
@@ -396,8 +402,8 @@ class ParspalVerifyView(APIView):
                         }
                     }, status=status.HTTP_200_OK)
 
-                # ❌ وضعیت ناموفق
-                logger.warning(f"⚠️ Verification failed: {data}")
+                # وضعیت ناموفق
+                logger.warning(f"[PARSPAL_VERIFY] Verification failed: {data}")
                 payment.status = PaymentStatus.FAILED
                 payment.save(update_fields=['status'])
 
@@ -407,7 +413,7 @@ class ParspalVerifyView(APIView):
                     "data": data
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            logger.error(f"❌ Invalid response from ParsPal: {response.status_code}")
+            logger.error(f"[PARSPAL_VERIFY] Invalid response from ParsPal: {response.status_code}")
             return Response({
                 "success": False,
                 "message": "پاسخ نامعتبر از پارس‌پال.",
@@ -416,7 +422,7 @@ class ParspalVerifyView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"❌ خطا در verify: {e}")
+            logger.error(f"[PARSPAL_VERIFY] Error in verification: {e}")
             payment.status = PaymentStatus.FAILED
             payment.save(update_fields=['status'])
 

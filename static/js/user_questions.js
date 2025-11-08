@@ -73,8 +73,9 @@ function userQuestionsApp() {
                 Swal.fire({
                     icon: 'error',
                     title: 'خطا',
-                    text: error.message || 'خطا در بارگذاری سوالات',
+                    text: error.message || "اره",
                     confirmButtonText: 'تلاش مجدد',
+                    backButtonText: "بازگشت",
                     confirmButtonColor: '#0077b6'
                 }).then((result) => {
                     if (result.isConfirmed) {

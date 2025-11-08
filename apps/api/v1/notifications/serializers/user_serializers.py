@@ -30,6 +30,6 @@ class UserNotificationSerializer(serializers.ModelSerializer):
             'message', 
             'created_at_jalali', 
             'content_type',
-            'object_id'
+            'object_id',
         ]
                     

@@ -1,0 +1,555 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}قوانین و مقررات{% endblock title %}
+
+{% block extra_css %}
+<!-- قسمت css و حتی ایمپورت کردن فایل هات رو اینجا بزار -->
+{% endblock extra_css %}
+
+{% block content %}
+<!-- محتوای صفحات اینجاست -->
+<style>
+    /* Custom animations */
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+    }
+    
+    @keyframes pulse-slow {
+        0%, 100% { transform: scale(1); opacity: 0.3; }
+        50% { transform: scale(1.05); opacity: 0.5; }
+    }
+    
+    .float-animation {
+        animation: float 6s ease-in-out infinite;
+    }
+    
+    .pulse-animation {
+        animation: pulse-slow 4s ease-in-out infinite;
+    }
+    
+    /* Gradient text */
+    .gradient-text {
+        background: linear-gradient(135deg, #0077b6 0%, #00b4d8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    /* Custom shapes */
+    .shape-blob {
+        border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    }
+    
+    .shape-blob-2 {
+        border-radius: 70% 30% 30% 70% / 70% 70% 30% 30%;
+    }
+
+    /* Number badge */
+    .number-badge {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        background: linear-gradient(135deg, #0077b6 0%, #00b4d8 100%);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 14px;
+    }
+</style>
+
+<div id="base__div" class="overflow-x-hidden">
+
+<!-- Hero Section -->
+<section class="relative min-h-[60vh] flex items-center py-25 overflow-hidden">
+    <!-- Background Elements -->
+    <div class="absolute inset-0">
+        <!-- Gradient circles -->
+        <div class="absolute top-20 right-10 w-96 h-96 bg-c2 rounded-full opacity-10 blur-3xl pulse-animation"></div>
+        <div class="absolute bottom-20 left-10 w-96 h-96 bg-c3 rounded-full opacity-10 blur-3xl pulse-animation" style="animation-delay: 2s;"></div>
+        
+        <!-- Medical pattern overlay -->
+        <div class="absolute inset-0 opacity-5">
+            <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+                <path fill="#0077b6" fill-opacity="0.1" d="M0,224L48,208C96,192,192,160,288,170.7C384,181,480,235,576,245.3C672,256,768,224,864,197.3C960,171,1056,149,1152,165.3C1248,181,1344,235,1392,261.3L1440,288L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+            </svg>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 lg:px-8 relative z-10">
+        <div class="text-center max-w-4xl mx-auto">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-c1 to-c2 rounded-2xl mb-6" data-aos="fade-up">
+                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                </svg>
+            </div>
+            <h1 class="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6" data-aos="fade-up" data-aos-delay="100">
+                قوانین و مقررات
+                <span class="gradient-text">دکتر کد</span>
+            </h1>
+            <p class="text-lg lg:text-xl text-gray-600 leading-relaxed" data-aos="fade-up" data-aos-delay="200">
+                استفاده از سامانه دکتر کد به منزله پذیرش کامل قوانین زیر توسط کاربر می‌باشد. لذا لطفاً قبل از استفاده از خدمات سایت، این بخش را با دقت مطالعه فرمایید.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- Terms Section 1: مالکیت معنوی -->
+<section class="py-20 bg-white">
+    <div class="container mx-auto px-4 lg:px-8">
+        <div class="max-w-5xl mx-auto">
+            <div class="bg-gradient-to-br from-c5 to-white rounded-3xl p-8 lg:p-12 shadow-lg" data-aos="fade-up">
+                <div class="flex items-start gap-6 mb-8">
+                    <div class="w-16 h-16 bg-gradient-to-br from-c1 to-c2 rounded-2xl flex items-center justify-center flex-shrink-0">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">مالکیت معنوی محتوا</h2>
+                        <div class="w-24 h-1 bg-gradient-to-r from-c1 to-c2 rounded-full"></div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- Item 1 -->
+                    <div class="flex gap-4">
+                        <div class="number-badge">1</div>
+                        <p class="text-gray-700 leading-relaxed flex-1">
+                            کلیه محتوای ارائه‌شده در سامانه دکتر کد (نسخه‌های آماده، توضیحات تخصصی، ویدیوها، مقالات و...) توسط تیم پزشکی این سامانه تولید شده و دارای حقوق مالکیت معنوی می‌باشد.
+                        </p>
+                    </div>
+
+                    <!-- Item 2 -->
+                    <div class="flex gap-4">
+                        <div class="number-badge">2</div>
+                        <p class="text-gray-700 leading-relaxed flex-1">
+                            هرگونه کپی‌برداری، بازنشر، فروش یا انتشار عمومی این محتوا غیرقانونی بوده و از طریق مراجع ذی‌ربط پیگیری خواهد شد.
+                        </p>
+                    </div>
+
+                    <!-- Item 3 -->
+                    <div class="flex gap-4">
+                        <div class="number-badge">3</div>
+                        <div class="flex-1">
+                            <p class="text-gray-700 leading-relaxed mb-3">
+                                انتشار محتوا بدون اجازه، شرعاً حرام و اخلاقاً ناپسند است.
+                            </p>
+                            <div class="bg-red-50 border-r-4 border-red-500 p-4 rounded-lg">
+                                <p class="text-red-800 font-semibold">
+                                    <svg class="w-5 h-5 inline ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                    تخلف از این قانون پیگرد قانونی دارد
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Terms Section 2: مسئولیت استفاده -->
+<section class="py-20 bg-gray-50">
+    <div class="container mx-auto px-4 lg:px-8">
+        <div class="max-w-5xl mx-auto">
+            <div class="bg-white rounded-3xl p-8 lg:p-12 shadow-lg" data-aos="fade-up">
+                <div class="flex items-start gap-6 mb-8">
+                    <div class="w-16 h-16 bg-gradient-to-br from-c2 to-c3 rounded-2xl flex items-center justify-center flex-shrink-0">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">مسئولیت استفاده از نسخه‌ها</h2>
+                        <div class="w-24 h-1 bg-gradient-to-r from-c2 to-c3 rounded-full"></div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- Item 1 -->
+                    <div class="flex gap-4">
+                        <div class="number-badge">1</div>
+                        <p class="text-gray-700 leading-relaxed flex-1">
+                            نسخه‌های ارائه‌شده در سایت، صرفاً جنبه راهنمایی تخصصی دارند و برای کمک به پزشک در تسریع فرآیند نسخه‌نویسی طراحی شده‌اند.
+                        </p>
+                    </div>
+
+                    <!-- Item 2 -->
+                    <div class="flex gap-4">
+                        <div class="number-badge">2</div>
+                        <p class="text-gray-700 leading-relaxed flex-1">
+                            ما به هیچ وجه جایگزین قضاوت بالینی پزشک نیستیم.
+                        </p>
+                    </div>
+
+                    <!-- Item 3 -->
+                    <div class="flex gap-4">
+                        <div class="number-badge">3</div>
+                        <div class="flex-1">
+                            <p class="text-gray-700 leading-relaxed mb-3">
+                                مسئولیت نهایی هر نسخه صرفاً بر عهده پزشک معالج است که بیمار را ویزیت کرده و بر اساس معاینه، شرح حال و وضعیت بالینی، تصمیم نهایی را اتخاذ می‌کند.
+                            </p>
+                            <div class="bg-blue-50 border-r-4 border-c1 p-4 rounded-lg">
+                                <p class="text-c1 font-semibold">
+                                    <svg class="w-5 h-5 inline ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    تصمیم‌گیری بالینی نهایی با پزشک معالج است
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Terms Section 3: احراز هویت -->
+<section class="py-20 bg-white">
+    <div class="container mx-auto px-4 lg:px-8">
+        <div class="max-w-5xl mx-auto">
+            <div class="bg-gradient-to-br from-c5 to-white rounded-3xl p-8 lg:p-12 shadow-lg" data-aos="fade-up">
+                <div class="flex items-start gap-6 mb-8">
+                    <div class="w-16 h-16 bg-gradient-to-br from-c3 to-c1 rounded-2xl flex items-center justify-center flex-shrink-0">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">احراز هویت و محرمانگی اطلاعات</h2>
+                        <div class="w-24 h-1 bg-gradient-to-r from-c3 to-c1 rounded-full"></div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- Item 1 -->
+                    <div class="flex gap-4">
+                        <div class="number-badge">1</div>
+                        <p class="text-gray-700 leading-relaxed flex-1">
+                            کاربران برای استفاده از نسخه‌های سامانه باید احراز هویت پزشکی شوند (کارت نظام پزشکی یا کارت دانشجویی).
+                        </p>
+                    </div>
+
+                    <!-- Item 2 -->
+                    <div class="flex gap-4">
+                        <div class="number-badge">2</div>
+                        <p class="text-gray-700 leading-relaxed flex-1">
+                            اطلاعات احراز هویت (شامل تصویر مدارک و اطلاعات شخصی) صرفاً جهت تأیید هویت و جلوگیری از سوءاستفاده ذخیره می‌شود و با هیچ فرد یا نهاد ثالثی به اشتراک گذاشته نخواهد شد.
+                        </p>
+                    </div>
+
+                    <!-- Item 3 -->
+                    <div class="flex gap-4">
+                        <div class="number-badge">3</div>
+                        <p class="text-gray-700 leading-relaxed flex-1">
+                            کاربران موظف‌اند در هنگام ثبت‌نام، اطلاعات واقعی و دقیق وارد نمایند.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-8 p-6 bg-green-50 border-2 border-green-200 rounded-xl">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
+                        <p class="text-green-800 font-semibold">حریم خصوصی شما برای ما اهمیت دارد و اطلاعات شما کاملاً محفوظ است</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Terms Section 4 & 5: اشتراک و محدودیت نشست -->
+<section class="py-20 bg-gray-50">
+    <div class="container mx-auto px-4 lg:px-8">
+        <div class="max-w-5xl mx-auto">
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- اشتراک ویژه -->
+                <div class="bg-white rounded-3xl p-8 shadow-lg" data-aos="fade-right">
+                    <div class="flex items-start gap-4 mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-br from-c1 to-c2 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900">اشتراک ویژه و پرداخت‌ها</h3>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="flex gap-3">
+                            <div class="w-6 h-6 bg-c5 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span class="text-c1 text-xs font-bold">1</span>
+                            </div>
+                            <p class="text-gray-700 text-sm leading-relaxed">
+                                برای دسترسی کامل به نسخه‌ها، کاربران باید یکی از پلن‌های اشتراک ویژه را خریداری کنند.
+                            </p>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <div class="w-6 h-6 bg-c5 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span class="text-c1 text-xs font-bold">2</span>
+                            </div>
+                            <p class="text-gray-700 text-sm leading-relaxed">
+                                اشتراک‌ها به‌صورت مدت‌دار (مثلاً یک‌ماهه، سه‌ماهه و...) تعریف شده و پس از پایان دوره، تمدید آن بر عهده کاربر است.
+                            </p>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <div class="w-6 h-6 bg-c5 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span class="text-c1 text-xs font-bold">3</span>
+                            </div>
+                            <p class="text-gray-700 text-sm leading-relaxed">
+                                وجه پرداخت‌شده به هیچ عنوان قابل استرداد نمی‌باشد، مگر در موارد خطای سیستمی اثبات‌شده از سمت سامانه.
+                            </p>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <div class="w-6 h-6 bg-c5 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span class="text-c1 text-xs font-bold">4</span>
+                            </div>
+                            <p class="text-gray-700 text-sm leading-relaxed">
+                                مسئولیت استفاده از اشتراک فقط بر عهده صاحب حساب کاربری است و اشتراک‌گذاری اطلاعات ورود با دیگران تخلف محسوب می‌شود.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- محدودیت نشست -->
+                <div class="bg-white rounded-3xl p-8 shadow-lg" data-aos="fade-left">
+                    <div class="flex items-start gap-4 mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-br from-c2 to-c3 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900">محدودیت نشست هم‌زمان</h3>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="flex gap-3">
+                            <div class="w-6 h-6 bg-c5 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span class="text-c2 text-xs font-bold">1</span>
+                            </div>
+                            <p class="text-gray-700 text-sm leading-relaxed">
+                                هر حساب کاربری فقط مجاز است در یک دستگاه به‌صورت هم‌زمان وارد سامانه شود.
+                            </p>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <div class="w-6 h-6 bg-c5 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span class="text-c2 text-xs font-bold">2</span>
+                            </div>
+                            <p class="text-gray-700 text-sm leading-relaxed">
+                                در صورت ورود به سامانه از دستگاه جدید، نشست قبلی به‌صورت خودکار خاتمه می‌یابد.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 p-4 bg-yellow-50 border-2 border-yellow-200 rounded-xl">
+                        <div class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                            <p class="text-yellow-800 text-sm font-semibold">
+                                استفاده همزمان از چند دستگاه امکان‌پذیر نیست
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Terms Section 6 & 7: تغییرات و نقض -->
+<section class="py-20 bg-white">
+    <div class="container mx-auto px-4 lg:px-8">
+        <div class="max-w-5xl mx-auto space-y-8">
+            <!-- تغییرات در قوانین -->
+            <div class="bg-gradient-to-br from-c5 to-white rounded-3xl p-8 lg:p-12 shadow-lg" data-aos="fade-up">
+                <div class="flex items-start gap-6 mb-6">
+                    <div class="w-16 h-16 bg-gradient-to-br from-c1 to-c2 rounded-2xl flex items-center justify-center flex-shrink-0">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">تغییرات در قوانین</h2>
+                        <div class="w-24 h-1 bg-gradient-to-r from-c1 to-c2 rounded-full"></div>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex gap-4">
+                        <div class="number-badge">1</div>
+                        <p class="text-gray-700 leading-relaxed flex-1">
+                            «دکتر کد» این حق را دارد که در هر زمان، مفاد این قوانین را به‌روزرسانی کند.
+                        </p>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <div class="number-badge">2</div>
+                        <p class="text-gray-700 leading-relaxed flex-1">
+                            تغییرات از زمان انتشار در همین صفحه، لازم‌الاجرا خواهند بود.
+                        </p>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <div class="number-badge">3</div>
+                        <p class="text-gray-700 leading-relaxed flex-1">
+                            توصیه می‌شود کاربران به‌صورت دوره‌ای این صفحه را مرور نمایند.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- نقض قوانین -->
+            <div class="bg-white rounded-3xl p-8 lg:p-12 shadow-lg border-2 border-red-100" data-aos="fade-up">
+                <div class="flex items-start gap-6 mb-6">
+                    <div class="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">نقض قوانین</h2>
+                        <div class="w-24 h-1 bg-gradient-to-r from-red-500 to-red-600 rounded-full"></div>
+                    </div>
+                </div>
+
+                <div class="bg-red-50 border-r-4 border-red-500 p-6 rounded-xl mb-6">
+                    <p class="text-gray-700 leading-relaxed mb-4">
+                        در صورت مشاهده هرگونه نقض قوانین (از جمله انتشار غیرمجاز محتوا، ارائه اطلاعات نادرست، سو استفاده از حساب کاربری، یا تلاش برای نفوذ به سیستم):
+                    </p>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                            </svg>
+                            <p class="text-red-800 font-semibold">دسترسی کاربر بدون بازگشت وجه قطع خواهد شد.</p>
+                        </div>
+
+                        <div class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                            </svg>
+                            <p class="text-red-800 font-semibold">اقدامات حقوقی لازم از سوی تیم سامانه انجام خواهد شد.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Section -->
+<section class="py-20 bg-gray-50">
+    <div class="container mx-auto px-4 lg:px-8">
+        <div class="max-w-5xl mx-auto">
+            <div class="bg-white rounded-3xl p-8 lg:p-12 shadow-lg" data-aos="fade-up">
+                <div class="text-center mb-12">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-c1 to-c2 rounded-2xl mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">راه‌های ارتباطی</h2>
+                    <p class="text-gray-600">جهت پیگیری یا سوالات با ما در ارتباط باشید</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Telegram -->
+                    <a href="https://t.me/Doctor_Code_Admin" target="_blank" class="flex items-center gap-4 p-6 bg-gradient-to-br from-c5 to-white rounded-2xl hover:shadow-lg transition-all duration-300 group">
+                        <div class="w-14 h-14 bg-gradient-to-br from-c1 to-c2 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295-.002 0-.003 0-.005 0l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.941z"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-gray-900 mb-1">تلگرام پشتیبانی</h3>
+                            <p class="text-c1 text-sm direction-ltr text-right">@Doctor_Code_Admin</p>
+                        </div>
+                        <svg class="w-5 h-5 text-c1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </a>
+
+                    <!-- Email -->
+                    <a href="mailto:support@Drcode-med.ir" class="flex items-center gap-4 p-6 bg-gradient-to-br from-c5 to-white rounded-2xl hover:shadow-lg transition-all duration-300 group">
+                        <div class="w-14 h-14 bg-gradient-to-br from-c2 to-c3 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-gray-900 mb-1">ایمیل پشتیبانی</h3>
+                            <p class="text-c2 text-sm direction-ltr text-right">support@Drcode-med.ir</p>
+                        </div>
+                        <svg class="w-5 h-5 text-c2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Final Acceptance Section -->
+<section class="py-20 bg-gradient-to-br from-c1 to-c2 relative overflow-hidden">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-10">
+        <div class="absolute top-0 left-0 w-96 h-96 bg-white rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+        <div class="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full translate-x-1/2 translate-y-1/2"></div>
+    </div>
+    
+    <div class="container mx-auto px-4 lg:px-8 relative z-10">
+        <div class="max-w-4xl mx-auto text-center">
+            <div class="bg-white/10 backdrop-blur-sm rounded-3xl p-8 lg:p-12 border-2 border-white/20" data-aos="fade-up">
+                <div class="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-10 h-10 text-c1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-3xl lg:text-4xl font-bold text-white mb-6">
+                    پذیرش قوانین و مقررات
+                </h2>
+                <p class="text-xl text-white/90 leading-relaxed mb-8">
+                    با ثبت‌نام در سامانه، شما تأیید می‌کنید که کلیه مفاد بالا را مطالعه کرده و پذیرفته‌اید.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a onclick="Auth.showAuthModal()" class="inline-flex items-center justify-center px-8 py-4 bg-white text-c1 rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 cursor-pointer">
+                        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                        </svg>
+                        ثبت نام و شروع کار
+                    </a>
+                    <a href="/" class="inline-flex items-center justify-center px-8 py-4 bg-transparent text-white border-2 border-white rounded-2xl font-semibold text-lg hover:bg-white hover:text-c1 transform hover:scale-105 transition-all duration-300">
+                        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                        بازگشت به صفحه اصلی
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+</div>
+
+{% endblock content %}
+
+{% block extra_js %}
+<!-- قسمت js و حتی ایمپورت کردن فایل هات رو اینجا بزار -->
+{% endblock extra_js %}

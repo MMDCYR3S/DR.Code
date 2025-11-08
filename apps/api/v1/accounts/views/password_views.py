@@ -30,10 +30,7 @@ class PasswordResetRequestAPIView(generics.GenericAPIView):
         try:
             user = User.objects.get(email__iexact=email)
             
-            site_domain = request.get_host()
-            protocol = 'https' if request.is_secure() else 'http'
-            
-            send_password_reset_email(user, site_domain, protocol)
+            send_password_reset_email(user)
         except User.DoesNotExist:
             return Response(
                 {'detail': 'کاربری با این ایمیل یافت نشد.'},

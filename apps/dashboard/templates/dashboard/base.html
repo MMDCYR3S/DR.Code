@@ -59,7 +59,7 @@
     <div x-data="notificationManager" 
          @notify.window="add($event.detail)"
          class="fixed top-5 left-5 z-[100] w-full max-w-xs space-y-3">
-        <template x-for="notification in notifications" :key="notification.id">
+        <template x-for="notification in notifications.filter(n => !n.is_read)" :key="notification.id">
             <div x-show="notification.visible" 
                  x-transition:enter="transition ease-out duration-300"
                  x-transition:enter-start="transform -translate-x-full opacity-0"

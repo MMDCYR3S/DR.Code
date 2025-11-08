@@ -32,7 +32,7 @@ class AnalysisDashboardView(LoginRequiredMixin, TemplateView):
     def get_user_stats(self):
         """آمار مربوط به کاربران"""
         # تعداد ادمین‌ها
-        admin_count = User.objects.filter(is_staff=True).count()
+        admin_count = User.objects.filter(Q(is_staff=True) | Q(is_superuser=True) | Q(profile__role="admin")).count()
         
         # کاربران عادی (غیر ادمین و غیر سوپر یوزر)
         regular_users = User.objects.filter(
@@ -123,7 +123,9 @@ class UserStatsDetailView(LoginRequiredMixin, View):
     def get_admin_users(self):
         """لیست ادمین‌ها"""
         admins = User.objects.filter(
-            is_staff=True
+            Q(is_staff=True) |
+            Q(is_superuser=True) |
+            Q(profile__role="admin")
         ).select_related('profile').order_by('-date_joined')[:10]
         
         data = []

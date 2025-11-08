@@ -107,7 +107,7 @@ class Payment(models.Model):
         ]
 
     def __str__(self):
-        return f"پرداخت به مبلغ {self.amount} توسط {self.user.username} ({self.status})"
+        return f"پرداخت به مبلغ {self.amount} ({self.status})"
     
     @property
     def is_successful(self):

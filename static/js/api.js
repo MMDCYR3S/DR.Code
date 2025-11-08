@@ -1,7 +1,7 @@
 // log and reg
 // مدیریت ارتباط با API
 const API = {
-    BASE_URL: 'http://127.0.0.1:8000/', // آدرس API خودتون
+    BASE_URL: 'https://drcode-med.ir/', // آدرس API خودتون
     // تنظیمات پیش‌فرض برای درخواست‌ها
     getHeaders(includeAuth = false) {
         const headers = {
@@ -324,21 +324,27 @@ API.prescriptions = {
         }
     },
 
-    // Submit question for premium users
+    // Submit question for premium users (برای آینده)
     async submitQuestion(prescriptionId, questionText) {
         try {
             const url = `${API.BASE_URL}api/v1/questions/create/`;
+            console.log('📡 POST to:', url);
             const payload = {
                 prescription: prescriptionId,  
                 question_text: questionText.trim()
             };
 
+            console.log('📤 Sending payload:', payload);
+
             const response = await axios.post(url, payload, {
                 headers: API.getHeaders(true) 
             });
+
+            console.log('✅ Question submission successful:', response.data);
             return response.data;
 
         } catch (error) {
+            console.error('❌ Error submitting question in API layer:', error);
             throw error; 
         }
     }
@@ -350,7 +356,6 @@ API.prescriptions = {
 
 // اضافه کردن به انتهای فایل api.js
 
-// Profile APIs
 API.profile = {
     // دریافت اطلاعات پروفایل
     async getProfile() {
@@ -902,8 +907,6 @@ API.payment = {
     }
 };
 
-
-
 // در انتهای فایل api.js اضافه کن:
 
 // User Questions API
@@ -935,7 +938,7 @@ API.userQuestions = {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'خطا در دریافت سوالات');
+                throw new Error(data.detail || 'خطا در دریافت سوالات');
             }
 
             console.log('✅ Questions Response:', data);

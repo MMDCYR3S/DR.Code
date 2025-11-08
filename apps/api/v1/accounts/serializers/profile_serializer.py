@@ -20,19 +20,27 @@ class ProfileSerializer(serializers.ModelSerializer):
     user_full_name = serializers.CharField(source='user.full_name', read_only=True)
     user_phone = serializers.CharField(source='user.phone_number', read_only=True)
     auth_status_display = serializers.CharField(source='get_auth_status_display', read_only=True)
+    has_uploaded_document = serializers.SerializerMethodField()
     
     class Meta:
         model = Profile
         fields = (
             'user_full_name', 'user_phone', 'role', 'medical_code',
             'auth_status', 'auth_status_display', 'rejection_reason',
-            'subscription_end_date', 'created_at', 'updated_at'
+            'subscription_end_date', 'created_at', 'updated_at', "has_uploaded_document"
         )
         read_only_fields = (
             'role', 'auth_status', 'rejection_reason', 
             'subscription_end_date', 'created_at', 'updated_at'
         )
+    
+    def get_has_uploaded_document(self, obj):
+        "بررسی اینکه آیا کاربر فایلی آپلود کرده برای احراز هویت یا خیر"
+        if obj.documents.exists():
+            return True
+        return False
         
+    
     def to_representation(self, instance):
         """تبدیل تاریخ پایان اشتراک به تعداد روز باقی‌مانده"""
         data = super().to_representation(instance)

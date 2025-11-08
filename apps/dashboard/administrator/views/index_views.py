@@ -33,7 +33,7 @@ def admin_dashboard_view(request):
         context = cached_data
     else:
         context = _calculate_dashboard_stats()
-        cache.set(cache_key, context, timeout=300)
+        cache.set(cache_key, context, timeout=20)
 
     context.update(_get_realtime_data())
     
@@ -82,7 +82,8 @@ def _calculate_dashboard_stats():
     
     # کاربران در صف احراز هویت
     pending_verification_count = Profile.objects.filter(
-        auth_status=AuthStatusChoices.PENDING.value
+        auth_status=AuthStatusChoices.PENDING.value,
+        documents__isnull=False
     ).count()
     
     # سوالات بدون پاسخ
@@ -115,7 +116,8 @@ def _get_realtime_data():
     
     # آخرین کاربران در صف احراز هویت (۳ نفر)
     pending_users = Profile.objects.select_related('user').filter(
-        auth_status=AuthStatusChoices.PENDING.value
+        auth_status=AuthStatusChoices.PENDING.value,
+        documents__isnull=False
     ).order_by('-created_at')[:3]
     
     # آخرین سوالات بدون پاسخ (۳ سوال)

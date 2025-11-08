@@ -190,14 +190,38 @@ function authenticationForm() {
                 
                 // Redirect to home
                 window.location.href = '/';
-                
             } catch (error) {
+                let errorMessage = 'مشکلی در ارتباط با سرور رخ داده است. لطفاً دوباره تلاش کنید.';
+
+                if (error.response && error.response.data) {
+                    if (error.response.data.errors) {
+                        const errorMessages = Object.values(error.response.data.errors)
+                                                    .flat()
+                                                    .join('\n');
+                        if (errorMessages) {
+                            errorMessage = errorMessages;
+                        }
+                    } 
+
+                    else if (error.response.data.message) {
+                        errorMessage = error.response.data.message;
+                    }
+                } else if (error.request) {
+
+                    errorMessage = 'پاسخی از سرور دریافت نشد. لطفاً اتصال اینترنت خود را بررسی کنید.';
+                } else {
+
+                    console.error('Error during request setup:', error.message);
+                    errorMessage = 'فایل نباید بیش از 2 مگابایت باشد.';
+                }
+
                 await Swal.fire({
                     icon: 'error',
                     title: 'خطا در ارسال درخواست',
-                    text: error.message || 'لطفاً دوباره تلاش کنید',
+                    text: errorMessage,
                     confirmButtonColor: '#0077b6'
                 });
+
             } finally {
                 this.isSubmitting = false;
             }

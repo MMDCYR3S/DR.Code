@@ -10,7 +10,7 @@ const Auth = {
             const response = await API.register(formData);
             
             if (response.success) {
-                // ذخیره توکن‌ها
+                
                 if (response.data.access_token) {
                     StorageManager.saveTokens({
                         access_token: response.data.access_token,
@@ -26,6 +26,8 @@ const Auth = {
                     phone_number: response.data.phone_number
                 });
                 
+                StorageManager.saveUserProfile(response.data.profile);
+                
                 // پیام موفقیت
                 this.showMessage('success', response.message);
                 
@@ -33,6 +35,7 @@ const Auth = {
                 setTimeout(() => {
                     this.closeAuthModal();
                     this.updateUIForLoggedInUser();
+                    window.location.href = '/';
                 }, 1500);
                 
                 // اگر نیاز به احراز هویت تکمیلی دارد
@@ -141,7 +144,6 @@ async logout() {
                             <i class="fas fa-user"></i>
                             پروفایل من
                         </a>
-
                         <hr>
                         <a href="#" onclick="Auth.logout(); return false;">
                             <i class="fas fa-sign-out-alt"></i>
@@ -162,8 +164,6 @@ async logout() {
                 </button>
                 <div id="mobile-user-menu" class="mobile-dropdown-menu absolute px-8" style="display: none;">
                     <a href="/profile"><i class="fas fa-user"></i> پروفایل</a>
-                    ${profile?.role === 'premium' ? `
-                    ` : ''}
                     <a href="#" onclick="Auth.logout(); return false;">
                         <i class="fas fa-sign-out-alt"></i> خروج
                     </a>

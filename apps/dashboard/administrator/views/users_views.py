@@ -162,7 +162,8 @@ class PendingVerificationListView(LoginRequiredMixin, HasAdminAccessPermission, 
         کاربران به ترتیب تاریخ ثبت‌نام (قدیمی‌ترین در ابتدا) مرتب می‌شوند.
         """
         queryset = User.objects.select_related('profile').filter(
-            profile__auth_status=AuthStatusChoices.PENDING.value
+            profile__auth_status=AuthStatusChoices.PENDING.value,
+            profile__documents__isnull=False
         ).order_by('date_joined')
         return queryset
 
@@ -212,10 +213,10 @@ class UserVerificationDetailView(LoginRequiredMixin, HasAdminAccessPermission, D
                 })
                 
         elif action == 'reject':
-            resend_auth_email(user)
             rejection_reason = request.POST.get('rejection_reason', 'دلیل مشخصی ثبت نشده است.')
             profile.auth_status = AuthStatusChoices.REJECTED
             profile.rejection_reason = rejection_reason
+            resend_auth_email(user)
             profile.save()
             
             if is_ajax:
@@ -258,7 +259,7 @@ class AddUserView(LoginRequiredMixin, HasAdminAccessPermission, View):
                     # به‌روزرسانی پروفایل کاربر
                     profile = user.profile
                     profile.role = form.cleaned_data['role']
-                    profile.medical_code = form.cleaned_data['medical_code'] or None
+                    profile.medical_code = form.cleaned_data['medical_code'] or "DR-CODE"
                     profile.auth_status = 'APPROVED'  # به صورت خودکار تایید شده
                     profile.save()
                     

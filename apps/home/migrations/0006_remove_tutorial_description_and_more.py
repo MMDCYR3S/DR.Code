@@ -10,6 +10,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RemoveField(
+            model_name='tutorial',
+            name='description',
+        ),
         migrations.AlterField(
             model_name='tutorial',
             name='aparat_url',

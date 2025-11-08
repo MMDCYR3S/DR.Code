@@ -1,11 +1,13 @@
+import os
+import uuid
+import random
+
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.db.models.signals import post_save
 from django.core.validators import FileExtensionValidator
 from django.dispatch import receiver
-
-import uuid
 
 User = get_user_model()
 
@@ -16,10 +18,31 @@ class AuthStatusChoices(models.TextChoices):
     APPROVED = "APPROVED", _("تایید شده")
     REJECTED = "REJECTED", _("رد شده")
 
-# ========== Get Auth Document Path  ========== #
+# # ========== Generate Random Number ========== # 
+def generate_random_number(length=6):
+    """تولید عدد تصادفی با طول دلخواه (پیش‌فرض ۶ رقمی)"""
+    return ''.join([str(random.randint(0, 9)) for _ in range(length)])
+
+# ========== Get Auth Document Path ========== #
 def get_auth_document_path(instance, filename):
-    """ تابعی برای تولید مسیر آپلود مدارک به صورت اختصاصی برای هر کاربر """
-    return f'auth/documents/user_{instance.profile.user.id}/{filename}'
+    """تابعی برای تولید مسیر و نام فایل اختصاصی کاربر"""
+
+    # استخراج اطلاعات کاربر
+    user = instance.profile.user
+    username = user.username
+    user_id = user.id
+    
+    # جدا کردن پسوند فایل اصلی
+    ext = filename.split('.')[-1].lower()
+    
+    # تولید عدد تصادفی
+    random_number = generate_random_number()
+
+    # ساخت نام جدید فایل
+    new_filename = f"{username}_{user_id}_{random_number}.{ext}"
+
+    # مسیر ذخیره‌سازی نهایی
+    return os.path.join("auth", "documents", f"user_{user_id}", new_filename)
 
 # ========== Authentication Document ========== #
 class AuthenticationDocument(models.Model):
@@ -43,6 +66,10 @@ class AuthenticationDocument(models.Model):
     class Meta:
         verbose_name = _("مدرک هویتی")
         verbose_name_plural = _("مدارک هویتی")
+        
+    def save(self, *args, **kwargs):
+        """هر دفعه که ذخیره شد، از نام اختصاصی فایل استفاده کند"""
+        super().save(*args, **kwargs)
 
 # ========== Profile Model ========== #
 class Profile(models.Model):

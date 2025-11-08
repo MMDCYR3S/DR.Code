@@ -51,6 +51,23 @@
         -webkit-text-fill-color: transparent;
         background-clip: text;
     }
+    .h_iframe-aparat_embed_frame{
+        position:relative;
+    }
+    .h_iframe-aparat_embed_frame .ratio{
+        display:block;
+        width:100%;
+        height:100%;
+        height:auto;
+    }
+    .h_iframe-aparat_embed_frame iframe{
+        position:absolute;
+        top:0;
+        left:0;
+        width:100%;
+        height:100%;
+    }
+
 </style>
 
 <!-- base div -->
@@ -814,44 +831,29 @@
                 با یک ویدیو کوتاه، نحوه استفاده از دکتر کد را یاد بگیرید
             </p>
 
-            <!-- Video Thumbnail -->
-            <div class="relative group cursor-pointer" data-aos="fade-up" data-aos-delay="200">
-                <div class="relative rounded-2xl overflow-hidden shadow-2xl">
-                    <img src="data:image/svg+xml,%3Csvg width='800' height='450' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='800' height='450' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='24' fill='%239ca3af' text-anchor='middle' dy='.3em'%3EVideo Thumbnail%3C/text%3E%3C/svg%3E"
-                        alt="آموزش دکتر کد" class="w-full h-auto">
-
-                    <!-- Play Button Overlay -->
-                    <div
-                        class="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/50 transition-colors">
-                        <div
-                            class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-xl transform group-hover:scale-110 transition-transform">
-                            <svg class="w-8 h-8 text-c1 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd"
-                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                                    clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Video Duration Badge -->
-                <div class="absolute bottom-4 right-4 bg-black/80 text-white px-3 py-1 rounded-lg text-sm font-medium">
-                    01:23
+        <!-- Video Player -->
+        <div class="relative group cursor-pointer" data-aos="fade-up" data-aos-delay="200">
+            <div class="relative rounded-2xl overflow-hidden shadow-2xl">
+                <!-- Video Element -->
+                <div class="h_iframe-aparat_embed_frame">
+                    <span style="display: block;padding-top: 57%"></span>
+                    <iframe src="https://www.aparat.com/video/video/embed/videohash/bcrdh85/vt/frame?titleShow=true"  allowFullScreen="true" webkitallowfullscreen="true" mozallowfullscreen="true"></iframe>
                 </div>
             </div>
+        </div>
 
             <!-- Additional CTAs -->
             <div class="flex flex-col sm:flex-row gap-4 justify-center mt-8" data-aos="fade-up" data-aos-delay="300">
-                <a href="#"
+                <a href="/tutorials/"
                     class="inline-flex items-center justify-center px-6 py-3 bg-white text-c1 rounded-xl font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 border-2 border-c5">
                     <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
                         </path>
                     </svg>
-                    مشاهده آموزش‌های بیشتر
+                    مشاهده آموزش‌ها
                 </a>
-                <a href="#"
+                <a href="/prescriptions/"
                     class="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-c1 to-c2 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">
                     <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -869,6 +871,4 @@
 {% endblock content %}
 
 {% block extra_js %}
-<!-- قسمت js و حتی ایمپورت کردن فایل هات رو اینجا بزار -->
-
 {% endblock extra_js %}

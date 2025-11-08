@@ -19,7 +19,7 @@ function prescriptionsApp() {
         nextPage: null,
         previousPage: null,
         isSearchMode: false, // برای تشخیص حالت جستجو
-        selectedAccessLevel: 'FREE', // 🆕 پیش‌فرض روی "همه"
+        selectedAccessLevel: 'ALL', // 🆕 پیش‌فرض روی "همه"
 
         // Computed
         get totalPages() {
@@ -47,7 +47,7 @@ function prescriptionsApp() {
         async init() {
             // Check if user is premium
             const profile = StorageManager.getUserProfile();
-            this.isPremiumUser = profile?.role === 'premium';
+            this.isPremiumUser = profile?.role === 'premium' || profile?.role === 'admin';
 
             // Load prescriptions
             await this.loadPrescriptions();
@@ -187,10 +187,11 @@ function prescriptionsApp() {
 
         handlePrescriptionClick(prescription) {
             if (prescription.access_level === 'PREMIUM' && !this.isPremiumUser) {
-                // Handled by overlay click
+                // نمایش پنجره ارتقا برای موبایل
+                this.showPremiumModal();
                 return;
             }
-
+        
             // Navigate to prescription detail
             window.location.href = `/prescriptions/${prescription.slug}`;
         },
@@ -212,7 +213,7 @@ function prescriptionsApp() {
                 cancelButtonColor: '#6b7280'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = '/plans';
+                    window.location.href = '/plan';
                 }
             });
         }

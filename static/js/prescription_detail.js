@@ -75,19 +75,20 @@ function prescriptionDetailApp() {
 
             } catch (error) {
                 console.error('Error loading prescription:', error);
+                const errorMessage = (error.response && error.response.data && error.response.data.detail) || 'خطا در بارگذاری اطلاعات نسخه. آدرس ممکن است اشتباه باشد.';
                 
                 Swal.fire({
 
                     icon: 'error',
                     title: 'خطا',
-                    text: 'خطا در بارگذاری اطلاعات نسخه',
+                    text: errorMessage,
                     confirmButtonText: 'بازگشت',
                     confirmButtonColor: '#0077b6'
                 }).then(() => {
                     setTimeout(() => {
                         console.log('Redirecting to /prescriptions after 5 seconds...');
                         window.location.href = '/prescriptions';
-                    }, 2000);
+                    }, 3000);
                 });
             } finally {
                 this.loading = false;
@@ -149,34 +150,20 @@ initGallery() {
         },
         
 
-getCombinationGroups(drugs) {
-    const groups = {};
-    
-    drugs
-        .filter(d => d.is_combination && d.group_number)
-        .forEach(drug => {
-            if (!groups[drug.group_number]) {
-                groups[drug.group_number] = [];
-            }
+        getCombinationGroups(drugs) {
+            const groups = {};
             
-            // بررسی آیا دارو با این کد قبلاً در گروه اضافه شده است
-            const existingDrugIndex = groups[drug.group_number].findIndex(d => d.code === drug.code);
-            
-            if (existingDrugIndex === -1) {
-                // اگر دارو با این کد وجود ندارد، آن را اضافه کن
-                groups[drug.group_number].push(drug);
-            } else {
-                // اگر دارو با این کد وجود دارد، تعداد آن را افزایش بده
-                if (!groups[drug.group_number][existingDrugIndex].quantity) {
-                    groups[drug.group_number][existingDrugIndex].quantity = 1;
-                }
-                groups[drug.group_number][existingDrugIndex].quantity += 1;
-            }
-        });
+            drugs
+                .filter(d => d.is_combination && d.group_number)
+                .forEach(drug => {
+                    if (!groups[drug.group_number]) {
+                        groups[drug.group_number] = [];
+                    }
+                    groups[drug.group_number].push(drug);
+                });
 
-    return groups;
-}
-        ,
+            return groups;
+        },
 
         async toggleSave() {
             // چک لاگین
@@ -219,7 +206,7 @@ getCombinationGroups(drugs) {
                 Swal.fire({
                     icon: 'error',
                     title: 'خطا در ذخیره‌سازی',
-                    text: error.message || 'لطفاً دوباره تلاش کنید',
+                    text: error.detail || 'لطفاً دوباره تلاش کنید',
                     confirmButtonText: 'باشه',
                     confirmButtonColor: '#ef4444'
                 });
@@ -255,6 +242,7 @@ getCombinationGroups(drugs) {
             if (questionBox) {
                 questionBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
+            alert('salam')
         },
 
         copyDrugCode(code) {
@@ -750,7 +738,7 @@ function createProtectedWatermark() {
             `;
             let medi = localStorage.getItem('drcode_user_profile')
             let mediObject = JSON.parse(medi);
-
+            // alert(!!null)
         for (let row = 1; row <= rows; row++) {
             for (let col = 1; col <= cols; col++) {
                 const text = document.createElement('div');

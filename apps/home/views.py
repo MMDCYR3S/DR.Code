@@ -56,6 +56,20 @@ class TutorialListView(TemplateView):
 # =========== PLAN LIST VIEW =========== #
 class PlanListView(TemplateView):
     """
-    صفحه ارتباط با ما
+    صفحه اشتراک‌ها و پلن‌ها
     """
     template_name = 'home/plan.html'
+    
+# =========== RULES VIEW =========== #
+class RulesView(TemplateView):
+    """
+    صفحه قوانین و مقررات
+    """
+    template_name = 'home/rules.html'
+    
+# =========== PRIVACY VIEW =========== #
+class PrivacyView(TemplateView):
+    """
+    صفحه حریم خصوصی
+    """
+    template_name = 'home/privacy.html'

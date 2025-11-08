@@ -42,7 +42,6 @@ class ZarinpalService:
             "amount": int(amount),  # زرین‌پال مبلغ را به صورت integer می‌پذیرد
             "description": description,
             "callback_url": callback_url,
-            "currency": "IRT"
         }
         if metadata:
             request_data["metadata"] = metadata
@@ -105,7 +104,6 @@ class ZarinpalService:
             "merchant_id": self.merchant_id,
             "authority": authority,
             "amount": int(amount),
-            "currency": "IRR"
         }
         
         try:

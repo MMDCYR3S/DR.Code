@@ -1,12 +1,13 @@
+import jdatetime
+from slugify import slugify
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
+from django_ckeditor_5.fields import CKEditor5Field
 
 from .category import PrescriptionCategory
-from slugify import slugify
 
-from django_ckeditor_5.fields import CKEditor5Field
-import jdatetime
 
 # ========= PRESCRIPTION ALIAS ========= #
 class PrescriptionAlias(models.Model):

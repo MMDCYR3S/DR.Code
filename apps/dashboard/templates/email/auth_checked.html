@@ -1,540 +1,151 @@
 <!DOCTYPE html>
 <html dir="rtl" lang="fa">
 <head>
-    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>احراز هویت موفقیت‌آمیز - دکتر کد</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body { 
-            font-family: 'Tahoma', 'Vazir', sans-serif; 
-            direction: rtl; 
-            background: linear-gradient(135deg, #00c851 0%, #007e33 100%);
-            min-height: 100vh;
-            padding: 20px;
-            line-height: 1.6;
-        }
-        
-        .email-container {
-            max-width: 750px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
-            overflow: hidden;
-            position: relative;
-        }
-        
-        .email-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 6px;
-            background: linear-gradient(90deg, #00c851, #28a745, #20c997, #17a2b8);
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
-            padding: 50px 30px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="80" r="3" fill="rgba(255,255,255,0.1)"/><circle cx="60" cy="30" r="1.5" fill="rgba(255,255,255,0.1)"/><circle cx="30" cy="70" r="2.5" fill="rgba(255,255,255,0.1)"/></svg>');
-            animation: sparkle 25s infinite linear;
-        }
-        
-        @keyframes sparkle {
-            0% { transform: translate(-50%, -50%) rotate(0deg); }
-            100% { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-        
-        .success-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-            display: block;
-            animation: checkmarkPulse 2s ease-in-out infinite;
-            position: relative;
-            z-index: 1;
-        }
-        
-        @keyframes checkmarkPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-        
-        .header h1 {
-            font-size: 32px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            position: relative;
-            z-index: 1;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        
-        .header .subtitle {
-            font-size: 18px;
-            opacity: 0.95;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .content {
-            padding: 50px 30px;
-        }
-        
-        .celebration {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-        
-        .celebration h2 {
-            color: #28a745;
-            font-size: 26px;
-            margin-bottom: 15px;
-            animation: bounce 2s ease-in-out infinite;
-        }
-        
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-            40% { transform: translateY(-10px); }
-            60% { transform: translateY(-5px); }
-        }
-        
-        .celebration p {
-            font-size: 16px;
-            color: #6c757d;
-            line-height: 1.8;
-        }
-        
-        .status-card {
-            background: linear-gradient(135deg, #d4edda, #c3e6cb);
-            border: 2px solid #28a745;
-            border-radius: 15px;
-            padding: 30px;
-            margin: 30px 0;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .status-card::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, #28a745, #20c997, #17a2b8, #6f42c1);
-            border-radius: 17px;
-            z-index: -1;
-            animation: borderAnimation 3s linear infinite;
-        }
-        
-        @keyframes borderAnimation {
-            0% { filter: hue-rotate(0deg); }
-            100% { filter: hue-rotate(360deg); }
-        }
-        
-        .status-card h3 {
-            color: #155724;
-            font-size: 22px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .status-card h3::before {
-            content: '🎉';
-            margin-left: 12px;
-            font-size: 26px;
-        }
-        
-        .status-text {
-            color: #155724;
-            font-size: 16px;
-            font-weight: 600;
-        }
-        
-        .important-notes {
-            margin: 40px 0;
-        }
-        
-        .notes-title {
-            color: #dc3545;
-            font-size: 24px;
-            text-align: center;
-            margin-bottom: 30px;
-            font-weight: bold;
-            position: relative;
-        }
-        
-        .notes-title::before {
-            content: '⚠️';
-            margin-left: 12px;
-            font-size: 28px;
-        }
-        
-        .note-card {
-            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
-            border: 2px solid #ffc107;
-            border-radius: 12px;
-            padding: 25px;
-            margin: 20px 0;
-            border-right: 6px solid #fd7e14;
-            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.2);
-            transition: transform 0.3s ease;
-        }
-        
-        .note-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(255, 193, 7, 0.3);
-        }
-        
-        .note-card h4 {
-            color: #856404;
-            font-size: 18px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-        }
-        
-        .note-card h4.browser-note::before {
-            content: '🖥️';
-            margin-left: 10px;
-            font-size: 20px;
-        }
-        
-        .note-card h4.subscription-note::before {
-            content: '💎';
-            margin-left: 10px;
-            font-size: 20px;
-        }
-        
-        .note-card p {
-            color: #856404;
-            font-size: 15px;
-            line-height: 1.8;
-        }
-        
-        .highlight {
-            background: #ffc107;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-weight: bold;
-            color: #212529;
-        }
-        
-        .subscription-cta {
-            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-            border: 2px solid #2196f3;
-            border-radius: 15px;
-            padding: 30px;
-            margin: 30px 0;
-            text-align: center;
-        }
-        
-        .subscription-cta h3 {
-            color: #1565c0;
-            font-size: 22px;
-            margin-bottom: 15px;
-        }
-        
-        .subscription-cta h3::before {
-            content: '🚀';
-            margin-left: 12px;
-            font-size: 24px;
-        }
-        
-        .subscription-cta p {
-            color: #1976d2;
-            font-size: 16px;
-            margin-bottom: 20px;
-            line-height: 1.7;
-        }
-        
-        .cta-button {
-            display: inline-block;
-            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
-            color: white;
-            padding: 15px 35px;
-            text-decoration: none;
-            border-radius: 30px;
-            font-size: 16px;
-            font-weight: bold;
-            box-shadow: 0 6px 20px rgba(33, 150, 243, 0.3);
-            transition: all 0.3s ease;
-        }
-        
-        .cta-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
-        }
-        
-        .next-steps {
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-            border-radius: 15px;
-            padding: 35px;
-            margin: 40px 0;
-        }
-        
-        .next-steps h3 {
-            color: #495057;
-            font-size: 22px;
-            text-align: center;
-            margin-bottom: 25px;
-        }
-        
-        .next-steps h3::before {
-            content: '📋';
-            margin-left: 12px;
-            font-size: 24px;
-        }
-        
-        .steps-list {
-            list-style: none;
-        }
-        
-        .steps-list li {
-            background: white;
-            margin: 15px 0;
-            padding: 20px;
-            border-radius: 10px;
-            border-right: 4px solid #28a745;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            position: relative;
-            transition: transform 0.2s ease;
-        }
-        
-        .steps-list li:hover {
-            transform: translateX(-5px);
-        }
-        
-        .steps-list li::before {
-            content: counter(step-counter);
-            counter-increment: step-counter;
-            background: #28a745;
-            color: white;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            position: absolute;
-            right: -15px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 14px;
-        }
-        
-        .steps-list {
-            counter-reset: step-counter;
-        }
-        
-        .step-content {
-            margin-right: 25px;
-        }
-        
-        .step-title {
-            font-weight: bold;
-            color: #28a745;
-            margin-bottom: 8px;
-            font-size: 16px;
-        }
-        
-        .step-description {
-            color: #6c757d;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-        
-        .divider {
-            height: 4px;
-            background: linear-gradient(90deg, transparent, #28a745, transparent);
-            margin: 50px 0;
-            border-radius: 2px;
-        }
-        
-        .footer {
-            background: linear-gradient(135deg, #2c3e50, #34495e);
-            color: white;
-            padding: 40px 30px;
-            text-align: center;
-        }
-        
-        .footer .company-name {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
-        
-        .footer .company-name::before {
-            content: '🏥';
-            margin-left: 12px;
-            font-size: 26px;
-        }
-        
-        .footer .motto {
-            font-size: 16px;
-            opacity: 0.9;
-            margin-bottom: 20px;
-        }
-        
-        .footer .contact-info {
-            font-size: 14px;
-            opacity: 0.8;
-            line-height: 1.8;
-        }
-        
-        .footer .heart {
-            color: #e74c3c;
-            animation: heartbeat 1.5s infinite;
-        }
-        
-        @keyframes heartbeat {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-        
-        @media (max-width: 600px) {
-            body {
-                padding: 10px;
-            }
-            
-            .content, .note-card, .subscription-cta, .next-steps {
-                padding: 25px 20px;
-            }
-            
-            .header {
-                padding: 40px 20px;
-            }
-            
-            .header h1 {
-                font-size: 28px;
-            }
-            
-            .success-icon {
-                font-size: 48px;
-            }
-            
-            .celebration h2 {
-                font-size: 22px;
-            }
-            
-            .notes-title {
-                font-size: 20px;
-            }
-        }
-    </style>
 </head>
-<body>
-    <div class="email-container">
-        <div class="header">
-            <div class="success-icon">✅</div>
-            <h1>احراز هویت موفقیت‌آمیز!</h1>
-            <div class="subtitle">حساب کاربری شما با موفقیت فعال شد</div>
-        </div>
-        
-        <div class="content">
-            <div class="celebration">
-                <h2>🎉 تبریک! به خانواده دکتر کد خوش آمدید</h2>
-                <p>حساب کاربری شما با موفقیت تأیید و فعال شد. اکنون می‌توانید از تمامی امکانات پلتفرم دکتر کد استفاده کنید.</p>
-            </div>
-            
-            <div class="status-card">
-                <h3>وضعیت حساب کاربری</h3>
-                <div class="status-text">✨ فعال و آماده استفاده ✨</div>
-            </div>
-            
-            <div class="important-notes">
-                <h3 class="notes-title">نکات مهم امنیتی</h3>
-                
-                <div class="note-card">
-                    <h4 class="browser-note">محدودیت دسترسی</h4>
-                    <p>
-                        برای حفظ امنیت حساب کاربری شما، امکان ورود <span class="highlight">تنها از یک مرورگر و یک سیستم</span> 
-                        در هر زمان فراهم است. در صورت تلاش برای ورود همزمان از چندین دستگاه، حساب شما موقتاً مسدود خواهد شد.
-                    </p>
-                </div>
-                
-                <div class="note-card">
-                    <h4 class="subscription-note">دسترسی به محتوای ویژه</h4>
-                    <p>
-                        برای دسترسی به <span class="highlight">نسخه‌های ویژه، محتوای پریمیوم و ویژگی‌های پیشرفته</span> 
-                        پلتفرم، نیاز به تهیه اشتراک ویژه دارید. با اشتراک، از کیفیت بالاتر خدمات و پشتیبانی اختصاصی برخوردار خواهید شد.
-                    </p>
-                </div>
-            </div>
-            
-            <div class="subscription-cta">
-                <h3>ارتقاء به اشتراک ویژه</h3>
-                <p>
-                    برای بهره‌مندی کامل از امکانات دکتر کد و دریافت مشاوره‌های تخصصی، 
-                    اشتراک ویژه خود را فعال کنید.
-                </p>
-                <a href="http://drcode-med.ir/plan/" class="cta-button">🎯 مشاهده پلان‌های اشتراک</a>
-            </div>
-            
-            <div class="next-steps">
-                <h3>مراحل بعدی</h3>
-                <ul class="steps-list">
-                    <li>
-                        <div class="step-content">
-                            <div class="step-title">ورود به پنل کاربری</div>
-                            <div class="step-description">با اطلاعات کاربری خود وارد پنل شخصی شوید</div>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="step-content">
-                            <div class="step-title">تکمیل پروفایل پزشکی</div>
-                            <div class="step-description">اطلاعات پزشکی و سوابق خود را کامل کنید</div>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="step-content">
-                            <div class="step-title">انتخاب اشتراک مناسب</div>
-                            <div class="step-description">از بین پلان‌های مختلف، اشتراک متناسب با نیازتان را انتخاب کنید</div>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="step-content">
-                            <div class="step-title">شروع استفاده از خدمات</div>
-                            <div class="step-description">از مشاوره آنلاین و سایر خدمات پلتفرم بهره‌مند شوید</div>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-            
-            <div class="divider"></div>
-        </div>
-        
-        <div class="footer">
-            <div class="company-name">دکتر کد</div>
-            <div class="motto">مراقب سلامت شما هستیم</div>
-            <div class="contact-info">
-                خدمات پزشکی آنلاین با <span class="heart">❤️</span> و کیفیت<br>
-                دکتر کد © 1404 - پلتفرم پیشرو خدمات بهداشت و درمان
-            </div>
-        </div>
-    </div>
+<body style="margin: 0; padding: 0; direction: rtl; font-family: Tahoma, Arial, sans-serif; background-color: #f4f4f4;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+            <td style="padding: 20px 0;">
+                <!-- Main Container -->
+                <table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="border-collapse: collapse; background-color: #ffffff; border: 1px solid #dddddd;">
+                    
+                    <!-- === HEADER === -->
+                    <tr>
+                        <td align="center" style="background-color: #28a745; padding: 40px 30px; color: #ffffff;">
+                            <h1 style="margin: 0; font-size: 28px; font-weight: bold;">
+                                ✅ احراز هویت موفقیت‌آمیز!
+                            </h1>
+                            <p style="margin: 10px 0 0; font-size: 16px;">
+                                حساب کاربری شما با موفقیت فعال شد
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- === CONTENT === -->
+                    <tr>
+                        <td style="padding: 40px 30px; color: #333333; font-size: 16px; line-height: 1.6;">
+                            
+                            <!-- Welcome Message -->
+                            <h2 style="margin: 0 0 20px 0; color: #28a745; font-size: 22px; text-align: center;">
+                                🎉 به خانواده دکتر کد خوش آمدید
+                            </h2>
+                            <p style="margin: 0 0 25px 0; text-align: center;">
+                                حساب کاربری شما با موفقیت تأیید و فعال شد. اکنون می‌توانید از تمامی امکانات پلتفرم دکتر کد استفاده کنید.
+                            </p>
+
+                            <!-- Account Status -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 30px;">
+                                <tr>
+                                    <td style="border: 1px solid #c3e6cb; background-color: #d4edda; padding: 20px; text-align: center;">
+                                        <p style="margin: 0; font-size: 16px; color: #155724; font-weight: bold;">
+                                            وضعیت حساب: ✨ فعال و آماده استفاده ✨
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Important Notes -->
+                            <h3 style="color: #333333; font-size: 20px; text-align: center; margin-bottom: 20px; border-bottom: 2px solid #eeeeee; padding-bottom: 10px;">
+                                ⚠️ نکات مهم
+                            </h3>
+                            
+                            <!-- Note 1 -->
+                            <p style="margin: 0 0 10px 0;">
+                                <strong style="color: #856404;">🖥️ محدودیت دسترسی:</strong>
+                                برای امنیت حساب، امکان ورود 
+                                <span style="background-color: #ffc107; color: #212529; padding: 2px 6px;">فقط از یک دستگاه</span> 
+                                در هر زمان وجود دارد.
+                            </p>
+                            <!-- Note 2 -->
+                            <p style="margin: 0 0 30px 0;">
+                                <strong style="color: #856404;">💎 دسترسی به محتوای ویژه:</strong>
+                                برای دسترسی به نسخه‌های ویژه و امکانات پریمیوم، نیاز به تهیه 
+                                <span style="background-color: #ffc107; color: #212529; padding: 2px 6px;">اشتراک ویژه</span> 
+                                دارید.
+                            </p>
+
+                            <!-- CTA BUTTON -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td align="center">
+                                        <p style="margin: 0 0 15px 0; font-size: 16px;">
+                                            برای بهره‌مندی کامل از امکانات، اشتراک ویژه خود را فعال کنید.
+                                        </p>
+                                        <table border="0" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td align="center" bgcolor="#2196f3" style="padding: 12px 25px;">
+                                                    <a href="http://drcode-med.ir/plan/" target="_blank" style="color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; display: inline-block;">
+                                                        🎯 مشاهده پلان‌های اشتراک
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Divider -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 40px 0;">
+                                <tr>
+                                    <td height="1" style="background-color: #dddddd;"></td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Next Steps -->
+                            <h3 style="color: #333333; font-size: 20px; text-align: center; margin-bottom: 20px;">
+                                📋 مراحل بعدی
+                            </h3>
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <!-- Step 1 -->
+                                <tr>
+                                    <td style="padding: 10px 0; border-bottom: 1px solid #eeeeee;">
+                                        <strong>1. ورود به پنل کاربری:</strong> با اطلاعات خود وارد پنل شوید.
+                                    </td>
+                                </tr>
+                                <!-- Step 2 -->
+                                <tr>
+                                    <td style="padding: 10px 0; border-bottom: 1px solid #eeeeee;">
+                                        <strong>2. تکمیل پروفایل:</strong> اطلاعات پزشکی و سوابق خود را کامل کنید.
+                                    </td>
+                                </tr>
+                                <!-- Step 3 -->
+                                <tr>
+                                    <td style="padding: 10px 0; border-bottom: 1px solid #eeeeee;">
+                                        <strong>3. انتخاب اشتراک:</strong> اشتراک متناسب با نیازتان را انتخاب کنید.
+                                    </td>
+                                </tr>
+                                <!-- Step 4 -->
+                                <tr>
+                                    <td style="padding: 10px 0;">
+                                        <strong>4. شروع استفاده:</strong> از مشاوره آنلاین و سایر خدمات بهره‌مند شوید.
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- === FOOTER === -->
+                    <tr>
+                        <td align="center" style="background-color: #34495e; padding: 30px; color: #cccccc; font-size: 14px;">
+                            <p style="margin: 0 0 10px 0; font-size: 18px; color: #ffffff; font-weight: bold;">
+                                🏥 دکتر کد
+                            </p>
+                            <p style="margin: 0 0 10px 0;">
+                                مراقب سلامت شما هستیم ❤️
+                            </p>
+                            <p style="margin: 0;">
+                                دکتر کد © 1404 - تمامی حقوق محفوظ است.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+                <!-- /Main Container -->
+            </td>
+        </tr>
+    </table>
 </body>
 </html>

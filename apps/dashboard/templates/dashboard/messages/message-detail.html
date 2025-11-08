@@ -64,7 +64,7 @@
         <!-- Question Header -->
         <div class="p-6 border-b border-slate-200">
             <h2 class="text-lg font-medium text-slate-500 mb-2">سوال در مورد نسخه:</h2>
-            <a href="{% url 'dashboard:prescriptions:prescription_detail' question.prescription.id %}" 
+            <a href="{% url 'dashboard:prescriptions:prescription_list'%}?search={{question.prescription.title}}" 
                class="block text-xl font-bold text-blue-600 hover:text-blue-700 hover:underline transition-colors">
                 <i class="fa-solid fa-file-prescription ml-2"></i>
                 {{ question.prescription.title }}

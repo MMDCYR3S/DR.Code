@@ -9,12 +9,12 @@ class PrescriptionFilter(django_filters.FilterSet):
         label='جستجو در نام و توضیحات'
     )
     
-    category = django_filters.ModelChoiceFilter(
+    category = django_filters.ModelMultipleChoiceFilter(
         queryset=PrescriptionCategory.objects.all(),
         field_name='category',
         to_field_name='id',
-        empty_label="همه دسته‌ها",
-        label='دسته‌بندی'
+        label='دسته‌بندی',
+        conjoined=False
     )
     
     access_level = django_filters.ChoiceFilter(

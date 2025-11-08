@@ -37,7 +37,6 @@ class PublicPlanListView(generics.ListAPIView):
             membership__is_active=True
         ).select_related('membership')
 
-    @method_decorator(cache_page(60 * 15))
     @method_decorator(vary_on_headers('User-Agent'))
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)

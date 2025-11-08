@@ -10,7 +10,6 @@ const profileApp = {
     showPasswordResetModal: false,
     resetPasswordEmail: '',
     passwordResetLoading: false,
-    
 
     async init() {
         console.log('🟢 Profile app initializing...');
@@ -77,6 +76,11 @@ const profileApp = {
         } finally {
             this.loading = false;
         }
+    },
+    
+    goToVerification() {
+        // آدرس صفحه احراز هویت را اینجا قرار دهید
+        window.location.href = '/authentication/'; 
     },
 
     enableEditMode() {

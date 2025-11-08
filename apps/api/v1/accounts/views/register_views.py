@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, login
 from django.db import transaction
 from django.utils import timezone
 
@@ -39,22 +39,25 @@ class RegisterView(CreateAPIView, BaseAPIView):
                     user.last_login_ip = self.get_client_ip(request)
                     user.last_login_device = self.get_user_agent(request)
                     
-                    user.save(update_fields=['last_login_ip', 'last_login_device'])
+                    uuid_jti = uuid.uuid4().hex
+                    
                     
                     refresh = RefreshToken.for_user(user)
+                    refresh["jti"] = uuid_jti
+                    
                     access_token = refresh.access_token
+                    access_token["jti"] = uuid_jti
                     
-                    uuid_jti = uuid.uuid4().hex
-                    refresh.payload["jti"] = uuid_jti
-                    refresh.access_token.payload["jti"] = uuid_jti
-                    
-                    access_token = str(refresh.access_token)
                     user.active_jti = uuid_jti
+                    
+                    user.save(update_fields=['last_login_ip', 'last_login_device', 'active_jti'])
                     
                     user.profile.medical_code = "DR-CODE"
                     user.profile.save()
                     
                     send_welcome_email(user=user)
+                    
+                    login(request, user)
                     
                     logger.info(f"کاربر جدید ثبت‌نام شد: {user.phone_number}")
                     
@@ -67,6 +70,13 @@ class RegisterView(CreateAPIView, BaseAPIView):
                             'phone_number': user.phone_number,
                             'access_token': str(access_token),
                             'refresh_token': str(refresh),
+                            'jti' : user.active_jti,
+                            'profile': {
+                                'role': user.profile.role,
+                                'role_display': user.profile.get_role_display(),
+                                "auth_status": user.profile.auth_status,
+                                "medical_code": user.profile.medical_code,
+                            },
                             'next_step': 'authentication'
                         }
                     }, status=status.HTTP_201_CREATED)
