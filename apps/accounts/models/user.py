@@ -82,7 +82,7 @@ class User(AbstractUser):
     
     # استفاده از phone_number به عنوان username
     USERNAME_FIELD = 'phone_number'
-    REQUIRED_FIELDS = ['first_name', 'last_name']
+    REQUIRED_FIELDS = ['first_name', 'last_name', 'email']
     
     objects = CustomUserManager()
     
