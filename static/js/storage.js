@@ -52,10 +52,48 @@ const StorageManager = {
         return data ? JSON.parse(data) : null;
     },
 
-    getUserProfile() {
+// ✨ فقط این متد رو عوض کن
+async getUserProfile() {
+    try {
+        const token = this.getAccessToken();
+        
+        if (!token) {
+            console.log('❌ No token, reading from localStorage');
+            const profile = localStorage.getItem(this.KEYS.USER_PROFILE);
+            return profile ? JSON.parse(profile) : null;
+        }
+
+        console.log('🌐 Fetching profile from API...');
+        
+        const response = await fetch('http://127.0.0.1:8000/api/v1/accounts/profile/', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            console.error('❌ API Error:', response.status);
+            const profile = localStorage.getItem(this.KEYS.USER_PROFILE);
+            return profile ? JSON.parse(profile) : null;
+        }
+
+        const profileData = await response.json();
+        console.log('✅ Profile from API:', profileData);
+
+        // ذخیره در localStorage
+        this.saveUserProfile(profileData);
+
+        return profileData;
+
+    } catch (error) {
+        console.error('❌ Error:', error);
         const profile = localStorage.getItem(this.KEYS.USER_PROFILE);
         return profile ? JSON.parse(profile) : null;
-    },
+    }
+},
+
 
     isLoggedIn() {
         const hasToken = !!this.getAccessToken();

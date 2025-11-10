@@ -1,7 +1,8 @@
 // log and reg
 // مدیریت ارتباط با API
 const API = {
-    BASE_URL: 'https://drcode-med.ir/', // آدرس API خودتون
+    // BASE_URL: 'https://drcode-med.ir/', 
+    BASE_URL: '/', 
     // تنظیمات پیش‌فرض برای درخواست‌ها
     getHeaders(includeAuth = false) {
         const headers = {
@@ -364,7 +365,7 @@ API.profile = {
                 method: 'GET',
                 headers: API.getHeaders(true)
             });
-
+            console.log('🚀 Profile response:', response);
             const data = await response.json();
 
             if (!response.ok) {
