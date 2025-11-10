@@ -553,7 +553,10 @@ function prescriptionDetailApp() {
 
       if (userData?.medical_code) {
         this.watermarkText = userData.medical_code;
+      } else {
+        this.watermarkText = "DrCode-med.ir";
       }
+
 
       await this.loadPrescription(slug);
       await this.loadDescription(slug);
@@ -758,13 +761,25 @@ function createProtectedWatermark() {
             width: 100%;
             height: 100%;
             `;
-    let medi = localStorage.getItem("drcode_user_profile")
-    let mediObject = JSON.parse(medi).data
+            let medi
+            let mediObject
+    try {
+        medi = localStorage.getItem("drcode_user_profile")
+        mediObject = JSON.parse(medi).data
+        } catch (error) {
+            
+        }
+
     // alert(!!null)
     for (let row = 1; row <= rows; row++) {
       for (let col = 1; col <= cols; col++) {
         const text = document.createElement("div");
-        text.textContent = medi ? mediObject.medical_code : "drcode-med.ir";
+        if (medi){
+            text.textContent = medi ? mediObject.medical_code : "drcode-med.ir";
+        }else{
+            text.textContent = "drcode-med.ir";
+        }
+
         text.style.cssText = `
                     position: absolute;
                     top: ${row * rowSpacing}px;

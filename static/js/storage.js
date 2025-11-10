@@ -1,4 +1,12 @@
+ let BASE_URL
+//  BASE_URL= 'https://drcode-med.ir/'
+ BASE_URL= '/'
+
+
+
+
 // مدیریت لوکال استوریج
+
 console.log('📦 Storage.js loading...');
 
 const StorageManager = {
@@ -64,8 +72,11 @@ async getUserProfile() {
         }
 
         console.log('🌐 Fetching profile from API...');
+
+
+        console.log(BASE_URL);
         
-        const response = await fetch('http://127.0.0.1:8000/api/v1/accounts/profile/', {
+        const response = await fetch(`${BASE_URL}api/v1/accounts/profile/`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
