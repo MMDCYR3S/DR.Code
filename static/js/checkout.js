@@ -51,7 +51,8 @@ document.addEventListener('alpine:init', () => {
             }
 
             // بررسی احراز هویت
-            const profile = StorageManager.getUserProfile();
+            const profile = JSON.parse(localStorage.getItem("drcode_user_profile")).data
+            console.log(profile.auth_status);
             
             if (!profile || profile.auth_status !== 'APPROVED') {
                 Swal.fire({
