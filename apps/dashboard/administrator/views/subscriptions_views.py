@@ -67,6 +67,7 @@ class SubscriptionCreateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
                 
                 # بروزرسانی نقش کاربر به premium
                 profile = user.profile
+                profile.subscription_end_date = end_date
                 profile.role = 'premium'
                 profile.save()
             
@@ -146,14 +147,14 @@ class SubscriptionUpdateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
         """ویرایش اطلاعات اشتراک"""
         try:
             subscription = get_object_or_404(
-                Subscription.objects.select_related('user', 'plan'),
+                Subscription.objects.select_related('user', 'plan', 'user__profile'),
                 pk=pk
             )
             
             plan_id = request.POST.get('plan_id')
             payment_amount = request.POST.get('payment_amount')
             status = request.POST.get('status')
-            duration_days = request.POST.get('duration_days')  # برای تمدید اشتراک
+            duration_days = request.POST.get('duration_days')
             
             with transaction.atomic():
                 # بروزرسانی پلن (در صورت تغییر)
@@ -162,6 +163,10 @@ class SubscriptionUpdateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
                     subscription.plan = plan
                     # محاسبه مجدد تاریخ انقضا بر اساس پلن جدید
                     subscription.end_date = subscription.start_date + timedelta(days=plan.duration_days)
+
+                    profile = subscription.user.profile
+                    profile.subscription_end_date = subscription.end_date
+                    profile.save()
                 
                 # بروزرسانی مبلغ
                 if payment_amount:
@@ -180,8 +185,9 @@ class SubscriptionUpdateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
                         profile.save()
                     # اگر وضعیت به active تغییر کرد، نقش را به premium تغییر بده
                     elif status == SubscriptionStatusChoicesModel.active.value and \
-                         old_status != SubscriptionStatusChoicesModel.active.value:
+                            old_status != SubscriptionStatusChoicesModel.active.value:
                         profile = subscription.user.profile
+                        profile.subscription_end_date = subscription.end_date
                         profile.role = 'premium'
                         profile.save()
                 
@@ -190,6 +196,10 @@ class SubscriptionUpdateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
                     try:
                         days = int(duration_days)
                         subscription.end_date = subscription.end_date + timedelta(days=days)
+                        # 🔥 اینجا هم باید بروزرسانی کنی
+                        profile = subscription.user.profile
+                        profile.subscription_end_date = subscription.end_date
+                        profile.save()
                     except ValueError:
                         pass
                 
@@ -223,6 +233,7 @@ class SubscriptionUpdateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
                 'success': False,
                 'message': f'خطا در بروزرسانی اشتراک: {str(e)}'
             }, status=500)
+
 
 
 # ================================================== #
@@ -418,11 +429,15 @@ class SubscriptionExtendView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
             
             # تمدید اشتراک
             subscription.end_date = subscription.end_date + timedelta(days=days)
+            profile = subscription.user.profile
+            profile.subscription_end_date = subscription.end_date
+            profile.save()
             
             # اگر اشتراک منقضی شده بود، فعال کن
             if subscription.status == SubscriptionStatusChoicesModel.expired.value:
                 subscription.status = SubscriptionStatusChoicesModel.active.value
                 profile = subscription.user.profile
+                profile.subscription_end_date = subscription.end_date
                 profile.role = 'premium'
                 profile.save()
             

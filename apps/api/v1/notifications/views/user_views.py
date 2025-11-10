@@ -23,6 +23,18 @@ class UserNotificationListView(generics.ListAPIView):
         """
         user = self.request.user
         return Notification.objects.filter(recipient=user).order_by('is_read', '-created_at')
+    
+    def list(self, request, *args, **kwargs):
+        """ ارسال داده ها به همراه پیام های خوانده نشده """
+        queryset = self.get_queryset()
+        unread_count = queryset.filter(is_read=False).count()
+        is_read_count = queryset.filter(is_read=True).count()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            'unread_count': unread_count,
+            'total_count': is_read_count,
+            'notifications': serializer.data
+        }, status=status.HTTP_200_OK)
 
 # ================================================== #
 # ======== NOTIFICATION MARK AS READ VIEW ======== #
