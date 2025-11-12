@@ -325,8 +325,8 @@
                 </div>
             </div>
             
-            {% if show_auth_warning %}
-            <div class=" pt-16 lg:pt-20" id="auth-warning-bar" style="display: none;">
+
+            <div class=" pt-16 lg:pt-20  z-[1000000000]" id="auth-warning-bar" style="display: none;">
                 <div class="py-4 bg-red-300">
                     <!-- 🆕 نوار هشدار احراز هویت -->
                     <div 
@@ -347,8 +347,8 @@
                     </div>
                 </div>
             </div>
-            {% endif %}
-            
+
+
             {% endblock header %}
         </header>
 
@@ -1001,19 +1001,23 @@ document.getElementById('forgot-password-modal')?.addEventListener('click', func
     document.addEventListener('DOMContentLoaded', function () {
         function checkAuthWarning() {
             // بررسی لاگین بودن
-            if (!StorageManager.isLoggedIn()) {
-                return; // اگر لاگین نیست، هیچ کاری نکن
-            }
+            // if (true) {
+            //     // return; // اگر لاگین نیست، هیچ کاری نکن
+            // }
 
             try {
                 // دریافت پروفایل از localStorage
-                const profile = StorageManager.getUserProfile();
+                const profile = JSON.parse(localStorage.getItem('drcode_user_profile')).data
+                console.log(profile.auth_status)
 
+                // if (profile.auth_status !==  'APPROVED' ) {
+                //     alert('salam')
+                // }
                 // بررسی auth_status
-                if (profile && profile.auth_status === 'PENDING' || profile.auth_status === 'REJECTED') {
+                if (profile.auth_status !== 'APPROVED') {
                     const warningBar = document.getElementById('auth-warning-bar');
+                    warningBar.style.display = 'block';
                     if (warningBar) {
-                        warningBar.style.display = 'block';
                         console.log('⚠️ Auth warning bar displayed');
                     }
                 }
