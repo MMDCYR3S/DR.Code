@@ -57,4 +57,13 @@ from .index_views import admin_dashboard_view
 from .plan_views import *
 from .analysis_views import *
 from .subscriptions_views import *
-
+from .notifications_views import (
+    NotificationDashboardView,
+    AnnouncementCreateView,
+    AnnouncementUpdateView,
+    AnnouncementDeleteView,
+    AnnouncementDetailView,
+    NotificationDeleteView,
+    NotificationCreateView,
+    UserSearchJsonView,
+)

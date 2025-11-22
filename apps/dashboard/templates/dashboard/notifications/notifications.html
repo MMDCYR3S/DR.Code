@@ -1,0 +1,719 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}مدیریت اعلان‌ها{% endblock %}
+
+{% block content %}
+<!-- 
+    اصلاح ۱: یک div اصلی ساختیم که x-data را نگه می‌دارد. 
+    تگ main مسئول اسکرول است و مودال‌ها بیرون از آن قرار می‌گیرند تا مشکل overflow حل شود.
+-->
+<div class="flex flex-col h-full" x-data="notificationDashboard()">
+    
+    <!-- محتوای اصلی صفحه (اسکرول‌خور) -->
+    <main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-4 sm:p-6 relative">
+        <div class="container mx-auto max-w-7xl">
+            <!-- هدر و دکمه افزودن -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-700">مدیریت اعلان‌ها</h1>
+                    <p class="text-sm text-slate-500 mt-1">مشاهده لیست اعلان‌ها و ارسال پیام جدید</p>
+                </div>
+                <button @click="openAddModal()" type="button" class="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition-colors">
+                    <i class="fa-solid fa-paper-plane ml-2"></i>
+                    <span>ارسال اعلان جدید</span>
+                </button>
+            </div>
+
+            <!-- باکس جستجو و فیلتر -->
+            <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+                <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+                    <!-- جستجو -->
+                    <div class="relative w-full md:w-2/3">
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <i class="fa-solid fa-search text-slate-400"></i>
+                        </div>
+                        <input 
+                            type="text" 
+                            x-model="searchQuery"
+                            @input.debounce.500ms="searchNotifications()"
+                            placeholder="جستجو در عنوان، گیرنده یا متن اعلان..."
+                            class="w-full pr-10 pl-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        >
+                        <div x-show="searchQuery && searchQuery.length > 0" class="absolute inset-y-0 left-0 flex items-center pl-3" style="display: none;">
+                            <button @click="clearSearch()" class="text-slate-400 hover:text-slate-600">
+                                <i class="fa-solid fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- فیلتر وضعیت -->
+                    <div class="flex items-center space-x-2 space-x-reverse w-full md:w-auto">
+                        <select x-model="filterType" @change="searchNotifications()" class="w-full md:w-40 py-3 px-4 border border-slate-300 bg-white rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+                            <option value="all">همه اعلان‌ها</option>
+                            <option value="unread">خوانده نشده</option>
+                            <option value="read">خوانده شده</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- وضعیت نتایج -->
+                <div x-show="searchQuery && searchQuery.length > 0" class="mt-3 text-sm text-slate-600" style="display: none;">
+                    <span x-show="filteredNotifications.length > 0">
+                        <i class="fa-solid fa-check-circle text-green-500 ml-1"></i>
+                        <span x-text="filteredNotifications.length"></span> مورد یافت شد
+                    </span>
+                    <span x-show="filteredNotifications.length === 0" class="text-amber-600">
+                        <i class="fa-solid fa-info-circle ml-1"></i>
+                        هیچ اعلانی یافت نشد
+                    </span>
+                </div>
+            </div>
+
+            <!-- جدول دسکتاپ -->
+            <div class="hidden lg:block bg-white rounded-xl shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <div class="max-h-[calc(100vh-320px)] overflow-y-auto custom-scrollbar">
+                        <table class="min-w-full text-sm">
+                            <thead class="bg-slate-50 text-slate-600 sticky top-0 z-10 shadow-sm">
+                                <tr>
+                                    <th class="px-6 py-4 text-right font-medium whitespace-nowrap w-1/4">عنوان</th>
+                                    <th class="px-6 py-4 text-right font-medium whitespace-nowrap w-1/5">گیرنده</th>
+                                    <th class="px-6 py-4 text-right font-medium whitespace-nowrap w-1/3">متن کوتاه</th>
+                                    <th class="px-6 py-4 text-center font-medium whitespace-nowrap">وضعیت</th>
+                                    <th class="px-6 py-4 text-center font-medium whitespace-nowrap">تاریخ</th>
+                                    <th class="px-6 py-4 text-center font-medium whitespace-nowrap sticky left-0 bg-slate-50">عملیات</th>
+                                </tr>
+                            </thead>
+                            
+                            <template x-for="item in filteredNotifications" :key="item.type + '-' + item.id">
+                                <tbody class="group/row border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
+                                    
+                                    <!-- === حالت اول: پیام تکی === -->
+                                    <tr x-show="item.type === 'single'" class="transition-colors">
+                                        <td class="px-6 py-4 font-semibold text-slate-900 align-middle">
+                                            <div class="flex flex-col">
+                                                <span x-html="highlightText(item.title || '---', searchQuery)"></span>
+                                                <span class="text-[10px] text-slate-400 font-normal mt-0.5">پیام شخصی</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-slate-600 align-middle">
+                                            <div class="flex items-center">
+                                                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 ml-2 text-xs font-bold shrink-0">
+                                                    <span x-text="item.recipient_initial"></span>
+                                                </div>
+                                                <span x-html="highlightText(item.recipient_name || 'ناشناس', searchQuery)"></span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-slate-500 truncate max-w-xs align-middle">
+                                            <span x-text="item.message_preview || ''"></span>
+                                        </td>
+                                        <td class="px-6 py-4 text-center align-middle">
+                                            <span x-show="item.is_read" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">خوانده شده</span>
+                                            <span x-show="!item.is_read" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">نخوانده</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-slate-500 text-xs text-center align-middle" style="direction: ltr;" x-text="item.created_at_shamsi"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-center align-middle">
+                                            <button @click="openDetailModal(item)" class="text-slate-400 hover:text-blue-600 p-2 transition-colors"><i class="fa-solid fa-eye"></i></button>
+                                            <button @click="openDeleteModal(item)" class="text-slate-400 hover:text-red-600 p-2 transition-colors"><i class="fa-solid fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+
+                                    <!-- === حالت دوم: پیام گروهی (ردیف اصلی) === -->
+                                    <tr x-show="item.type === 'group'" class="cursor-pointer bg-slate-50/50" @click="toggleAccordion(item)">
+                                        <td class="px-6 py-4 font-semibold text-blue-900 relative align-middle">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fa-solid fa-chevron-left text-xs text-slate-400 transition-transform duration-300"
+                                                :class="{'!-rotate-90 text-blue-600': item.is_expanded}"></i>
+                                                
+                                                <div class="flex flex-col">
+                                                    <span x-html="highlightText(item.title || '---', searchQuery)"></span>
+                                                    <span class="inline-flex items-center gap-1 text-[10px] font-medium text-blue-600 mt-0.5">
+                                                        <i class="fa-solid fa-bullhorn"></i>
+                                                        اطلاعیه عمومی
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-slate-600 align-middle">
+                                            <div class="flex items-center gap-2 text-xs">
+                                                <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-md font-bold" x-text="(item.total_sent || 0) + ' گیرنده'"></span>
+                                                <span class="text-slate-400 text-[10px]">(<span x-text="item.read_count || 0"></span> بازدید)</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-slate-500 truncate max-w-xs italic align-middle">
+                                            <span x-text="item.message_preview || ''"></span>
+                                        </td>
+                                        <td class="px-6 py-4 text-center align-middle">
+                                            <div class="w-24 h-1.5 bg-slate-200 rounded-full mx-auto overflow-hidden">
+                                                <div class="h-full bg-green-500 rounded-full" 
+                                                    :style="'width: ' + (item.total_sent > 0 ? (item.read_count / item.total_sent * 100) : 0) + '%'"></div>
+                                            </div>
+                                            <span class="text-[10px] text-slate-400 mt-1 block" x-text="Math.round(item.total_sent > 0 ? (item.read_count / item.total_sent * 100) : 0) + '% خوانده شده'"></span>
+                                        </td>
+                                        <td class="px-6 py-4 text-slate-500 text-xs text-center align-middle" style="direction: ltr;" x-text="item.created_at_shamsi"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-center align-middle" @click.stop>
+                                            <button @click="openDeleteModal(item)" class="text-slate-400 hover:text-red-600 p-2 transition-colors" title="حذف کل گروه"><i class="fa-solid fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+
+                                    <!-- === حالت دوم: پیام گروهی (ردیف جزئیات) === -->
+                                    <tr x-show="item.type === 'group' && item.is_expanded" x-transition>
+                                        <td colspan="6" class="bg-slate-50 px-6 py-4 shadow-inner border-t border-slate-100">
+                                            <div class="flex gap-6">
+                                                <div class="w-1/2 border-l border-slate-200 pl-6">
+                                                    <h4 class="text-xs font-bold text-slate-500 uppercase mb-3 tracking-wider">نمونه گیرندگان</h4>
+                                                    <ul class="space-y-2">
+                                                        <template x-for="(sample, index) in (item.samples || [])" :key="index">
+                                                            <li class="flex items-center justify-between text-sm">
+                                                                <span class="flex items-center text-slate-700">
+                                                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-300 mr-2"></span>
+                                                                    <span x-text="sample.name"></span>
+                                                                </span>
+                                                                <span x-text="sample.status" 
+                                                                    class="text-[10px] px-1.5 rounded"
+                                                                    :class="sample.status === 'خوانده' ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-500'"></span>
+                                                            </li>
+                                                        </template>
+                                                    </ul>
+                                                </div>
+                                                <div class="w-1/2">
+                                                    <h4 class="text-xs font-bold text-slate-500 uppercase mb-3 tracking-wider">متن کامل پیام</h4>
+                                                    <p class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap p-3 bg-white border border-slate-200 rounded-lg" x-text="item.full_message"></p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </template>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Empty State -->
+                <div x-show="filteredNotifications.length === 0" class="text-center py-12" style="display: none;">
+                    <div class="mx-auto w-fit bg-slate-100 rounded-full p-4 mb-4">
+                        <i class="fa-regular fa-bell-slash text-3xl text-slate-400"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-slate-900 mb-2">
+                        <span x-show="!searchQuery">هیچ اعلانی ثبت نشده است</span>
+                        <span x-show="searchQuery">هیچ نتیجه‌ای یافت نشد</span>
+                    </h3>
+                </div>
+            </div>
+
+            <!-- کارت‌های موبایل -->
+            <div class="lg:hidden space-y-4">
+                <template x-for="notif in filteredNotifications" :key="notif.type + '-' + notif.id">
+                    <div class="bg-white rounded-xl shadow-sm p-4 border-r-4 transition-all" 
+                        :class="notif.is_read ? 'border-green-400 opacity-90' : 'border-yellow-400'">
+                        
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex flex-col gap-1 w-2/3">
+                                <h3 class="font-bold text-slate-800 text-sm truncate" x-html="highlightText(notif.title, searchQuery)"></h3>
+                                <span x-show="notif.type === 'group'" class="w-fit text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-medium">
+                                    <i class="fa-solid fa-bullhorn ml-1"></i>اطلاعیه عمومی
+                                </span>
+                            </div>
+                            <span class="text-[10px] text-slate-400 whitespace-nowrap" x-text="notif.created_at_shamsi"></span>
+                        </div>
+
+                        <div class="flex items-center text-sm text-slate-600 mb-3 bg-slate-50 p-2 rounded-lg">
+                            <template x-if="notif.type === 'single'">
+                                <div class="flex items-center w-full">
+                                    <i class="fa-solid fa-user text-slate-400 ml-2 text-xs"></i>
+                                    <span class="truncate font-medium" x-html="highlightText(notif.recipient_name, searchQuery)"></span>
+                                </div>
+                            </template>
+
+                            <template x-if="notif.type === 'group'">
+                                <div class="flex items-center justify-between w-full">
+                                    <div class="flex items-center">
+                                        <i class="fa-solid fa-users text-indigo-400 ml-2 text-xs"></i>
+                                        <span class="font-medium text-indigo-600" x-text="notif.total_sent + ' گیرنده'"></span>
+                                    </div>
+                                    <span class="text-[10px] text-slate-400" x-text="'(' + notif.read_count + ' بازدید)'"></span>
+                                </div>
+                            </template>
+                        </div>
+
+                        <p class="text-sm text-slate-500 mb-3 line-clamp-2 leading-relaxed" x-text="notif.message_preview"></p>
+                        
+                        <div class="flex justify-between items-center pt-2 border-t border-slate-100">
+                            <span class="text-[10px]" :class="notif.is_read ? 'text-green-600' : 'text-yellow-600'">
+                                <i class="fa-solid fa-circle text-[6px] ml-1"></i>
+                                <span x-text="notif.is_read ? 'خوانده شده' : 'نخوانده'"></span>
+                            </span>
+
+                            <div class="flex space-x-2 space-x-reverse">
+                                <button @click="openDetailModal(notif)" class="text-indigo-600 text-xs font-medium px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors">
+                                    مشاهده
+                                </button>
+                                <button @click="openDeleteModal(notif)" class="text-red-500 hover:text-red-700 p-1.5 px-2">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </main>
+
+    <!-- 
+        مودال‌ها اینجا (بیرون از تگ main) هستند 
+        تا position: fixed درست کار کند و زیر لایه اسکرول نرود 
+    -->
+
+    <!-- مودال ارسال اعلان -->
+    <div x-show="isModalOpen" style="display: none;" @keydown.escape.window="closeModal()" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div @click="closeModal()" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div x-show="isModalOpen" x-transition class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg my-8 overflow-hidden">
+            
+            <div class="bg-slate-50 px-6 py-4 border-b flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-800">ارسال اعلان جدید</h3>
+                <button @click="closeModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="px-6 py-4 border-b bg-white">
+                <div class="flex p-1 bg-slate-100 rounded-lg">
+                    <button @click="sendType = 'single'" 
+                        :class="sendType === 'single' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+                        class="flex-1 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center justify-center">
+                        <i class="fa-solid fa-user ml-2"></i>
+                        ارسال تکی
+                    </button>
+                    <button @click="sendType = 'group'" 
+                        :class="sendType === 'group' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+                        class="flex-1 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center justify-center">
+                        <i class="fa-solid fa-users ml-2"></i>
+                        ارسال گروهی
+                    </button>
+                </div>
+            </div>
+
+            <form @submit.prevent="sendNotification()">
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                
+                <div class="p-6 space-y-5 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                    
+                    <!-- فیلد گیرنده (فقط برای تکی) -->
+                    <div x-show="sendType === 'single'" x-transition class="relative">
+                        <label class="block text-sm font-medium text-slate-700 mb-2">جستجوی کاربر گیرنده <span class="text-red-500">*</span></label>
+                        
+                        <div class="relative">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <i class="fa-solid fa-search text-slate-400"></i>
+                            </div>
+                            <input 
+                                type="text" 
+                                x-model="userSearchQuery"
+                                @input.debounce.300ms="searchUsersApi()"
+                                @focus="isUserSearchOpen = true"
+                                placeholder="نام، موبایل، ایمیل یا کد نظام پزشکی..."
+                                class="w-full pr-10 pl-4 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                autocomplete="off"
+                            >
+                            <div x-show="formData.recipient" class="absolute inset-y-0 left-0 flex items-center pl-3 cursor-pointer" @click="clearSelectedUser()">
+                                <i class="fa-solid fa-times text-slate-400 hover:text-red-500"></i>
+                            </div>
+                        </div>
+
+                        <div x-show="selectedUserDisplay" class="mt-2 p-2 bg-blue-50 border border-blue-100 rounded-md flex justify-between items-center text-sm text-blue-700">
+                            <div>
+                                <span class="font-bold">گیرنده:</span> 
+                                <span x-text="selectedUserDisplay.name"></span>
+                                <span class="text-xs text-blue-500 mr-2" x-text="'(' + selectedUserDisplay.sub + ')'"></span>
+                            </div>
+                        </div>
+
+                        <div x-show="isUserSearchOpen && userSearchResults.length > 0" 
+                            @click.outside="isUserSearchOpen = false"
+                            class="absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-y-auto border border-slate-200 custom-scrollbar">
+                            
+                            <ul>
+                                <template x-for="user in userSearchResults" :key="user.id">
+                                    <li @click="selectUser(user)" 
+                                        class="px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors">
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                                <p class="text-sm font-semibold text-slate-800" x-text="user.full_name"></p>
+                                                <p class="text-xs text-slate-500 mt-0.5" x-text="user.subtext"></p>
+                                            </div>
+                                            <span class="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full" x-text="user.role"></span>
+                                        </div>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+                        
+                        <div x-show="isUserSearchOpen && isSearchingUsers" class="absolute z-10 w-full mt-1 bg-white p-3 text-center text-slate-500 text-sm shadow-lg rounded-md border">
+                            <i class="fa-solid fa-spinner fa-spin ml-1"></i> در حال جستجو...
+                        </div>
+                        <div x-show="isUserSearchOpen && !isSearchingUsers && userSearchResults.length === 0 && userSearchQuery.length >= 2" class="absolute z-10 w-full mt-1 bg-white p-3 text-center text-red-500 text-sm shadow-lg rounded-md border">
+                            کاربری یافت نشد.
+                        </div>
+                    </div>
+
+                    <!-- فیلد نقش هدف (فقط برای گروهی) -->
+                    <div x-show="sendType === 'group'" x-transition style="display: none;">
+                        <label class="block text-sm font-medium text-slate-700 mb-2">گروه هدف <span class="text-red-500">*</span></label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <template x-for="role in roles" :key="role.value">
+                                <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50 transition-colors"
+                                       :class="formData.target_role === role.value ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-slate-200'">
+                                    <input type="radio" :value="role.value" x-model="formData.target_role" class="text-blue-600 focus:ring-blue-500 ml-2">
+                                    <span class="text-sm font-medium text-slate-700" x-text="role.label"></span>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- عنوان و متن -->
+                    <div class="group">
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">عنوان اعلان <span class="text-red-500">*</span></label>
+                        <input type="text" x-model="formData.title" class="block w-full pr-10 pl-4 py-2.5 text-sm border border-slate-300 rounded-lg shadow-sm" placeholder="مثلا: اطلاعیه...">
+                    </div>
+
+                    <div class="group">
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">متن پیام <span class="text-red-500">*</span></label>
+                        <textarea x-model="formData.message" rows="5" class="block w-full pr-10 pl-4 py-3 text-sm border border-slate-300 rounded-lg shadow-sm" placeholder="متن..."></textarea>
+                    </div>
+                </div>
+
+                <div class="px-6 py-4 bg-slate-50 rounded-b-xl flex justify-end items-center space-x-3 space-x-reverse border-t">
+                    <button type="button" @click="closeModal()" class="py-2 px-5 text-sm font-semibold bg-white border border-slate-300 rounded-lg hover:bg-slate-100 text-slate-700">انصراف</button>
+                    <button type="submit" class="py-2 px-6 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm transition-colors flex items-center" :disabled="isSubmitting">
+                        <i x-show="isSubmitting" class="fa-solid fa-spinner fa-spin ml-2"></i>
+                        <span x-text="isSubmitting ? 'در حال ارسال...' : 'ارسال اعلان'"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- مودال جزئیات -->
+    <div x-show="isDetailModalOpen" style="display: none;" @keydown.escape.window="isDetailModalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div @click="isDetailModalOpen = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div x-show="isDetailModalOpen" x-transition class="relative bg-white rounded-xl shadow-lg w-full max-w-lg my-8">
+            <div class="p-5 flex justify-between items-center border-b bg-slate-50 rounded-t-xl">
+                <h3 class="text-lg font-bold text-slate-800">جزئیات اعلان</h3>
+                <button @click="isDetailModalOpen = false" class="p-1 hover:bg-slate-200 rounded-full transition-colors">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4" x-show="currentNotif">
+                <div x-show="currentNotif?.type === 'single'" class="flex items-center space-x-3 space-x-reverse">
+                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg">
+                        <span x-text="currentNotif?.recipient_initial"></span>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-slate-900">گیرنده: <span x-text="currentNotif?.recipient_name"></span></p>
+                        <p class="text-xs text-slate-500" x-text="currentNotif?.created_at_shamsi"></p>
+                    </div>
+                </div>
+                
+                <div x-show="currentNotif?.type === 'group'" class="flex items-center justify-between bg-blue-50 p-3 rounded-lg">
+                    <div>
+                        <p class="text-sm font-medium text-blue-900">
+                            <i class="fa-solid fa-users ml-1"></i>
+                            <span x-text="currentNotif?.total_sent"></span> گیرنده
+                        </p>
+                        <p class="text-xs text-slate-500" x-text="currentNotif?.created_at_shamsi"></p>
+                    </div>
+                    <span class="text-xs text-blue-600" x-text="currentNotif?.read_count + ' بازدید'"></span>
+                </div>
+                
+                <div class="bg-slate-50 rounded-lg p-4 border border-slate-100">
+                    <h4 class="font-bold text-blue-700 mb-3 text-lg" x-text="currentNotif?.title"></h4>
+                    <p class="text-slate-700 leading-relaxed whitespace-pre-wrap" x-text="currentNotif?.full_message"></p>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-slate-50 rounded-b-xl flex justify-end">
+                <button @click="isDetailModalOpen = false" class="py-2 px-5 text-sm font-semibold bg-white border border-slate-300 rounded-lg hover:bg-slate-100">بستن</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال حذف (هوشمند و اصلاح شده) -->
+    <div x-show="isDeleteModalOpen" style="display: none;" @keydown.escape.window="isDeleteModalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div @click="isDeleteModalOpen = false" class="absolute inset-0 bg-slate-900/60"></div>
+        <div x-show="isDeleteModalOpen" x-transition class="relative bg-white rounded-xl shadow-lg w-full max-w-sm text-center p-6 my-8">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <i class="fa-solid fa-trash-can text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-2">
+                <!-- اصلاح شرط برای نمایش تیتر -->
+                <span x-show="currentNotif && currentNotif.type === 'single'">حذف اعلان</span>
+                <span x-show="currentNotif && currentNotif.type === 'group'">حذف پیام گروهی</span>
+            </h3>
+            <div class="text-sm text-gray-500 mb-6 leading-relaxed">
+                <!-- اصلاح شرط برای نمایش متن -->
+                <p x-show="currentNotif && currentNotif.type !== 'group'">آیا از حذف این اعلان مطمئن هستید؟</p>
+                
+                <div x-show="currentNotif && currentNotif.type === 'group'" class="bg-red-50 border border-red-100 rounded p-2 mt-2">
+                    <p class="font-bold text-red-600 mb-1">هشدار!</p>
+                    <p class="text-xs text-red-500">این یک پیام گروهی است. با حذف آن، این اعلان برای <strong>همه گیرندگان</strong> حذف خواهد شد.</p>
+                </div>
+            </div>
+            <div class="flex justify-center space-x-3 space-x-reverse">
+                <button @click="isDeleteModalOpen = false" class="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">انصراف</button>
+                <button @click="deleteNotification()" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-sm">بله، حذف کن</button>
+            </div>
+        </div>
+    </div>
+
+</div> <!-- پایان Div نگهدارنده اصلی -->
+
+<style>
+    [x-cloak] { display: none !important; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .search-highlight { background-color: #fef08a; font-weight: 600; padding: 0 2px; border-radius: 2px; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const RAW_NOTIFICATIONS = {{ notifications_json|default:"[]"|safe }};
+
+    function notificationDashboard() {
+        return {
+            isModalOpen: false,
+            isDeleteModalOpen: false,
+            isDetailModalOpen: false,
+            isSubmitting: false,
+            sendType: 'single',
+            searchQuery: '',
+            filterType: 'all',
+            notifications: RAW_NOTIFICATIONS,
+            filteredNotifications: RAW_NOTIFICATIONS,
+            formData: {
+                recipient: '',
+                target_role: 'all',
+                title: '',
+                message: ''
+            },
+            currentNotif: null,
+            roles: [
+                { value: 'all', label: 'همه کاربران' },
+                { value: 'visitor', label: 'بازدیدکنندگان' },
+                { value: 'regular', label: 'کاربر عادی' },
+                { value: 'premium', label: 'کاربر ویژه' }
+            ],
+
+            userSearchQuery: '',
+            userSearchResults: [],
+            isUserSearchOpen: false,
+            isSearchingUsers: false,
+            selectedUserDisplay: null,
+
+            init() {
+                this.filteredNotifications = this.notifications;
+            },
+
+            notify(message, type = 'success') {
+                alert((type === 'success' ? '✅ ' : '❌ ') + message);
+            },
+            
+            getCSRFToken() {
+                return document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || '';
+            },
+
+            searchNotifications() {
+                const query = this.searchQuery ? this.searchQuery.trim().toLowerCase() : '';
+                let result = this.notifications;
+
+                if (this.filterType === 'unread') result = result.filter(n => !n.is_read);
+                if (this.filterType === 'read') result = result.filter(n => n.is_read);
+
+                if (query !== '') {
+                    result = result.filter(n => 
+                        (n.title && n.title.toLowerCase().includes(query)) || 
+                        (n.recipient_name && n.recipient_name.toLowerCase().includes(query)) ||
+                        (n.message_preview && n.message_preview.toLowerCase().includes(query))
+                    );
+                }
+                this.filteredNotifications = result;
+            },
+            
+            toggleAccordion(item) {
+                if (item.type !== 'group') return;
+                this.filteredNotifications.forEach(n => {
+                    if (n.id !== item.id) n.is_expanded = false;
+                });
+                item.is_expanded = !item.is_expanded;
+            },
+
+            clearSearch() {
+                this.searchQuery = '';
+                this.searchNotifications();
+            },
+
+            highlightText(text, query) {
+                if (!query || !text) return text;
+                try {
+                    const regex = new RegExp(`(${query})`, 'gi');
+                    return text.replace(regex, '<span class="search-highlight">$1</span>');
+                } catch (e) { return text; }
+            },
+
+            openAddModal() {
+                this.formData = { recipient: '', target_role: 'all', title: '', message: '' };
+                this.userSearchQuery = '';
+                this.userSearchResults = [];
+                this.selectedUserDisplay = null;
+                this.sendType = 'single'; 
+                this.isModalOpen = true;
+            },
+
+            openDetailModal(notif) { 
+                this.currentNotif = notif; 
+                this.isDetailModalOpen = true; 
+            },
+            
+            openDeleteModal(notif) { 
+                this.currentNotif = notif; 
+                this.isDeleteModalOpen = true; 
+            },
+            
+            closeModal() { 
+                this.isModalOpen = false; 
+                this.isSubmitting = false; 
+            },
+
+            async searchUsersApi() {
+                if (this.userSearchQuery.length < 2) {
+                    this.userSearchResults = [];
+                    return;
+                }
+                this.isSearchingUsers = true;
+                this.isUserSearchOpen = true;
+
+                try {
+                    const response = await fetch(`{% url 'dashboard:notifications:user_search_json' %}?q=${encodeURIComponent(this.userSearchQuery)}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.userSearchResults = data.results;
+                    }
+                } catch (error) {
+                    console.error('Search Error:', error);
+                } finally {
+                    this.isSearchingUsers = false;
+                }
+            },
+
+            selectUser(user) {
+                this.formData.recipient = user.id;
+                this.selectedUserDisplay = { name: user.full_name, sub: user.subtext };
+                this.userSearchQuery = ''; 
+                this.isUserSearchOpen = false;
+            },
+
+            clearSelectedUser() {
+                this.formData.recipient = '';
+                this.selectedUserDisplay = null;
+                this.userSearchQuery = '';
+            },
+
+            async sendNotification() {
+                if (this.sendType === 'single' && !this.formData.recipient) {
+                    this.notify('لطفاً کاربر گیرنده را جستجو و انتخاب کنید.', 'error');
+                    return;
+                }
+                if (!this.formData.title || !this.formData.message) {
+                    this.notify('عنوان و متن پیام الزامی است.', 'error');
+                    return;
+                }
+
+                this.isSubmitting = true;
+                const url = this.sendType === 'single' 
+                    ? "{% url 'dashboard:notifications:single_create' %}" 
+                    : "{% url 'dashboard:notifications:announcement_create' %}";
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': this.getCSRFToken() 
+                        },
+                        body: JSON.stringify(this.formData)
+                    });
+                    
+                    let data = {};
+                    const contentType = response.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        data = await response.json();
+                    }
+
+                    if (response.ok) {
+                        this.notify('عملیات با موفقیت انجام شد.', 'success');
+                        setTimeout(() => location.reload(), 1000);
+                        this.closeModal();
+                    } else {
+                        this.notify(data.message || 'خطا در ارسال اطلاعات', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    this.notify('خطای ارتباط با سرور', 'error');
+                } finally {
+                    this.isSubmitting = false;
+                }
+            },
+
+            async deleteNotification() {
+                if (!this.currentNotif) return;
+
+                let url;
+                // اصلاح: چک کردن type به جای is_group
+                const isGroupType = this.currentNotif.type === 'group';
+
+                if (isGroupType) {
+                    const annId = this.currentNotif.announcement_id; 
+                    if(!annId) {
+                        this.notify('شناسه اعلان گروهی یافت نشد', 'error');
+                        return;
+                    }
+                    url = "{% url 'dashboard:notifications:announcement_delete' 0 %}".replace('0', annId);
+                } else {
+                    url = "{% url 'dashboard:notifications:single_delete' 0 %}".replace('0', this.currentNotif.id);
+                }
+                
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': this.getCSRFToken() }
+                    });
+                    
+                    if (response.ok) {
+                        this.notify('حذف با موفقیت انجام شد', 'success');
+                        
+                        const deletedId = this.currentNotif.id;
+                        const annId = this.currentNotif.announcement_id;
+
+                        this.notifications = this.notifications.filter(n => {
+                            // اصلاح: استفاده از متغیر محلی صحیح برای فیلتر
+                            if (isGroupType) return n.announcement_id !== annId;
+                            return n.id !== deletedId;
+                        });
+                        
+                        this.searchNotifications();
+                        this.isDeleteModalOpen = false;
+                        this.currentNotif = null;
+                    } else {
+                        this.notify('خطا در حذف آیتم', 'error');
+                    }
+                } catch (error) {
+                    console.error(error);
+                    this.notify('خطای سرور', 'error');
+                }
+            }
+        };
+    }
+</script>
+{% endblock %}
