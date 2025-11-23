@@ -3,13 +3,27 @@
 {% block title %}مدیریت کاربران{% endblock %}
 
 {% block content %}
-<div class="container mx-auto">
+<!-- 
+    تغییر شماره 1: 
+    x-data را به اینجا منتقل کردیم تا تمام محتویات (دکمه‌ها و مودال) به exportModalOpen دسترسی داشته باشند 
+-->
+<div class="container mx-auto" x-data="{ exportModalOpen: false }">
+    
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-slate-700">لیست کاربران</h1>
         <div class="flex space-x-2 space-x-reverse">
             <a href="{% url 'dashboard:users:admin_add_user' %}" class="px-3 py-1 bg-green-600 text-white rounded-full text-sm hover:bg-green-700 transition-colors">
                 افزودن کاربر جدید
             </a>
+            
+            <!-- 
+                تغییر شماره 2: 
+                حذف تابع JS قدیمی و استفاده مستقیم از دستور Alpine 
+            -->
+            <button @click="exportModalOpen = true" class="px-3 py-1 bg-blue-600 text-white rounded-full text-sm hover:bg-blue-700 transition-colors">
+                استخراج اطلاعات
+            </button>
+            
             <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
                 کل: {{ stats.total_users }}
             </span>
@@ -21,6 +35,82 @@
             </span>
         </div>
     </div>
+    
+    <!-- Export Modal -->
+    <!-- 
+        تغییر شماره 3: 
+        حذف x-data از اینجا (چون در والد تعریف شده است) و حفظ x-show 
+    -->
+    <div x-show="exportModalOpen" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;" x-cloak>
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            
+            <div x-show="exportModalOpen" 
+                 x-transition:enter="ease-out duration-300" 
+                 x-transition:enter-start="opacity-0" 
+                 x-transition:enter-end="opacity-100" 
+                 x-transition:leave="ease-in duration-200" 
+                 x-transition:leave-start="opacity-100" 
+                 x-transition:leave-end="opacity-0" 
+                 class="fixed inset-0 transition-opacity" 
+                 @click="exportModalOpen = false">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+            
+            <div x-show="exportModalOpen" 
+                 x-transition:enter="ease-out duration-300" 
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" 
+                 x-transition:leave="ease-in duration-200" 
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" 
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
+                 class="inline-block align-bottom bg-white rounded-lg text-right overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full" 
+                 role="dialog" aria-modal="true" aria-labelledby="modal-headline">
+                
+                <form id="exportForm" method="GET" action="{% url 'dashboard:users:admin_export_users' %}">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                                <i class="fas fa-file-export text-blue-600"></i>
+                            </div>
+                            <div class="mt-3 text-center sm:mt-0 sm:mr-4 sm:text-right">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-headline">
+                                    استخراج اطلاعات کاربران
+                                </h3>
+                                <div class="mt-2">
+                                    <p class="text-sm text-gray-500">
+                                        لطفاً نقش کاربرانی که می‌خواهید اطلاعات آن‌ها را استخراج کنید را انتخاب نمایید:
+                                    </p>
+                                    
+                                    <div class="mt-4">
+                                        <label for="roleSelect" class="block text-sm font-medium text-gray-700 mb-2">انتخاب نقش:</label>
+                                        <select id="roleSelect" name="role" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                            <option value="">همه کاربران</option>
+                                            <option value="visitor">بازدیدکننده</option>
+                                            <option value="regular">کاربر عادی</option>
+                                            <option value="premium">کاربر ویژه</option>
+                                            <option value="admin">ادمین</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                            دریافت فایل
+                        </button>
+                        <button @click="exportModalOpen = false" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                            انصراف
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- اسکریپت openExportModal حذف شد چون دیگر نیازی نیست -->
 
     <!-- فرم جستجو و فیلتر -->
    <div x-data="{ filterOpen: window.innerWidth >= 1024 }" @resize.window="filterOpen = window.innerWidth >= 1024" class="bg-white p-4 rounded-xl shadow-sm mb-6">
@@ -66,6 +156,7 @@
     <!-- جدول کاربران - دسکتاپ -->
     <div class="hidden lg:block bg-white rounded-xl shadow-sm overflow-hidden">
         <table class="min-w-full text-sm">
+            <!-- محتویات جدول (بدون تغییر) -->
             <thead class="bg-slate-50 text-slate-600">
                 <tr>
                     <th scope="col" class="px-6 py-3 text-right font-medium">کاربر</th>
@@ -106,7 +197,7 @@
                         {% elif user.profile.auth_status == 'REJECTED' %}
                             <div class="flex items-center text-red-600">
                                 <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.061L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
                                 </svg>
                                 <span class="mr-1.5">رد شده</span>
                             </div>
@@ -152,7 +243,7 @@
         </table>
     </div>
 
-    <!-- کارت‌های موبایل -->
+    <!-- کارت‌های موبایل (بدون تغییر) -->
     <div class="grid grid-cols-1 gap-4 lg:hidden">
         {% for user in users %}
         <div x-data="{ expanded: false }" class="bg-white rounded-xl shadow-sm p-4">
@@ -197,6 +288,7 @@
                     </div>
                 </dl>
                 <div class="mt-4 pt-4 border-t border-slate-200 flex justify-end space-x-2 space-x-reverse">
+                    <!-- دکمه‌های عملیات موبایل (همان لاجیک دسکتاپ) -->
                     <button onclick="viewUser({{ user.id }})" class="p-1.5 text-slate-500 hover:text-blue-600 rounded-md hover:bg-slate-100 transition-colors">
                         <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C5.412 7.051 8.574 4.5 12 4.5c3.426 0 6.588 2.551 9.964 7.178.15.207.15.431 0 .639C18.588 16.949 15.426 19.5 12 19.5c-3.426 0-6.588-2.551-9.964-7.178z" />
@@ -223,7 +315,7 @@
         {% endfor %}
     </div>
 
-    <!-- Pagination -->
+    <!-- Pagination (بدون تغییر) -->
     {% if is_paginated %}
     <div class="mt-6 flex justify-center">
         <nav class="flex items-center space-x-2 space-x-reverse">
@@ -247,8 +339,9 @@
     {% endif %}
 </div>
 
-<!-- مودال ویرایش -->
+<!-- مودال‌های ویرایش و حذف (همان کد قبلی شما - نیاز به تغییر ندارند چون Vanilla JS هستند) -->
 <div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <!-- ... (محتویات مودال ویرایش بدون تغییر) ... -->
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="mt-3">
             <div class="flex justify-between items-center mb-4">
@@ -307,8 +400,8 @@
     </div>
 </div>
 
-<!-- مودال حذف -->
 <div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <!-- ... (محتویات مودال حذف بدون تغییر) ... -->
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="mt-3 text-center">
             <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
@@ -333,7 +426,6 @@ let currentEditUserId = null;
 let currentDeleteUserId = null;
 
 function viewUser(userId) {
-    // پیاده‌سازی مشاهده جزئیات کاربر
     window.location.href = `/dashboard/admin/users/${userId}/`;
 }
 

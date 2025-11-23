@@ -232,7 +232,7 @@
                     <span class="mx-3">دسته‌بندی‌ها</span>
                 </a>
                 <a href="{% url 'dashboard:notifications:notifications_list' %}" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 {% if request.resolver_match.url_name == 'notifications_list' %}bg-slate-700 text-blue-300{% endif %}">
-                    <i class="fa-solid fa-comments sidebar-icon"></i>
+                    <i class="fa-solid fa-bell sidebar-icon"></i>
                     <span class="mx-3">مدیریت اعلان‌ها</span>
                 </a>
                 <a href="{% url 'dashboard:questions:questions_list' %}" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 {% if request.resolver_match.url_name == 'questions_list' %}bg-slate-700 text-blue-300{% endif %}">

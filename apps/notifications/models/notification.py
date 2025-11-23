@@ -16,7 +16,7 @@ class Notification(models.Model):
         verbose_name="گیرنده"
     )
     title = models.CharField(max_length=100, verbose_name="عنوان اعلان", default="اعلان جدید")
-    message = models.CharField(max_length=255, verbose_name="متن اعلان")
+    message = models.TextField(verbose_name="متن اعلان")
     is_read = models.BooleanField(default=False, verbose_name="خوانده شده؟")
     
     content_type = models.ForeignKey(

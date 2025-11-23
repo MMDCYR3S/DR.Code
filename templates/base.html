@@ -163,58 +163,181 @@
             {% block header %}
             <!-- اینجا باید قسمت مربوط به هدرو اضافه کنی -->
 
-            <!-- Header / Navbar -->
-            <header class="fixed w-full top-0 z-50 transition-all duration-300 glass shadow-lg">
-                <nav class="container mx-auto px-4 lg:px-8">
-                    <div class="flex items-center justify-between h-16 lg:h-20">
-                        <!-- Logo -->
-                        <div class="flex items-center">
-                            <a href="/" class="flex items-center gap-2 group">
-                                <div
-                                    class="w-12 h-12 flex items-center justify-center transition-all">
-                                    <img src="{% static 'pics/logo-64x64.png' %}" alt="">
+                <!-- Header / Navbar -->
+                <header class="fixed w-full top-0 z-50 transition-all duration-300 glass shadow-lg">
+                    <nav class="container mx-auto px-4 lg:px-8">
+                        <div class="flex items-center justify-between h-16 lg:h-20">
+                            <!-- Logo -->
+                            <div class="flex items-center">
+                                <a href="/" class="flex items-center gap-2 group">
+                                    <div class="w-12 h-12 flex items-center justify-center transition-all">
+                                        <img src="{% static 'pics/logo-64x64.png' %}" alt="">
+                                    </div>
+                                    <span class="text-xl font-bold text-gray-800 group-hover:text-c1 transition-colors"></span>
+                                </a>
+                            </div>
+
+                            <!-- Desktop Menu -->
+                            <div class="hidden lg:flex items-center gap-8">
+                                <a href="/prescriptions/" class="text-gray-700 hover:text-c1 transition-colors font-medium">نسخه‌ها</a>
+                                <a href="/plan/" class="text-gray-700 hover:text-c1 transition-colors font-medium">پلن‌های اشتراک</a>
+                                <a href="/tutorials/" class="text-gray-700 hover:text-c1 transition-colors font-medium">آموزش‌ها</a>
+                                <a href="/about/" class="text-gray-700 hover:text-c1 transition-colors font-medium">درباره ما</a>
+                                <a href="/contact/" class="text-gray-700 hover:text-c1 transition-colors font-medium">تماس با ما</a>
+                            </div>
+
+                            <!-- CTA Button & Notifications & Mobile Menu Toggle -->
+                            <div class="flex items-center gap-4">
+                                
+                                <!-- 🔔 بخش اعلان‌ها (Notification Widget) -->
+                                <div x-data="notificationWidget()" x-init="init()" class="relative z-50" x-cloak>
+                                    <!-- آیکون زنگوله (فقط برای کاربران لاگین شده نمایش داده می‌شود) -->
+                                    <button 
+                                        x-show="isLoggedIn && !isAdmin" 
+                                        @click="togglePanel()" 
+                                        class="relative p-2 text-gray-600 hover:text-blue-600 transition-colors rounded-full hover:bg-gray-100 focus:outline-none"
+                                        style="display: none;"> <!-- style="display: none;" برای جلوگیری از پرش تصویر قبل از لود شدن آلپاین -->
+                                        
+                                        <!-- Icon -->
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                        </svg>
+                                        
+                                        <!-- Badge -->
+                                        <span 
+                                            x-show="unreadCount > 0" 
+                                            x-transition.scale
+                                            class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white"
+                                            x-text="unreadCount > 9 ? '+9' : unreadCount">
+                                        </span>
+                                    </button>
+
+                                    <!-- پنل کشویی اعلان‌ها -->
+                                    <div 
+                                        x-show="isOpen" 
+                                        @click.away="isOpen = false"
+                                        x-transition:enter="transition ease-out duration-200"
+                                        x-transition:enter-start="opacity-0 translate-y-2"
+                                        x-transition:enter-end="opacity-100 translate-y-0"
+                                        x-transition:leave="transition ease-in duration-150"
+                                        x-transition:leave-start="opacity-100 translate-y-0"
+                                        x-transition:leave-end="opacity-0 translate-y-2"
+                                        class="
+                                            fixed inset-x-4 top-20 mt-2 
+                                            lg:absolute lg:inset-auto lg:left-0 lg:mt-3 
+                                            w-auto lg:w-96 
+                                            bg-white rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none overflow-hidden z-[60]
+                                        "
+                                        style="display: none;">
+                                        
+                                        <!-- Header پنل -->
+                                        <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
+                                            <h3 class="text-sm font-bold text-gray-700">اعلان‌ها</h3>
+                                            <span x-text="unreadCount + ' پیام خوانده نشده'" class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full"></span>
+                                        </div>
+
+                                        <!-- لیست اعلان‌ها -->
+                                        <!-- ارتفاع حداکثری برای موبایل تنظیم شده تا اسکرول بخورد -->
+                                        <div class="max-h-[60vh] lg:max-h-[400px] overflow-y-auto custom-scrollbar">
+                                            <template x-if="loading && notifications.length === 0">
+                                                <div class="p-4 text-center text-gray-500 text-sm flex flex-col items-center gap-2">
+                                                    <svg class="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    <span>در حال بارگذاری...</span>
+                                                </div>
+                                            </template>
+
+                                            <template x-if="!loading && notifications.length === 0">
+                                                <div class="p-8 text-center text-gray-400">
+                                                    <i class="fas fa-bell-slash text-3xl mb-2"></i>
+                                                    <p class="text-sm">هیچ اعلان جدیدی ندارید</p>
+                                                </div>
+                                            </template>
+
+                                            <!-- آیتم اعلان (Accordion) -->
+                                            <template x-for="notif in notifications" :key="notif.id">
+                                                <div 
+                                                    x-data="{ expanded: false }" 
+                                                    class="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors duration-150">
+                                                    
+                                                    <!-- هدر آیتم (قابل کلیک) -->
+                                                    <div 
+                                                        @click="toggleItem(notif, $data)"
+                                                        class="p-4 cursor-pointer flex items-start gap-3 relative">
+                                                        
+                                                        <!-- نشانگر خوانده نشده -->
+                                                        <div x-show="!notif.is_read" class="absolute right-2 top-5 w-2 h-2 bg-blue-500 rounded-full"></div>
+
+                                                        <!-- آیکون نوع پیام -->
+                                                        <div class="mt-1 flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                                            <i class="fas fa-info-circle text-sm"></i>
+                                                        </div>
+
+                                                        <div class="flex-1 min-w-0">
+                                                            <div class="flex justify-between items-baseline mb-1">
+                                                                <p class="text-sm font-semibold text-gray-800 truncate ml-2" x-text="notif.title"></p>
+                                                                <span class="text-[10px] text-gray-400 whitespace-nowrap" x-text="notif.shamsi_created_at"></span>
+                                                            </div>
+                                                            <p class="text-xs text-gray-500 truncate" x-text="notif.message"></p>
+                                                        </div>
+
+                                                        <!-- فلش باز/بسته -->
+                                                        <svg 
+                                                            class="w-4 h-4 text-gray-400 transform transition-transform duration-200 mt-1"
+                                                            :class="expanded ? 'rotate-180' : ''"
+                                                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    </div>
+
+                                                    <!-- محتوای مخفی (Accordion Body) -->
+                                                    <div 
+                                                        x-show="expanded" 
+                                                        x-collapse
+                                                        class="bg-gray-50 px-4 pb-4 pt-0 pl-12 text-sm text-gray-600 leading-relaxed border-t border-gray-100 border-dashed mx-4 mt-[-8px] mb-2">
+                                                        <div class="pt-3" x-html="notif.full_text || notif.message"></div>
+                                                        
+                                                        <!-- وضعیت -->
+                                                        <div class="mt-2 flex justify-end">
+                                                            <span x-show="notif.is_read" class="text-[10px] text-green-600 flex items-center gap-1">
+                                                                <i class="fas fa-check-double"></i> خوانده شده
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        
+                                        <!-- Footer پنل -->
+                                        <div class="bg-gray-50 p-2 text-center border-t border-gray-100">
+                                            <a href="/profile/notifications/" class="text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors">
+                                                مشاهده همه اعلان‌ها
+                                            </a>
+                                        </div>
+                                    </div>
+
                                 </div>
-                                <span class="text-xl font-bold text-gray-800 group-hover:text-c1 transition-colors"></span>
-                            </a>
-                        </div>
 
-                        <!-- Desktop Menu -->
-                        <div class="hidden lg:flex items-center gap-8">
-                            <a href="/prescriptions/"
-                                class="text-gray-700 hover:text-c1 transition-colors font-medium">نسخه‌ها</a>
-                            <a href="/plan/" class="text-gray-700 hover:text-c1 transition-colors font-medium">پلن‌های
-                                اشتراک</a>
-                            <a href="/tutorials/"
-                                class="text-gray-700 hover:text-c1 transition-colors font-medium">آموزش‌ها</a>
-                            <a href="/about/" class="text-gray-700 hover:text-c1 transition-colors font-medium">درباره
-                                ما</a>
-                            <a href="/contact/" class="text-gray-700 hover:text-c1 transition-colors font-medium">تماس
-                                با
-                                ما</a>
-                        </div>
-
-                        <!-- CTA Button & Mobile Menu Toggle -->
-                        <div class="flex items-center gap-4">
-                            <div id="auth-btn-mobile">
-                                <button class="login-register-btn " onclick="Auth.showAuthModal()">
-                                    <i class="fas fa-sign-in-alt"></i>
-                                    ورود / ثبت‌نام
+                                <div id="auth-btn-mobile">
+                                    <button class="login-register-btn" onclick="Auth.showAuthModal()">
+                                        <i class="fas fa-sign-in-alt"></i>
+                                        ورود / ثبت‌نام
+                                    </button>
+                                </div>
+                                
+                                <!-- Mobile Menu Toggle -->
+                                <button @click="mobileMenu = !mobileMenu" class="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path x-show="!mobileMenu" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                                        <path x-show="mobileMenu" x-cloak stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
                                 </button>
                             </div>
-                            <!-- Mobile Menu Toggle -->
-                            <button @click="mobileMenu = !mobileMenu"
-                                class="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path x-show="!mobileMenu" stroke-linecap="round" stroke-linejoin="round"
-                                        stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                                    <path x-show="mobileMenu" x-cloak stroke-linecap="round" stroke-linejoin="round"
-                                        stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                </svg>
-                            </button>
                         </div>
-                    </div>
-                </nav>
-            </header>
+                    </nav>
+                </header>
 
             <!-- Mobile Sidebar Menu -->
             <div>
@@ -928,6 +1051,93 @@ document.getElementById('forgot-password-modal')?.addEventListener('click', func
     });
 
 </script>
+
+<script>
+    function notificationWidget() {
+        return {
+            isOpen: false,
+            isLoggedIn: false,
+            isAdmin: false,
+            notifications: [],
+            unreadCount: 0,
+            loading: false,
+            intervalId: null,
+
+            async init() {
+                this.isLoggedIn = StorageManager.isLoggedIn();
+                
+                if (this.isLoggedIn) {
+                    const user = StorageManager.getUser();
+                    // بررسی ادمین بودن
+                    if (user && (user.is_superuser === true || user.is_staff === true || user.role === 'admin')) {
+                        this.isAdmin = true;
+                    }
+
+                    if (!this.isAdmin) {
+                        await this.fetchNotifications();
+                        
+                        this.intervalId = setInterval(() => {
+                            this.fetchNotifications(true);
+                        }, 60000);
+                    }
+                }
+            },
+
+            async fetchNotifications(silent = false) {
+                if (this.isAdmin) return;
+                if (!silent) this.loading = true;
+                
+                try {
+                    const response = await API.notifications.getNotifications();
+                    
+                    // لاگ برای اطمینان از ساختار (می‌توانید بعداً حذف کنید)
+                    // console.log("API Response:", response);
+
+                    if (response.success) {
+                        // دسترسی به داده‌ها: فرض بر این است که response.data حاوی آبجکتی است که در کنسول دیدید
+                        const data = response.data; 
+
+                        // 1. اصلاح نام کلید: notifications به جای results
+                        this.notifications = data.notifications || [];
+                        
+                        // 2. دریافت تعداد خوانده نشده مستقیم از سرور
+                        this.unreadCount = data.unread_count || 0;
+                    }
+                } catch (error) {
+                    console.error("خطا در دریافت اعلان‌ها:", error);
+                } finally {
+                    if (!silent) this.loading = false;
+                }
+            },
+
+            togglePanel() {
+                this.isOpen = !this.isOpen;
+                if (this.isOpen && !this.isAdmin) {
+                    // وقتی پنل باز شد، لیست را رفرش کن (silent=true برای اینکه لودینگ نچرخد)
+                    this.fetchNotifications(true); 
+                }
+            },
+
+            async toggleItem(notification, itemData) {
+                itemData.expanded = !itemData.expanded;
+
+                if (itemData.expanded && !notification.is_read) {
+                    try {
+                        const response = await API.notifications.markAsRead(notification.id);
+                        if (response.success) {
+                            notification.is_read = true;
+                            // تعداد را یکی کم کن (چون سمت کلاینت هستیم و می‌خواهیم سریع آپدیت شود)
+                            if (this.unreadCount > 0) this.unreadCount--;
+                        }
+                    } catch (error) {
+                        console.error("خطا در ثبت خوانده شدن:", error);
+                    }
+                }
+            }
+        };
+    }
+</script>
+
 
 <script>
     // تغییر بین تب‌های ورود و ثبت‌نام

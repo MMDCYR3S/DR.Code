@@ -4,7 +4,8 @@ from .users_views import (
     UserUpdateView,
     UserVerificationDetailView,
     PendingVerificationListView,
-    AddUserView
+    AddUserView,
+    ExportUsersToExcelView
 )
 
 from .categories_views import (

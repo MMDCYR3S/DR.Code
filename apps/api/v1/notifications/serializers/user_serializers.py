@@ -10,7 +10,6 @@ class UserNotificationSerializer(serializers.ModelSerializer):
     
     recipient_username = serializers.CharField(source='recipient.username', read_only=True)
     created_at_jalali = serializers.CharField(source='shamsi_created_at', read_only=True)
-    is_read_count = serializers.IntegerField(source='is_read_count', read_only=True)
     
     class Meta:
         model = Notification
@@ -18,6 +17,7 @@ class UserNotificationSerializer(serializers.ModelSerializer):
             'id',
             'recipient',
             'recipient_username',
+            'title',
             'message',
             'is_read',
             'created_at_jalali',
@@ -26,7 +26,8 @@ class UserNotificationSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             'id', 
-            'recipient', 
+            'recipient',
+            "title",
             'recipient_username', 
             'message', 
             'created_at_jalali', 

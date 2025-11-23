@@ -61,7 +61,8 @@ class Announcement(models.Model):
         for profile in profiles:
             notification = Notification(
                 recipient=profile.user,
-                message=self.title,
+                title=self.title,
+                message=self.message,
                 content_object=self,
             )
             notifications_to_create.append(notification)

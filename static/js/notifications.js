@@ -27,10 +27,9 @@ function notificationsApp() {
             await this.loadNotifications();
         },
 
-        // Load Notifications
         async loadNotifications(url = null) {
             try {
-                this.loading = !url; // اگه صفحه اول باشه loading, وگرنه pageLoading
+                this.loading = !url;
                 this.pageLoading = !!url;
 
                 console.log('📡 Fetching notifications...');
@@ -39,13 +38,21 @@ function notificationsApp() {
                 console.log('📦 Response:', response);
 
                 if (response.success) {
-                    this.notifications = response.data.results;
-                    this.totalCount = response.data.count;
-                    this.nextPage = response.data.next;
-                    this.previousPage = response.data.previous;
+                    // اصلاح مسیر دریافت داده‌ها بر اساس ساختار جدید API
+                    // قبلاً: response.data.results
+                    // الان: response.data.notifications
+                    this.notifications = response.data.notifications || [];
                     
-                    // محاسبه تعداد خوانده نشده‌ها
-                    this.unreadCount = this.notifications.filter(n => !n.is_read).length;
+                    this.totalCount = response.data.total_count || 0; // اصلاح نام فیلد
+                    
+                    // این فیلدها ممکن است در پاسخ جدید نباشند، اگر پیجینیشن ندارید null بگذارید
+                    this.nextPage = response.data.next || null;
+                    this.previousPage = response.data.previous || null;
+                    
+                    // اصلاح دریافت تعداد خوانده نشده (مستقیم از سرور)
+                    // قبلاً: محاسبه دستی با filter
+                    // الان: response.data.unread_count
+                    this.unreadCount = response.data.unread_count || 0;
 
                     // محاسبه شماره صفحه
                     if (url) {

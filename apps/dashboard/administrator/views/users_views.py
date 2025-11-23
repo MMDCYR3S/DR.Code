@@ -14,6 +14,10 @@ from ..forms import UserSearchForm, UserEditForm, ProfileEditForm, AddUserForm
 from ..services.email_service import resend_auth_email, send_auth_checked_email
 
 import jdatetime
+from django.http import HttpResponse
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -298,3 +302,99 @@ class AddUserView(LoginRequiredMixin, HasAdminAccessPermission, View):
             messages.error(request, 'اطلاعات وارد شده معتبر نیست. لطفاً خطاهای زیر را بررسی کنید.')
             
         return render(request, 'dashboard/users/add_user.html', {'form': form})
+
+# ================================================== #
+# ============= EXPORT USERS TO EXCEL ============= #
+# ================================================== #
+class ExportUsersToExcelView(LoginRequiredMixin, HasAdminAccessPermission, View):
+    """ویو برای استخراج اطلاعات کاربران به فرمت Excel"""
+    
+    def get(self, request):
+        # دریافت پارامتر نقش از درخواست
+        role = request.GET.get('role', None)
+        
+        # ایجاد queryset برای کاربران
+        users = User.objects.select_related('profile').all()
+        
+        # اعمال فیلتر بر اساس نقش در صورت وجود
+        if role:
+            users = users.filter(profile__role=role)
+        
+        # ایجاد workbook جدید
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "کاربران"
+        
+        # تنظیم سبک برای سلول‌های هدر
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
+        header_alignment = Alignment(horizontal="center", vertical="center")
+        
+        # تعریف ستون‌ها
+        columns = [
+            'نام',
+            'نام خانوادگی', 
+            'ایمیل',
+            'شماره تماس',
+            'کد نظام پزشکی',
+            'لینک نظام پزشکی',
+            'وضعیت احراز هویت',
+            'نقش',
+            'کد معرف',
+            'دلیل رد هویت',
+            'تاریخ عضویت'
+        ]
+        
+        # اضافه کردن هدرها به اکسل
+        for col_num, column_title in enumerate(columns, 1):
+            cell = ws.cell(row=1, column=col_num, value=column_title)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+        
+        # اضافه کردن داده‌ها
+        for row_num, user in enumerate(users, 2):
+            # تبدیل تاریخ عضویت به تاریخ شمسی
+            jalali_date = ""
+            if user.date_joined:
+                jalali_date_obj = jdatetime.datetime.fromgregorian(datetime=user.date_joined)
+                jalali_date = jalali_date_obj.strftime('%Y/%m/%d - %H:%M')
+            
+            row_data = [
+                user.first_name,
+                user.last_name,
+                user.email,
+                user.phone_number,
+                getattr(user.profile, 'medical_code', '') or '',
+                getattr(user.profile, 'auth_link', '') or '',
+                getattr(user.profile, 'get_auth_status_display', lambda: '')(),
+                getattr(user.profile, 'get_role_display', lambda: '')(),
+                getattr(user.profile, 'referral_code', '') or '',
+                getattr(user.profile, 'rejection_reason', '') or '',
+                jalali_date
+            ]
+            
+            for col_num, cell_value in enumerate(row_data, 1):
+                ws.cell(row=row_num, column=col_num, value=str(cell_value))
+        
+        # تنظیم عرض ستون‌ها
+        column_widths = [15, 20, 25, 15, 20, 25, 15, 15, 15, 25, 20]
+        for i, column_width in enumerate(column_widths, 1):
+            ws.column_dimensions[chr(64 + i)].width = column_width
+        
+        # ایجاد پاسخ HTTP
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        # تنظیم نام فایل با توجه به نقش انتخابی
+        if role:
+            filename = f"users_{role}_{timezone.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        else:
+            filename = f"all_users_{timezone.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        # ذخیره workbook در پاسخ
+        wb.save(response)
+        
+        return response
