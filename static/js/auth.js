@@ -38,8 +38,13 @@ const Auth = {
                     if (typeof updateAuthWarningBar === 'function') {
                         updateAuthWarningBar();
                     }
+                    
+                    // به Alpine خبر بده که کاربر لاگین شده
+                    window.dispatchEvent(new CustomEvent('user-logged-in'));
+                    
                     window.location.href = '/';
-                    window.location.reload();
+                    // رفرش کامل با پاک کردن کش (Ctrl+F5)
+                    window.location.reload(true);
                 }, 1500);
                 
                 // اگر نیاز به احراز هویت تکمیلی دارد
@@ -85,8 +90,11 @@ setTimeout(() => {
         updateAuthWarningBar();
     }
 
-    window.location.href = '/';
-    window.location.reload();
+    // به Alpine خبر بده که کاربر لاگین شده
+    window.dispatchEvent(new CustomEvent('user-logged-in'));
+    
+    // رفرش کامل با پاک کردن کش (Ctrl+F5)
+    window.location.reload(true);
 }, 1500);
             }
         } catch (error) {

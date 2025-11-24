@@ -450,7 +450,7 @@
             
 
             <div class=" pt-16 lg:pt-20  z-[1000000000]" id="auth-warning-bar" style="display: none;">
-                <div id="auth-warning-bar2" class="py-4 bg-red-300">
+                <div id="auth-warning-bar2" class="py-4 bg-red-300" style="display: none;">
                     <!-- 🆕 نوار هشدار احراز هویت -->
                     <div 
                         class=" bg-red-50 border-2 border-red-200 border-dashed rounded-xl mx-10 lg:mx-20 py-3 px-4 shadow-sm ">
@@ -1109,6 +1109,21 @@ document.getElementById('forgot-password-modal')?.addEventListener('click', func
                         }, 60000);
                     }
                 }
+
+                // لیسنر برای لاگین از طریق auth.js
+                window.addEventListener('user-logged-in', async () => {
+                    this.isLoggedIn = true;
+                    const user = StorageManager.getUser();
+                    if (user && (user.is_superuser === true || user.is_staff === true || user.role === 'admin')) {
+                        this.isAdmin = true;
+                    } else {
+                        this.isAdmin = false;
+                    }
+
+                    if (!this.isAdmin) {
+                        await this.fetchNotifications();
+                    }
+                });
             },
 
             async fetchNotifications(silent = false) {
