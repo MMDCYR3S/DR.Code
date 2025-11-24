@@ -35,7 +35,16 @@ const Auth = {
                 setTimeout(() => {
                     this.closeAuthModal();
                     this.updateUIForLoggedInUser();
+                    if (typeof updateAuthWarningBar === 'function') {
+                        updateAuthWarningBar();
+                    }
+                    
+                    // به Alpine خبر بده که کاربر لاگین شده
+                    window.dispatchEvent(new CustomEvent('user-logged-in'));
+                    
                     window.location.href = '/';
+                    // رفرش کامل با پاک کردن کش (Ctrl+F5)
+                    window.location.reload(true);
                 }, 1500);
                 
                 // اگر نیاز به احراز هویت تکمیلی دارد
@@ -64,6 +73,7 @@ const Auth = {
                 // ذخیره اطلاعات کاربر
                 StorageManager.saveUserData(response.data.user);
                 
+                
                 // ذخیره پروفایل کاربر
                 StorageManager.saveUserProfile(response.data.profile);
                 
@@ -71,10 +81,21 @@ const Auth = {
                 this.showMessage('success', response.message);
                 
                 // بستن مودال و به‌روزرسانی UI
-                setTimeout(() => {
-                    this.closeAuthModal();
-                    this.updateUIForLoggedInUser();
-                }, 1500);
+// بستن مودال و به‌روزرسانی UI
+setTimeout(() => {
+    this.closeAuthModal();
+    this.updateUIForLoggedInUser();
+
+    if (typeof updateAuthWarningBar === 'function') {
+        updateAuthWarningBar();
+    }
+
+    // به Alpine خبر بده که کاربر لاگین شده
+    window.dispatchEvent(new CustomEvent('user-logged-in'));
+    
+    // رفرش کامل با پاک کردن کش (Ctrl+F5)
+    window.location.reload(true);
+}, 1500);
             }
         } catch (error) {
             this.showMessage('error', error.message);
@@ -267,6 +288,10 @@ showLogoutMessage() {
             this.updateUIForLoggedInUser();
         } else {
             this.updateUIForLoggedOutUser();
+        }
+
+        if (typeof updateAuthWarningBar === 'function') {
+            updateAuthWarningBar();
         }
 
         // event listener برای کلیک خارج از منو

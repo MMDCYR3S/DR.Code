@@ -450,7 +450,7 @@
             
 
             <div class=" pt-16 lg:pt-20  z-[1000000000]" id="auth-warning-bar" style="display: none;">
-                <div class="py-4 bg-red-300">
+                <div id="auth-warning-bar2" class="py-4 bg-red-300" style="display: none;">
                     <!-- 🆕 نوار هشدار احراز هویت -->
                     <div 
                         class=" bg-red-50 border-2 border-red-200 border-dashed rounded-xl mx-10 lg:mx-20 py-3 px-4 shadow-sm ">
@@ -1053,6 +1053,34 @@ document.getElementById('forgot-password-modal')?.addEventListener('click', func
 </script>
 
 <script>
+    async function updateAuthWarningBar() {
+        try {
+            const bar = document.getElementById('auth-warning-bar');
+            if (!bar) return;
+
+            // اگر لاگین نیست، نوار احراز هویت نمایش داده نشود
+            if (!StorageManager || !StorageManager.isLoggedIn || !StorageManager.isLoggedIn()) {
+                bar.style.display = 'none';
+                return;
+            }
+
+            // گرفتن پروفایل از API / localStorage
+            const profile = await StorageManager.getUserProfile();
+
+            // فرض: فیلد وضعیت احراز هویت در پروفایل auth_status است
+            const status = profile && (profile.auth_status || profile.authentication_status);
+
+            // اگر کاربر احراز نشده باشد (یا وضعیت مشخص نباشد)، نوار را نمایش بده
+            const isVerified = status === 'verified' || status === 'APPROVED' || status === 'approved';
+            bar.style.display = isVerified ? 'none' : 'block';
+
+        } catch (e) {
+            console.error('updateAuthWarningBar error:', e);
+        }
+    }
+</script>
+
+<script>
     function notificationWidget() {
         return {
             isOpen: false,
@@ -1081,6 +1109,21 @@ document.getElementById('forgot-password-modal')?.addEventListener('click', func
                         }, 60000);
                     }
                 }
+
+                // لیسنر برای لاگین از طریق auth.js
+                window.addEventListener('user-logged-in', async () => {
+                    this.isLoggedIn = true;
+                    const user = StorageManager.getUser();
+                    if (user && (user.is_superuser === true || user.is_staff === true || user.role === 'admin')) {
+                        this.isAdmin = true;
+                    } else {
+                        this.isAdmin = false;
+                    }
+
+                    if (!this.isAdmin) {
+                        await this.fetchNotifications();
+                    }
+                });
             },
 
             async fetchNotifications(silent = false) {
@@ -1244,18 +1287,28 @@ document.getElementById('forgot-password-modal')?.addEventListener('click', func
             try {
                 // دریافت پروفایل از localStorage
                 const profile = JSON.parse(localStorage.getItem('drcode_user_profile')).data
-                console.log(profile.auth_status)
+                alert(profile.auth_status)
+                
 
                 // if (profile.auth_status !==  'APPROVED' ) {
                 //     alert('salam')
                 // }
                 // بررسی auth_status
+                
                 if (profile.auth_status !== 'APPROVED') {
-                    const warningBar = document.getElementById('auth-warning-bar');
+                    let warningBar = document.getElementById('auth-warning-bar');
                     warningBar.style.display = 'block';
+                    let warningBar2 = document.getElementById('auth-warning-bar2');
+                    warningBar2.style.display = 'block';
                     if (warningBar) {
                         console.log('⚠️ Auth warning bar displayed');
                     }
+                }
+                if (profile.auth_status === 'APPROVED') {
+                    let warningBar2 = document.getElementById('auth-warning-bar2');
+                    warningBar2.style.display = 'none';
+                    warningBar2.classList.add('hidden');
+
                 }
             } catch (error) {
                 console.error('Error checking auth status:', error);
