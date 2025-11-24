@@ -1053,6 +1053,34 @@ document.getElementById('forgot-password-modal')?.addEventListener('click', func
 </script>
 
 <script>
+    async function updateAuthWarningBar() {
+        try {
+            const bar = document.getElementById('auth-warning-bar');
+            if (!bar) return;
+
+            // اگر لاگین نیست، نوار احراز هویت نمایش داده نشود
+            if (!StorageManager || !StorageManager.isLoggedIn || !StorageManager.isLoggedIn()) {
+                bar.style.display = 'none';
+                return;
+            }
+
+            // گرفتن پروفایل از API / localStorage
+            const profile = await StorageManager.getUserProfile();
+
+            // فرض: فیلد وضعیت احراز هویت در پروفایل auth_status است
+            const status = profile && (profile.auth_status || profile.authentication_status);
+
+            // اگر کاربر احراز نشده باشد (یا وضعیت مشخص نباشد)، نوار را نمایش بده
+            const isVerified = status === 'verified' || status === 'APPROVED' || status === 'approved';
+            bar.style.display = isVerified ? 'none' : 'block';
+
+        } catch (e) {
+            console.error('updateAuthWarningBar error:', e);
+        }
+    }
+</script>
+
+<script>
     function notificationWidget() {
         return {
             isOpen: false,

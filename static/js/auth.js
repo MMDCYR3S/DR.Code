@@ -35,7 +35,11 @@ const Auth = {
                 setTimeout(() => {
                     this.closeAuthModal();
                     this.updateUIForLoggedInUser();
+                    if (typeof updateAuthWarningBar === 'function') {
+                        updateAuthWarningBar();
+                    }
                     window.location.href = '/';
+                    window.location.reload();
                 }, 1500);
                 
                 // اگر نیاز به احراز هویت تکمیلی دارد
@@ -71,10 +75,18 @@ const Auth = {
                 this.showMessage('success', response.message);
                 
                 // بستن مودال و به‌روزرسانی UI
-                setTimeout(() => {
-                    this.closeAuthModal();
-                    this.updateUIForLoggedInUser();
-                }, 1500);
+// بستن مودال و به‌روزرسانی UI
+setTimeout(() => {
+    this.closeAuthModal();
+    this.updateUIForLoggedInUser();
+
+    if (typeof updateAuthWarningBar === 'function') {
+        updateAuthWarningBar();
+    }
+
+    window.location.href = '/';
+    window.location.reload();
+}, 1500);
             }
         } catch (error) {
             this.showMessage('error', error.message);
@@ -267,6 +279,10 @@ showLogoutMessage() {
             this.updateUIForLoggedInUser();
         } else {
             this.updateUIForLoggedOutUser();
+        }
+
+        if (typeof updateAuthWarningBar === 'function') {
+            updateAuthWarningBar();
         }
 
         // event listener برای کلیک خارج از منو
