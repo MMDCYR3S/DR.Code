@@ -450,7 +450,7 @@
             
 
             <div class=" pt-16 lg:pt-20  z-[1000000000]" id="auth-warning-bar" style="display: none;">
-                <div class="py-4 bg-red-300">
+                <div id="auth-warning-bar2" class="py-4 bg-red-300">
                     <!-- 🆕 نوار هشدار احراز هویت -->
                     <div 
                         class=" bg-red-50 border-2 border-red-200 border-dashed rounded-xl mx-10 lg:mx-20 py-3 px-4 shadow-sm ">
@@ -1272,18 +1272,28 @@ document.getElementById('forgot-password-modal')?.addEventListener('click', func
             try {
                 // دریافت پروفایل از localStorage
                 const profile = JSON.parse(localStorage.getItem('drcode_user_profile')).data
-                console.log(profile.auth_status)
+                alert(profile.auth_status)
+                
 
                 // if (profile.auth_status !==  'APPROVED' ) {
                 //     alert('salam')
                 // }
                 // بررسی auth_status
+                
                 if (profile.auth_status !== 'APPROVED') {
-                    const warningBar = document.getElementById('auth-warning-bar');
+                    let warningBar = document.getElementById('auth-warning-bar');
                     warningBar.style.display = 'block';
+                    let warningBar2 = document.getElementById('auth-warning-bar2');
+                    warningBar2.style.display = 'block';
                     if (warningBar) {
                         console.log('⚠️ Auth warning bar displayed');
                     }
+                }
+                if (profile.auth_status === 'APPROVED') {
+                    let warningBar2 = document.getElementById('auth-warning-bar2');
+                    warningBar2.style.display = 'none';
+                    warningBar2.classList.add('hidden');
+
                 }
             } catch (error) {
                 console.error('Error checking auth status:', error);
