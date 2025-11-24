@@ -68,6 +68,7 @@ class User(AbstractUser):
         max_length=11,
         unique=True
     )
+    is_phone_verified = models.BooleanField('تایید شماره تلفن', default=False)
     
     # تاریخ ثبت‌نام
     date_joined = models.DateTimeField('تاریخ ثبت‌نام', default=timezone.now)

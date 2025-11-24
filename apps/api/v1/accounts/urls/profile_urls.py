@@ -20,5 +20,9 @@ urlpatterns = [
         views.QuestionListAPIView.as_view(), 
         name='questions-prescriptions-list'
     ),
-    
+    path(
+        'verify-phone/', 
+        views.PhoneVerificationView.as_view(), 
+        name='verify-phone'
+    ),
 ]
