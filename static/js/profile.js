@@ -4,6 +4,7 @@ console.log('👤 Profile.js loading...');
 const profileApp = {
     profileData: null,
     profileUpdateData: null,
+    unreadNotificationsCount: 0,
     loading: true,
     error: null,
     editMode: false,
@@ -23,8 +24,27 @@ const profileApp = {
 
         console.log('✅ User is logged in, loading profile data...');
         await this.loadProfileData();
+        await Promise.all([
+            this.loadProfileData(),
+            this.fetchUnreadNotifications() // ✨ فراخوانی تابع جدید
+        ]);
     },
 
+
+    async fetchUnreadNotifications() {
+        try {
+            // فرض بر این است که API دریافت لیست نوتیفیکیشن‌ها، تعداد خوانده نشده را هم برمی‌گرداند
+            // مشابه کاری که در notificationWidget انجام دادید
+            const response = await API.notifications.getNotifications();
+            if (response.success && response.data) {
+                this.unreadNotificationsCount = response.data.unread_count || 0;
+            }
+        } catch (error) {
+            console.error('Error fetching notification count:', error);
+        }
+    },
+
+    
     async loadProfileData() {
         try {
             this.loading = true;
