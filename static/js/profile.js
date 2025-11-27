@@ -12,6 +12,13 @@ const profileApp = {
     resetPasswordEmail: '',
     passwordResetLoading: false,
 
+    // --- متغیرهای جدید برای تایید تلفن ---
+    showPhoneVerifyModal: false,
+    phoneVerifyCode: '',
+    phoneVerifyLoading: false,
+    phoneVerifyTimer: 0,
+    timerInterval: null,
+
     async init() {
         console.log('🟢 Profile app initializing...');
         
@@ -28,7 +35,147 @@ const profileApp = {
             this.loadProfileData(),
             this.fetchUnreadNotifications() // ✨ فراخوانی تابع جدید
         ]);
+
+// ✨ چک کردن هش URL برای باز کردن خودکار مودال (برای وقتی از نوار بالا کلیک میشه)
+        if (window.location.hash === '#verify-phone' && this.profileData && !this.profileData.is_phone_verified) {
+            this.openPhoneVerifyModal();
+            // حذف هش از URL تمیزتره
+            history.replaceState(null, null, ' ');
+        }
+
     },
+
+// --- توابع جدید ---
+
+    async openPhoneVerifyModal() {
+        this.showPhoneVerifyModal = true;
+        this.phoneVerifyCode = '';
+        // بلافاصله کد رو بفرست
+        await this.requestPhoneCode();
+    },
+
+    async requestPhoneCode() {
+        try {
+            this.phoneVerifyLoading = true;
+            
+            // درخواست GET برای دریافت/ارسال کد
+            // طبق مستندات: GET /api/v1/accounts/profile/verify-phone/
+            // این باید SMS رو تریگر کنه
+            const response = await fetch('/api/v1/accounts/profile/verify-phone/', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('drcode_access_token')}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                // شروع تایمر (مثلاً ۱۲۰ ثانیه)
+                this.startTimer(120);
+                
+                Swal.fire({
+                    icon: 'info',
+                    title: 'کد ارسال شد',
+                    text: 'کد تایید به شماره شما پیامک شد.',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
+            } else {
+                throw new Error('خطا در ارسال پیامک');
+            }
+
+        } catch (error) {
+            console.error(error);
+            Swal.fire({
+                icon: 'error',
+                title: 'خطا',
+                text: 'مشکلی در ارسال کد پیش آمد. لطفا دوباره تلاش کنید.'
+            });
+        } finally {
+            this.phoneVerifyLoading = false;
+        }
+    },
+
+    async submitPhoneVerify() {
+        try {
+            this.phoneVerifyLoading = true;
+
+            // درخواست POST برای تایید کد
+            const response = await fetch('/api/v1/accounts/profile/verify-phone/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('drcode_access_token')}`,
+                    'Content-Type': 'application/json',
+                    // اضافه کردن CSRF Token اگه جنگو نیاز داره (معمولاً تو هدر یا کوکی هست)
+                    'X-CSRFToken': this.getCookie('csrftoken') 
+                },
+                body: JSON.stringify({ code: this.phoneVerifyCode })
+            });
+
+            if (response.ok) {
+                // موفقیت
+                this.showPhoneVerifyModal = false;
+                await this.loadProfileData(); // ریلود کردن اطلاعات برای سبز شدن تیک
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'تایید شد!',
+                    text: 'شماره تلفن شما با موفقیت تایید شد.',
+                    confirmButtonText: 'باشه',
+                    confirmButtonColor: '#10b981'
+                });
+            } else {
+                const data = await response.json();
+                throw new Error(data.detail || 'کد وارد شده اشتباه است');
+            }
+
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطا',
+                text: error.message
+            });
+        } finally {
+            this.phoneVerifyLoading = false;
+        }
+    },
+
+    startTimer(seconds) {
+        this.phoneVerifyTimer = seconds;
+        if (this.timerInterval) clearInterval(this.timerInterval);
+        
+        this.timerInterval = setInterval(() => {
+            if (this.phoneVerifyTimer > 0) {
+                this.phoneVerifyTimer--;
+            } else {
+                clearInterval(this.timerInterval);
+            }
+        }, 1000);
+    },
+
+    formatTimer(seconds) {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m}:${s < 10 ? '0' : ''}${s}`;
+    },
+
+    getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    },
+
 
 
     async fetchUnreadNotifications() {

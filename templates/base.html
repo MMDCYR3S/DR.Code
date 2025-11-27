@@ -431,6 +431,27 @@
                 </div>
             </div>
 
+<div class=" z-[1000000000]" id="phone-warning-bar" style="display: none;">
+    <div class="py-4 bg-yellow-300">
+        <div class="bg-yellow-50 border-2 border-yellow-200 border-dashed rounded-xl mx-10 lg:mx-20 py-3 px-4 shadow-sm">
+            <div class="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="flex items-center gap-2 text-yellow-800">
+                    <i class="fas fa-mobile-alt text-lg"></i>
+                    <span class="text-sm sm:text-base font-medium">
+                        شماره تلفن شما هنوز تایید نشده است. برای استفاده از امکانات سایت، لطفا آن را تایید کنید.
+                    </span>
+                </div>
+                <a href="/profile/#verify-phone"
+                   class="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2">
+                    <i class="fas fa-check"></i>
+                    <span>تایید کنید</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 
             {% endblock header %}
         </header>
@@ -1268,8 +1289,60 @@ document.getElementById('forgot-password-modal')?.addEventListener('click', func
             }
         }
 
+// این تابع فقط مخصوص چک کردن وضعیت شماره تلفن است
+    function checkPhoneVerification() {
+        try {
+            // 1. دریافت پروفایل از localStorage
+            const profileStr = localStorage.getItem('drcode_user_profile');
+            if (!profileStr) return; // اگر کاربری لاگین نیست، کاری نکن
+
+            // 2. پارس کردن دیتا (هندل کردن فرمت‌های مختلف)
+            let profile = JSON.parse(profileStr);
+            if (profile.data) profile = profile.data; // گاهی اوقات دیتا داخل یک آبجکت data است
+
+            // 3. چک کردن فیلد تایید تلفن
+            // نکته: اگر فیلد is_phone_verified هنوز در localStorage ست نشده باشد (undefined)،
+            // ما فرض می‌کنیم تایید نشده (یا برعکس، بسته به سیاست شما. اینجا فرض بر عدم تاییده برای امنیت)
+            const isVerified = profile.is_phone_verified === true; 
+
+            // 4. مدیریت نمایش نوار زرد
+            const phoneBar = document.getElementById('phone-warning-bar');
+            if (!phoneBar) return;
+
+            if (!isVerified) {
+                // اگر تایید نشده، نوار را نشان بده
+                phoneBar.style.display = 'block';
+                
+                // جلوگیری از روی هم افتادن با نوار احراز هویت (Auth Bar)
+                const authBar = document.getElementById('auth-warning-bar');
+                if (authBar && authBar.style.display !== 'none') {
+                    // اگر نوار قرمز (احراز هویت) باز است، پدینگ نوار زرد را بردار تا درست زیر آن بچسبد
+                    phoneBar.classList.remove('pt-16', 'lg:pt-20');
+                } else {
+                    // اگر نوار قرمز بسته است، پدینگ را نگه دار تا زیر هدر نرود
+                    phoneBar.classList.add('pt-16', 'lg:pt-20');
+                }
+            } else {
+                // اگر تایید شده، مخفی کن
+                phoneBar.style.display = 'none';
+            }
+
+        } catch (error) {
+            console.error('Error checking phone verification:', error);
+        }
+    }
+
+    // اجرا هنگام لود صفحه
+    document.addEventListener('DOMContentLoaded', () => {
+        // کمی تاخیر می‌دهیم تا مطمئن شویم نوار احراز هویت (Auth Bar) وضعیتش مشخص شده
+        setTimeout(checkPhoneVerification, 100);
+    });
+
+
         // اجرای چک بعد از لود کامل
         checkAuthWarning();
+         checkPhoneVerification() 
+        
     });
 </script>
 
