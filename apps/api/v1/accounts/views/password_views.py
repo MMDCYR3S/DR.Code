@@ -6,6 +6,7 @@ from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.core.exceptions import ValidationError
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from drf_spectacular.views import extend_schema
 
 from ..serializers import (
     PasswordResetRequestSerializer,
@@ -17,6 +18,7 @@ from apps.accounts.services.password_service import send_password_reset_sms
 User = get_user_model()
 
 # ============= PASSWORD RESET REQUEST ============= #
+@extend_schema(tags=['Accounts-Password'])
 class PasswordResetRequestAPIView(generics.GenericAPIView):
     """
     API برای درخواست لینک بازنشانی رمز عبور.
@@ -47,6 +49,7 @@ class PasswordResetRequestAPIView(generics.GenericAPIView):
         )
 
 # ============= PASSWORD RESET CONFIRM ============= #
+@extend_schema(tags=['Accounts-Password'])
 class PasswordResetConfirmAPIView(generics.GenericAPIView):
     """
     API برای تایید بازنشانی رمز عبور.
@@ -88,6 +91,7 @@ class PasswordResetConfirmAPIView(generics.GenericAPIView):
 # ================================================== #
 # ======= PASSWORD RESET REQUEST (SMS) VIEW ====== #
 # ================================================== #
+@extend_schema(tags=['Accounts-Password'])
 class PasswordResetByPhoneRequestAPIView(generics.GenericAPIView):
     """
     API درخواست لینک بازنشانی رمز عبور از طریق پیامک.

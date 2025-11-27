@@ -1,105 +1,63 @@
 import requests
-from typing import Optional
+import logging
+from typing import Optional, List
+
+# فراخوانی لاگر اختصاصی که در تنظیمات ساختیم
+logger = logging.getLogger('user_verification')
 
 class AmootSMSService:
     # ===== Constants ===== #
     BASE_URL = "https://portal.amootsms.com/rest/SendSimple"
     URL_SIMPLE = "https://portal.amootsms.com/rest/SendSimple"
-    URL_QUICK_OTP = "https://portal.amootsms.com/rest/SendQuickOTP"
-
+    
+    # *** آدرس صحیح پترن ***
+    URL_PATTERN = "https://portal.amootsms.com/rest/SendWithPattern" 
+    
     def __init__(self, token: str = "4A9869096131EA46E7A41BDCD99B2ADC560193B2", line_number: str = "public"):
         self.token = token
         self.line_number = line_number
-
-    def send_verification_code(self, mobile: str = "", message_text: str = ""):
-        """
-        ارسال پیامک با متن دلخواه (متد قدیمی‌تر SendSimple)
-        """
-        # ===== Payload Configuration ===== #
-        payload = {
-            "Token": self.token,
-            "SMSMessageText": message_text,
-            "Mobiles": mobile,
-            "LineNumber": self.line_number,
-            "SendDateTime": ""
-        }
-
-        headers = {"Content-Type": "application/x-www-form-urlencoded"}
-
-        # ===== Debug Logging ===== #
-        print("\n" + "="*20 + " DEBUG: SendSimple " + "="*20)
-        print(f"Sending to: {mobile}")
         
-        try:
-            response = requests.post(self.BASE_URL, data=payload, headers=headers)
-            
-            print(f"Status Code: {response.status_code}")
-            print(f"Response: {response.text}")
-            print("="*60 + "\n")
-
-            return response.text
-
-        except Exception as e:
-            print(f"Error: {e}")
-            return None
-            
-    def send_quick_otp(self, mobile: str, code_length: int = 6, optional_code: str = "") -> Optional[str]:
+    def send_with_pattern(self, mobile: str, pattern_code: int, values: List[str]) -> bool:
         """
-        ارسال کد تایید سریع و بهینه (SendQuickOTP)
+        ارسال پیامک با الگوی خاص به همراه لاگ دقیق
         """
-        # ===== Authorization Headers ===== #
         headers = {"Authorization": self.token}
+        
+        # تبدیل لیست به رشته
+        values_str = ",".join(str(v) for v in values)
 
         data = {
             "Mobile": mobile,
-            "CodeLength": str(code_length),
-            "OptionalCode": optional_code
+            "PatternCodeID": pattern_code,
+            "PatternValues": values_str
         }
 
-        print(f"DEBUG: Sending QuickOTP to {mobile} with Code: {optional_code}")
+        # لاگ قبل از ارسال (برای دیدن دیتای خروجی)
+        logger.info(f"--- [AMOOT SEND START] ---")
+        logger.info(f"Target: {mobile} | Pattern: {pattern_code} | Values: {values_str}")
 
         try:
-            response = requests.post(self.URL_QUICK_OTP, data=data, headers=headers)
+            response = requests.post(self.URL_PATTERN, data=data, headers=headers, timeout=10)
             
-            print(f"QuickOTP Response Status: {response.status_code}")
-            print(f"QuickOTP Response Body: {response.text}")
+            # لاگ پاسخ دریافت شده (بسیار مهم برای دیباگ)
+            logger.info(f"Amoot Response Status: {response.status_code}")
+            logger.info(f"Amoot Response Body: {response.text}")
 
             if response.status_code == 200:
-                return response.text
-            return None
+                # گاهی اوقات استاتوس 200 است اما در متن بادی خطا وجود دارد
+                # آموت معمولاً در صورت موفقیت آبجکت جیسون برمی‌گرداند
+                logger.info("--- [AMOOT SEND SUCCESS] ---")
+                return True
+            
+            logger.error(f"--- [AMOOT SEND FAILED] Status: {response.status_code}")
+            return False
 
+        except requests.exceptions.RequestException as e:
+            # خطاهای شبکه (تایم‌اوت، قطعی اینترنت و ...)
+            logger.error(f"Network Error in Amoot Service: {str(e)}")
+            return False
+            
         except Exception as e:
-            print(f"QuickOTP Service Error: {str(e)}")
-            return None
-
-    def send_message(self, mobile: str, message_text: str) -> Optional[str]:
-        """
-        ارسال پیامک اطلاع‌رسانی با متن دلخواه (SendSimple)
-        """
-        # ===== Payload Setup ===== #
-        payload = {
-            "Token": self.token,
-            "SMSMessageText": message_text,
-            "Mobiles": mobile,
-            "LineNumber": self.line_number,
-            "SendDateTime": ""
-        }
-
-        headers = {"Content-Type": "application/x-www-form-urlencoded"}
-
-        print(f"DEBUG: Sending Custom Message to {mobile}")
-
-        try:
-            response = requests.post(self.URL_SIMPLE, data=payload, headers=headers)
-            
-            print(f"SendSimple Status: {response.status_code}")
-            
-            if response.status_code == 200:
-                return response.text
-            
-            print(f"SendSimple Failed Response: {response.text}")
-            return None
-
-        except Exception as e:
-            print(f"SendSimple Error: {str(e)}")
-            return None
+            # خطاهای کلی پایتون
+            logger.error(f"General Error in Amoot Service: {str(e)}")
+            return False

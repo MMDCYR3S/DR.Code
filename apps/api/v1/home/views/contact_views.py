@@ -1,11 +1,11 @@
+import logging
+
 from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 from django.utils import timezone
 from django.db import transaction
-
-import logging
+from drf_spectacular.views import extend_schema
 
 from .base_views import BaseAPIView
 from apps.home.models import Contact
@@ -14,6 +14,7 @@ from ..serializers import ContactListSerializer, ContactSerializer
 logger = logging.getLogger(__name__)
 
 # =========== CONTACT VIEW =========== #
+@extend_schema(tags=['Contact'])
 class ContactView(BaseAPIView):
     """
     ارسال پیام تماس با ما
@@ -87,6 +88,7 @@ class ContactView(BaseAPIView):
             logger.error(f"خطا در اطلاع‌رسانی به ادمین‌ها: {str(e)}")
 
 # ========= CONTACT INFO VIEW  ========= #
+@extend_schema(tags=['Contact'])
 class ContactInfoView(BaseAPIView):
     """
     دریافت اطلاعات تماس و راهنمایی

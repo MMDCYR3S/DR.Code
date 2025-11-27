@@ -1,9 +1,8 @@
 from rest_framework import generics, permissions
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework.filters import OrderingFilter
-
 from django_filters.rest_framework import DjangoFilterBackend
-
+from drf_spectacular.views import extend_schema
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django.db.models import Prefetch
@@ -14,6 +13,8 @@ from .filters import PrescriptionFilter
 from .pagination import PrescriptionPagination
 
 # ========= PRESCRIPTION LIST VIEW ========== #
+
+@extend_schema(tags=['Prescriptions'])
 class PrescriptionListView(generics.ListAPIView):
     """
     لیست نسخه‌ها با قابلیت جستجو، فیلتر و صفحه‌بندی

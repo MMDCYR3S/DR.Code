@@ -1,16 +1,15 @@
 from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
 from django.views.decorators.vary import vary_on_headers
-
 from rest_framework import generics, filters, permissions
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
-
+from drf_spectacular.views import extend_schema
 from django_filters.rest_framework import DjangoFilterBackend
 
 from apps.subscriptions.models import Plan
 from .sub_serializers import PlanPublicSerializer
 
 # ========== PUBLIC PLAN LIST VIEW ========== #
+@extend_schema(tags=['Plans'])
 class PublicPlanListView(generics.ListAPIView):
     """
     API برای نمایش لیست پلن‌های فعال در صفحات عمومی

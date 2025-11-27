@@ -1,8 +1,9 @@
+from datetime import timedelta
+
 from rest_framework import status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import serializers
-
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken, UntypedToken, AccessToken
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
@@ -11,8 +12,7 @@ from django.contrib.auth import login, logout
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils import timezone
-
-from datetime import timedelta
+from drf_spectacular.views import extend_schema
 
 from ..serializers import LoginSerializer, RefreshTokenSerializer
 
@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 # ================================ #
 # ========== LOGIN VIEW ========== #
 # ================================ #
+@extend_schema(tags=['Accounts'])
 class LoginView(BaseAPIView):
     """
     ورود کاربر به سیستم
@@ -120,6 +121,7 @@ class LoginView(BaseAPIView):
 # ====================================== #
 # ============ LOGOUT VIEW ============ # 
 # ====================================== #
+@extend_schema(tags=['Accounts'])
 class LogoutView(BaseAPIView):
     """
     خروج کاربر از سیستم
@@ -163,6 +165,7 @@ class LogoutView(BaseAPIView):
 # ===================================================== #
 # ============ REFRESH ACCESS TOKEN VIEW ============ #
 # ===================================================== #
+@extend_schema(tags=['Accounts'])
 class RefreshAccessTokenView(TokenRefreshView, BaseAPIView):
     """
     بازسازی Access Token با استفاده از Refresh Token
@@ -215,6 +218,7 @@ class RefreshAccessTokenView(TokenRefreshView, BaseAPIView):
 # ============================================= #
 # ============ FORCE LOGOUT VIEW ============ #
 # ============================================= #
+@extend_schema(tags=['Accounts'])
 class ForceLogoutView(BaseAPIView):
     """
     خروج اجباری از تمام دستگاه‌ها
@@ -255,6 +259,7 @@ class ForceLogoutView(BaseAPIView):
 # ============================================ #
 # ============ LOGIN STATUS VIEW ============ #
 # ============================================ #
+@extend_schema(tags=['Accounts'])
 class LoginStatusView(BaseAPIView):
     """
     بررسی وضعیت ورود کاربر

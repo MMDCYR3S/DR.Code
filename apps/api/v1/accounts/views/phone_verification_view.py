@@ -1,67 +1,81 @@
 import random
+import logging
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from django.core.cache import cache
+from drf_spectacular.views import extend_schema
+
+# ===== Local Services ===== #
 
 from apps.accounts.services import AmootSMSService
 from ..serializers import PhoneVerificationSerializer
 
+# فراخوانی همان لاگر
+logger = logging.getLogger('user_verification')
+
+@extend_schema(tags=['Accounts-Phone'])
 class PhoneVerificationView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = PhoneVerificationSerializer
 
+    AMOOT_PATTERN_CODE = "4311"  # بهتر است استرینگ باشد یا مطمئن شوید سرویس int میپذیرد
+
     def get(self, request):
         user = request.user
-        print(f"DEBUG: User {user.phone_number} requested OTP via QuickOTP.")
+        
+        logger.info(f"Verify Request received for User: {user.phone_number} (ID: {user.id})")
 
-        if user.is_phone_verified:
+        if getattr(user, 'is_phone_verified', False):
+            logger.warning(f"User {user.id} is already verified.")
             return Response(
-                {"message": "Your phone is already verified."}, # پیام انگلیسی برای جلوگیری از ارور اسکی در لاگ‌های خاص
+                {"message": "حساب کاربری شما قبلاً تایید شده است."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # تولید کد ۵ رقمی
-        otp_code = str(random.randint(10000, 99999))
+        code = str(random.randint(10000, 99999))
         
-        # ذخیره در کش
         cache_key = f"phone_verification_{user.id}"
-        cache.set(cache_key, otp_code, timeout=120)
+        cache.set(cache_key, code, timeout=120)
+        
+        # لاگ کردن کد ساخته شده (فقط در محیط توسعه استفاده شود، در پروداکشن بهتر است لاگ نشود)
+        logger.info(f"Generated OTP for {user.phone_number}: {code}")
+
+        user_name = user.first_name if user.first_name else "گرامی"
+        pattern_values = [user_name, code]
 
         try:
-            service = AmootSMSService() 
+            service = AmootSMSService()
             mobile_number = str(user.phone_number)
             
-            # === استفاده از متد جدید SendQuickOTP ===
-            result = service.send_quick_otp(
+            success = service.send_with_pattern(
                 mobile=mobile_number,
-                code_length=5,          # طول کد (جهت اطمینان)
-                optional_code=otp_code  # کد تولید شده توسط ما
+                pattern_code=self.AMOOT_PATTERN_CODE,
+                values=pattern_values
             )
             
-            if result:
-                # معمولا اگر موفق باشد جیسون یا پیامی برمی‌گرداند
+            if success:
                 return Response(
-                    {"message": "کد اعتبارسنجی ارسال شد."}, 
+                    {"message": "کد تایید با موفقیت ارسال شد."}, 
                     status=status.HTTP_200_OK
                 )
             else:
+                # اینجا لاگ نمی‌کنیم چون خود سرویس با جزئیات لاگ کرده است
                 return Response(
-                    {"message": "خطا در سرویس پیامک (QuickOTP)."}, 
+                    {"message": "خطا در ارسال پیامک. لطفاً دقایقی دیگر تلاش کنید."}, 
                     status=status.HTTP_503_SERVICE_UNAVAILABLE
                 )
                 
         except Exception as e:
-            print(f"CRITICAL ERROR: {repr(e)}")
+            # لاگ کردن خطای پیش‌بینی نشده در ویو
+            logger.error(f"Unexpected Error in View: {str(e)}", exc_info=True)
             return Response(
                 {"message": "خطای داخلی سرور."}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
     def post(self, request):
-        # متد POST بدون تغییر باقی می‌ماند
         serializer = self.serializer_class(data=request.data)
-        
         if serializer.is_valid():
             input_code = serializer.validated_data['code']
             user = request.user
@@ -74,13 +88,16 @@ class PhoneVerificationView(GenericAPIView):
                 user.save()
                 cache.delete(cache_key)
                 
+                logger.info(f"User {user.id} verified successfully.")
+                
                 return Response(
-                    {"message": "شماره تلفن تایید شد."}, 
+                    {"message": "شماره موبایل شما با موفقیت تایید شد."}, 
                     status=status.HTTP_200_OK
                 )
             else:
+                logger.warning(f"Failed verification attempt for User {user.id}. Input: {input_code}, Cached: {cached_otp}")
                 return Response(
-                    {"message": "کد نامعتبر است."}, 
+                    {"message": "کد وارد شده نامعتبر یا منقضی شده است."}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
         

@@ -13,6 +13,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
+from drf_spectacular.views import extend_schema
 
 from apps.accounts.models import Profile, AuthStatusChoices
 from ..serializers import ProfileSerializer, UpdateProfileSerializer
@@ -23,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 # ============ PROFILE VIEWS ============ #
+@extend_schema(tags=['Profile'])
 class ProfileView(RetrieveAPIView, BaseAPIView):
     """
     نمایش اطلاعات پروفایل کاربر
@@ -48,6 +50,7 @@ class ProfileView(RetrieveAPIView, BaseAPIView):
             return self.handle_exception(e)
 
 # ============= UPDATE PROFILE VIEWS ============= #
+@extend_schema(tags=['Profile'])
 class UpdateProfileView(BaseAPIView):
     """
     بروزرسانی اطلاعات پایه پروفایل

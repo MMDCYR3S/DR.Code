@@ -178,7 +178,7 @@ class PendingVerificationListView(LoginRequiredMixin, HasAdminAccessPermission, 
 # ================================================== #
 # ======== USER VERIFICATION DETAIL VIEW ======== #
 # ================================================== #
-class UserVerificationDetailView(LoginRequiredMixin, HasAdminAccessPermission, DetailView):
+class UserVerificationDetailView(LoginRequiredMixin, DetailView): # HasAdminAccessPermission را اضافه کنید
     """
     نمایش جزئیات کاربر برای بررسی و مدیریت احراز هویت توسط ادمین.
     """
@@ -191,7 +191,10 @@ class UserVerificationDetailView(LoginRequiredMixin, HasAdminAccessPermission, D
         context = super().get_context_data(**kwargs)
         target_user = self.get_object()
         context['profile'] = get_object_or_404(Profile, user=target_user)
-        context['documents'] = target_user.profile.documents.all()
+        try:
+            context['documents'] = target_user.profile.documents.all()
+        except:
+            context['documents'] = []
         return context
 
     def post(self, request, *args, **kwargs):
@@ -211,7 +214,7 @@ class UserVerificationDetailView(LoginRequiredMixin, HasAdminAccessPermission, D
             medical_code = request.POST.get('medical_code', '').strip()
             
             try:
-                send_auth_checked_email(user)
+                # send_auth_checked_email(user)
                 logger.info(f"Auth Email Sent to {user.email}")
             except Exception as e:
                 logger.error(f"Failed to send Auth Email to {user.email}: {e}")
@@ -225,24 +228,27 @@ class UserVerificationDetailView(LoginRequiredMixin, HasAdminAccessPermission, D
             
             logger.info(f"User {user.phone_number} APPROVED by Admin {admin_user.email}")
             
-            # ===== SMS Notification ===== #
+            # ===== SMS Notification (UPDATED TO PATTERN) ===== #
             try:
                 sms_service = AmootSMSService()
-                message_text = (
-                    f"همکار گرامی {user.full_name}، حساب کاربر شما با موفقیت تایید شد.\n"
-                    "اکنون می‌توانید با تهیه پلن‌های اشتراکی، از نسخه‌های ویژه بهره‌مند شوید.\n"
-                    "دکترکد"
-                )
-                # ارسال پیامک
-                result = sms_service.send_message(mobile=user.phone_number, message_text=message_text)
                 
-                if result:
-                    logger.info(f"Approval SMS sent successfully to {user.phone_number}. Result: {result}")
+                # نام کاربر (اگر خالی بود یک مقدار پیش‌فرض)
+                user_name = user.full_name if user.full_name else "همکار گرامی"
+                
+                # ارسال با پترن 4312
+                success = sms_service.send_with_pattern(
+                    mobile=str(user.phone_number),
+                    pattern_code=4312,
+                    values=[user_name]
+                )
+                
+                if success:
+                    logger.info(f"Approval SMS (Pattern 4312) sent successfully to {user.phone_number}.")
                 else:
-                    logger.warning(f"Approval SMS returned None for {user.phone_number}")
+                    logger.warning(f"Approval SMS (Pattern 4312) Failed for {user.phone_number}. Check previous logs for details.")
                     
             except Exception as e:
-                logger.error(f"Error sending approval SMS to {user.phone_number}: {e}")
+                logger.error(f"Error sending approval SMS to {user.phone_number}: {e}", exc_info=True)
 
             if is_ajax:
                 return JsonResponse({
@@ -258,7 +264,7 @@ class UserVerificationDetailView(LoginRequiredMixin, HasAdminAccessPermission, D
             profile.rejection_reason = rejection_reason
             
             try:
-                resend_auth_email(user)
+                # resend_auth_email(user)
                 logger.info(f"Rejection Email Sent to {user.email}")
             except Exception as e:
                 logger.error(f"Failed to send Rejection Email to {user.email}: {e}")

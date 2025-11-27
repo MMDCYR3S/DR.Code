@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from drf_spectacular.views import extend_schema
 
 from apps.payment.models import Payment, PaymentStatus, PaymentGateway
 from apps.subscriptions.models import Subscription, SubscriptionStatusChoicesModel, Plan
@@ -66,6 +67,7 @@ def prepare_cached_payment_data(cached_data, plan_id, user):
 
 
 # ======= PARSPAL PAYMENT REQUEST VIEW ======= #
+@extend_schema(tags=['Payment'])
 class ParspalPaymentRequestView(CreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = PaymentCreateSerializer
@@ -159,6 +161,7 @@ class ParspalPaymentRequestView(CreateAPIView):
 
 
 # ======= PARSPAL CALLBACK VIEW (دریافت POST از پارس‌پال) ======= #
+@extend_schema(tags=['Payment'])
 @method_decorator(csrf_exempt, name='dispatch')
 class ParspalCallbackView(APIView):
     """
@@ -201,6 +204,7 @@ class ParspalCallbackView(APIView):
 
 
 # ======= PARSPAL VERIFY VIEW (اصلاح شده با چک کردن وضعیت قبلی) ======= #
+@extend_schema(tags=['Payment'])
 class ParspalVerifyView(APIView):
     """تأیید پرداخت با استفاده از داده‌های callback"""
     permission_classes = [IsAuthenticated]
@@ -433,6 +437,7 @@ class ParspalVerifyView(APIView):
             }, status=status.HTTP_502_BAD_GATEWAY)
 
 # ======= PARSPAL INQUIRY VIEW ======= #
+@extend_schema(tags=['Payment'])
 class ParspalInquiryView(APIView):
     """استعلام وضعیت تراکنش"""
     permission_classes = [IsAuthenticated]

@@ -1,12 +1,14 @@
 from rest_framework.generics import ListAPIView
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.permissions import IsAuthenticated
+from drf_spectacular.views import extend_schema
 
 from apps.accounts.permissions import IsTokenJtiActive, HasActiveSubscription
 from apps.questions.models import Question
 from ..serializers import QuestionListSerializer
 
 # ========= Question List API View ========= #
+@extend_schema(tags=['Profile'])
 class QuestionListAPIView(ListAPIView):
     """ نمایش لیست سوالاتی که کاربر پرسیده است. """
     
