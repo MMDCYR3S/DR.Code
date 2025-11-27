@@ -1,3 +1,5 @@
+import re
+
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
@@ -61,3 +63,19 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError({"password_confirm": "رمز عبور و تکرار آن باید یکسان باشند."})
         return super().validate(attrs)
+        
+# ================================================== #
+# ====== PASSWORD RESET BY PHONE SERIALIZER ====== #
+# ================================================== #
+class PasswordResetByPhoneRequestSerializer(serializers.Serializer):
+    """
+    سریالایزر برای درخواست بازنشانی رمز عبور از طریق پیامک.
+    """
+    phone_number = serializers.CharField(
+        max_length=15,
+        required=True,
+        error_messages={
+            "required": "شماره موبایل الزامی است.",
+            "blank": "شماره موبایل نمی‌تواند خالی باشد."
+        }
+    )

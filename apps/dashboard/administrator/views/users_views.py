@@ -1,25 +1,28 @@
+import logging
+import jdatetime
+from django.utils import timezone
 from django.views.generic import ListView, View, DetailView
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
-from django.shortcuts import get_object_or_404, redirect
-from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, redirect, render
+from django.http import JsonResponse, HttpResponse
 from django.db import transaction
 from django.contrib import messages
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill
 
+# ===== Local Imports ===== #
 from apps.accounts.permissions import IsTokenJtiActive, HasAdminAccessPermission
 from apps.accounts.models import Profile, AuthStatusChoices
 from ..forms import UserSearchForm, UserEditForm, ProfileEditForm, AddUserForm
 from ..services.email_service import resend_auth_email, send_auth_checked_email
-
-import jdatetime
-from django.http import HttpResponse
-from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment, PatternFill
-from django.utils import timezone
+from apps.accounts.services import AmootSMSService
 
 User = get_user_model()
+
+# تنظیم لاگر اختصاصی که در settings تعریف کردیم
+logger = logging.getLogger('user_verification')
 
 # ================================================== #
 # ============= ADMIN USERS LIST VIEW ============= #
@@ -72,7 +75,9 @@ class AdminUsersListView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPer
             'total_users': User.objects.count(),
             'premium_users': Profile.objects.filter(role='premium').count(),
             'pending_verification': Profile.objects.filter(
-                auth_status='PENDING'
+                role="visitor",
+                auth_status=AuthStatusChoices.PENDING.value,
+                documents__isnull=False
             ).count(),
             'approved_users': Profile.objects.filter(
                 auth_status='APPROVED'
@@ -101,7 +106,7 @@ def get_jalali_date(date_obj):
 # ======== USER UPDATE VIEW ======== #
 # ================================================== #
 class UserUpdateView(LoginRequiredMixin, HasAdminAccessPermission, View):
-    """ ویو برای دریافت اطلاعات و ویرایش کاربر (اصلاح شده) """
+    """ ویو برای دریافت اطلاعات و ویرایش کاربر """
     
     def get(self, request, pk):
         """ اطلاعات کاربر را برای نمایش در مودال به صورت JSON برمی‌گرداند """
@@ -163,7 +168,6 @@ class PendingVerificationListView(LoginRequiredMixin, HasAdminAccessPermission, 
     def get_queryset(self):
         """
         فقط کاربرانی را برمی‌گرداند که وضعیت پروفایل آن‌ها 'PENDING' است.
-        کاربران به ترتیب تاریخ ثبت‌نام (قدیمی‌ترین در ابتدا) مرتب می‌شوند.
         """
         queryset = User.objects.select_related('profile').filter(
             profile__auth_status=AuthStatusChoices.PENDING.value,
@@ -177,7 +181,6 @@ class PendingVerificationListView(LoginRequiredMixin, HasAdminAccessPermission, 
 class UserVerificationDetailView(LoginRequiredMixin, HasAdminAccessPermission, DetailView):
     """
     نمایش جزئیات کاربر برای بررسی و مدیریت احراز هویت توسط ادمین.
-    این ویو هم اطلاعات را نمایش می‌دهد (GET) و هم عملیات تایید/رد را پردازش می‌کند (POST).
     """
     model = User
     template_name = 'dashboard/users/user-detail.html'
@@ -194,14 +197,25 @@ class UserVerificationDetailView(LoginRequiredMixin, HasAdminAccessPermission, D
     def post(self, request, *args, **kwargs):
         """ مدیریت درخواست‌های تایید یا رد هویت """
         user = self.get_object()
+        admin_user = request.user
         
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         profile = user.profile
         action = request.POST.get('action')
         
+        # ثبت لاگ شروع عملیات
+        logger.info(f"Verification Action Started | Admin: {admin_user.email} | Target: {user.phone_number} | Action: {action}")
+        
         if action == 'approve':
+            # ===== Approve Logic ===== #
             medical_code = request.POST.get('medical_code', '').strip()
-            send_auth_checked_email(user)
+            
+            try:
+                send_auth_checked_email(user)
+                logger.info(f"Auth Email Sent to {user.email}")
+            except Exception as e:
+                logger.error(f"Failed to send Auth Email to {user.email}: {e}")
+            
             profile.auth_status = AuthStatusChoices.APPROVED
             profile.role = 'regular'
             profile.rejection_reason = None
@@ -209,6 +223,27 @@ class UserVerificationDetailView(LoginRequiredMixin, HasAdminAccessPermission, D
                 profile.medical_code = medical_code
             profile.save()
             
+            logger.info(f"User {user.phone_number} APPROVED by Admin {admin_user.email}")
+            
+            # ===== SMS Notification ===== #
+            try:
+                sms_service = AmootSMSService()
+                message_text = (
+                    f"همکار گرامی {user.full_name}، حساب کاربر شما با موفقیت تایید شد.\n"
+                    "اکنون می‌توانید با تهیه پلن‌های اشتراکی، از نسخه‌های ویژه بهره‌مند شوید.\n"
+                    "دکترکد"
+                )
+                # ارسال پیامک
+                result = sms_service.send_message(mobile=user.phone_number, message_text=message_text)
+                
+                if result:
+                    logger.info(f"Approval SMS sent successfully to {user.phone_number}. Result: {result}")
+                else:
+                    logger.warning(f"Approval SMS returned None for {user.phone_number}")
+                    
+            except Exception as e:
+                logger.error(f"Error sending approval SMS to {user.phone_number}: {e}")
+
             if is_ajax:
                 return JsonResponse({
                     'success': True,
@@ -217,11 +252,20 @@ class UserVerificationDetailView(LoginRequiredMixin, HasAdminAccessPermission, D
                 })
                 
         elif action == 'reject':
+            # ===== Reject Logic ===== #
             rejection_reason = request.POST.get('rejection_reason', 'دلیل مشخصی ثبت نشده است.')
             profile.auth_status = AuthStatusChoices.REJECTED
             profile.rejection_reason = rejection_reason
-            resend_auth_email(user)
+            
+            try:
+                resend_auth_email(user)
+                logger.info(f"Rejection Email Sent to {user.email}")
+            except Exception as e:
+                logger.error(f"Failed to send Rejection Email to {user.email}: {e}")
+                
             profile.save()
+            
+            logger.info(f"User {user.phone_number} REJECTED by Admin {admin_user.email}. Reason: {rejection_reason}")
             
             if is_ajax:
                 return JsonResponse({
@@ -239,18 +283,16 @@ class AddUserView(LoginRequiredMixin, HasAdminAccessPermission, View):
     """ویو برای افزودن کاربر جدید"""
     
     def get(self, request):
-        """نمایش فرم افزودن کاربر"""
         form = AddUserForm()
         return render(request, 'dashboard/users/add_user.html', {'form': form})
     
     def post(self, request):
-        """افزودن کاربر جدید"""
         form = AddUserForm(request.POST)
         
         if form.is_valid():
             try:
                 with transaction.atomic():
-                    # ایجاد کاربر جدید با استفاده از پسورد ارائه شده
+                    # ایجاد کاربر جدید
                     user = User.objects.create_user(
                         phone_number=form.cleaned_data['phone_number'],
                         email=form.cleaned_data['email'],
@@ -260,11 +302,11 @@ class AddUserView(LoginRequiredMixin, HasAdminAccessPermission, View):
                         is_active=True
                     )
                     
-                    # به‌روزرسانی پروفایل کاربر
+                    # به‌روزرسانی پروفایل
                     profile = user.profile
                     profile.role = form.cleaned_data['role']
                     profile.medical_code = form.cleaned_data['medical_code'] or "DR-CODE"
-                    profile.auth_status = 'APPROVED'  # به صورت خودکار تایید شده
+                    profile.auth_status = 'APPROVED'
                     profile.save()
                     
                     # ایجاد اشتراک برای کاربران ویژه
@@ -273,14 +315,11 @@ class AddUserView(LoginRequiredMixin, HasAdminAccessPermission, View):
                         if subscription_plan_id:
                             try:
                                 from apps.subscriptions.models import Plan, Subscription, SubscriptionStatusChoicesModel
-                                from django.utils import timezone
                                 from datetime import timedelta
                                 
                                 plan = Plan.objects.get(id=subscription_plan_id)
-                                # محاسبه تاریخ انقضا
                                 end_date = timezone.now() + timedelta(days=plan.duration_days)
                                 
-                                # ایجاد اشتراک
                                 Subscription.objects.create(
                                     user=user,
                                     plan=plan,
@@ -310,51 +349,34 @@ class ExportUsersToExcelView(LoginRequiredMixin, HasAdminAccessPermission, View)
     """ویو برای استخراج اطلاعات کاربران به فرمت Excel"""
     
     def get(self, request):
-        # دریافت پارامتر نقش از درخواست
         role = request.GET.get('role', None)
         
-        # ایجاد queryset برای کاربران
         users = User.objects.select_related('profile').all()
         
-        # اعمال فیلتر بر اساس نقش در صورت وجود
         if role:
             users = users.filter(profile__role=role)
         
-        # ایجاد workbook جدید
         wb = Workbook()
         ws = wb.active
         ws.title = "کاربران"
         
-        # تنظیم سبک برای سلول‌های هدر
         header_font = Font(bold=True, color="FFFFFF")
         header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
         header_alignment = Alignment(horizontal="center", vertical="center")
         
-        # تعریف ستون‌ها
         columns = [
-            'نام',
-            'نام خانوادگی', 
-            'ایمیل',
-            'شماره تماس',
-            'کد نظام پزشکی',
-            'لینک نظام پزشکی',
-            'وضعیت احراز هویت',
-            'نقش',
-            'کد معرف',
-            'دلیل رد هویت',
-            'تاریخ عضویت'
+            'نام', 'نام خانوادگی', 'ایمیل', 'شماره تماس',
+            'کد نظام پزشکی', 'لینک نظام پزشکی', 'وضعیت احراز هویت',
+            'نقش', 'کد معرف', 'دلیل رد هویت', 'تاریخ عضویت'
         ]
         
-        # اضافه کردن هدرها به اکسل
         for col_num, column_title in enumerate(columns, 1):
             cell = ws.cell(row=1, column=col_num, value=column_title)
             cell.font = header_font
             cell.fill = header_fill
             cell.alignment = header_alignment
         
-        # اضافه کردن داده‌ها
         for row_num, user in enumerate(users, 2):
-            # تبدیل تاریخ عضویت به تاریخ شمسی
             jalali_date = ""
             if user.date_joined:
                 jalali_date_obj = jdatetime.datetime.fromgregorian(datetime=user.date_joined)
@@ -377,16 +399,13 @@ class ExportUsersToExcelView(LoginRequiredMixin, HasAdminAccessPermission, View)
             for col_num, cell_value in enumerate(row_data, 1):
                 ws.cell(row=row_num, column=col_num, value=str(cell_value))
         
-        # تنظیم عرض ستون‌ها
         column_widths = [15, 20, 25, 15, 20, 25, 15, 15, 15, 25, 20]
         for i, column_width in enumerate(column_widths, 1):
             ws.column_dimensions[chr(64 + i)].width = column_width
         
-        # ایجاد پاسخ HTTP
         response = HttpResponse(
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         )
-        # تنظیم نام فایل با توجه به نقش انتخابی
         if role:
             filename = f"users_{role}_{timezone.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
         else:
@@ -394,7 +413,6 @@ class ExportUsersToExcelView(LoginRequiredMixin, HasAdminAccessPermission, View)
             
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         
-        # ذخیره workbook در پاسخ
         wb.save(response)
         
         return response

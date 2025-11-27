@@ -17,6 +17,50 @@
                 </button>
             </div>
         </div>
+        
+        <!-- بخش آمار گوگل آنالیتیکس -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold text-slate-700">آمار بازدید وبسایت (۷ روز گذشته)</h2>
+                <div class="flex items-center text-xs text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                    <span class="w-2 h-2 bg-green-500 rounded-full ml-2 animate-pulse"></span>
+                    Google Analytics 4
+                </div>
+            </div>
+        
+            <!-- باکس‌های خلاصه آمار -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- بازدید کل -->
+                <div class="bg-blue-50 rounded-lg p-6 border border-blue-200 flex justify-between items-center">
+                    <div>
+                        <p class="text-sm font-medium text-blue-600 mb-1">بازدید کل صفحات</p>
+                        <p class="text-3xl font-bold text-blue-800" x-text="gaStats.total_views.toLocaleString()"></p>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-eye text-blue-500 text-xl"></i>
+                    </div>
+                </div>
+        
+                <!-- کاربران یکتا -->
+                <div class="bg-emerald-50 rounded-lg p-6 border border-emerald-200 flex justify-between items-center">
+                    <div>
+                        <p class="text-sm font-medium text-emerald-600 mb-1">کاربران فعال</p>
+                        <p class="text-3xl font-bold text-emerald-800" x-text="gaStats.total_users.toLocaleString()"></p>
+                    </div>
+                    <div class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-users-viewfinder text-emerald-500 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- نمودار آنالیتیکس -->
+            <div class="bg-slate-50 rounded-lg p-6 border border-slate-200">
+                <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="gaChart"></canvas>
+                </div>
+            </div>
+        </div>
+
 
         <!-- بخش کاربران -->
         <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
@@ -264,6 +308,11 @@
 <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.7/dist/jalaali.min.js"></script>
 
 <script>
+
+function formatPrice(num) {
+    return Number(num).toLocaleString('en-us');
+}
+
 document.addEventListener('alpine:init', () => {
     Alpine.data('analysisDashboard', () => ({
         // State variables
@@ -277,6 +326,13 @@ document.addEventListener('alpine:init', () => {
         incomeChart: null,
         usersChart: null,
         subscriptionsChart: null,
+        
+        // GA4 
+        gaChart: null,
+        gaStats: {
+            total_users: 0,
+            total_views: 0
+        },
 
         convertToJalali(gregorianDate) {
             try {
@@ -342,8 +398,29 @@ document.addEventListener('alpine:init', () => {
                     this.loadChartData('income', 'daily');
                     this.loadChartData('users', 'daily');
                     this.loadChartData('subscriptions', 'daily');
+                    this.loadGaData();
                 }, 150);
             });
+        },
+        
+        async loadGaData() {
+            try {
+                // آدرس را با توجه به urls.py تنظیم کنید
+                const response = await fetch("{% url 'dashboard:analysis:analytics_json_data' %}"); 
+                const data = await response.json();
+
+                if (response.ok) {
+                    // آپدیت کردن آمار کلی برای نمایش در باکس‌ها
+                    this.gaStats = data.summary;
+                    
+                    // رسم نمودار
+                    this.renderChart('ga', data);
+                } else {
+                    console.error('GA Data Error:', data.error);
+                }
+            } catch (error) {
+                console.error('Error loading GA data:', error);
+            }
         },
 
         // User Modal Methods
@@ -441,7 +518,7 @@ document.addEventListener('alpine:init', () => {
                                 <div class="grid grid-cols-2 gap-4 text-sm">
                                     <div>
                                         <span class="text-slate-600">قیمت:</span>
-                                        <span class="font-mono font-semibold">${user.active_subscription.price} ریال</span>
+                                        <span class="font-mono font-semibold">${formatPrice(user.active_subscription.price)} ریال</span>
                                     </div>
                                     <div>
                                         <span class="text-slate-600">شروع:</span>
@@ -551,7 +628,7 @@ document.addEventListener('alpine:init', () => {
                                 <h4 class="text-lg font-semibold text-slate-700">${membership.membership_title}</h4>
                                 <div class="text-right">
                                     <p class="text-sm text-slate-600">فروش کل: <span class="font-semibold">${membership.total_plans_sold}</span></p>
-                                    <p class="text-sm text-slate-600">درآمد: <span class="font-semibold">${membership.total_revenue} ریال</span></p>
+                                    <p class="text-sm text-slate-600">درآمد: <span class="font-semibold">${formatPrice(membership.total_revenue)} ریال</span></p>
                                 </div>
                             </div>
                             
@@ -561,7 +638,7 @@ document.addEventListener('alpine:init', () => {
                                         <tr>
                                             <th class="px-4 py-2 text-right text-sm font-semibold text-slate-700 bg-slate-50">نام پلن</th>
                                             <th class="px-4 py-2 text-right text-sm font-semibold text-slate-700 bg-slate-50">مدت (روز)</th>
-                                            <th class="px-4 py-2 text-right text-sm font-semibold text-slate-700 bg-slate-50">قیمت (ریال)</th>
+                                            <th class="px-4 py-2 text-right text-sm font-semibold text-slate-700 bg-slate-50">قیمت (تومان)</th>
                                             <th class="px-4 py-2 text-right text-sm font-semibold text-slate-700 bg-slate-50">تعداد فروش</th>
                                             <th class="px-4 py-2 text-right text-sm font-semibold text-slate-700 bg-slate-50">درآمد</th>
                                         </tr>
@@ -571,9 +648,9 @@ document.addEventListener('alpine:init', () => {
                                             <tr class="border-b border-slate-200 hover:bg-slate-50">
                                                 <td class="px-4 py-3 text-sm text-slate-700">${plan.name}</td>
                                                 <td class="px-4 py-3 text-sm text-slate-700">${plan.duration_days}</td>
-                                                <td class="px-4 py-3 text-sm text-slate-700 font-mono">${plan.price}</td>
-                                                <td class="px-4 py-3 text-sm text-slate-700">${plan.sales_count}</td>
-                                                <td class="px-4 py-3 text-sm text-slate-700 font-mono">${plan.revenue} ریال</td>
+                                                <td class="px-4 py-3 text-sm text-slate-700 font-mono">${formatPrice(plan.price)}</td>
+                                                <td class="px-4 py-3 text-sm text-slate-700">${formatPrice(plan.sales_count)}</td>
+                                                <td class="px-4 py-3 text-sm text-slate-700 font-mono">${formatPrice(plan.revenue)} ریال</td>
                                             </tr>
                                         `).join('')}
                                     </tbody>
@@ -616,14 +693,13 @@ document.addEventListener('alpine:init', () => {
             const ctx = canvas.getContext('2d');
             
             // از بین بردن chart قبلی اگر وجود دارد
-            if (chartType === 'income' && this.incomeChart) {
-                this.incomeChart.destroy();
-            } else if (chartType === 'users' && this.usersChart) {
-                this.usersChart.destroy();
-            } else if (chartType === 'subscriptions' && this.subscriptionsChart) {
-                this.subscriptionsChart.destroy();
-            }
+            if (chartType === 'income' && this.incomeChart) this.incomeChart.destroy();
+            else if (chartType === 'users' && this.usersChart) this.usersChart.destroy();
+            else if (chartType === 'subscriptions' && this.subscriptionsChart) this.subscriptionsChart.destroy();
+            // --- اضافه کردن شرط برای چارت جدید ---
+            else if (chartType === 'ga' && this.gaChart) this.gaChart.destroy();
             
+
             // 🔥 تبدیل تاریخ‌های میلادی به شمسی برای نمایش در چارت
             const jalaliLabels = this.convertLabelsToJalali(data.labels);
             
@@ -703,13 +779,11 @@ document.addEventListener('alpine:init', () => {
             });
             
             // ذخیره reference به chart
-            if (chartType === 'income') {
-                this.incomeChart = chart;
-            } else if (chartType === 'users') {
-                this.usersChart = chart;
-            } else if (chartType === 'subscriptions') {
-                this.subscriptionsChart = chart;
-            }
+            if (chartType === 'income') this.incomeChart = chart;
+            else if (chartType === 'users') this.usersChart = chart;
+            else if (chartType === 'subscriptions') this.subscriptionsChart = chart;
+            // --- ذخیره رفرنس چارت جدید ---
+            else if (chartType === 'ga') this.gaChart = chart;
         },
 
 

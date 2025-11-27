@@ -289,7 +289,8 @@ class PaymentVerifyView(APIView):
     def _update_user_profile(self, user, subscription, payment):
         """به‌روزرسانی پروفایل کاربر"""
         profile = user.profile
-        profile.role = 'premium'
+        if not profile.role == "admin":
+            profile.role = 'premium'
         profile.subscription_end_date = subscription.end_date
         
         # بررسی کد معرف از کش

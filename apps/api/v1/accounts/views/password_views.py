@@ -7,9 +7,13 @@ from django.utils.encoding import force_str
 from django.core.exceptions import ValidationError
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
-from ..serializers import PasswordResetRequestSerializer, PasswordResetConfirmSerializer
+from ..serializers import (
+    PasswordResetRequestSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetByPhoneRequestSerializer
+)
 from apps.dashboard.administrator.services.email_service import send_password_reset_email 
-
+from apps.accounts.services.password_service import send_password_reset_sms
 User = get_user_model()
 
 # ============= PASSWORD RESET REQUEST ============= #
@@ -80,3 +84,41 @@ class PasswordResetConfirmAPIView(generics.GenericAPIView):
                 {"detail": "لینک بازیابی نامعتبر یا منقضی شده است. لطفاً دوباره درخواست دهید."},
                 status=status.HTTP_400_BAD_REQUEST
             )
+            
+# ================================================== #
+# ======= PASSWORD RESET REQUEST (SMS) VIEW ====== #
+# ================================================== #
+class PasswordResetByPhoneRequestAPIView(generics.GenericAPIView):
+    """
+    API درخواست لینک بازنشانی رمز عبور از طریق پیامک.
+    شماره موبایل را می‌گیرد، لینک کوتاه می‌سازد و پیامک می‌کند.
+    """
+    permission_classes = [AllowAny]
+    serializer_class = PasswordResetByPhoneRequestSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        phone_number = serializer.validated_data['phone_number']
+        
+        try:
+            user = User.objects.get(phone_number=phone_number)
+            
+            # فراخوانی سرویس ارسال پیامک لینک‌دار
+            send_password_reset_sms(user)
+            
+        except User.DoesNotExist:
+            # نباید رخ دهد چون در سریالایزر چک شده، اما برای اطمینان
+            return Response(
+                {'detail': 'کاربری با این مشخصات یافت نشد.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        return Response(
+            {
+                "success": True,
+                "detail": "لینک بازیابی رمز عبور به شماره موبایل شما پیامک شد."
+            },
+            status=status.HTTP_200_OK
+        )

@@ -10,6 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from django.core.validators import FileExtensionValidator
 
 from .prescription import Prescription
+from apps.prescriptions.tasks import compress_prescription_image
 
 # ========== Helper: Random Number Generator ==========
 def generate_random_number(length=6):
@@ -85,3 +86,11 @@ class PrescriptionImage(models.Model):
         """
         is_new = self.pk is None
         super().save(*args, **kwargs)
+
+        # فراخوانی تسک فشرده‌سازی در پس‌زمینه
+        if self.image and not self.is_compressed:
+
+            def run_compression():
+                compress_prescription_image.delay(self.id)
+
+            transaction.on_commit(run_compression)

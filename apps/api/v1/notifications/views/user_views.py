@@ -81,3 +81,4 @@ class UserNotificationMarkAsReadView(generics.GenericAPIView):
         notification = self._mark_as_read(notification)
         serializer = self.get_serializer(notification)
         return Response(serializer.data, status=status.HTTP_200_OK)
+        

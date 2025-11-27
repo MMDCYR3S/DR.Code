@@ -68,7 +68,8 @@ class SubscriptionCreateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
                 # بروزرسانی نقش کاربر به premium
                 profile = user.profile
                 profile.subscription_end_date = end_date
-                profile.role = 'premium'
+                if not profile.role == 'admin':
+                    profile.role = 'premium'
                 profile.save()
             
             return JsonResponse({
@@ -144,7 +145,7 @@ class SubscriptionUpdateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
             }, status=500)
     
     def post(self, request, pk, *args, **kwargs):
-        """ویرایش اطلاعات اشتراک"""
+        """ ویرایش اطلاعات اشتراک """
         try:
             subscription = get_object_or_404(
                 Subscription.objects.select_related('user', 'plan', 'user__profile'),
@@ -188,7 +189,8 @@ class SubscriptionUpdateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
                             old_status != SubscriptionStatusChoicesModel.active.value:
                         profile = subscription.user.profile
                         profile.subscription_end_date = subscription.end_date
-                        profile.role = 'premium'
+                        if not profile.role == 'admin':
+                            profile.role = 'premium'
                         profile.save()
                 
                 # تمدید اشتراک (اضافه کردن روز)
@@ -269,6 +271,7 @@ class SubscriptionDeleteView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
                 # اگر اشتراک فعال دیگری ندارد، نقش را به regular تغییر بده
                 if not has_other_active:
                     user_profile.role = 'regular'
+                    user_profile.subscription_end_date = None
                     user_profile.save()
             
             return JsonResponse({
@@ -438,7 +441,8 @@ class SubscriptionExtendView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
                 subscription.status = SubscriptionStatusChoicesModel.active.value
                 profile = subscription.user.profile
                 profile.subscription_end_date = subscription.end_date
-                profile.role = 'premium'
+                if not profile.role == 'admin':
+                    profile.role = 'premium'
                 profile.save()
             
             subscription.save()

@@ -15,7 +15,7 @@ urlpatterns = [
     path('users/', AdminUsersListView.as_view(), name='admin_users_list'),
     path('users/add/', AddUserView.as_view(), name='admin_add_user'),
     path('users/export/', ExportUsersToExcelView.as_view(), name='admin_export_users'),
-    
+     
     path('users/<int:pk>/edit/', UserUpdateView.as_view(), name='admin_user_update'),
     path('users/<int:pk>/delete/', UserDeleteView.as_view(), name='admin_user_delete'),
     

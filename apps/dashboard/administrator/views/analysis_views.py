@@ -10,6 +10,7 @@ from collections import defaultdict
 from apps.accounts.models import User, Profile
 from apps.subscriptions.models import Subscription, Plan, Membership, SubscriptionStatusChoicesModel
 from apps.payment.models import Payment
+from apps.dashboard.administrator.services.google_analytics_service import GoogleAnalyticsService
 
 # ====== ANALYSIS DASHBOARD VIEW ====== #
 class AnalysisDashboardView(LoginRequiredMixin, TemplateView):
@@ -126,7 +127,7 @@ class UserStatsDetailView(LoginRequiredMixin, View):
             Q(is_staff=True) |
             Q(is_superuser=True) |
             Q(profile__role="admin")
-        ).select_related('profile').order_by('-date_joined')[:10]
+        ).select_related('profile').order_by('-date_joined')
         
         data = []
         for admin in admins:
@@ -146,7 +147,7 @@ class UserStatsDetailView(LoginRequiredMixin, View):
             is_staff=False,
             is_superuser=False,
             profile__role__in=['visitor', 'regular']
-        ).select_related('profile').order_by('-date_joined')[:10]
+        ).select_related('profile').order_by('-date_joined')
         
         data = []
         for user in regular_users:
@@ -167,7 +168,7 @@ class UserStatsDetailView(LoginRequiredMixin, View):
             profile__role='premium'
         ).select_related('profile').prefetch_related(
             'subscriptions__plan__membership'
-        ).order_by('-date_joined')[:10]
+        ).order_by('-date_joined')
         
         data = []
         for user in premium_users:
@@ -622,3 +623,59 @@ class ChartDataView(View):
                 'backgroundColor': 'rgba(139, 92, 246, 0.1)',
             }]
         })
+
+# ===== Analytics Data Json View ===== #
+class AnalyticsDataJsonView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        try:
+            ga_service = GoogleAnalyticsService()
+            raw_data = ga_service.get_last_7_days_report()
+            
+            labels = []
+            users_data = []
+            views_data = []
+            
+            total_users = 0
+            total_views = 0
+
+            for item in raw_data:
+                # تبدیل فرمت تاریخ GA4 از YYYYMMDD به YYYY-MM-DD
+                # تا تابع جاوااسکریپتی شما بتواند آن را به شمسی تبدیل کند
+                date_obj = datetime.strptime(item['date'], "%Y%m%d")
+                formatted_date = date_obj.strftime("%Y-%m-%d")
+                
+                labels.append(formatted_date)
+                users_data.append(item['active_users'])
+                views_data.append(item['page_views'])
+                
+                total_users += item['active_users']
+                total_views += item['page_views']
+
+            return JsonResponse({
+                'labels': labels,
+                'datasets': [
+                    {
+                        'label': 'کاربران فعال',
+                        'data': users_data,
+                        'borderColor': 'rgb(59, 130, 246)', # Blue-500
+                        'backgroundColor': 'rgba(59, 130, 246, 0.1)',
+                        'fill': True,
+                        'tension': 0.3
+                    },
+                    {
+                        'label': 'بازدید صفحات',
+                        'data': views_data,
+                        'borderColor': 'rgb(16, 185, 129)', # Emerald-500
+                        'backgroundColor': 'rgba(16, 185, 129, 0.1)',
+                        'fill': True,
+                        'tension': 0.3
+                    }
+                ],
+                'summary': {
+                    'total_users': total_users,
+                    'total_views': total_views
+                }
+            })
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)

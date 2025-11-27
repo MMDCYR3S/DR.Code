@@ -105,7 +105,7 @@
 
                     <!-- CTA Buttons -->
                     <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start ">
-                        <a href="/prescriptions"
+                        <a href="#freepres"
                             class="group inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-c1 to-c2 text-white rounded-2xl font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300">
                             رایگان امتحان کنید
                             <svg class="w-5 h-5 mr-2 transform group-hover:translate-x-1 transition-transform"
@@ -564,7 +564,7 @@
             
             <div class="mb-16" data-aos="fade-up">
                 <h3 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-                    با نسخه‌های <span class="bg-gradient-to-r from-c1 to-c2 bg-clip-text text-transparent">رایگان</span> ما شروع کنید
+                    با نسخه‌های <span id="freepres" class="bg-gradient-to-r from-c1 to-c2 bg-clip-text text-transparent">رایگان</span> ما شروع کنید
                 </h3>
                 <p class="text-lg text-gray-600 max-w-2xl mx-auto">
                     قبل از خرید اشتراک، کیفیت نسخه‌های ما را با نمونه‌های رایگان تجربه کنید
@@ -656,7 +656,7 @@
             <div data-aos="fade-up">
                 <a href="{% url 'prescriptions:prescription_list' %}" class="group relative inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-c1 to-c2 text-white rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-500 overflow-hidden">
                     <span class="relative z-10 flex items-center">
-                        مشاهده تمام نسخه‌های رایگان
+                        مشاهده تمام نسخه‌ها
                         <svg class="w-5 h-5 mr-2 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                         </svg>

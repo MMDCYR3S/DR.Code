@@ -9,4 +9,5 @@ urlpatterns = [
     path('analysis/payment-stats/', analysis_views.PaymentStatsDetailView.as_view(), name='payment_stats'),
     path('analysis/subscription-stats/', analysis_views.SubscriptionStatsDetailView.as_view(), name='subscription_stats'),
     path('analysis/chart-data/', analysis_views.ChartDataView.as_view(), name='chart_data'),
+    path('api/analytics-data/', analysis_views.AnalyticsDataJsonView.as_view(), name='analytics_json_data'),
 ]

@@ -177,8 +177,7 @@ class RefreshAccessTokenView(TokenRefreshView, BaseAPIView):
         try:
             # استفاده از implementation پایه TokenRefreshView
             response = super().post(request, *args, **kwargs)
-            profile = request.user.profile
-            user = request.user
+            
             # اگر موفقیت‌آمیز بود، لاگ بگیریم
             if response.status_code == status.HTTP_200_OK:
                 # تلاش برای شناسایی کاربر از روی refresh token
@@ -200,24 +199,7 @@ class RefreshAccessTokenView(TokenRefreshView, BaseAPIView):
                         'success': True,
                         'message': 'توکن با موفقیت بازسازی شد.',
                         'token_refreshed_at': timezone.now().isoformat(),
-                        "jti": jti,
-                        'profile':{
-                            'role': profile.role,
-                            'referral_code': profile.referral_code,
-                            'referred_by': profile.referred_by.id if profile.referred_by else None,
-                            'auth_status': profile.auth_status,
-                            'auth_link': profile.auth_link,
-                            'medical_code': profile.medical_code,
-                        },
-                        'user_info':{
-                            'id': user.id,
-                            'email': user.email,
-                            'phone_number': user.phone_number,
-                            'first_name': user.first_name,
-                            'last_name': user.last_name,
-                            'full_name': user.full_name(),
-                            'is_active': user.is_active,
-                        }
+                        "jti": jti
                     })
             
             return response

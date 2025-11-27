@@ -1,4 +1,7 @@
-# views.py
+from datetime import timedelta
+from decimal import Decimal
+import jdatetime
+
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
@@ -6,9 +9,6 @@ from django.db.models import Sum
 from django.utils import timezone
 from django.core.cache import cache
 from django.db.models.functions import TruncMonth
-
-from datetime import timedelta
-from decimal import Decimal
 
 from apps.accounts.models import Profile, AuthStatusChoices
 from apps.subscriptions.models import Subscription, SubscriptionStatusChoicesModel
@@ -41,15 +41,42 @@ def admin_dashboard_view(request):
 
 def _calculate_dashboard_stats():
     """محاسبه آمارهای داشبورد"""
+# 1. دریافت زمان حال و محاسبه شروع ماه شمسی
     now = timezone.now()
-    current_month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    last_month_start = (current_month_start - timedelta(days=1)).replace(day=1)
+    
+    # تبدیل به تاریخ شمسی (Timezone حفظ می‌شود)
+    j_now = jdatetime.datetime.fromgregorian(datetime=now)
+    
+    # رفتن به اول ماه شمسی، ساعت 00:00
+    j_current_month_start = j_now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    # تبدیل به میلادی
+    current_month_start_gregorian = j_current_month_start.togregorian()
+    
+    # --- اصلاح خطا اینجاست ---
+    # فقط در صورتی make_aware می‌کنیم که تاریخ Naive (بدون تایم‌زون) باشد
+    if timezone.is_naive(current_month_start_gregorian):
+        current_month_start_gregorian = timezone.make_aware(current_month_start_gregorian)
+
+
+    # 2. محاسبه ماه قبل
+    if j_current_month_start.month == 1:
+        j_last_month_start = j_current_month_start.replace(year=j_current_month_start.year - 1, month=12)
+    else:
+        j_last_month_start = j_current_month_start.replace(month=j_current_month_start.month - 1)
+        
+    last_month_start_gregorian = j_last_month_start.togregorian()
+    
+    # --- اصلاح خطا برای ماه قبل ---
+    if timezone.is_naive(last_month_start_gregorian):
+        last_month_start_gregorian = timezone.make_aware(last_month_start_gregorian)
+
     
     current_month_revenue = (
         Payment.objects
         .filter(
             status=PaymentStatus.COMPLETED,
-            paid_at__gte=current_month_start
+            paid_at__gte=current_month_start_gregorian
         )
         .aggregate(
             total=Sum('final_amount')
@@ -60,8 +87,8 @@ def _calculate_dashboard_stats():
         Payment.objects
         .filter(
             status=PaymentStatus.COMPLETED,
-            paid_at__gte=last_month_start,
-            paid_at__lt=current_month_start,
+            paid_at__gte=last_month_start_gregorian,
+            paid_at__lt=current_month_start_gregorian,
             subscription__status=SubscriptionStatusChoicesModel.active.value
         )
         .aggregate(
@@ -92,7 +119,7 @@ def _calculate_dashboard_stats():
     ).count()
     
     # نمودار درآمد ۶ ماه اخیر
-    six_months_ago = current_month_start - timedelta(days=180)
+    six_months_ago = current_month_start_gregorian - timedelta(days=180)
     monthly_revenue = Subscription.objects.filter(
         status=SubscriptionStatusChoicesModel.active.value,
         start_date__gte=six_months_ago

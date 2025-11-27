@@ -17,7 +17,7 @@ from .login_serializer import (
 
 from .password_serializer import (
     PasswordResetRequestSerializer,
-    PasswordResetConfirmSerializer
+    PasswordResetConfirmSerializer,
+    PasswordResetByPhoneRequestSerializer
 )
-
 from .phone_verification_serializer import PhoneVerificationSerializer

@@ -1,82 +1,105 @@
 import requests
-from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
-# ===== Amoot SMS Service ===== #
 class AmootSMSService:
-    """
-    سرویس ارسال پیامک از طریق پیام‌رسان آموت اس ام اس
-    """
-    
+    # ===== Constants ===== #
     BASE_URL = "https://portal.amootsms.com/rest/SendSimple"
+    URL_SIMPLE = "https://portal.amootsms.com/rest/SendSimple"
+    URL_QUICK_OTP = "https://portal.amootsms.com/rest/SendQuickOTP"
 
-    def __init__(self, token: str = "MyToken", line_number: str = "public"):
-        """
-        بررسی اولیه سرویس با استفاده از توکن و شماره خط ثابت
-        
-        :param token: توکن امنیتی برای ارتباط با API
-        :param line_number: شماره خط ثابت برای ارسال پیامک
-        """
+    def __init__(self, token: str = "4A9869096131EA46E7A41BDCD99B2ADC560193B2", line_number: str = "public"):
         self.token = token
         self.line_number = line_number
 
-    def send_message(self, mobiles: List[str], message_text: str) -> Optional[str]:
+    def send_verification_code(self, mobile: str = "", message_text: str = ""):
         """
-        ارسال پیامک به یک یا چند شماره موبایل
-
-        :param mobiles: لیست از شماره موبایل (رشته).
-        :param message_text: متن پیامک.
-        :return: پاسخ API در صورت موفقیت، None در صورت عدم موفقیت.
+        ارسال پیامک با متن دلخواه (متد قدیمی‌تر SendSimple)
         """
-        
-        # ===== زمان ارسال پیامک ===== #
-        send_date_time = datetime.now().isoformat()
-        
-        # ===== پارامترهای ارسالی ===== #
-        data = {
-            "SendDateTime": send_date_time,
+        # ===== Payload Configuration ===== #
+        payload = {
+            "Token": self.token,
             "SMSMessageText": message_text,
+            "Mobiles": mobile,
             "LineNumber": self.line_number,
-            "Mobiles": ",".join(mobiles),
+            "SendDateTime": ""
         }
 
-        try:
-            # ===== ارسال پیامک ===== #
-            response = requests.post(self.BASE_URL, data=data)
-            response.raise_for_status()
-            
-            # ===== پاسخ را دریافت و بازگرداندن ===== #
-            return response.text
-            
-        except requests.RequestException as e:
-            # ===== در صورت خطایی، پیام خطا را چاپ کرده و چیزی را باز نمی گرداند ===== #
-            print(f"خطا در ارسال پیامک: {e}")
-            return None
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
-    def send_verification_code(self, mobile: str, code_length: int = 4, optional_code: str = "") -> Optional[str]:
-        """
-        ارسال پیام اعتبارسنجی به شماره تلفن کاربر
+        # ===== Debug Logging ===== #
+        print("\n" + "="*20 + " DEBUG: SendSimple " + "="*20)
+        print(f"Sending to: {mobile}")
         
-        :param mobile: شماره تلفن کاربر
-        :param code_length: طول کد اعتبارسنجی
-        :param optional_code: کد اعتبارسنجی اختیاری
-        :return: پاسخ آدرس در صورت موفقیت، در صورت عدم موفقیت، خطا.
+        try:
+            response = requests.post(self.BASE_URL, data=payload, headers=headers)
+            
+            print(f"Status Code: {response.status_code}")
+            print(f"Response: {response.text}")
+            print("="*60 + "\n")
+
+            return response.text
+
+        except Exception as e:
+            print(f"Error: {e}")
+            return None
+            
+    def send_quick_otp(self, mobile: str, code_length: int = 6, optional_code: str = "") -> Optional[str]:
         """
-        
+        ارسال کد تایید سریع و بهینه (SendQuickOTP)
+        """
+        # ===== Authorization Headers ===== #
+        headers = {"Authorization": self.token}
+
         data = {
             "Mobile": mobile,
             "CodeLength": str(code_length),
-            "OptionalCode": optional_code,
+            "OptionalCode": optional_code
         }
 
+        print(f"DEBUG: Sending QuickOTP to {mobile} with Code: {optional_code}")
+
         try:
-            # ===== ارسال کد اعتبارسنجی ===== #
-            response = requests.post("https://portal.amootsms.com/rest/SendQuickOTP", data=data)
-            response.raise_for_status()
+            response = requests.post(self.URL_QUICK_OTP, data=data, headers=headers)
             
-            # ===== پاسخ را دریافت و بازگرداندن ===== #
-            return response.text
+            print(f"QuickOTP Response Status: {response.status_code}")
+            print(f"QuickOTP Response Body: {response.text}")
+
+            if response.status_code == 200:
+                return response.text
+            return None
+
+        except Exception as e:
+            print(f"QuickOTP Service Error: {str(e)}")
+            return None
+
+    def send_message(self, mobile: str, message_text: str) -> Optional[str]:
+        """
+        ارسال پیامک اطلاع‌رسانی با متن دلخواه (SendSimple)
+        """
+        # ===== Payload Setup ===== #
+        payload = {
+            "Token": self.token,
+            "SMSMessageText": message_text,
+            "Mobiles": mobile,
+            "LineNumber": self.line_number,
+            "SendDateTime": ""
+        }
+
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+
+        print(f"DEBUG: Sending Custom Message to {mobile}")
+
+        try:
+            response = requests.post(self.URL_SIMPLE, data=payload, headers=headers)
             
-        except requests.RequestException as e:
-            print(f"خطا در ارسال پیامک: {e}")
+            print(f"SendSimple Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                return response.text
+            
+            print(f"SendSimple Failed Response: {response.text}")
+            return None
+
+        except Exception as e:
+            print(f"SendSimple Error: {str(e)}")
             return None
