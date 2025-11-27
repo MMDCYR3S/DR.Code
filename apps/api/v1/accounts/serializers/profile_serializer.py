@@ -19,6 +19,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     
     user_full_name = serializers.CharField(source='user.full_name', read_only=True)
     user_phone = serializers.CharField(source='user.phone_number', read_only=True)
+    is_phone_verified = serializers.BooleanField(source='user.is_phone_verified', read_only=True)
     auth_status_display = serializers.CharField(source='get_auth_status_display', read_only=True)
     has_uploaded_document = serializers.SerializerMethodField()
     
