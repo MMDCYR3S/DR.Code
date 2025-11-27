@@ -1,6 +1,7 @@
 asgiref
 attrs
 certifi
+celery
 charset-normalizer
 Django
 django-ckeditor-5
@@ -8,8 +9,10 @@ django-debug-toolbar
 django-environ
 django-filter
 djangorestframework
+django-import-export
 djangorestframework_simplejwt
 drf-spectacular
+google-analytics-data
 idna
 inflection
 jalali_core
@@ -17,6 +20,7 @@ jdatetime
 jsonschema
 jsonschema-specifications
 Markdown
+openpyxl
 pillow
 PyJWT
 python-slugify

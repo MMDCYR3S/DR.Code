@@ -94,6 +94,7 @@ class LoginView(BaseAPIView):
                             'id': user.id,
                             'full_name': user.full_name,
                             'phone_number': user.phone_number,
+                            'is_phone_verified': user.is_phone_verified,
                         },
                         'profile': {
                             'role': profile.role,
@@ -278,6 +279,7 @@ class LoginStatusView(BaseAPIView):
                         'id': user.id,
                         'full_name': user.full_name,
                         'phone_number': user.phone_number,
+                        "is_phone_verified": user.is_phone_verified,
                         'active_jti': user.active_jti,
                         'last_login': user.last_login,
                         'last_login_ip': user.last_login_ip,

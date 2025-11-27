@@ -78,8 +78,12 @@ class UpdateProfileView(BaseAPIView):
                 )
                 
                 if serializer.is_valid():
+                    # ===== در صورت تغییر شماره تلفن، نیاز به تایید مجدد آن ===== #
+                    if 'phone_number' in serializer.validated_data:
+                        user.is_phone_verified = "False"
+                        user.save(update_fields=['is_phone_verified'])
+                        
                     changed_fields = list(serializer.validated_data.keys())
-                    
                     updated_user = serializer.save()
                     
                     if 'profile_image' in changed_fields and updated_user.profile.profile_image:
@@ -181,6 +185,7 @@ class UpdateProfileView(BaseAPIView):
                         'last_name': user.last_name,
                         'full_name': user.full_name,
                         'phone_number': user.phone_number,
+                        "is_phone_verified": user.is_phone_verified,
                         'email': user.email,
                         'profile_image': profile.profile_image.url if profile.profile_image else None,
                         'date_joined': user.date_joined.isoformat(),
