@@ -1,12 +1,10 @@
-import logging
-
 from datetime import timedelta
 from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from drf_spectacular.views import extend_schema
+
 from django.shortcuts import get_object_or_404
 from django.core.cache import cache
 from django.conf import settings
@@ -14,6 +12,8 @@ from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.db import transaction
+
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,6 @@ from ..serializers import PaymentCreateSerializer, PaymentSerializer
 from apps.subscriptions.models import Subscription, SubscriptionStatusChoicesModel, Plan
 
 # ====== Payment Create View ====== #
-@extend_schema(tags=['Payment'])
 class PaymentCreateView(CreateAPIView):
     """
     ایجاد درخواست پرداخت نهایی بر اساس اطلاعات خلاصه خرید.
@@ -115,8 +114,8 @@ class PaymentCreateView(CreateAPIView):
             ip = request.META.get('REMOTE_ADDR')
         return ip
 
+
 # ====== Payment Verify View ====== #
-@extend_schema(tags=['Payment'])
 class PaymentVerifyView(APIView):
     """
     تایید پرداخت از زرین‌پال (Callback)

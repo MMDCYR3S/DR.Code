@@ -634,9 +634,11 @@ class AnalyticsDataJsonView(LoginRequiredMixin, View):
             labels = []
             users_data = []
             views_data = []
+            new_users_data = []
             
             total_users = 0
             total_views = 0
+            total_new_users = 0
 
             for item in raw_data:
                 # تبدیل فرمت تاریخ GA4 از YYYYMMDD به YYYY-MM-DD
@@ -647,9 +649,12 @@ class AnalyticsDataJsonView(LoginRequiredMixin, View):
                 labels.append(formatted_date)
                 users_data.append(item['active_users'])
                 views_data.append(item['page_views'])
+                new_users_data.append(item['new_users'])
                 
                 total_users += item['active_users']
                 total_views += item['page_views']
+                total_new_users += item['new_users']
+                
 
             return JsonResponse({
                 'labels': labels,
@@ -669,11 +674,21 @@ class AnalyticsDataJsonView(LoginRequiredMixin, View):
                         'backgroundColor': 'rgba(16, 185, 129, 0.1)',
                         'fill': True,
                         'tension': 0.3
+                    },
+                    {
+                        'label': 'کاربران جدید',
+                        'data': new_users_data,
+                        'borderColor': 'rgb(139, 92, 246)', # Purple-500 (بنفش)
+                        'backgroundColor': 'rgba(139, 92, 246, 0.1)',
+                        'fill': True,
+                        'tension': 0.3,
+                        'borderDash': [5, 5] # خط‌چین برای تمایز بهتر
                     }
                 ],
                 'summary': {
                     'total_users': total_users,
-                    'total_views': total_views
+                    'total_views': total_views,
+                    'total_new_users': total_new_users
                 }
             })
             

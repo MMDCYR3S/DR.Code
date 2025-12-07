@@ -12,4 +12,4 @@ class AdminPlan(admin.ModelAdmin):
 
 @admin.register(Subscription)
 class AdminSubscription(admin.ModelAdmin):
-    pass
+    list_filter = ("end_date", "start_date")

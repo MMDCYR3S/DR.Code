@@ -1,5 +1,4 @@
 from rest_framework.generics import ListAPIView
-from drf_spectacular.views import extend_schema
 
 from apps.home.models import Tutorial
 from apps.prescriptions.models import Prescription, AccessChoices
@@ -8,7 +7,6 @@ from ..serializers import (
     RecentTutorialSerializer
 )
 
-@extend_schema(tags=["Home"])
 class RecentPrescriptionsAPIView(ListAPIView):
     """
     نمایش نسخه های اخیر و لیست کردن 4 تا از آن ها

@@ -4,17 +4,14 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from django.core.cache import cache
-from drf_spectacular.views import extend_schema
 
 # ===== Local Services ===== #
-
 from apps.accounts.services import AmootSMSService
 from ..serializers import PhoneVerificationSerializer
 
 # فراخوانی همان لاگر
 logger = logging.getLogger('user_verification')
 
-@extend_schema(tags=['Accounts-Phone'])
 class PhoneVerificationView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = PhoneVerificationSerializer
@@ -41,7 +38,9 @@ class PhoneVerificationView(GenericAPIView):
         # لاگ کردن کد ساخته شده (فقط در محیط توسعه استفاده شود، در پروداکشن بهتر است لاگ نشود)
         logger.info(f"Generated OTP for {user.phone_number}: {code}")
 
-        user_name = user.first_name if user.first_name else "گرامی"
+        full_name = " ".join([user.first_name, user.last_name]) if user.first_name and user.last_name else "گرامی"
+
+        user_name = full_name
         pattern_values = [user_name, code]
 
         try:

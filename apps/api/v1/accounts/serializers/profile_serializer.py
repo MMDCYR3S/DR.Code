@@ -26,13 +26,12 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = (
-            'user_full_name', 'user_phone', "is_phone_verified",'role', 'medical_code',
+            'user_full_name', 'user_phone', "is_phone_verified", 'role', 'medical_code',
             'auth_status', 'auth_status_display', 'rejection_reason',
-            'subscription_end_date', 'created_at', 'updated_at',
-            "has_uploaded_document"
+            'subscription_end_date', 'created_at', 'updated_at', "has_uploaded_document"
         )
         read_only_fields = (
-            'role', 'auth_status', 'rejection_reason', "is_phone_verified",
+            'role', 'auth_status', "is_phone_verified", 'rejection_reason', 
             'subscription_end_date', 'created_at', 'updated_at'
         )
     

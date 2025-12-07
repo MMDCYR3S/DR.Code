@@ -210,11 +210,13 @@ class UserVerificationDetailView(LoginRequiredMixin, DetailView): # HasAdminAcce
         logger.info(f"Verification Action Started | Admin: {admin_user.email} | Target: {user.phone_number} | Action: {action}")
         
         if action == 'approve':
+            
+            
             # ===== Approve Logic ===== #
             medical_code = request.POST.get('medical_code', '').strip()
             
             try:
-                # send_auth_checked_email(user)
+                send_auth_checked_email(user)
                 logger.info(f"Auth Email Sent to {user.email}")
             except Exception as e:
                 logger.error(f"Failed to send Auth Email to {user.email}: {e}")
@@ -227,6 +229,8 @@ class UserVerificationDetailView(LoginRequiredMixin, DetailView): # HasAdminAcce
             profile.save()
             
             logger.info(f"User {user.phone_number} APPROVED by Admin {admin_user.email}")
+            
+            success = False
             
             # ===== SMS Notification (UPDATED TO PATTERN) ===== #
             try:
@@ -264,7 +268,7 @@ class UserVerificationDetailView(LoginRequiredMixin, DetailView): # HasAdminAcce
             profile.rejection_reason = rejection_reason
             
             try:
-                # resend_auth_email(user)
+                resend_auth_email(user)
                 logger.info(f"Rejection Email Sent to {user.email}")
             except Exception as e:
                 logger.error(f"Failed to send Rejection Email to {user.email}: {e}")

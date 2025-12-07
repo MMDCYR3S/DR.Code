@@ -13,7 +13,6 @@ from django.db import transaction
 from django.utils import timezone
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from drf_spectacular.views import extend_schema
 
 from apps.accounts.models import Profile, AuthStatusChoices
 from ..serializers import ProfileSerializer, UpdateProfileSerializer
@@ -24,7 +23,6 @@ logger = logging.getLogger(__name__)
 
 
 # ============ PROFILE VIEWS ============ #
-@extend_schema(tags=['Profile'])
 class ProfileView(RetrieveAPIView, BaseAPIView):
     """
     نمایش اطلاعات پروفایل کاربر
@@ -50,7 +48,6 @@ class ProfileView(RetrieveAPIView, BaseAPIView):
             return self.handle_exception(e)
 
 # ============= UPDATE PROFILE VIEWS ============= #
-@extend_schema(tags=['Profile'])
 class UpdateProfileView(BaseAPIView):
     """
     بروزرسانی اطلاعات پایه پروفایل
@@ -82,8 +79,8 @@ class UpdateProfileView(BaseAPIView):
                     if 'phone_number' in serializer.validated_data:
                         user.is_phone_verified = "False"
                         user.save(update_fields=['is_phone_verified'])
-                        
                     changed_fields = list(serializer.validated_data.keys())
+                    
                     updated_user = serializer.save()
                     
                     if 'profile_image' in changed_fields and updated_user.profile.profile_image:
@@ -107,6 +104,7 @@ class UpdateProfileView(BaseAPIView):
                                 'full_name': updated_user.full_name,
                                 'email': updated_user.email,
                                 'phone_number': updated_user.phone_number,
+                                "is_phone_verified": user.is_phone_verified,
                                 'profile_image': updated_user.profile.profile_image.url if updated_user.profile.profile_image else None
                             },
                             'updated_at': timezone.now().isoformat()
@@ -185,7 +183,6 @@ class UpdateProfileView(BaseAPIView):
                         'last_name': user.last_name,
                         'full_name': user.full_name,
                         'phone_number': user.phone_number,
-                        "is_phone_verified": user.is_phone_verified,
                         'email': user.email,
                         'profile_image': profile.profile_image.url if profile.profile_image else None,
                         'date_joined': user.date_joined.isoformat(),

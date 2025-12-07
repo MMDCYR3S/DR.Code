@@ -6,7 +6,6 @@ from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from drf_spectacular.views import extend_schema
 from django.contrib.auth import get_user_model, login
 from django.db import transaction
 from django.utils import timezone
@@ -20,7 +19,6 @@ User = get_user_model()
 logger = logging.getLogger(__name__)
 
 # ============ REGISTER VIEW ============ #
-@extend_schema(tags=['Accounts'])
 class RegisterView(CreateAPIView, BaseAPIView):
     """
     ثبت‌نام کاربر جدید
@@ -93,7 +91,6 @@ class RegisterView(CreateAPIView, BaseAPIView):
             return self.handle_exception(e)
 
 # =============== AUTHENTICATION VIEW =============== #
-@extend_schema(tags=['Accounts'])
 class AuthenticationView(BaseAPIView):
     """
     احراز هویت پزشکی
@@ -167,7 +164,6 @@ class AuthenticationView(BaseAPIView):
             return self.handle_exception(e)
 
 # ========== LOGOUT VIEW ========== #
-@extend_schema(tags=['Accounts'])
 class LogoutView(BaseAPIView):
     """
     خروج کاربر از سیستم
@@ -203,7 +199,7 @@ class LogoutView(BaseAPIView):
         except Exception as e:
             return self.handle_exception(e)
 
-@extend_schema(tags=['Accounts'])
+
 class CheckAuthStatusView(BaseAPIView):
     """
     بررسی وضعیت احراز هویت کاربر
@@ -229,7 +225,7 @@ class CheckAuthStatusView(BaseAPIView):
         except Exception as e:
             return self.handle_exception(e)
 
-@extend_schema(tags=['Accounts'])
+
 class ResendAuthenticationView(BaseAPIView):
     """
     ارسال مجدد مدارک احراز هویت

@@ -41,7 +41,8 @@ class GoogleAnalyticsService:
                 dimensions=[Dimension(name="date")],
                 metrics=[
                     Metric(name="activeUsers"),
-                    Metric(name="screenPageViews")
+                    Metric(name="screenPageViews"),
+                    Metric(name="newUsers")
                 ],
                 date_ranges=[DateRange(start_date="7daysAgo", end_date="today")],
             )
@@ -55,6 +56,7 @@ class GoogleAnalyticsService:
                     # مقادیر متریک به صورت رشته برمی‌گردند، تبدیل به int می‌کنیم
                     "active_users": int(row.metric_values[0].value),
                     "page_views": int(row.metric_values[1].value),
+                    "new_users": int(row.metric_values[2].value),
                 })
 
             # ===== مرتب سازی براساس تاریخ بازدید ===== #

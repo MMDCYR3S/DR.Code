@@ -2,7 +2,7 @@ from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
-from drf_spectacular.views import extend_schema
+
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
 from django.core.cache import cache
@@ -13,7 +13,6 @@ from apps.accounts.permissions import IsTokenJtiActive
 from .discount_serializer import PurchaseDetailSerializer, PurchaseSummarySerializer
 
 # ========== PURCHASE DETAIL VIEW ========== #
-@extend_schema(tags=['Order'])
 class PurchaseDetailView(generics.RetrieveUpdateAPIView):
     """
     نمایش جزئیات خرید پلن با امکان اعمال کدهای تخفیف

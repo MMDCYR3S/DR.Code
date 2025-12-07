@@ -1,15 +1,11 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
-from drf_spectacular.views import extend_schema
 
 from .question_serializers import QuestionCreateSerializer
 from apps.accounts.permissions import HasActiveSubscription
 
-from drf_spectacular.utils import extend_schema
-
 # ======== QUESTION CREATE VIEW ========= #
-@extend_schema(tags=['Questions'])
 class QuestionCreateView(generics.CreateAPIView):
     """
     ایجاد سوال جدید - فقط کاربران با اشتراک فعال
@@ -32,3 +28,5 @@ class QuestionCreateView(generics.CreateAPIView):
                 'data': response.data,
                 'message': 'سوال شما با موفقیت ثبت شد و به زودی پاسخ داده خواهد شد.'
             }, status=status.HTTP_201_CREATED)
+        
+        return response
