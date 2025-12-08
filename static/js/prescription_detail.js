@@ -97,27 +97,66 @@ function prescriptionDetailApp() {
       this.initGallery();
     },
 
-    // Initialize GLightbox for images
+// Initialize Viewer.js
     initGallery() {
+      // اول چک میکنیم دیتای عکس هست یا نه
       if (this.prescription.images && this.prescription.images.length > 0) {
-        // Wait for DOM to update
+        
+        // این دستور حیاتیه: صبر میکنیم تا Alpine تگ‌های img رو بسازه
         this.$nextTick(() => {
-          const lightbox = GLightbox({
-            selector: ".glightbox",
-            touchNavigation: true,
-            loop: true,
-            autoplayVideos: false,
-            closeButton: true,
-            openEffect: "zoom",
-            closeEffect: "fade",
-            slideEffect: "slide",
-            moreLength: 0,
-            skin: "clean",
-            cssEfects: {
-              fade: { in: "fadeIn", out: "fadeOut" },
-              zoom: { in: "zoomIn", out: "zoomOut" },
+          const galleryElement = document.getElementById('docs-gallery');
+          
+          // اگر المنت پیدا نشد یعنی هنوز رندر نشده، بیخیال شو
+          if (!galleryElement) return;
+
+          // اگر قبلاً ویوور ساخته شده، خرابش کن (برای جلوگیری از باگ دابل کلیک)
+          if (this.galleryInstance) {
+            this.galleryInstance.destroy();
+          }
+
+          // ساخت ویوور جدید
+          this.galleryInstance = new Viewer(galleryElement, {
+            url: 'data-original',
+            
+            // این آپشن مهمه: فقط عکس‌هایی که نمایش داده شدن رو بگیر
+            filter(image) {
+                return image.complete; 
             },
+
+            toolbar: {
+              zoomIn: 1,
+              zoomOut: 1,
+              oneToOne: 1,
+              reset: 1,
+              prev: 1,
+              play: 0,
+              next: 1,
+              rotateLeft: 1,
+              rotateRight: 1,
+              flipHorizontal: 1,
+              flipVertical: 1,
+            },
+            
+            // تنظیمات تعاملی
+            navbar: true,
+            title: false,
+            tooltip: true,
+            movable: true,
+            zoomable: true,
+            rotatable: true,
+            scalable: true,
+            transition: false, // ترنزیشن رو خاموش کن شاید سرعتش اذیت میکنه
+            fullscreen: true,
+            keyboard: true,
+            backdrop: true,
+            
+            // تنظیمات زوم
+            zoomRatio: 0.3,
+            minZoomRatio: 0.1,
+            maxZoomRatio: 10,
           });
+          
+          console.log("✅ Viewer initialized on:", galleryElement);
         });
       }
     },
