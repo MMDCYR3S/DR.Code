@@ -16,7 +16,7 @@ class ZarinpalService:
         try:
             config = settings.ZARINPAL_CONFIG
             self.merchant_id = config['MERCHANT_ID']
-            self.is_sandbox = config.get('SANDBOX', False)
+            self.is_sandbox = config.get('SANDBOX', True)
 
             if self.is_sandbox:
                 base_url = 'https://sandbox.zarinpal.com/pg/v4/payment/'

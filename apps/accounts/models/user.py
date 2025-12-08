@@ -115,6 +115,18 @@ class User(AbstractUser):
             self.username = self.phone_number
         super().save(*args, **kwargs)
         
+    # ===== اعتبارسنجی و صحت از یکتا بودن شماره تماس و ایمیل کاربر و در صورت نبود، ارور ===== #
+    def clean(self):
+        """Override clean method to validate unique phone_number and email"""
+        super().clean()
+        
+        if User.objects.filter(phone_number=self.phone_number).exclude(id=self.id).exists():
+            raise ValueError(_('این شماره تلفن همراه قبلا استفاده شده است.'))
+        
+        if User.objects.filter(email=self.email).exclude(id=self.id).exists():
+            raise ValueError(_('این ایمیل قبلا استفاده شده است.'))
+
+        
     def has_active_membership(self):
         """
         بررسی بهینه برای اینکه کاربر اشتراک فعال دارد یا نه.

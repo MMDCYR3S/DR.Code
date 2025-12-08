@@ -62,16 +62,30 @@ class LoginSerializer(serializers.Serializer):
         )
 
         if not self.user:
-            raise serializers.ValidationError(
-                "اطلاعات کاربری نامعتبر است."
-            )
+            try:
+                user = User.objects.get(phone_number=phone_number)
+                
+                # اگر کاربر یافت شد اما غیرفعال است
+                if not user.is_active:
+                    raise serializers.ValidationError({
+                        'non_field_errors': 'حساب کاربری شما غیرفعال است. لطفاً با پشتیبانی تماس بگیرید.'
+                    })
+                
+                # اگر کاربر فعال است ولی احراز هویت نشد، پس رمز عبور اشتباه است
+                raise serializers.ValidationError({
+                    'password': 'رمز عبور وارد شده صحیح نیست.'
+                })
+                
+            except User.DoesNotExist:
+                # این حالت نباید رخ دهد چون بالاتر بررسی کردیم
+                raise serializers.ValidationError({
+                    'phone_number': 'شماره تلفن وارد شده در سیستم ثبت نشده است.'
+                })
 
-        # بررسی اینکه حساب کاربری فعال باشد
         if not self.user.is_active:
-            raise serializers.ValidationError(
-                "حساب کاربری شما غیرفعال است. لطفاً با پشتیبانی تماس بگیرید."
-            )
-
+            raise serializers.ValidationError({
+                'non_field_errors': 'حساب کاربری شما غیرفعال است. لطفاً با پشتیبانی تماس بگیرید.'
+            })
         return attrs
 
     def get_user(self):
