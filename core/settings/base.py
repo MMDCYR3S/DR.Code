@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # Initialize django-environ
 env = environ.Env(
     # set casting, default value
-    DEBUG=(bool, False)
+    DEBUG=(bool, True)
 )
 
 # Take environment variables from .env file
@@ -37,7 +37,7 @@ SECRET_KEY = env("SECRET_KEY", default="your-default-secret-key")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env("DEBUG", cast=bool, default=True)
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost"])
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
 
 # Application definition
 
@@ -56,7 +56,8 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "django_filters",
     "django_ckeditor_5",
-
+    "import_export",
+    
     "apps.accounts.apps.AccountsConfig",
     "apps.home.apps.HomeConfig",
     "apps.prescriptions.apps.PrescriptionsConfig",
@@ -123,7 +124,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "fa-ir"
 
 TIME_ZONE = "UTC"
 
