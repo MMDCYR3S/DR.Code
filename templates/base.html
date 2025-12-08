@@ -432,7 +432,7 @@
             </div>
 
 <div class=" z-[1000000000]" id="phone-warning-bar" style="display: none;">
-    <div class="py-4 bg-yellow-300">
+    <div class="py-4 bg-yellow-300" id="phone-warning-bar2>
         <div class="bg-yellow-50 border-2 border-yellow-200 border-dashed rounded-xl mx-10 lg:mx-20 py-3 px-4 shadow-sm">
             <div class="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div class="flex items-center gap-2 text-yellow-800">
@@ -1265,7 +1265,7 @@ document.getElementById('forgot-password-modal')?.addEventListener('click', func
                 // }
                 // بررسی auth_status
                 
-                if (profile.auth_status !== 'APPROVED') {
+                if (profile.auth_status !== 'APPROVED' || 'PENDING') {
                     let warningBar = document.getElementById('auth-warning-bar');
                     if(warningBar) warningBar.style.display = 'block';
                     let warningBar2 = document.getElementById('auth-warning-bar2');
@@ -1277,7 +1277,7 @@ document.getElementById('forgot-password-modal')?.addEventListener('click', func
                         console.log('⚠️ Auth warning bar displayed');
                     }
                 }
-                if (profile.auth_status === 'APPROVED') {
+                if (profile.auth_status === 'APPROVED' || 'PENDING') {
                     let warningBar2 = document.getElementById('auth-warning-bar2');
                     if(warningBar2) {
                         warningBar2.style.display = 'none';
