@@ -362,7 +362,44 @@
             background: rgba(0, 180, 216, 0.9);
         }
 
-        
+        /* GLightbox Override - رفع تداخل با کدهای امنیتی */
+.glightbox-container, 
+.glightbox-container * {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -webkit-user-drag: auto !important;
+    user-drag: auto !important;
+    touch-action: pan-y pinch-zoom !important; /* اجازه زوم و اسکرول */
+}
+
+.glightbox-container img {
+    pointer-events: auto !important;
+    -webkit-user-drag: auto !important; 
+}
+/* GLightbox Zoom Fix - رفع مشکل زوم و درگ در دسکتاپ */
+.glightbox-clean .gslide-image img {
+    /* اجازه دادن به تعامل موس برای زوم و درگ */
+    pointer-events: auto !important;
+    touch-action: pan-y pinch-zoom !important;
+    
+    /* اجازه انتخاب و درگ فقط داخل لایت‌باکس (ضروری برای محاسبه مختصات زوم) */
+    -webkit-user-drag: auto !important;
+    user-drag: auto !important; 
+    user-select: auto !important;
+    -webkit-user-select: auto !important;
+    
+    /* تغییر نشانگر موس برای اینکه کاربر بفهمد عکس قابل زوم است */
+    cursor: zoom-in !important;
+}
+
+/* وقتی زوم انجام شد، نشانگر موس تبدیل به دست شود (برای جابجایی) */
+.glightbox-clean .gslide-image.zoomed img {
+    cursor: grab !important;
+}
+
+.glightbox-clean .gslide-image.zoomed img:active {
+    cursor: grabbing !important;
+}
 </style>
 
 <div x-data="prescriptionDetailApp()" x-init="init()" class="min-h-screen pt-16 bg-gray-50">
@@ -744,50 +781,124 @@
     </section>
 
     <!-- ==================== IMAGE BOX SECTION ==================== -->
-    <div x-show="prescription.images && prescription.images.length > 0" 
-    class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 mx-6">
-   <!-- Header -->
-   <div class="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
-       <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-c1 to-c2 flex items-center justify-center">
-           <i class="fas fa-images text-white text-lg"></i>
-       </div>
-       <h3 class="text-lg font-bold text-gray-800">تصاویر پیوست</h3>
-       <span class="mr-auto text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-full" 
-             x-text="prescription.images.length + ' تصویر'"></span>
-   </div>
+<div x-show="prescription.images && prescription.images.length > 0" 
+     class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 mx-6">
+    
+    <div class="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
+        <h3 class="text-lg font-bold text-gray-800">تصاویر پیوست (Debug Mode)</h3>
+    </div>
 
-   <!-- Images Grid -->
-   <div class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-       <template x-for="(image, index) in prescription.images" :key="index">
-           <a :href="image.image" 
-              class="glightbox group relative aspect-square rounded-xl overflow-hidden bg-gray-100 cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105"
-              :data-gallery="'prescription-gallery'"
-              :data-description="image.caption || ''">
-               <!-- Image -->
-               <img :src="image.image" 
-                    :alt="image.caption || 'تصویر نسخه'"
-                    class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                    loading="lazy">
-               
-               <!-- Overlay -->
-               <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                   <div class="absolute bottom-2 left-2 right-2 flex items-center justify-center">
-                       <div class="bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1.5 flex items-center gap-2">
-                           <i class="fas fa-search-plus text-c1 text-sm"></i>
-                           <span class="text-xs font-semibold text-gray-700">مشاهده</span>
-                       </div>
-                   </div>
-               </div>
+    <div id="docs-gallery" 
+         style="user-select: auto !important; pointer-events: auto !important;"
+         class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+         
+        <template x-for="(image, index) in prescription.images" :key="index">
+            <div class="flex flex-col gap-2 relative">
+                
+                <div class="relative aspect-square rounded-xl overflow-hidden bg-gray-100 border border-gray-200"
+                     style="cursor: pointer !important; z-index: 1;">
+                   
+                    <img :src="image.image" 
+                         :data-original="image.image"
+                         :alt="image.caption || 'تصویر'"
+                         onclick="console.log('✅ Native Click Works on Image index:', this.getAttribute('src'))"
+                         class="w-full h-full object-cover"
+                         style="pointer-events: auto !important; z-index: 100; position: relative;"
+                         loading="lazy">
+                    
+                    <div class="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity"
+                         style="pointer-events: none !important; z-index: 50;">
+                        <i class="fas fa-search text-white text-xl"></i>
+                    </div>
 
-               <!-- Badge -->
-               <div class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 text-xs font-bold text-gray-600">
-                   <span x-text="index + 1"></span>
-               </div>
-           </a>
-       </template>
-   </div>
+                </div>
+
+                <p class="hidden lg:block text-xs text-center text-gray-600" x-text="image.caption"></p>
+            </div>
+        </template>
+    </div>
 </div>
 
+<script>
+    document.addEventListener('alpine:initialized', () => {
+        // صبر میکنیم تا Alpine کامل لود بشه
+        setTimeout(() => {
+            const gallery = document.getElementById('docs-gallery');
+            if (!gallery) {
+                console.error("❌ Gallery Element NOT FOUND");
+                return;
+            }
+
+            console.log("✅ Gallery Element Found. Initializing Viewer...");
+
+            // ساخت ویوور روی کانتینر اصلی
+            try {
+                // اگر قبلا اینستنس بوده، پاکش کن (دستی چک میکنیم)
+                if (window.myGalleryInstance) {
+                    window.myGalleryInstance.destroy();
+                }
+
+                window.myGalleryInstance = new Viewer(gallery, {
+                    url: 'data-original',
+                    button: true,
+                    navbar: true,
+                    title: false,
+                    toolbar: true,
+                    tooltip: true,
+                    movable: true,
+                    zoomable: true,
+                    rotatable: true,
+                    scalable: true,
+                    transition: false, // ترنزیشن خاموش برای سرعت
+                    fullscreen: true,
+                    keyboard: true,
+                    
+                    // هوک برای دیباگ
+                    viewed() {
+                        console.log('✅ Viewer: Image Opened Successfully');
+                    },
+                    ready() {
+                        console.log('✅ Viewer: Ready');
+                    }
+                });
+                console.log("✅ Viewer initialized successfully via Inline Script");
+
+            } catch (e) {
+                console.error("❌ Viewer Initialization Error:", e);
+            }
+        }, 1000); // یک ثانیه تاخیر برای اطمینان از رندر شدن x-for
+    });
+</script>
+<style>
+    /* 1. باز کردن دسترسی کلیک برای عکس‌های گالری (حیاتی) */
+    #docs-gallery img {
+        cursor: pointer !important;
+        pointer-events: auto !important; /* این خط کلیک رو فعال میکنه */
+        z-index: 10 !important; /* میاره روی همه لایه‌ها */
+    }
+    
+    /* 2. تنظیمات کانتینر ویوور */
+    .viewer-container {
+        direction: ltr; 
+        z-index: 99999 !important;
+        background-color: rgba(0, 0, 0, 0.9) !important;
+    }
+    
+    .viewer-container * {
+        box-sizing: border-box; 
+    }
+
+    /* 3. تنظیمات عکس داخل ویوور (برای زوم و درگ) */
+    .viewer-canvas img {
+        pointer-events: auto !important; 
+        cursor: move !important; /* نشانگر موس برای درگ */
+    }
+    
+    /* 4. جلوگیری از مزاحمت واترمارک یا لایه‌های دیگر */
+    .viewer-backdrop {
+        background-color: rgba(0, 0, 0, 0.9) !important;
+    }
+</style>
     <!-- ==================== VIDEO BOX SECTION ==================== -->
     <div x-show="prescription.videos && prescription.videos.length > 0" 
     class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 mx-6">
