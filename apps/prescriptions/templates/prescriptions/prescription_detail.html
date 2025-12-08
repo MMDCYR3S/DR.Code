@@ -813,7 +813,7 @@
 
                 </div>
 
-                <p class="hidden lg:block text-xs text-center text-gray-600" x-text="image.caption"></p>
+                <p class="hidden lg:block text-xs text-center text-white bg-black/50 p-1 rounded-lg" x-text="image.caption"></p>
             </div>
         </template>
     </div>
@@ -869,34 +869,16 @@
         }, 1000); // یک ثانیه تاخیر برای اطمینان از رندر شدن x-for
     });
 </script>
-<style>
-    /* 1. باز کردن دسترسی کلیک برای عکس‌های گالری (حیاتی) */
-    #docs-gallery img {
-        cursor: pointer !important;
-        pointer-events: auto !important; /* این خط کلیک رو فعال میکنه */
-        z-index: 10 !important; /* میاره روی همه لایه‌ها */
-    }
-    
-    /* 2. تنظیمات کانتینر ویوور */
-    .viewer-container {
-        direction: ltr; 
-        z-index: 99999 !important;
-        background-color: rgba(0, 0, 0, 0.9) !important;
-    }
-    
-    .viewer-container * {
-        box-sizing: border-box; 
-    }
 
-    /* 3. تنظیمات عکس داخل ویوور (برای زوم و درگ) */
-    .viewer-canvas img {
-        pointer-events: auto !important; 
-        cursor: move !important; /* نشانگر موس برای درگ */
+<style>
+    .viewer-container, .viewer-canvas {
+        user-select: none !important; /* خود ویوور هندل میکنه */
+        touch-action: none !important;
     }
-    
-    /* 4. جلوگیری از مزاحمت واترمارک یا لایه‌های دیگر */
-    .viewer-backdrop {
-        background-color: rgba(0, 0, 0, 0.9) !important;
+    .viewer-canvas img {
+        /* این خط حیاتیه برای اینکه ویوور بتونه عکس رو بگیره و بکشه */
+        pointer-events: auto !important; 
+        user-drag: none !important; /* ویوور خودش درگ رو با ترنسفرم انجام میده */
     }
 </style>
     <!-- ==================== VIDEO BOX SECTION ==================== -->
