@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.sites",
     "django.contrib.humanize",
-
+    
+    "debug_toolbar",
     "rest_framework",
     "rest_framework_simplejwt",
     "drf_spectacular",
@@ -78,7 +79,17 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.accounts.middleware.SubscriptionCheckMiddleware",
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
+
+INTERNAL_IPS = [
+    '127.0.0.1',
+    'localhost',
+]
+
+DEBUG_TOOLBAR_CONFIG = {
+    'SHOW_TOOLBAR_CALLBACK': lambda request: True,
+}
 
 ROOT_URLCONF = "core.urls"
 
@@ -398,4 +409,87 @@ PARSPAL_CONFIG = {
     'API_KEY': env('PARSPAL_API_KEY', default='00000000aaaabbbbcccc000000000000'),
     'CALLBACK_URL': env('PARSPAL_CALLBACK_URL', default='http://127.0.0.1:8000/api/v1/payment/parspal/callback/'),
     'SANDBOX': env.bool('PARSPAL_SANDBOX', default=True),
+}
+
+DEBUG_TOOLBAR_CONFIG = {
+    # کنترل نمایش toolbar
+    'SHOW_TOOLBAR_CALLBACK': lambda request: True,
+    # یا برای کنترل شرطی:
+    'SHOW_TOOLBAR_CALLBACK': lambda request: request.user.is_superuser,
+    
+    # پنل‌های پیش‌فرض
+    'PANELS': [
+        'debug_toolbar.panels.history.HistoryPanel',
+        'debug_toolbar.panels.versions.VersionsPanel',
+        'debug_toolbar.panels.timer.TimerPanel',
+        'debug_toolbar.panels.settings.SettingsPanel',
+        'debug_toolbar.panels.headers.HeadersPanel',
+        'debug_toolbar.panels.request.RequestPanel',
+        'debug_toolbar.panels.sql.SQLPanel',
+        'debug_toolbar.panels.staticfiles.StaticFilesPanel',
+        'debug_toolbar.panels.templates.TemplatesPanel',
+        'debug_toolbar.panels.cache.CachePanel',
+        'debug_toolbar.panels.signals.SignalsPanel',
+        'debug_toolbar.panels.redirects.RedirectsPanel',
+        'debug_toolbar.panels.profiling.ProfilingPanel',
+    ],
+    
+    # غیرفعال کردن پنل‌های خاص
+    'DISABLE_PANELS': {
+        'debug_toolbar.panels.redirects.RedirectsPanel',
+        'debug_toolbar.panels.profiling.ProfilingPanel',
+    },
+    
+    # استایل و ظاهر
+    'TOOLBAR_LANGUAGE': 'en-us',  # یا 'fa-ir' برای فارسی
+    'TOOLBAR_TIME_FORMAT': 'H:i:s',
+    'RESULTS_CACHE_SIZE': 25,
+    
+    # تنظیمات SQL پنل
+    'SQL_WARNING_THRESHOLD': 100,  # میلی‌ثانیه
+    'SQL_WARNING_LOGGER': 'myproject.loggers.sql_logger',
+    'EXPLAIN_TYPES': ['SELECT', 'INSERT', 'UPDATE', 'DELETE'],
+    'EXPLAIN_STREAMLINED': True,
+    
+    # تنظیمات ریکوئست
+    'ENABLE_STACKTRACES': True,
+    'ENABLE_STACKTRACES_LOCALS': False,  # اگر True شود، اطلاعات local variables را نشان می‌دهد
+    
+    # تنظیمات نمایش
+    'SHOW_COLLAPSED': False,  # نمایش جمع‌شده یا باز
+    'SHOW_TEMPLATE_CONTEXT': True,
+    'ROOT_TAG_EXTRA_ATTRS': 'data-theme="dark"',  # اضافه کردن attribute به تگ root
+    
+    # AJAX
+    'RENDER_PANELS': True,  # رندر پنل‌ها در پاسخ‌های AJAX
+    'UPDATE_ON_FETCH': True,  # آپدیت toolbar در fetch requests
+    
+    # ظاهر و موقعیت
+    'TOOLBAR_POSITION': 'bottom',  # یا 'top', 'left', 'right'
+    'TOOLBAR_FLOAT': True,  # شناور بودن toolbar
+    
+    # اضافه کردن پنل‌های سفارشی
+    'EXTRA_PANELS': [
+        'myapp.panels.CustomPanel',
+    ],
+    
+    # کش
+    'SKIP_TEMPLATE_PREFIXES': (
+        'django/forms/widgets/',
+        'admin/widgets/',
+    ),
+    
+    # فیلتر کردن
+    'HIDE_IN_STACKTRACES': (
+        'socketserver',
+        'threading',
+        'wsgiref',
+        'debug_toolbar',
+        'django.db',
+        'django.core.handlers',
+        'django.core.servers',
+        'django.utils.decorators',
+        'django.utils.deprecation',
+        'django.utils.functional',
+    ),
 }

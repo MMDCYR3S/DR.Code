@@ -78,7 +78,7 @@ function paymentVerifyApp() {
             const url = '/api/v1/payment/zarinpal/verify/';
 
             const response = await fetch(url, {
-                method: 'POST',
+                method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
