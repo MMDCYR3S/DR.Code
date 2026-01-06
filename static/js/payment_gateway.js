@@ -32,13 +32,18 @@ document.addEventListener('alpine:init', () => {
                     confirmButtonText: 'ورود',
                     confirmButtonColor: '#0077b6'
                 }).then(() => {
-                    window.location.href = '/login';
+                    window.location.href = '/';
                 });
                 return false;
             }
 
-            const profile = StorageManager.getUserProfile();
-            if (!profile || profile.auth_status !== 'APPROVED') {
+            let profile = JSON.parse(localStorage.getItem('drcode_user_profile'));
+            console.log(profile);
+            
+            // alert(profile)
+            // alert(typeof(profile))
+            alert(profile.data.auth_status)
+            if (!profile || profile.data.auth_status !== 'APPROVED') {
                 Swal.fire({
                     icon: 'error',
                     title: 'احراز هویت لازم است',
