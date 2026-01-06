@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from django.shortcuts import get_object_or_404
 from django.conf import settings
+from django.core.cache import cache
 from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth import get_user_model
@@ -37,28 +38,25 @@ class PaymentCreateView(CreateAPIView):
         serializer.is_valid(raise_exception=True)
 
         plan_id = serializer.validated_data['plan_id']
-        discount_code = serializer.validated_data.get('discount_code')
+        
+        cache_key = f"purchase_summary:{request.user.id}:{plan_id}"
+        purchase_data = cache.get(cache_key)
+        
+        if not purchase_data:
+            return Response({
+                'success': False,
+                'error': 'جلسه خرید شما منقضی شده است. لطفاً مراحل را از ابتدا طی کنید.'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         plan = get_object_or_404(Plan, id=plan_id)
-        
-        original_amount_rial = plan.price * 10 
-        
-        discount_amount_rial = 0
-        
-        if discount_code:
-            dis_code = DiscountCode.objects.get(code=discount_code, active=True)
-            discount_amount_rial = (original_amount_rial * dis_code.discount_percent ) / 100
-
-        # ===== محاسبه قیمت نهایی ===== #
-        final_amount_rial = original_amount_rial - discount_amount_rial
-        
-        if final_amount_rial < 0:
-            final_amount_rial = 0
+        amount = purchase_data['original_price'] * 10
+        discount_amount = purchase_data['discount_amount'] * 10
+        final_amount = purchase_data['final_price'] * 10
             
         subscription = Subscription.objects.create(
             user=request.user,
             plan=plan,
-            payment_amount=final_amount_rial,
+            payment_amount=final_amount,
             status=SubscriptionStatusChoicesModel.pending,
             start_date=timezone.now(),
             end_date=timezone.now()
@@ -67,8 +65,8 @@ class PaymentCreateView(CreateAPIView):
         payment = Payment.objects.create(
             user=request.user,
             subscription=subscription,
-            amount=original_amount_rial,
-            discount_amount=discount_amount_rial,
+            amount=final_amount,
+            discount_amount=discount_amount,
             final_amount=final_amount_rial,
             user_ip=self.get_client_ip(request),
             user_agent=request.META.get('HTTP_USER_AGENT', ''),
@@ -80,7 +78,7 @@ class PaymentCreateView(CreateAPIView):
         )
         
         result = zarinpal.create_payment_request(
-            amount=int(final_amount_rial),
+            amount=int(final_amount),
             description=f"خرید اشتراک {plan.name}",
             callback_url=callback_url,
             metadata={'mobile': request.user.phone_number, 'email': request.user.email}
@@ -89,6 +87,7 @@ class PaymentCreateView(CreateAPIView):
         if result['success']:
             payment.authority = result['authority']
             payment.save()
+            cache.delete(cache_key)
             logger.info(f"Payment created successfully: payment_id={payment.id}, user={request.user.id}")
             
             return Response({
