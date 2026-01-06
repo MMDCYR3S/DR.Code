@@ -852,18 +852,27 @@ API.payment = {
     },
 
     // تایید پرداخت زرین‌پال (برای صفحه callback)
-    async verifyZarinpalPayment(authority) {
+    async verifyZarinpalPayment(authority, status) {
         try {
-            const response = await fetch(`${API.BASE_URL}api/v1/payment/zarinpal/verify/`, {
-                method: 'POST',
+            // ساخت پارامترهای URL
+            const params = new URLSearchParams({
+                Authority: authority,
+                Status: status
+            });
+
+            // چسباندن پارامترها به انتهای آدرس
+            const url = `${API.BASE_URL}api/v1/payment/zarinpal/verify/?${params.toString()}`;
+
+            const response = await fetch(url, {
+                method: 'GET', // متد حتما GET باشد
                 headers: API.getHeaders(true),
-                body: JSON.stringify({ authority })
+                // ❌ خط body: JSON.stringify(...) باید کاملا حذف شود
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'خطا در تایید پرداخت');
+                throw new Error(data.message || data.error || 'خطا در تایید پرداخت');
             }
 
             return {

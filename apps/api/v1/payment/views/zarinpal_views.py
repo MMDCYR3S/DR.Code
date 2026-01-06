@@ -1,11 +1,12 @@
 from datetime import timedelta
-from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
-from django.shortcuts import get_object_or_404
+from django.views import View
+from django.shortcuts import get_object_or_404, render
 from django.conf import settings
 from django.core.cache import cache
 from django.urls import reverse
@@ -21,8 +22,7 @@ User = get_user_model()
 
 from apps.payment.models import Payment, PaymentStatus
 from apps.payment.services import ZarinpalService
-from apps.order.models import DiscountCode
-from ..serializers import PaymentCreateSerializer, PaymentSerializer
+from ..serializers import PaymentCreateSerializer
 from apps.subscriptions.models import Subscription, SubscriptionStatusChoicesModel, Plan
 
 # ====== Payment Create View ====== #
@@ -113,139 +113,125 @@ class PaymentCreateView(CreateAPIView):
             ip = request.META.get('REMOTE_ADDR')
         return ip
 
-
-# ====== Payment Verify View ====== #
+ 
 class PaymentVerifyView(APIView):
-    """
-    تایید پرداخت از زرین‌پال (Callback)
-    """
-    permission_classes = [IsAuthenticated]
-    
+    authentication_classes = [] 
+    permission_classes = []
+
     def get(self, request):
-        """
-        دریافت داده‌ها از URL (Query Params) و تایید پرداخت
-        """
-        authority = request.query_params.get('Authority') or request.query_params.get('authority')
-        status_param = request.query_params.get('Status') or request.query_params.get('status')
+        authority = request.GET.get('Authority') or request.query_params.get('Authority')
+        status_param = request.GET.get('Status') or request.query_params.get('Status')
         
-        if not authority:
-            return Response({
-                'success': False,
-                'error': 'کد رهگیری (Authority) در آدرس بازگشتی یافت نشد.'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
+        # تشخیص نوع درخواست
+        is_api_request = 'application/json' in request.headers.get('Accept', '') or \
+                         'application/json' in request.headers.get('Content-Type', '')
+
+        # دیتای پیش‌فرض برای ارسال به فرانت (CamelCase برای هماهنگی با JS)
+        context_data = {
+            'loading': False,
+            'success': False,
+            'errorMessage': 'اطلاعات پرداخت یافت نشد.',
+            'refId': '',       # اصلاح شد: refId برای نمایش در فرانت
+            'paymentDate': '',
+            'gateway': 'zarinpal'
+        }
+
         try:
-            # ===== تنظیمات یکپارچه ===== #
+            if not authority:
+                # اگر پارامتری نبود، فقط صفحه را رندر کن (حالت انتظار)
+                return self._response(request, is_api_request, context_data)
+
+            # 1. پیدا کردن پرداخت
+            try:
+                payment = Payment.objects.get(authority=authority)
+            except Payment.DoesNotExist:
+                raise ValueError('رکورد پرداخت یافت نشد.')
+
+            # 2. اگر قبلاً تکمیل شده
+            if payment.status == PaymentStatus.COMPLETED:
+                context_data.update({
+                    'success': True,
+                    'refId': payment.ref_id,
+                    'paymentDate': payment.paid_at.strftime('%Y-%m-%d %H:%M') if payment.paid_at else '',
+                    'errorMessage': '',
+                    'already_verified': True
+                })
+                return self._response(request, is_api_request, context_data)
+
+            # 3. اگر کاربر لغو کرده
+            if status_param != 'OK':
+                payment.status = PaymentStatus.CANCELLED
+                payment.save()
+                raise ValueError('پرداخت توسط کاربر لغو شد.')
+
+            # 4. درخواست به زرین‌پال
+            zarinpal = ZarinpalService()
+            verify_result = zarinpal.verify_payment(
+                authority=authority,
+                amount=int(payment.final_amount)
+            )
+            
             with transaction.atomic():
-                
-                # ===== دریافت رکورد پرداخت ===== #
-                payment = get_object_or_404(
-                    Payment.objects.select_for_update(), 
-                    authority=authority
-                )
-                
-                # ===== بررسی کاربر ===== #
-                if payment.user != request.user:
-                    logger.warning(f"Unauthorized verify attempt: payment={payment.id}, user={request.user.id}")
-                    return Response({
-                        'success': False,
-                        'error': 'دسترسی غیرمجاز به این تراکنش'
-                    }, status=status.HTTP_403_FORBIDDEN)
-                
-                
-                if payment.status == PaymentStatus.COMPLETED:
-                    logger.info(f"Payment already completed: payment={payment.id}")
-                    return Response({
-                        'success': True,
-                        'message': 'این پرداخت قبلاً تایید شده است',
-                        'payment_id': payment.id,
-                        'ref_id': payment.ref_id,
-                        'already_verified': True
-                    }, status=status.HTTP_200_OK)
-                
-                # ===== بررسی وضعیت پرداخت ===== #
-                if status_param != 'OK':
-                    payment.status = PaymentStatus.CANCELLED
-                    payment.save()
-                    
-                    if payment.subscription:
-                        payment.subscription.status = SubscriptionStatusChoicesModel.canceled
-                        payment.subscription.save()
-                
-                    logger.info(f"Payment cancelled by user: payment={payment.id}")
-                    return Response({
-                        'success': False,
-                        'error': 'پرداخت توسط کاربر لغو شد',
-                        'payment_id': payment.id
-                    }, status=status.HTTP_400_BAD_REQUEST)
-                
-                zarinpal = ZarinpalService()
-                verify_result = zarinpal.verify_payment(
-                    authority=authority,
-                    amount=int(payment.final_amount)
-                )
+                payment = Payment.objects.select_for_update().get(id=payment.id)
                 
                 if verify_result['success']:
-                    
                     payment.status = PaymentStatus.COMPLETED
                     payment.ref_id = verify_result['ref_id']
                     payment.paid_at = timezone.now()
                     payment.save()
-                    
-                    # ===== اگر اشتراک بود ===== #
+
+                    # فعال‌سازی اشتراک
                     if payment.subscription:
                         sub = payment.subscription
+                        # اینجا چون request.user ممکن است به خاطر سشن ست نشده باشد از payment.user استفاده میکنیم
+                        active_subscription = self._get_active_subscription(payment.user)
                         
-                        # ===== اشتراک ها فعال مربوط به کاربر ===== #
-                        active_subscription = self._get_active_subscription(request.user)
-                        
-                        # ===== اشتراک فعال ===== #
                         if active_subscription and active_subscription.id != sub.id:
                             self._extend_subscription(active_subscription, sub, payment)
                         else:
                             self._activate_subscription(sub)
-                        # ===== به روز کردن پروفایل کاربر ===== #
-                        self._update_user_profile(request.user, active_subscription or sub, payment)
-                
-                    logger.info(f"Payment verified successfully: RefID={verify_result['ref_id']}")
-                                      
-                    return Response({
+                        
+                        self._update_user_profile(payment.user, active_subscription or sub, payment)
+
+                    context_data.update({
                         'success': True,
-                        'message': 'پرداخت با موفقیت انجام شد',
-                        'payment_id': payment.id,
-                        'ref_id': verify_result['ref_id'],
-                        'already_verified': False
-                    }, status=status.HTTP_200_OK)
-                
+                        'refId': str(verify_result['ref_id']), # تبدیل به رشته برای اطمینان
+                        'paymentDate': payment.paid_at.strftime('%Y-%m-%d %H:%M'),
+                        'errorMessage': ''
+                    })
                 else:
-                    # ===== پرداخت ناموفق ===== #
                     payment.status = PaymentStatus.FAILED
                     payment.save()
-                    
-                    # ===== بازگشت اشتراک ===== #
                     if payment.subscription:
                         payment.subscription.status = SubscriptionStatusChoicesModel.canceled
                         payment.subscription.save()
-                
-                    logger.error(f"Payment verification failed: payment={payment.id}, error={verify_result.get('error')}")
-                    
-                    return Response({
-                        'success': False,
-                        'error': verify_result.get('error', 'خطای نامشخص در تایید پرداخت'),
-                        'payment_id': payment.id
-                    }, status=status.HTTP_400_BAD_REQUEST)
-                
-        except Exception as e:
-            logger.exception(f"Exception in PaymentVerifyView: {e}")
-            return Response({
-                'success': False,
-                'error': 'خطای داخلی سرور هنگام تایید پرداخت'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    raise ValueError(verify_result.get('error', 'تراکنش ناموفق بود'))
 
-    # ====== Helper Methods (بدون تغییر) ====== #
-    
+        except Exception as e:
+            logger.error(f"Payment Verify Error: {str(e)}")
+            context_data['errorMessage'] = str(e)
+            
+            if is_api_request:
+                return Response({'success': False, 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return self._response(request, is_api_request, context_data)
+
+    def _response(self, request, is_api_request, data):
+        if is_api_request:
+            return Response({
+                'success': data['success'],
+                'data': {
+                    'ref_id': data['refId'],
+                    'created_at': data['paymentDate']
+                },
+                'message': 'عملیات موفق' if data['success'] else data['errorMessage']
+            }, status=status.HTTP_200_OK if data['success'] else status.HTTP_400_BAD_REQUEST)
+        else:
+            # ارسال initial_data به تمپلیت HTML
+            return render(request, 'payment/verify_payment.html', {'initial_data': data})
+
+    # ================= Helper Methods =================
     def _get_active_subscription(self, user):
-        """پیدا کردن اشتراک فعال کاربر"""
         now = timezone.now()
         return Subscription.objects.filter(
             user=user,
@@ -254,7 +240,6 @@ class PaymentVerifyView(APIView):
         ).order_by('-end_date').first()
     
     def _extend_subscription(self, active_subscription, new_subscription, payment):
-        """تمدید اشتراک فعال"""
         additional_days = new_subscription.plan.duration_days
         active_subscription.end_date = active_subscription.end_date + timedelta(days=additional_days)
         active_subscription.save()
@@ -264,26 +249,19 @@ class PaymentVerifyView(APIView):
         new_subscription.end_date = active_subscription.end_date
         new_subscription.save()
         
-        logger.info(f"Subscription extended: user={active_subscription.user.id}, "
-                    f"added_days={additional_days}, new_end={active_subscription.end_date}")
-    
     def _activate_subscription(self, subscription):
-        """فعال‌سازی اشتراک جدید"""
         now = timezone.now()
         subscription.status = SubscriptionStatusChoicesModel.active
         subscription.start_date = now
         subscription.end_date = now + timedelta(days=subscription.plan.duration_days)
         subscription.save()
-        
-        logger.info(f"Subscription activated: user={subscription.user.id}, "
-                    f"end_date={subscription.end_date}")
-    
+
     def _update_user_profile(self, user, subscription, payment):
-        """به‌روزرسانی پروفایل کاربر"""
-        profile = user.profile
-        if profile.role != "admin":
-            profile.role = 'premium'
-        profile.subscription_end_date = subscription.end_date
-        
-        profile.save()
-        
+        try:
+            profile = user.profile
+            if profile.role != "admin":
+                profile.role = 'premium'
+            profile.subscription_end_date = subscription.end_date
+            profile.save()
+        except Exception as e:
+            logger.error(f"Error updating profile for user {user.id}: {e}")
