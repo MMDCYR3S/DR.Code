@@ -855,7 +855,7 @@ API.payment = {
     async verifyZarinpalPayment(authority) {
         try {
             const response = await fetch(`${API.BASE_URL}api/v1/payment/zarinpal/verify/`, {
-                method: 'GET',
+                method: 'POST',
                 headers: API.getHeaders(true),
                 body: JSON.stringify({ authority })
             });

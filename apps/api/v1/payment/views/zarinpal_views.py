@@ -65,9 +65,9 @@ class PaymentCreateView(CreateAPIView):
         payment = Payment.objects.create(
             user=request.user,
             subscription=subscription,
-            amount=final_amount,
+            amount=amount,
             discount_amount=discount_amount,
-            final_amount=final_amount_rial,
+            final_amount=final_amount,
             user_ip=self.get_client_ip(request),
             user_agent=request.META.get('HTTP_USER_AGENT', ''),
         )
