@@ -60,3 +60,186 @@ CACHES = {
         'LOCATION': 'unique-suffix',
     }
 }
+
+# ========= LOGS SETTINGS ========= #
+LOGS_DIR = BASE_DIR / 'logs'
+LOGS_DIR.mkdir(exist_ok=True)  # ایجاد پوشه در صورت عدم وجود
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {asctime} {message}',
+            'style': '{',
+        },
+        'celery': {
+            'format': '[{asctime}] {levelname} [{name}] {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
+    
+    'handlers': {
+        # لاگ عمومی Django
+        'django_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'django.log',
+            'maxBytes': 10 * 1024 * 1024,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+            'encoding': 'utf-8',
+        },
+        # ===== هندلر اختصاصی احراز هویت ===== #
+        'verification_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'verification.log',  # فایل جداگانه
+            'maxBytes': 5 * 1024 * 1024,  # 5 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+            'encoding': 'utf-8',
+        },
+        # ===== هندلر اختصاصی احراز هویت ===== #
+        'verification_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'verification.log',
+            'maxBytes': 5 * 1024 * 1024,  # 5 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+            'encoding': 'utf-8',
+        },
+        
+        # لاگ Celery Tasks
+        'celery_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'celery.log',
+            'maxBytes': 20 * 1024 * 1024,  # 20 MB
+            'backupCount': 10,
+            'formatter': 'celery',
+            'encoding': 'utf-8',
+        },
+        
+        # لاگ فشرده‌سازی تصاویر
+        'compression_file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'image_compression.log',
+            'maxBytes': 50 * 1024 * 1024,  # 50 MB
+            'backupCount': 15,
+            'formatter': 'celery',
+            'encoding': 'utf-8',
+        },
+        
+        # لاگ خطاها
+        'error_file': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'errors.log',
+            'maxBytes': 10 * 1024 * 1024,  # 10 MB
+            'backupCount': 10,
+            'formatter': 'verbose',
+            'encoding': 'utf-8',
+        },
+        
+        'email_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'email.log',
+            'maxBytes': 10 * 1024 * 1024,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'simple',
+            'encoding': 'utf-8',
+        },
+        # ===== هندلر اختصاصی پرداخت (جدید) ===== #
+        'payment_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'payments.log',  # ذخیره در فایل جداگانه
+            'maxBytes': 10 * 1024 * 1024,  # 10 MB
+            'backupCount': 10,
+            'formatter': 'verbose',
+            'encoding': 'utf-8',
+        },
+        # کنسول (اختیاری)
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    
+    'loggers': {
+        # Django عمومی
+        'apps.dashboard.administrator.services.email_service': {
+            'handlers': ['email_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        # ===== لاگر اختصاصی احراز هویت ===== #
+        'user_verification': {
+            'handlers': ['verification_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django': {
+            'handlers': ['django_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        # ===== لاگر اختصاصی احراز هویت ===== #
+        'user_verification': {
+            'handlers': ['verification_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        
+        # Celery عمومی
+        'celery': {
+            'handlers': ['celery_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        
+        # Task های فشرده‌سازی
+        'apps.prescriptions.tasks': {
+            'handlers': ['compression_file', 'console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        
+        # خطاها
+        'django.request': {
+            'handlers': ['error_file'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        
+        # لاگر سفارشی برای فشرده‌سازی
+        'image_compression': {
+            'handlers': ['compression_file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        # ===== لاگر اختصاصی زرین‌پال (جدید) ===== #
+        'zarinpal': {
+            'handlers': ['payment_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+    
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+}
+

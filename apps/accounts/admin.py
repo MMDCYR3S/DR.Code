@@ -31,7 +31,7 @@ class UserAdmin(ImportExportModelAdmin, BaseUserAdmin):
         'shamsi_date_joined'
     )
     
-    list_filter = ('is_staff', 'is_superuser', 'is_active', 'groups', 'profile__role', 'profile__auth_status')
+    list_filter = ('is_staff', 'is_superuser', 'is_active', 'groups', 'profile__role', 'email','profile__auth_status')
     
     fieldsets = (
         (None, {'fields': ('phone_number', 'password')}),
