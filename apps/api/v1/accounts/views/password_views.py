@@ -1,9 +1,11 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+
 from django.contrib.auth import get_user_model
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
@@ -31,10 +33,23 @@ class PasswordResetRequestAPIView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data['email']
         
+        cache_key = f"password_reset_spam_{email}"
+        
+        if cache.get(cache_key):
+            ttl = cache.ttl(cache_key) if hasattr(cache, 'ttl') else 'چند' # زمان باقی‌مانده
+            return Response(
+                {
+                    'detail': 'شما به تازگی درخواست داده‌اید. لطفاً ۲ دقیقه صبر کنید و سپس مجدداً تلاش نمایید.',
+                    'wait_seconds': ttl
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+        
         try:
             user = User.objects.get(email__iexact=email)
             
             send_password_reset_email(user)
+            cache.set(cache_key, "true", timeout=120)
         except User.DoesNotExist:
             return Response(
                 {'detail': 'کاربری با این ایمیل یافت نشد.'},

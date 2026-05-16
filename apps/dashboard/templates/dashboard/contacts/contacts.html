@@ -33,6 +33,8 @@
                         </th>
                         <th scope="col" class="px-6 py-3 text-right font-medium">فرستنده</th>
                         <th scope="col" class="px-6 py-3 text-right font-medium">موضوع و پیش‌نمایش</th>
+                        <th scope="col" class="px-6 py-3 text-right font-medium">شماره تماس</th>
+                        <th scope="col" class="px-6 py-3 text-right font-medium">ایمیل</th>
                         <th scope="col" class="px-6 py-3 text-right font-medium">وضعیت</th>
                         <th scope="col" class="px-6 py-3 text-right font-medium">تاریخ دریافت</th>
                     </tr>
@@ -51,6 +53,12 @@
                         <td class="px-6 py-4" @click="navigateToMessage({{ contact.pk }})">
                             <div class="text-slate-800 {% if contact.status == 'pending' %}font-bold{% endif %}">{{ contact.subject_display }}</div>
                             <div class="text-xs text-slate-500">{{ contact.message|truncatewords:15 }}...</div>
+                        </td>
+                        <td class="px-6 py-4" @click="navigateToMessage({{ contact.pk }})">
+                            <div class="text-md font-bold text-slate-800">{{ contact.phone }}</div>
+                        </td>
+                        <td class="px-6 py-4" @click="navigateToMessage({{ contact.pk }})">
+                            <div class="text-md font-bold text-slate-800">{{ contact.email }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap" @click="navigateToMessage({{ contact.pk }})">
                             {% if contact.status == 'pending' %}

@@ -6,7 +6,8 @@ logger = logging.getLogger('user_verification')
 
 class AmootSMSService:
     # آدرس‌های سرویس
-    URL_PATTERN = "https://portal.amootsms.com/rest/SendWithPattern" 
+    URL_PATTERN = "https://portal.amootsms.com/rest/SendWithPattern"
+    URL_SEND_SIMPLE = "https://portal.amootsms.com/rest/SendSimple"
     
     def __init__(self, token: str = "4A9869096131EA46E7A41BDCD99B2ADC560193B2"):
         self.token = token
@@ -53,4 +54,37 @@ class AmootSMSService:
         except Exception as e:
             # گرفتن تمام خطاهای احتمالی (مثل تایپ ارور و ...)
             logger.error(f"General Error in Amoot Service: {str(e)}", exc_info=True)
+            return False
+    
+    # ========== ارسال پیامک دلخواه ========== #
+    def send_message(self, mobile: str, message_text: str) -> bool:
+        """
+        ارسال پیامک معمولی (غیر پترن) بر اساس الگوی SendSimple
+        """
+        logger.info(f"--- [AMOOT SEND SIMPLE START] --- Target: {mobile}")
+
+        try:
+            headers = {"Authorization": self.token}
+            
+            data = {
+                "SendDateTime": "",
+                "SMSMessageText": message_text,
+                "LineNumber": "public",
+                "Mobiles": mobile
+            }
+            response = requests.post(self.URL_SEND_SIMPLE, data=data, headers=headers, timeout=10)
+
+            if response.status_code == 200:
+                logger.info("--- [AMOOT SEND SIMPLE SUCCESS] ---")
+                return True
+            
+            logger.error(f"--- [AMOOT SEND SIMPLE FAILED] Status: {response.status_code} | Body: {response.text}")
+            return False
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Network Error in Amoot Simple Service: {str(e)}")
+            return False
+            
+        except Exception as e:
+            logger.error(f"General Error in Amoot Simple Service: {str(e)}", exc_info=True)
             return False

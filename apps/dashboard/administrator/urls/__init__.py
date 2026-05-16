@@ -14,4 +14,5 @@ urlpatterns = [
     path("", include("apps.dashboard.administrator.urls.analysis_urls")),
     path("", include("apps.dashboard.administrator.urls.subscriptions_urls")),
     path("", include("apps.dashboard.administrator.urls.notifications_urls")),
+    path("", include("apps.dashboard.administrator.urls.ordering_urls")),
 ]

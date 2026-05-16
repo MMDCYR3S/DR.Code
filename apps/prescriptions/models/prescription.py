@@ -2,6 +2,7 @@ import jdatetime
 from slugify import slugify
 
 from django.db import models
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django_ckeditor_5.fields import CKEditor5Field
@@ -99,6 +100,9 @@ class Prescription(models.Model):
     def get_category_color(self):
         """ دریافت رنگ دسته‌بندی """
         return self.category.color_code
+
+    def get_absolute_url(self):
+        return reverse('prescriptions:prescription_detail', kwargs={'slug': self.slug})
 
     def get_primary_name(self):
         """نام اصلی نسخه را برمی‌گرداند"""

@@ -10,12 +10,11 @@ const Auth = {
             const response = await API.register(formData);
             
             if (response.success) {
-                
+                // ذخیره توکن‌ها
                 if (response.data.access_token) {
                     StorageManager.saveTokens({
                         access_token: response.data.access_token,
-                        refresh_token: response.data.refresh_token,
-                        jti: response.data.jti
+                        refresh_token: response.data.refresh_token
                     });
                 }
                 
@@ -26,8 +25,6 @@ const Auth = {
                     phone_number: response.data.phone_number
                 });
                 
-                StorageManager.saveUserProfile(response.data.profile);
-                
                 // پیام موفقیت
                 this.showMessage('success', response.message);
                 
@@ -35,16 +32,6 @@ const Auth = {
                 setTimeout(() => {
                     this.closeAuthModal();
                     this.updateUIForLoggedInUser();
-                    if (typeof updateAuthWarningBar === 'function') {
-                        updateAuthWarningBar();
-                    }
-                    
-                    // به Alpine خبر بده که کاربر لاگین شده
-                    window.dispatchEvent(new CustomEvent('user-logged-in'));
-                    
-                    window.location.href = '/';
-                    // رفرش کامل با پاک کردن کش (Ctrl+F5)
-                    window.location.reload(true);
                 }, 1500);
                 
                 // اگر نیاز به احراز هویت تکمیلی دارد
@@ -73,7 +60,6 @@ const Auth = {
                 // ذخیره اطلاعات کاربر
                 StorageManager.saveUserData(response.data.user);
                 
-                
                 // ذخیره پروفایل کاربر
                 StorageManager.saveUserProfile(response.data.profile);
                 
@@ -81,21 +67,10 @@ const Auth = {
                 this.showMessage('success', response.message);
                 
                 // بستن مودال و به‌روزرسانی UI
-// بستن مودال و به‌روزرسانی UI
-setTimeout(() => {
-    this.closeAuthModal();
-    this.updateUIForLoggedInUser();
-
-    if (typeof updateAuthWarningBar === 'function') {
-        updateAuthWarningBar();
-    }
-
-    // به Alpine خبر بده که کاربر لاگین شده
-    window.dispatchEvent(new CustomEvent('user-logged-in'));
-    
-    // رفرش کامل با پاک کردن کش (Ctrl+F5)
-    window.location.reload(true);
-}, 1500);
+                setTimeout(() => {
+                    this.closeAuthModal();
+                    this.updateUIForLoggedInUser();
+                }, 1500);
             }
         } catch (error) {
             this.showMessage('error', error.message);
@@ -128,8 +103,6 @@ async logout() {
             // ریدایرکت به صفحه اصلی
             setTimeout(() => {
                 window.location.href = '/';
-                // Reload the page to ensure all state is cleared
-                window.location.reload();
             }, 1000);
             
         } catch (error) {
@@ -137,9 +110,7 @@ async logout() {
             // در صورت ارور هم خروج انجام بشه
             StorageManager.clearAll();
             this.updateUIForLoggedOutUser();
-            // ریدایرکت به صفحه اصلی و ریلود صفحه
             window.location.href = '/';
-            window.location.reload();
         }
     }
     
@@ -165,6 +136,12 @@ async logout() {
                             <i class="fas fa-user"></i>
                             پروفایل من
                         </a>
+                        ${profile?.role === 'premium' ? `
+                            <a href="/premium">
+                                <i class="fas fa-crown"></i>
+                                پنل ویژه
+                            </a>
+                        ` : ''}
                         <hr>
                         <a href="#" onclick="Auth.logout(); return false;">
                             <i class="fas fa-sign-out-alt"></i>
@@ -185,6 +162,9 @@ async logout() {
                 </button>
                 <div id="mobile-user-menu" class="mobile-dropdown-menu absolute px-8" style="display: none;">
                     <a href="/profile"><i class="fas fa-user"></i> پروفایل</a>
+                    ${profile?.role === 'premium' ? `
+                        <a href="/premium"><i class="fas fa-crown"></i> پنل ویژه</a>
+                    ` : ''}
                     <a href="#" onclick="Auth.logout(); return false;">
                         <i class="fas fa-sign-out-alt"></i> خروج
                     </a>
@@ -288,10 +268,6 @@ showLogoutMessage() {
             this.updateUIForLoggedInUser();
         } else {
             this.updateUIForLoggedOutUser();
-        }
-
-        if (typeof updateAuthWarningBar === 'function') {
-            updateAuthWarningBar();
         }
 
         // event listener برای کلیک خارج از منو

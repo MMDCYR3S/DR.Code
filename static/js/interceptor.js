@@ -1,93 +1,30 @@
-// Interceptor for handling token refresh
-console.log('🔧 Interceptor.js loading...');
-
+// Axios-like interceptor for native fetch
 (function() {
     const originalFetch = window.fetch;
-    let isRefreshing = false;
-    let failedQueue = [];
-
-    const processQueue = (error, token = null) => {
-        failedQueue.forEach(prom => {
-            if (error) {
-                prom.reject(error);
-            } else {
-                prom.resolve(token);
-            }
-        });
-        failedQueue = [];
-    };
-
+    
     window.fetch = function(...args) {
         let [url, config = {}] = args;
-
-        // فقط برای API هایی که لاگین دارن، توکن اضافه کن
-        if (url.includes('/api/') && typeof StorageManager !== 'undefined') {
-            const token = StorageManager.getAccessToken();
-            if (token) {
-                config.headers = {
-                    ...config.headers,
-                    'Authorization': `Bearer ${token}`
-                };
-            }
+        
+        // اضافه کردن توکن به همه درخواست‌های API
+        if (url.includes('/api/') && StorageManager.isLoggedIn()) {
+            config.headers = {
+                ...config.headers,
+                'Authorization': `Bearer ${StorageManager.getAccessToken()}`
+            };
         }
-
+        
         return originalFetch(url, config)
             .then(async response => {
-                // فقط اگه 401 بود و لاگین هستیم، رفرش کن
-                if (response.status === 401 && 
-                    url.includes('/api/') && 
-                    !url.includes('/token/refresh/') &&
-                    typeof StorageManager !== 'undefined' &&
-                    StorageManager.isLoggedIn() &&
-                    StorageManager.getRefreshToken()) {
-                    
-                    console.log('⚠️ Got 401, will try to refresh token');
-
-                    if (isRefreshing) {
-                        return new Promise((resolve, reject) => {
-                            failedQueue.push({ resolve, reject });
-                        }).then(token => {
-                            config.headers['Authorization'] = `Bearer ${token}`;
-                            return originalFetch(url, config);
-                        });
-                    }
-
-                    isRefreshing = true;
-
-                    try {
-                        const refreshResult = await API.refreshToken();
-                        const newToken = refreshResult.access;
-
-                        console.log('✅ Token refreshed');
-                        processQueue(null, newToken);
-
-                        config.headers['Authorization'] = `Bearer ${newToken}`;
-                        return originalFetch(url, config);
-
-                    } catch (refreshError) {
-                        console.error('❌ Refresh failed:', refreshError);
-                        processQueue(refreshError, null);
-                        
-                        StorageManager.clearAll();
-                        
-                        // فقط هدایت کن، بدون reload
-                        if (window.location.pathname !== '/') {
-                            window.location.href = '/';
-                        }
-                        
-                        return response;
-                    } finally {
-                        isRefreshing = false;
-                    }
+                // Handle 401 errors
+                if (response.status === 401) {
+                    // توکن منقضی شده، کاربر رو لاگ‌اوت کن
+                    StorageManager.clearAll();
+                    Auth.updateUIForLoggedOutUser();
+                    Auth.showAuthModal();
+                    throw new Error('نشست شما منقضی شده است. لطفاً دوباره وارد شوید.');
                 }
-
+                
                 return response;
-            })
-            .catch(error => {
-                console.error('🔴 Fetch error:', error);
-                throw error;
             });
     };
-
-    console.log('✅ Interceptor.js loaded');
 })();

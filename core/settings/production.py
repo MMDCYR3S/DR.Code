@@ -17,7 +17,7 @@ SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 
-SSECURE_SSL_REDIRECT = True
+SECURE_SSL_REDIRECT = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 SECURE_HSTS_SECONDS = 31536000
@@ -28,6 +28,28 @@ SECURE_REDIRECT_EXEMPT = []
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
 
 CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOWED_ORIGINS = [
+    "https://drcode-med.ir",
+    "https://www.drcode-med.ir",
+]
+
+CORS_ALLOW_HEADERS = [
+    "authorization",
+    "content-type",
+    "accept",
+    "origin",
+]
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS"
+]
 
 # Content Security Policy (CSP) - اگر پکیج django-csp نصب باشد
 # CSP_DEFAULT_SRC = ("'self'",)
@@ -132,6 +154,26 @@ LOGGING = {
             'formatter': 'verbose',
             'encoding': 'utf-8',
         },
+        # ===== هندلر اختصاصی احراز هویت ===== #
+        'verification_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'verification.log',  # فایل جداگانه
+            'maxBytes': 5 * 1024 * 1024,  # 5 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+            'encoding': 'utf-8',
+        },
+        # ===== هندلر اختصاصی احراز هویت ===== #
+        'verification_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'verification.log',
+            'maxBytes': 5 * 1024 * 1024,  # 5 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+            'encoding': 'utf-8',
+        },
         
         # لاگ Celery Tasks
         'celery_file': {
@@ -166,6 +208,25 @@ LOGGING = {
             'encoding': 'utf-8',
         },
         
+        'email_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'email.log',
+            'maxBytes': 10 * 1024 * 1024,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'simple',
+            'encoding': 'utf-8',
+        },
+        # ===== هندلر اختصاصی پرداخت (جدید) ===== #
+        'payment_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'payments.log',  # ذخیره در فایل جداگانه
+            'maxBytes': 10 * 1024 * 1024,  # 10 MB
+            'backupCount': 10,
+            'formatter': 'verbose',
+            'encoding': 'utf-8',
+        },
         # کنسول (اختیاری)
         'console': {
             'level': 'INFO',
@@ -176,8 +237,25 @@ LOGGING = {
     
     'loggers': {
         # Django عمومی
+        'apps.dashboard.administrator.services.email_service': {
+            'handlers': ['email_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        # ===== لاگر اختصاصی احراز هویت ===== #
+        'user_verification': {
+            'handlers': ['verification_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
         'django': {
             'handlers': ['django_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        # ===== لاگر اختصاصی احراز هویت ===== #
+        'user_verification': {
+            'handlers': ['verification_file', 'console'],
             'level': 'INFO',
             'propagate': False,
         },
@@ -209,6 +287,12 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': False,
         },
+        # ===== لاگر اختصاصی زرین‌پال (جدید) ===== #
+        'zarinpal': {
+            'handlers': ['payment_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
     },
     
     'root': {
@@ -219,19 +303,20 @@ LOGGING = {
 
 # ========= ZarinPal Sandbox Settings ========= #
 ZARINPAL_CONFIG = {
-    'MERCHANT_ID': "45209320-b090-4116-a1bd-8abd770d7787",
+    'MERCHANT_ID': "511d8079-0a4d-43de-884c-29be8e57fdbb",
     'SANDBOX': False,
     'CALLBACK_URL': 'https://drcode-med.ir/payment/status/',
 }
 
 # ====== EMAIL CONFIGS ====== #
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "arad.pws-dns.net"
-EMAIL_PORT = "465"
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'mail.drcode-med.ir'
+EMAIL_PORT = 465
 EMAIL_USE_SSL = True
-EMAIL_HOST_USER = "info@drcode-med.ir"
-EMAIL_HOST_PASSWORD = "A!s2D#f4G%h6J&"
-DEFAULT_FROM_EMAIL = "info@drcode-med.ir"
+EMAIL_USE_TLS = False
+EMAIL_HOST_USER = 'info@drcode-med.ir'
+EMAIL_HOST_PASSWORD = 'a1S@d3F$g5H^j7'
+DEFAULT_FROM_EMAIL = 'info@drcode-med.ir'
 
 # ====== DATABASE CONFIGS ====== #
 DATABASES = {
@@ -249,3 +334,5 @@ DATABASES = {
         },
     }
 }
+
+GA4_PROPERTY_ID = '514184786'

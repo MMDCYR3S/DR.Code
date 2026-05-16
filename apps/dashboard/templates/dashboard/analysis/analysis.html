@@ -1,5 +1,6 @@
 {% extends 'dashboard/base.html' %}
 {% load humanize %}
+{% load static %}
 
 {% block title %}تحلیل و گزارش‌گیری{% endblock %}
 
@@ -300,9 +301,9 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'vendor/chart.umd.js' %}"></script>
 <!-- استفاده از jalaali-js -->
-<script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.7/dist/jalaali.min.js"></script>
+<script src="{% static 'vendor/jalaali.min.js' %}"></script>
 
 <script>
 

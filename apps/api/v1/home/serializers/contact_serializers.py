@@ -21,9 +21,8 @@ class ContactSerializer(serializers.ModelSerializer):
     )
     phone = serializers.CharField(
         max_length=15,
-        required=False,
-        allow_blank=True,
-        help_text="شماره تماس (اختیاری)"
+        required=True,
+        help_text="شماره تماس"
     )
     subject = serializers.ChoiceField(
         choices=Contact.SUBJECT_CHOICES,

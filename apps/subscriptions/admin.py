@@ -13,3 +13,4 @@ class AdminPlan(admin.ModelAdmin):
 @admin.register(Subscription)
 class AdminSubscription(admin.ModelAdmin):
     list_filter = ("end_date", "start_date")
+    list_display = ("user", "plan", "payment_amount", "status", "start_date")

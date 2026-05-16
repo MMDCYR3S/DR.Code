@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from django.core.validators import EmailValidator
 from django.core.exceptions import ValidationError
 
 import re
@@ -44,7 +43,8 @@ class Contact(models.Model):
     )
     email = models.EmailField(
         verbose_name='ایمیل',
-        validators=[EmailValidator()]
+        blank=True,
+        null=True,
     )
     phone = models.CharField(
         max_length=15,

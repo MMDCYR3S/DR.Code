@@ -1,25 +1,33 @@
-// محافظت از صفحات که نیاز به لاگین دارن
-console.log('🛡️ Protected.js loading...');
-
-const ProtectedPage = {
-    init() {
-        // هیچ کاری نکن!
-        // این فایل فقط برای صفحاتی هست که میخوای manually چک کنی
-        console.log('🛡️ ProtectedPage initialized');
-    },
-
-    checkAuth() {
-        const isLoggedIn = StorageManager.isLoggedIn();
-        console.log('🔒 Checking auth for protected page:', isLoggedIn);
+// بررسی دسترسی به صفحات محافظت شده
+const ProtectedRoute = {
+    // لیست صفحات محافظت شده
+    protectedPages: ['/profile', '/premium', '/my-prescriptions'],
+    
+    // بررسی دسترسی
+    checkAccess() {
+        const currentPath = window.location.pathname;
         
-        if (!isLoggedIn) {
-            console.log('❌ Not logged in, redirecting...');
+        if (this.protectedPages.includes(currentPath) && !StorageManager.isLoggedIn()) {
+            // ذخیره مسیر فعلی برای redirect بعد از لاگین
+            sessionStorage.setItem('redirectAfterLogin', currentPath);
+            
+            // نمایش پیام و redirect به صفحه اصلی
+            alert('برای دسترسی به این صفحه باید وارد شوید.');
             window.location.href = '/';
-            return false;
         }
-        
-        return true;
+    },
+    
+    // redirect بعد از لاگین موفق
+    redirectAfterLogin() {
+        const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+        if (redirectPath) {
+            sessionStorage.removeItem('redirectAfterLogin');
+            window.location.href = redirectPath;
+        }
     }
 };
 
-console.log('✅ Protected.js loaded');
+// اجرا در بارگذاری صفحه
+document.addEventListener('DOMContentLoaded', () => {
+    ProtectedRoute.checkAccess();
+});

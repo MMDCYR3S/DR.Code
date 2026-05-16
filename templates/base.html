@@ -22,133 +22,88 @@
     <!-- End Google Tag Manager -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
 
     <title>{% block title %}صفحه اصلی | دکتر کد{% endblock title %}</title>
 
-    {% block extra_css %}
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox@3.2.0/dist/css/glightbox.min.css">
-
-    <script src="https://cdn.jsdelivr.net/npm/glightbox@3.2.0/dist/js/glightbox.min.js"></script>
-
-
-    {% endblock extra_css %}
+    {% block extra_css %} {% endblock extra_css %}
+    <!-- Tailwind & Font Awesome -->
     <link rel="stylesheet" href="{% static 'css/auth.css' %}">
-    <meta name="referrer" content="strict-origin-when-cross-origin">
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
-    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.min.js"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
+    <link rel="stylesheet" href="{% static 'css/output.css' %}">
+    <link rel="stylesheet" href="{% static 'fa/css/all.min.css' %}">
+    <link src="{% static 'vendor/glightbox.min.css' %}">
+    <link src="{% static 'vendor/viewer.min.css' %}">
 
 
-    <script src="https://cdn.jsdelivr.net/npm/glightbox@3.2.0/dist/js/glightbox.min.js"></script>
-
-    <script
-        src="https://cdn.jsdelivr.net/gh/cferdinandi/smooth-scroll@15.0.0/dist/smooth-scroll.polyfills.min.js"></script>
+    <!-- Logo & Favicon -->
     <link rel="icon" type="image/x-icon" href="{% static 'pics/favicon.ico' %}">
-
     <link rel="icon" type="image/png" sizes="16x16" href="{% static 'pics/favicon-16x16.png' %}">
     <link rel="icon" type="image/png" sizes="32x32" href="{% static 'pics/favicon-32x32.png' %}">
-
     <link rel="icon" type="image/png" sizes="192x192" href="{% static 'pics/android-chrome-192x192.png' %}">
     <link rel="icon" type="image/png" sizes="512x512" href="{% static 'pics/android-chrome-512x512.png' %}">
-
     <link rel="apple-touch-icon" sizes="180x180" href="{% static 'pics/apple-touch-icon.png' %}">
+    <meta property="og:image" content="{% static 'pics/logo.png' %}">
 
     <meta name="theme-color" content="#ffffff">
 
-    <meta property="og:image" content="{% static 'pics/logo.png' %}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
-        integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/viewerjs@1.11.6/dist/viewer.min.css">
-<script src="https://cdn.jsdelivr.net/npm/viewerjs@1.11.6/dist/viewer.min.js"></script>
-
-    <style type="text/tailwindcss">
-        @theme {
-      --color-c1 : #0077b6 ;
-      --color-c2 : #00b4d8 ;
-      --color-c3 : #00a896 ;
-      --color-c4 : #90e0ef ;
-      --color-c5 : #caf0f8 ;
-    }
-
-    *{
-        font-family: 'Vazirmatn', sans-serif;
-    }
-
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-        width: 4px;
-    }
-    
-    ::-webkit-scrollbar-track {
-        background: #f1f1f100;
-    }
-    
-    ::-webkit-scrollbar-thumb {
-        background: #00b4d8;
-        border-radius: 4px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-        background: #0077b6;
-    }
-
-    /* Glass morphism effect */
-    .glass {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(50px);
-    -webkit-backdrop-filter: blur(50px);
-    }
-
-
-    [x-cloak] {
-        display: none !important;
-    }
-
-    /* 🆕 Auth Warning Bar Styles */
-    #auth-warning-bar {
-        animation: slideDown 0.4s ease-out;
-    }
-
-    @keyframes slideDown {
-        from {
-            transform: translateY(-100%);
-            opacity: 0;
+    <style>
+        /* فونت وزیرمتن - نسخه آفلاین */
+        @font-face {
+            font-family: 'Vazirmatn';
+            src: url("{% static 'fonts/Vazirmatn-Thin.woff2' %}") format('woff2');
+            font-weight: 100;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Vazirmatn';
+            src: url("{% static 'fonts/Vazirmatn-Light.woff2' %}") format('woff2');
+            font-weight: 300;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Vazirmatn';
+            src: url("{% static 'fonts/Vazirmatn-Regular.woff2' %}") format('woff2');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Vazirmatn';
+            src: url("{% static 'fonts/Vazirmatn-Medium.woff2' %}") format('woff2');
+            font-weight: 500;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Vazirmatn';
+            src: url("{% static 'fonts/Vazirmatn-SemiBold.woff2' %}") format('woff2');
+            font-weight: 600;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Vazirmatn';
+            src: url("{% static 'fonts/Vazirmatn-Bold.woff2' %}") format('woff2');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Vazirmatn';
+            src: url("{% static 'fonts/Vazirmatn-ExtraBold.woff2' %}") format('woff2');
+            font-weight: 800;
+            font-style: normal;
+            font-display: swap;
         }
 
-        to {
-            transform: translateY(0);
-            opacity: 1;
+        * { 
+            font-family: 'Vazirmatn', sans-serif; 
+            box-sizing: border-box; 
         }
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 640px) {
-        #auth-warning-bar .container {
-            padding: 0 1rem;
-        }
-
-        #auth-warning-bar a {
-            width: 100%;
-            justify-content: center;
-        }
-    }
     </style>
-
-
 
 </head>
 
@@ -159,7 +114,7 @@
 
         <header id="header">
             {% block header %}
-            <header class="fixed w-full top-0 z-50 transition-all duration-300 glass shadow-lg">
+            <header class="fixed w-full top-0 z-50 transition-all duration-300 glass shadow-lg bg-white">
                     <nav class="container mx-auto px-4 lg:px-8">
                         <div class="flex items-center justify-between h-16 lg:h-20">
                             <div class="flex items-center">
@@ -584,16 +539,38 @@
                                     </div>
                                     <span class="text-gray-400">support@drcode-med.ir</span>
                                 </li>
-                                <li class="flex items-center gap-3 group">
-                                    <div class="relative">
-                                        <div class="absolute -inset-1 bg-gradient-to-r from-c1 to-c2 rounded-lg opacity-0 group-hover:opacity-30 transition-opacity duration-300"></div>
-                                        <div class="relative w-10 h-10 bg-white/10 backdrop-blur rounded-lg flex items-center justify-center">
-                                            <svg class="w-5 h-5 text-c2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                                            </svg>
+                                <li class="group">
+                                    <a href="http://t.me/DrCode_Med" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 w-full">
+                                        <div class="relative">
+                                            <div class="absolute -inset-1 bg-gradient-to-r from-c1 to-c2 rounded-lg opacity-0 group-hover:opacity-30 transition-opacity duration-300"></div>
+                                            <div class="relative w-10 h-10 bg-white/10 backdrop-blur rounded-lg flex items-center justify-center">
+                                                <svg width="24" height="24" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M70.7373 29.3678C70.7373 29.3678 75.3626 27.5643 74.9772 31.9444C74.8487 33.748 73.6924 40.0605 72.793 46.8883L69.7094 67.1142C69.7094 67.1142 69.4525 70.0772 67.1398 70.5925C64.827 71.1078 61.3581 68.789 60.7156 68.2736C60.2017 67.8872 51.0795 62.0899 47.8674 59.2557C46.968 58.4828 45.9401 56.9368 47.9958 55.1332L61.4866 42.2506C63.0284 40.7047 64.5701 37.0975 58.146 41.4776L40.1585 53.7162C40.1585 53.7162 38.1027 55.0044 34.2483 53.845L25.8969 51.2685C25.8969 51.2685 22.8133 49.3361 28.0811 47.4036C40.9294 41.3487 56.7328 35.165 70.7373 29.3678Z" fill="#00B4D8"></path>
+                                                </svg>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <span class="text-gray-400 dir-ltr">+98 21 1234 5678</span>
+                                        <span class="text-gray-400 dir-ltr">
+                                            http://t.me/DrCode_Med
+                                        </span>
+                                    </a>
+                                </li>
+                            
+                                <li class="group">
+                                    <a href="http://instagram.com/DrCode_med" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 w-full">
+                                        <div class="relative">
+                                            <div class="absolute -inset-1 bg-gradient-to-r from-c1 to-c2 rounded-lg opacity-0 group-hover:opacity-30 transition-opacity duration-300"></div>
+                                            <div class="relative w-10 h-10 bg-white/10 backdrop-blur rounded-lg flex items-center justify-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00B4D8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                                                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                                                    <line x1="17.5" y1="6.5" x2="17.5" y2="6.5"></line>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <span class="text-gray-400 dir-ltr">
+                                            http://instagram.com/DrCode_med
+                                        </span>
+                                    </a>
                                 </li>
                             </ul>
                         </div>
@@ -977,6 +954,17 @@ document.getElementById('forgot-password-modal')?.addEventListener('click', func
 <script src="{% static 'js/auth.js' %}"></script>
 <script src="{% static 'js/protected.js' %}"></script>
 <script src="{% static 'js/check_jti.js' %}"></script>
+
+<!-- Scripts -->
+<script src="{% static 'vendor/aos.js' %}"></script>
+<script src="{% static 'vendor/sweetalert2.all.min.js' %}"></script>
+<script src="{% static 'vendor/axios.min.js' %}"></script>
+<script src="{% static 'vendor/fuse.basic.min.js' %}"></script>
+<script defer src="{% static 'vendor/cdn.min.js' %}"></script>
+<!--<script src="{% static 'vendor/cdn.js' %}"></script>-->
+<script src="{% static 'vendor/glightbox.min.js' %}"></script>
+<script src="{% static 'vendor/smooth-scroll.polyfills.min.js' %}"></script>
+<script src="{% static 'vendor/viewer.min.js' %}"></script>
 
 <script>
     AOS.init({
