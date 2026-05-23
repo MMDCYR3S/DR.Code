@@ -75,74 +75,10 @@ class OrderSection(models.Model):
 
 # ─────────────────────────────────────────────────────────────────────────────
 
-
-class SectionItem(models.Model):
+class Condition(models.Model):
     """
-    آیتم‌های هر Section.
-    هر Section شامل یک یا چند آیتم (عنوان/Value) است.
-    هر آیتم می‌تواند توضیحات اختصاصی و شرط‌های مربوط به خود را داشته باشد.
+    شرط‌های مشترک که می‌توانند روی چندین آیتم اعمال شوند.
     """
-
-    section = models.ForeignKey(
-        OrderSection,
-        on_delete=models.CASCADE,
-        related_name="items",
-        verbose_name="Section مرجع"
-    )
-    text = models.TextField(
-        verbose_name="متن آیتم",
-        help_text='مثال: "Heart Monitoring, Pulse Oxymetry"، "Tab ASA 325mg po stat"'
-    )
-    notes = models.TextField(
-        blank=True,
-        verbose_name="توضیحات اختصاصی آیتم",
-        help_text="توضیحاتی که فقط به این آیتم مربوط است"
-    )
-    order_index = models.PositiveIntegerField(
-        default=0,
-        verbose_name="ترتیب نمایش"
-    )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ساخت")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="زمان بروزرسانی")
-
-    class Meta:
-        verbose_name = "آیتم Section"
-        verbose_name_plural = "آیتم‌های Section"
-        ordering = ["order_index"]
-
-    def __str__(self):
-        return f"{self.text[:80]} — {self.section.title}"
-
-    @property
-    def shamsi_created_at(self):
-        if self.created_at is None:
-            return "—"
-        jdate = jdatetime.datetime.fromgregorian(datetime=self.created_at)
-        return jdate.strftime("%Y/%m/%d - %H:%M")
-
-    @property
-    def shamsi_updated_at(self):
-        if self.updated_at is None:
-            return "—"
-        jdate = jdatetime.datetime.fromgregorian(datetime=self.updated_at)
-        return jdate.strftime("%Y/%m/%d - %H:%M")
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-
-
-class ItemCondition(models.Model):
-    """
-    شرط‌های هر SectionItem یا DrugSectionItem.
-    مثال: "if SBP≥90, PR≥60" برای Tab Metoral
-    """
-
-    item = models.ForeignKey(
-        SectionItem,
-        on_delete=models.CASCADE,
-        related_name="conditions",
-        verbose_name="آیتم مرجع"
-    )
     text = models.TextField(
         verbose_name="متن شرط",
         help_text='مثال: "if SBP≥90, PR≥60"، "در صورت تهوع"'
@@ -154,24 +90,46 @@ class ItemCondition(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ساخت")
 
     class Meta:
-        verbose_name = "شرط آیتم"
-        verbose_name_plural = "شرط‌های آیتم"
+        verbose_name = "شرط"
+        verbose_name_plural = "شرط‌ها"
         ordering = ["order_index"]
 
     def __str__(self):
         return f"شرط: {self.text[:80]}"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+class SectionItem(models.Model):
+    section = models.ForeignKey(
+        OrderSection,
+        on_delete=models.CASCADE,
+        related_name="items",
+        verbose_name="Section مرجع"
+    )
+    text = models.TextField(verbose_name="متن آیتم")
+    notes = models.TextField(blank=True, verbose_name="توضیحات اختصاصی آیتم")
+    order_index = models.PositiveIntegerField(default=0, verbose_name="ترتیب نمایش")
+    
+    # ─── تغییر اصلی ───
+    conditions = models.ManyToManyField(
+        Condition,
+        related_name="section_items",
+        blank=True,
+        verbose_name="شرط‌ها"
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ساخت")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="زمان بروزرسانی")
+
+    class Meta:
+        verbose_name = "آیتم Section"
+        verbose_name_plural = "آیتم‌های Section"
+        ordering = ["order_index"]
+
+    def __str__(self):
+        return f"{self.text[:80]} — {self.section.title}"
 
 
 class DrugSectionItem(models.Model):
-    """
-    اتصال دارو به یک Section با is_drug_section=True.
-    از بانک داروهای موجود در سیستم نسخه‌نویسی استفاده می‌کند.
-    """
-    from apps.prescriptions.models.drug import Drug
-
     section = models.ForeignKey(
         OrderSection,
         on_delete=models.CASCADE,
@@ -184,15 +142,17 @@ class DrugSectionItem(models.Model):
         related_name="order_drug_items",
         verbose_name="داروی انتخابی"
     )
-    notes = models.TextField(
+    notes = models.TextField(blank=True, verbose_name="توضیحات اضافی دارو در این Order")
+    order_index = models.PositiveIntegerField(default=0, verbose_name="ترتیب نمایش")
+    
+    # ─── تغییر اصلی ───
+    conditions = models.ManyToManyField(
+        Condition,
+        related_name="drug_items",
         blank=True,
-        verbose_name="توضیحات اضافی دارو در این Order",
-        help_text='مثال: "در صورت مصرف قبلی آسپرین: 80mg داده شود"'
+        verbose_name="شرط‌ها"
     )
-    order_index = models.PositiveIntegerField(
-        default=0,
-        verbose_name="ترتیب نمایش"
-    )
+    
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ساخت")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="زمان بروزرسانی")
 
@@ -203,34 +163,3 @@ class DrugSectionItem(models.Model):
 
     def __str__(self):
         return f"داروی «{self.drug.title}» در Section «{self.section.title}»"
-
-
-class DrugItemCondition(models.Model):
-    """
-    شرط‌های اختصاصی برای DrugSectionItem.
-    مثال: "در صورت تهوع" برای یک داروی خاص در Order
-    """
-
-    drug_item = models.ForeignKey(
-        DrugSectionItem,
-        on_delete=models.CASCADE,
-        related_name="conditions",
-        verbose_name="دارو در Section"
-    )
-    text = models.TextField(
-        verbose_name="متن شرط",
-        help_text='مثال: "if SBP≥90, PR≥60"، "در صورت تهوع"'
-    )
-    order_index = models.PositiveIntegerField(
-        default=0,
-        verbose_name="ترتیب نمایش"
-    )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ساخت")
-
-    class Meta:
-        verbose_name = "شرط دارو"
-        verbose_name_plural = "شرط‌های دارو"
-        ordering = ["order_index"]
-
-    def __str__(self):
-        return f"شرط دارو: {self.text[:80]}"

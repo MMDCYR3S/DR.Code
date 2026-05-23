@@ -1,156 +1,184 @@
 from django.urls import path
-
 from ..views.ordering_views import (
-    # DynamicField — مرحله ۱
-    DynamicFieldGroupListView,
-    DynamicFieldGroupCreateView,
-    DynamicFieldGroupUpdateView,
-    DynamicFieldGroupDeleteView,
-    DynamicFieldSubGroupCreateView,
-    DynamicFieldItemCreateView,
-
-    # Order — مرحله ۲
     OrderListView,
     OrderCreateView,
     OrderUpdateView,
     OrderDeleteView,
-    OrderDetailView,
-    OrderSearchView,
+    DrugSearchView,
+    SectionBulkSyncView,
+)
+from ..views import (
+    # صفحه ترکیبی
+    OrderExtendedFormView,
 
-    # Emergency — مرحله ۳
-    EmergencyCreateView,
-    EmergencyUpdateView,
+    # DynamicField
+    DynamicFieldSyncView,
+    DynamicFieldGroupDetailView,
+    DynamicFieldGroupDeleteView,
+    DynamicFieldSubGroupDeleteView,
+    DynamicFieldItemDeleteView,
+ 
+    # Emergency
+    EmergencySyncView,
+    EmergencyDetailView,
+    EmergencyNodeDeleteView,
     EmergencyDeleteView,
-
-    # Media — مرحله ۴
-    MediaView,
-    MediaImageUploadView,
-    MediaImageUpdateView,
-    MediaImageDeleteView,
-    MediaVideoCreateView,
-    MediaVideoUpdateView,
-    MediaVideoDeleteView,
+ 
+    # Media
+    MediaAddImageView,
+    MediaAddImageBulkView,
+    MediaUpdateImageView,
+    MediaDeleteImageView,
+    MediaAddVideoView,
+    MediaUpdateVideoView,
+    MediaDeleteVideoView,
 )
 
-app_name = "ordering"
+app_name = 'ordering'
 
 urlpatterns = [
+    # ═══════════════════════════════════════════════════════
+    # Order
+    # ═══════════════════════════════════════════════════════
+    path('orders/', OrderListView.as_view(), name='order_list'),
+    path('orders/create/', OrderCreateView.as_view(), name='order_create'),
+    path('orders/<int:pk>/edit/', OrderUpdateView.as_view(), name='order_update'),
+    path('orders/<int:pk>/delete/', OrderDeleteView.as_view(), name='order_delete'),
 
-    # ─── DynamicField (مستقل از Order) ────────────────────────────────────────
+    # ═══════════════════════════════════════════════════════
+    # Section/Item/Condition — یک endpoint یکپارچه
+    # ═══════════════════════════════════════════════════════
     path(
-        "ordering/dynamic-fields/",
-        DynamicFieldGroupListView.as_view(),
+        'orders/<int:order_id>/sections/sync/',
+        SectionBulkSyncView.as_view(),
+        name='section_sync',
+    ),
+
+    # ═══════════════════════════════════════════════════════
+    # Drug search (autocomplete)
+    # ═══════════════════════════════════════════════════════
+    path('drugs/search/', DrugSearchView.as_view(), name='drug_search'),
+
+
+        # ──────────────────────────────────────────────────────────────
+    #  صفحه ترکیبی — ایجاد و ویرایش
+    # ──────────────────────────────────────────────────────────────
+    path(
+        "create/extended/",
+        OrderExtendedFormView.as_view(),
+        name="order_extended_create",
+    ),
+    path(
+        "<int:pk>/extended/",
+        OrderExtendedFormView.as_view(),
+        name="order_extended_edit",
+    ),
+ 
+    # ──────────────────────────────────────────────────────────────
+    #  DynamicField — پیش‌بالینی
+    # ──────────────────────────────────────────────────────────────
+    # GET  → دریافت همه گروه‌های یک Order
+    path(
+        "<int:order_id>/dynamic-fields/",
+        DynamicFieldGroupDetailView.as_view(),
         name="dynamic_field_list",
     ),
+    # POST → ذخیره یکجا (sync)
     path(
-        "ordering/dynamic-fields/create/",
-        DynamicFieldGroupCreateView.as_view(),
-        name="dynamic_field_create",
+        "<int:order_id>/dynamic-fields/sync/",
+        DynamicFieldSyncView.as_view(),
+        name="dynamic_field_sync",
     ),
+    # POST → حذف گروه
     path(
-        "ordering/dynamic-fields/<int:pk>/update/",
-        DynamicFieldGroupUpdateView.as_view(),
-        name="dynamic_field_update",
-    ),
-    path(
-        "ordering/dynamic-fields/<int:pk>/delete/",
+        "dynamic-fields/group/<int:group_id>/delete/",
         DynamicFieldGroupDeleteView.as_view(),
-        name="dynamic_field_delete",
+        name="dynamic_field_group_delete",
     ),
+    # POST → حذف زیرگروه
     path(
-        "ordering/dynamic-fields/<int:pk>/subgroups/create/",
-        DynamicFieldSubGroupCreateView.as_view(),
-        name="dynamic_subgroup_create",
+        "dynamic-fields/subgroup/<int:subgroup_id>/delete/",
+        DynamicFieldSubGroupDeleteView.as_view(),
+        name="dynamic_field_subgroup_delete",
     ),
+    # POST → حذف آیتم
     path(
-        "ordering/dynamic-fields/subgroups/<int:pk>/items/create/",
-        DynamicFieldItemCreateView.as_view(),
-        name="dynamic_item_create",
+        "dynamic-fields/item/<int:item_id>/delete/",
+        DynamicFieldItemDeleteView.as_view(),
+        name="dynamic_field_item_delete",
     ),
-
-    # ─── Order ────────────────────────────────────────────────────────────────
+ 
+    # ──────────────────────────────────────────────────────────────
+    #  Emergency Disposition — تعیین تکلیف اورژانسی
+    # ──────────────────────────────────────────────────────────────
+    # GET  → دریافت تعیین تکلیف
     path(
-        "ordering/",
-        OrderListView.as_view(),
-        name="order_list",
+        "<int:order_id>/emergency/",
+        EmergencyDetailView.as_view(),
+        name="emergency_detail",
     ),
+    # POST → ذخیره یکجا (sync)
     path(
-        "ordering/create/",
-        OrderCreateView.as_view(),
-        name="order_create",
+        "<int:order_id>/emergency/sync/",
+        EmergencySyncView.as_view(),
+        name="emergency_sync",
     ),
+    # POST → حذف گره
     path(
-        "ordering/search/",
-        OrderSearchView.as_view(),
-        name="order_search",
+        "emergency/node/<int:node_id>/delete/",
+        EmergencyNodeDeleteView.as_view(),
+        name="emergency_node_delete",
     ),
+    # POST → حذف کل disposition
     path(
-        "ordering/<int:pk>/",
-        OrderDetailView.as_view(),
-        name="order_detail",
-    ),
-    path(
-        "ordering/<int:pk>/update/",
-        OrderUpdateView.as_view(),
-        name="order_update",
-    ),
-    path(
-        "ordering/<int:pk>/delete/",
-        OrderDeleteView.as_view(),
-        name="order_delete",
-    ),
-
-    # ─── Emergency — زیر ordering/<pk>/ ──────────────────────────────────────
-    path(
-        "ordering/<int:pk>/emergency/",
-        EmergencyCreateView.as_view(),
-        name="emergency_create",
-    ),
-    path(
-        "ordering/<int:pk>/emergency/update/",
-        EmergencyUpdateView.as_view(),
-        name="emergency_update",
-    ),
-    path(
-        "ordering/<int:pk>/emergency/delete/",
+        "emergency/<int:disposition_id>/delete/",
         EmergencyDeleteView.as_view(),
         name="emergency_delete",
     ),
-
-    # ─── Media — زیر ordering/<pk>/ ───────────────────────────────────────────
+ 
+    # ──────────────────────────────────────────────────────────────
+    #  Media — فایل‌های پیوست
+    # ──────────────────────────────────────────────────────────────
+    # POST → آپلود یک تصویر
     path(
-        "ordering/<int:pk>/media/",
-        MediaView.as_view(),
-        name="media",
+        "<int:order_id>/media/image/add/",
+        MediaAddImageView.as_view(),
+        name="media_image_add",
     ),
+    # POST → آپلود چند تصویر
     path(
-        "ordering/<int:pk>/media/images/upload/",
-        MediaImageUploadView.as_view(),
-        name="media_image_upload",
+        "<int:order_id>/media/images/bulk/",
+        MediaAddImageBulkView.as_view(),
+        name="media_image_bulk",
     ),
+    # POST → ویرایش تصویر
     path(
-        "ordering/<int:pk>/media/images/<int:image_id>/update/",
-        MediaImageUpdateView.as_view(),
+        "media/image/<int:image_id>/update/",
+        MediaUpdateImageView.as_view(),
         name="media_image_update",
     ),
+    # POST → حذف تصویر
     path(
-        "ordering/<int:pk>/media/images/<int:image_id>/delete/",
-        MediaImageDeleteView.as_view(),
+        "media/image/<int:image_id>/delete/",
+        MediaDeleteImageView.as_view(),
         name="media_image_delete",
     ),
+    # POST → افزودن ویدیو
     path(
-        "ordering/<int:pk>/media/videos/create/",
-        MediaVideoCreateView.as_view(),
-        name="media_video_create",
+        "<int:order_id>/media/video/add/",
+        MediaAddVideoView.as_view(),
+        name="media_video_add",
     ),
+    # POST → ویرایش ویدیو
     path(
-        "ordering/<int:pk>/media/videos/<int:video_id>/update/",
-        MediaVideoUpdateView.as_view(),
+        "media/video/<int:video_id>/update/",
+        MediaUpdateVideoView.as_view(),
         name="media_video_update",
     ),
+    # POST → حذف ویدیو
     path(
-        "ordering/<int:pk>/media/videos/<int:video_id>/delete/",
-        MediaVideoDeleteView.as_view(),
+        "media/video/<int:video_id>/delete/",
+        MediaDeleteVideoView.as_view(),
         name="media_video_delete",
     ),
 ]

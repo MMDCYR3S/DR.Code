@@ -1,0 +1,63 @@
+{% comment %}
+_emergency_node.html
+رندر یک گره در درخت تعیین تکلیف — به صورت recursive برای فرزندان
+{% endcomment %}
+
+<div class="emergency-node bg-white border border-gray-200 rounded-xl shadow-sm"
+     data-node-id="{{ node.id }}"
+     data-node-order="{{ node.order_index }}"
+     style="{% if depth > 0 %}margin-right: {{ depth|add:'1' }}rem;{% endif %}">
+
+    <!-- Node Header -->
+    <div class="flex items-start gap-3 p-4 border-b border-gray-100">
+        <div class="drag-handle-node text-gray-300 hover:text-orange-500 mt-1 cursor-grab">
+            <i class="fas fa-grip-vertical"></i>
+        </div>
+        <div class="flex-1 space-y-2">
+            <div class="flex items-center gap-2">
+                {% if depth == 0 %}
+                <i class="fas fa-circle text-red-400 text-xs mt-0.5 shrink-0"></i>
+                {% elif depth == 1 %}
+                <i class="fas fa-circle text-orange-400 text-xs mt-0.5 shrink-0"></i>
+                {% else %}
+                <i class="fas fa-circle text-amber-400 text-xs mt-0.5 shrink-0"></i>
+                {% endif %}
+                <input type="text" dir="rtl" value="{{ node.title }}"
+                       placeholder="عنوان گره..."
+                       class="node-title flex-1 px-2 py-1 border border-gray-200 rounded-lg text-sm font-semibold text-gray-800 bg-gray-50 focus:bg-white focus:border-red-400 focus:outline-none transition">
+                <select class="node-color text-xs px-2 py-1 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:border-red-400 transition" dir="ltr">
+                    <option value="">— رنگ —</option>
+                    {% for color_val, color_label in tailwind_colors %}
+                    <option value="{{ color_val }}" {% if node.color == color_val %}selected{% endif %}>{{ color_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <textarea dir="ltr" rows="2" placeholder="محتوا / متن گره..."
+                      class="node-content w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs bg-gray-50 focus:bg-white focus:border-red-400 focus:outline-none transition resize-none">{{ node.content }}</textarea>
+            <input type="text" dir="rtl" value="{{ node.internal_notes }}" placeholder="توضیحات داخلی (اختیاری)..."
+                   class="node-notes w-full px-2 py-1 border border-gray-200 rounded-lg text-xs bg-gray-50 focus:bg-white focus:border-amber-400 focus:outline-none transition">
+        </div>
+        <div class="flex flex-col gap-1 shrink-0">
+            <button type="button" class="add-child-node-btn text-xs px-2 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 transition font-medium whitespace-nowrap">
+                <i class="fas fa-plus ml-1"></i>زیرگره
+            </button>
+            <button type="button" class="delete-node-btn text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition text-center">
+                <i class="fas fa-trash text-sm"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Children -->
+    {% if node.children.all %}
+    <div class="node-children p-3 space-y-2">
+        {% for child in node.children.all %}
+        {% with new_depth=depth|add:1 %}
+        {% include "dashboard/ordering/partials/_emergency_node.html" with node=child depth=new_depth %}
+        {% endwith %}
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="node-children p-3 space-y-2 hidden"></div>
+    {% endif %}
+
+</div>

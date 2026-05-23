@@ -24,12 +24,9 @@ from .order import Order
 from .section import (
     OrderSection,
     SectionItem,
-    ItemCondition,
     DrugSectionItem,
-    DrugItemCondition,
+    Condition,
 )
-
-from .item_note import ItemNote
 
 from .emergency_disposition import EmergencyDisposition, EmergencyNode
 
@@ -48,12 +45,8 @@ __all__ = [
     # Section‌ها و آیتم‌ها
     "OrderSection",
     "SectionItem",
-    "ItemCondition",
     "DrugSectionItem",
-    "DrugItemCondition",
-
-    # توضیحات جداگانه
-    "ItemNote",
+    "Condition",
 
     # تعیین تکلیف اورژانس
     "EmergencyDisposition",

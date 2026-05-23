@@ -21,6 +21,11 @@ class DynamicFieldGroup(models.Model):
     رابطه با Order:
         Order.dynamic_field_groups  (ManyToMany — تعریف‌شده در order.py)
     """
+    order = models.ForeignKey(
+        'ordering.Order',
+        on_delete=models.CASCADE,
+        related_name='dynamic_field_groups'
+    )
 
     title = models.CharField(
         max_length=200,

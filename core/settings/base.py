@@ -15,31 +15,22 @@ from pathlib import Path
 from datetime import timedelta
 import environ
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-# Initialize django-environ
 env = environ.Env(
-    # set casting, default value
-    DEBUG=(bool, False)
+    DEBUG=(bool, True)
 )
 
-# Take environment variables from .env file
-# Use different .env files based on the environment
-env_file = os.path.join(BASE_DIR, 'env/.env.prod')  # Default to development
-environ.Env.read_env(env_file)
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
+env_file = os.path.join(BASE_DIR, 'env/.env.dev')
+environ.Env.read_env(env_file)
+
 SECRET_KEY = env("SECRET_KEY", default="your-default-secret-key")
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env("DEBUG", cast=bool, default=True)
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost", "drcode-med.ir", "www.drcode-med.ir"])
 
-# Application definition
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -69,6 +60,7 @@ INSTALLED_APPS = [
     "apps.payment",
     "apps.questions",
     "apps.subscriptions",
+    "apps.ordering",
 ]
 
 MIDDLEWARE = [
@@ -138,9 +130,12 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = "/static/"
-STATIC_ROOT = "/home/drcodeme/public_html/static"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static")
+]
 
-MEDIA_ROOT = "/home/drcodeme/public_html/media"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = "/media/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

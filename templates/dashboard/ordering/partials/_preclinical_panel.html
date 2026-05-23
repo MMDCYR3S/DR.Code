@@ -1,0 +1,132 @@
+{% comment %}
+_preclinical_panel.html
+بخش دوم: پیش‌بالینی — DynamicFieldGroup / SubGroup / Item
+{% endcomment %}
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+
+    <!-- Panel Header -->
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+            <i class="fas fa-microscope text-teal-600"></i>فیلدهای پویا (پیش‌بالینی)
+        </h2>
+        {% if object %}
+        <div class="flex gap-2">
+            <button type="button" id="dynamicSaveBtn"
+                    class="px-4 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-lg text-sm font-semibold hover:from-teal-700 hover:to-cyan-700 transition-all shadow flex items-center gap-2">
+                <i class="fas fa-cloud-upload-alt"></i>ذخیره یکجا
+            </button>
+            <button type="button" id="addGroupBtn"
+                    class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg text-sm font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow flex items-center gap-2">
+                <i class="fas fa-plus"></i>افزودن گروه
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if not object %}
+    <!-- Locked state -->
+    <div class="text-center py-16">
+        <div class="w-fit mx-auto bg-teal-50 rounded-full p-5 mb-4">
+            <i class="fas fa-lock text-4xl text-teal-200"></i>
+        </div>
+        <h3 class="text-base font-semibold text-gray-600 mb-2">در انتظار ذخیره اوردر</h3>
+        <p class="text-sm text-gray-400 max-w-sm mx-auto">پس از ذخیره اطلاعات پایه اوردر، می‌توانید فیلدهای پویا را اضافه کنید.</p>
+    </div>
+
+    {% else %}
+    <!-- Groups Container -->
+    <div id="dynamicGroupsContainer" class="space-y-5">
+
+        {% if dynamic_groups %}
+            {% for group in dynamic_groups %}
+            <div class="dynamic-group bg-white border border-gray-200 rounded-xl shadow-sm"
+                 data-group-id="{{ group.id }}">
+
+                <!-- Group Header -->
+                <div class="flex items-center gap-3 p-4 border-b border-gray-100">
+                    <div class="drag-handle-group text-gray-300 hover:text-blue-500">
+                        <i class="fas fa-grip-vertical"></i>
+                    </div>
+                    <div class="flex-1">
+                        <input type="text" dir="rtl" value="{{ group.title }}"
+                               class="group-title w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-semibold text-gray-800 bg-gray-50 focus:bg-white focus:border-blue-400 focus:outline-none transition">
+                    </div>
+                    <select class="group-color text-xs px-2 py-1.5 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:border-blue-400 transition" dir="ltr">
+                        <option value="">— رنگ —</option>
+                        {% for color_val, color_label in tailwind_colors %}
+                        <option value="{{ color_val }}" {% if group.color == color_val %}selected{% endif %}>{{ color_label }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="add-subgroup-btn text-xs px-2.5 py-1 bg-teal-600 text-white rounded hover:bg-teal-700 transition font-medium">
+                        <i class="fas fa-plus ml-1"></i>زیرگروه
+                    </button>
+                    <button type="button" class="delete-group-btn text-red-400 hover:text-red-600 p-1.5 rounded hover:bg-red-50 transition">
+                        <i class="fas fa-trash text-sm"></i>
+                    </button>
+                </div>
+
+                <!-- SubGroups -->
+                <div class="subgroups-list p-4 space-y-4">
+                    {% if group.subgroups.all %}
+                        {% for subgroup in group.subgroups.all %}
+                        <div class="subgroup-block" data-subgroup-id="{{ subgroup.id }}">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i class="fas fa-folder-open text-amber-500 text-sm"></i>
+                                <input type="text" dir="rtl" value="{{ subgroup.title }}"
+                                       class="subgroup-title flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 bg-gray-50 focus:bg-white focus:border-teal-400 focus:outline-none transition">
+                                <button type="button" class="add-item-btn text-xs px-2 py-1 bg-amber-500 text-white rounded hover:bg-amber-600 transition font-medium">
+                                    <i class="fas fa-plus ml-1"></i>آیتم
+                                </button>
+                                <button type="button" class="delete-subgroup-btn text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition">
+                                    <i class="fas fa-times text-sm"></i>
+                                </button>
+                            </div>
+
+                            <!-- Items (KEY-VALUE) -->
+                            <div class="items-list space-y-2 mr-6">
+                                {% if subgroup.items.all %}
+                                    {% for item in subgroup.items.all %}
+                                    <div class="item-kv flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg p-2"
+                                         data-item-id="{{ item.id }}">
+                                        <input type="text" dir="ltr" value="{{ item.key }}" placeholder="کلید (key)..."
+                                               class="item-key w-1/3 px-2 py-1 border border-gray-200 rounded text-xs bg-white focus:border-blue-400 focus:outline-none transition">
+                                        <span class="text-gray-400 text-xs">:</span>
+                                        <textarea dir="ltr" rows="1"
+                                                  class="item-value flex-1 px-2 py-1 border border-gray-200 rounded text-xs bg-white focus:border-blue-400 focus:outline-none transition resize-none">{{ item.value }}</textarea>
+                                        <button type="button" class="delete-item-btn text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition shrink-0">
+                                            <i class="fas fa-trash text-xs"></i>
+                                        </button>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                <div class="empty-items text-center text-gray-400 text-xs py-3">آیتمی اضافه نشده</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                    <div class="empty-subgroups text-center text-gray-400 text-xs py-4">زیرگروهی اضافه نشده</div>
+                    {% endif %}
+                </div>
+
+            </div>
+            {% endfor %}
+        {% else %}
+        <div id="dynamicEmptyState" class="text-center py-14">
+            <div class="w-fit mx-auto bg-teal-50 rounded-full p-5 mb-4">
+                <i class="fas fa-table text-4xl text-teal-300"></i>
+            </div>
+            <h3 class="text-base font-semibold text-gray-600 mb-2">گروه پویایی وجود ندارد</h3>
+            <p class="text-sm text-gray-400 mb-4">اولین گروه پیش‌بالینی را ایجاد کنید.</p>
+            <button type="button" id="addFirstGroupBtn"
+                    class="px-5 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition font-semibold text-sm">
+                <i class="fas fa-plus ml-1"></i>افزودن اولین گروه
+            </button>
+        </div>
+        {% endif %}
+
+    </div>
+    {% endif %}
+
+</div>

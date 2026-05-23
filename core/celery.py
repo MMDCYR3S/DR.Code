@@ -2,7 +2,7 @@ import os
 from celery import Celery
 
 # تنظیم Django settings
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings.production')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings.development')
 
 # ساخت app سلری
 app = Celery('core')

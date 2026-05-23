@@ -19,6 +19,11 @@ class Order(models.Model):
         و بعد از ساخت Order به آن متصل شود.
     """
 
+    name = models.CharField(
+        verbose_name="نام اوردر",
+        max_length=150,
+        help_text="نام اوردر در حال ایجاد")
+
     # ─────────────────────────── فیلدهای ثابت ───────────────────────────
     imp = models.TextField(
         verbose_name="Impression / تشخیص اصلی",
@@ -49,22 +54,10 @@ class Order(models.Model):
     # ─────────────────────────── دسته‌بندی (اجباری) ──────────────────────
     category = models.ForeignKey(
         PrescriptionCategory,
-        on_delete=models.PROTECT,           # حذف Category اگر Order داشته باشد مجاز نیست
+        on_delete=models.PROTECT,
         related_name="orders",
         verbose_name="دسته‌بندی",
         help_text="دسته‌بندی اجباری است — هر Order حتماً باید دسته داشته باشد"
-    )
-
-    # ─────────────────────────── فیلدهای پویا (قالب) ────────────────────
-    dynamic_field_groups = models.ManyToManyField(
-        "ordering.DynamicFieldGroup",
-        blank=True,
-        related_name="orders",
-        verbose_name="گروه‌های فیلد پویا",
-        help_text=(
-            "گروه‌های DynamicField که به این Order متصل هستند. "
-            "این گروه‌ها مستقل از Order وجود دارند و فقط لینک می‌شوند."
-        )
     )
 
     # ─────────────────────────── رنگ‌بندی ────────────────────────────────

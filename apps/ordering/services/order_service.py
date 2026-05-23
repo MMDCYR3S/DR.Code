@@ -1,366 +1,417 @@
 """
 services/order_service.py
 ==========================
-سرویس مدیریت Order و تمام زیرمجموعه‌های مستقیم آن:
-  - OrderSection
-  - SectionItem + ItemCondition
-  - DrugSectionItem + DrugItemCondition
-  - ItemNote
-  - اتصال DynamicFieldGroup‌ها (بدون ایجاد مجدد — فقط lینک)
+سرویس مدیریت Order.
 
-جریان ایجاد Order در UI:
-  مرحله ۱ — DynamicFieldService.list_groups()  → نمایش گروه‌های موجود
-  مرحله ۲ — OrderService.create(data)          → ساخت Order + اتصال گروه‌ها
-  مرحله ۳ — EmergencyDispositionService        → تعیین تکلیف (فایل جداگانه)
-  مرحله ۴ — MediaService                       → آپلود تصویر/ویدیو
-
-ساختار ورودی create:
-{
-    "category_id": int,                  # اجباری
-    "imp": str,
-    "condition": str,
-    "diet": str,
-    "action": str,
-    "position": str,
-    "notes": str,                        # اختیاری
-    "color": str,                        # اختیاری
-
-    "dynamic_field_group_ids": [int],    # اختیاری — IDs از DynamicFieldGroup‌های موجود
-                                         # سرویس خودش آن‌ها را لینک می‌کند
-
-    "sections": [                        # اختیاری
-        {
-            "title": str,
-            "notes": str,               # اختیاری
-            "is_drug_section": bool,    # پیش‌فرض False
-            "order_index": int,         # اختیاری
-            "color": str,              # اختیاری
-
-            "items": [                  # اگر is_drug_section=False
-                {
-                    "text": str,
-                    "notes": str,       # اختیاری
-                    "order_index": int, # اختیاری
-                    "conditions": [
-                        {"text": str, "order_index": int}
-                    ],
-                    "notes_table": [    # ItemNote‌های سطح آیتم
-                        {"text": str, "order_index": int}
-                    ]
-                }
-            ],
-
-            "drug_items": [             # اگر is_drug_section=True
-                {
-                    "drug_id": int,
-                    "notes": str,       # اختیاری
-                    "order_index": int, # اختیاری
-                    "conditions": [
-                        {"text": str, "order_index": int}
-                    ]
-                }
-            ],
-
-            "notes_table": [            # ItemNote‌های سطح Section
-                {"text": str, "order_index": int}
-            ]
-        }
-    ]
-}
+رویکرد:
+  - OrderService فقط مسئول Order (ایجاد، ویرایش، حذف، لیست) است.
+  - مدیریت Section/Item/Condition به SectionSyncService واگذار شده.
+  - SectionSyncService یک متد یکپارچه دارد که همه تغییرات را یکجا ذخیره می‌کند.
 """
 
 from __future__ import annotations
 
+import logging
 from django.db import transaction
-from django.db.models import QuerySet
-from django.core.exceptions import ValidationError
+from django.db.models import Q
+from django.shortcuts import get_object_or_404
+from typing import List, Dict, Any, Optional
 
+from apps.prescriptions.models import PrescriptionCategory, Drug
 from apps.ordering.models import (
     Order,
     OrderSection,
     SectionItem,
-    ItemCondition,
     DrugSectionItem,
-    DrugItemCondition,
-    ItemNote,
-    DynamicFieldGroup,
+    Condition,
 )
-from apps.prescriptions.models.category import PrescriptionCategory
 
+logger = logging.getLogger(__name__)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  ORDER SERVICE
+# ═══════════════════════════════════════════════════════════════════════════
 
 class OrderService:
-
-    # ══════════════════════════════════════════════════════════════════════
-    #  CREATE
-    # ══════════════════════════════════════════════════════════════════════
+    """مدیریت Order — فقط عملیات خود Order."""
 
     @staticmethod
-    @transaction.atomic
-    def create(data: dict) -> Order:
-        """
-        ایجاد یک Order کامل در یک تراکنش اتمی.
+    def get_order_list(filters: Optional[Dict[str, Any]] = None) -> List[Order]:
+        queryset = Order.objects.select_related('category').all()
+        if filters:
+            queryset = queryset.filter(**filters)
+        return list(queryset)
 
-        گام‌ها:
-          1. اعتبارسنجی و ساخت Order
-          2. اتصال DynamicFieldGroup‌های انتخاب‌شده (لینک — بدون ایجاد مجدد)
-          3. ساخت Section‌ها + Items + Conditions + Notes
-        """
-        # ── 1. اعتبارسنجی category ──────────────────────────────────────
-        category_id = data.get("category_id")
-        if not category_id:
-            raise ValidationError("فیلد category_id اجباری است.")
-
-        try:
-            category = PrescriptionCategory.objects.get(pk=category_id)
-        except PrescriptionCategory.DoesNotExist:
-            raise ValidationError(f"دسته‌بندی با id={category_id} یافت نشد.")
-
-        # ── 2. ساخت Order ───────────────────────────────────────────────
-        order = Order.objects.create(
-            category=category,
-            imp=data["imp"],
-            condition=data["condition"],
-            diet=data["diet"],
-            action=data["action"],
-            position=data["position"],
-            notes=data.get("notes", ""),
-            color=data.get("color", ""),
+    @staticmethod
+    def get_order_detail(order_id: int) -> Dict[str, Any]:
+        order = get_object_or_404(
+            Order.objects.select_related('category').prefetch_related(
+                'sections__items__conditions',
+                'sections__drug_items__conditions',
+                'sections__drug_items__drug',
+            ),
+            id=order_id,
         )
 
-        # ── 3. اتصال DynamicFieldGroup‌ها ───────────────────────────────
-        group_ids = data.get("dynamic_field_group_ids", [])
-        if group_ids:
-            OrderService._attach_dynamic_field_groups(order, group_ids)
+        sections_data = []
+        for section in order.sections.all():
+            items_data = [
+                {
+                    'id': item.id,
+                    'text': item.text,
+                    'notes': item.notes,
+                    'order_index': item.order_index,
+                    'conditions': [
+                        {'id': c.id, 'text': c.text, 'order_index': c.order_index}
+                        for c in item.conditions.all()
+                    ],
+                    'created_at': item.created_at,
+                    'updated_at': item.updated_at,
+                }
+                for item in section.items.all()
+            ]
+            drug_items_data = [
+                {
+                    'id': di.id,
+                    'drug': {'id': di.drug.id, 'title': di.drug.title},
+                    'notes': di.notes,
+                    'order_index': di.order_index,
+                    'conditions': [
+                        {'id': c.id, 'text': c.text, 'order_index': c.order_index}
+                        for c in di.conditions.all()
+                    ],
+                    'created_at': di.created_at,
+                    'updated_at': di.updated_at,
+                }
+                for di in section.drug_items.all()
+            ]
+            sections_data.append({
+                'id': section.id,
+                'title': section.title,
+                'notes': section.notes,
+                'is_drug_section': section.is_drug_section,
+                'order_index': section.order_index,
+                'color': section.color,
+                'items': items_data,
+                'drug_items': drug_items_data,
+                'created_at': section.created_at,
+                'updated_at': section.updated_at,
+            })
 
-        # ── 4. ساخت Section‌ها ───────────────────────────────────────────
-        sections_data = data.get("sections", [])
-        for section_data in sections_data:
-            OrderService._create_section(order, section_data)
-
-        return order
-
-    # ══════════════════════════════════════════════════════════════════════
-    #  UPDATE
-    # ══════════════════════════════════════════════════════════════════════
+        return {
+            'id': order.id,
+            'name': order.name,
+            'imp': order.imp,
+            'condition': order.condition,
+            'diet': order.diet,
+            'action': order.action,
+            'position': order.position,
+            'notes': order.notes,
+            'category': {'id': order.category.id, 'name': order.category.name},
+            'color': order.color,
+            'sections': sections_data,
+            'created_at': order.created_at,
+            'updated_at': order.updated_at,
+            'shamsi_created_at': order.shamsi_created_at,
+            'shamsi_updated_at': order.shamsi_updated_at,
+        }
 
     @staticmethod
     @transaction.atomic
-    def update(order_id: int, data: dict) -> Order:
+    def create_order(data: Dict[str, Any]) -> Order:
         """
-        ویرایش Order.
+        ایجاد Order.
 
-        استراتژی برای زیرمجموعه‌ها:
-          - اگر "sections" در data ارسال نشده باشد: Section‌ها دست‌نخورده می‌مانند.
-          - اگر "sections" ارسال شده باشد: Section‌های قدیمی حذف و جدید ساخته می‌شوند.
-            (رویکرد replace-all — ساده و بدون باگ‌های sync)
-
-          - برای dynamic_field_group_ids: رویکرد set() — گروه‌های جدید جایگزین می‌شوند.
+        data keys:
+            name, imp, condition, diet, action, position,
+            notes (opt), category_id, color (opt)
         """
-        order = OrderService.get_order(order_id)
+        category = get_object_or_404(PrescriptionCategory, id=data['category_id'])
+        return Order.objects.create(
+            name=data['name'],
+            imp=data['imp'],
+            condition=data['condition'],
+            diet=data['diet'],
+            action=data['action'],
+            position=data['position'],
+            notes=data.get('notes', ''),
+            category=category,
+            color=data.get('color', ''),
+        )
 
-        # ── فیلدهای اصلی ────────────────────────────────────────────────
-        if "category_id" in data:
-            try:
-                order.category = PrescriptionCategory.objects.get(pk=data["category_id"])
-            except PrescriptionCategory.DoesNotExist:
-                raise ValidationError(f"دسته‌بندی با id={data['category_id']} یافت نشد.")
-
-        for field in ("imp", "condition", "diet", "action", "position", "notes", "color"):
+    @staticmethod
+    @transaction.atomic
+    def update_order(order_id: int, data: Dict[str, Any]) -> Order:
+        order = get_object_or_404(Order, id=order_id)
+        fields = ['name', 'imp', 'condition', 'diet', 'action', 'position', 'notes', 'color']
+        for field in fields:
             if field in data:
                 setattr(order, field, data[field])
-
+        if 'category_id' in data:
+            order.category = get_object_or_404(PrescriptionCategory, id=data['category_id'])
         order.save()
+        return order
 
-        # ── DynamicFieldGroup‌ها ─────────────────────────────────────────
-        if "dynamic_field_group_ids" in data:
-            OrderService._attach_dynamic_field_groups(order, data["dynamic_field_group_ids"])
+    @staticmethod
+    @transaction.atomic
+    def delete_order(order_id: int) -> None:
+        order = get_object_or_404(Order, id=order_id)
+        order.delete()
 
-        # ── Section‌ها ───────────────────────────────────────────────────
-        if "sections" in data:
-            order.sections.all().delete()   # cascade آیتم‌ها و notes را هم حذف می‌کند
-            for section_data in data["sections"]:
-                OrderService._create_section(order, section_data)
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  SECTION SYNC SERVICE  —  یکپارچه
+# ═══════════════════════════════════════════════════════════════════════════
+
+class SectionSyncService:
+    """
+    ذخیره‌سازی یکپارچه Section/Item/Condition برای یک Order.
+
+    فلو:
+        FE یک آرایه sections ارسال می‌کند.
+        هر section دارای items، drug_items و conditions است.
+        این سرویس:
+          1. سکشن‌های موجود را ویرایش یا جدید می‌سازد.
+          2. آیتم‌های حذف‌شده را پاک می‌کند.
+          3. Condition ها را با temp_id ↔ real_id map می‌کند.
+          4. سکشن‌هایی که در payload نیستند را حذف می‌کند.
+        همه چیز در یک تراکنش اتمیک انجام می‌شود.
+    """
+
+    @staticmethod
+    @transaction.atomic
+    def sync(order_id: int, sections_payload: List[Dict[str, Any]]) -> Order:
+        """
+        ورودی: order_id و لیست sections.
+
+        ساختار هر section:
+        {
+            "id": int | null,          # null = جدید
+            "temp_id": str | null,
+            "title": str,
+            "notes": str,
+            "color": str,
+            "is_drug_section": bool,
+            "order_index": int,
+            "items": [
+                {
+                    "id": int | null,
+                    "temp_id": str | null,
+                    "text": str,
+                    "notes": str,
+                    "order_index": int
+                }
+            ],
+            "drug_items": [
+                {
+                    "id": int | null,
+                    "temp_id": str | null,
+                    "drug_id": int,
+                    "notes": str,
+                    "order_index": int
+                }
+            ],
+            "conditions": [
+                {
+                    "id": int | null,
+                    "temp_id": str | null,
+                    "text": str,
+                    "order_index": int,
+                    "item_temp_ids": [str, ...],       # temp_id یا real_id آیتم‌های مرتبط
+                    "drug_item_temp_ids": [str, ...]
+                }
+            ]
+        }
+        """
+        order = get_object_or_404(Order, id=order_id)
+        surviving_section_ids: set[int] = set()
+
+        for sec_data in sections_payload:
+            section = SectionSyncService._upsert_section(order, sec_data)
+            surviving_section_ids.add(section.id)
+
+            # ─── items ───
+            item_id_map: Dict[str, int] = {}   # temp_id / str(real_id) → real db id
+            surviving_item_ids: set[int] = set()
+
+            for item_data in sec_data.get('items', []):
+                item = SectionSyncService._upsert_item(section, item_data)
+                surviving_item_ids.add(item.id)
+                SectionSyncService._register_id_map(item_id_map, item_data, item.id)
+
+            # ─── drug_items ───
+            drug_item_id_map: Dict[str, int] = {}
+            surviving_drug_item_ids: set[int] = set()
+
+            for di_data in sec_data.get('drug_items', []):
+                di = SectionSyncService._upsert_drug_item(section, di_data)
+                surviving_drug_item_ids.add(di.id)
+                SectionSyncService._register_id_map(drug_item_id_map, di_data, di.id)
+
+            # ─── حذف موارد از دست رفته ───
+            SectionItem.objects.filter(section=section).exclude(
+                id__in=surviving_item_ids
+            ).delete()
+            DrugSectionItem.objects.filter(section=section).exclude(
+                id__in=surviving_drug_item_ids
+            ).delete()
+
+            # ─── conditions ───
+            surviving_condition_ids: set[int] = set()
+
+            for cond_data in sec_data.get('conditions', []):
+                cond = SectionSyncService._upsert_condition(
+                    section, cond_data, item_id_map, drug_item_id_map
+                )
+                surviving_condition_ids.add(cond.id)
+
+            # حذف condition هایی که دیگر در payload نیستند
+            SectionSyncService._cleanup_conditions(
+                section, surviving_condition_ids
+            )
+
+        # ─── حذف سکشن‌هایی که در payload نیستند ───
+        OrderSection.objects.filter(order=order).exclude(
+            id__in=surviving_section_ids
+        ).delete()
 
         return order
 
-    # ══════════════════════════════════════════════════════════════════════
-    #  READ
-    # ══════════════════════════════════════════════════════════════════════
-
-    @staticmethod
-    def get_order(order_id: int) -> Order:
-        """بازیابی Order با prefetch کامل برای جلوگیری از N+1."""
-        try:
-            return (
-                Order.objects
-                .select_related("category")
-                .prefetch_related(
-                    "dynamic_field_groups__subgroups__items",
-                    "sections__items__conditions",
-                    "sections__items__notes_table",
-                    "sections__drug_items__conditions",
-                    "sections__notes_table",
-                    "images",
-                    "videos",
-                )
-                .get(pk=order_id)
-            )
-        except Order.DoesNotExist:
-            raise ValidationError(f"Order با id={order_id} یافت نشد.")
-
-    @staticmethod
-    def list_orders(**filters) -> QuerySet[Order]:
-        """فهرست Orders با فیلتر دلخواه (مثلاً category_id=5)."""
-        return (
-            Order.objects
-            .select_related("category")
-            .prefetch_related("dynamic_field_groups")
-            .filter(**filters)
-            .order_by("-created_at")
-        )
-
-    # ══════════════════════════════════════════════════════════════════════
-    #  DELETE
-    # ══════════════════════════════════════════════════════════════════════
-
-    @staticmethod
-    @transaction.atomic
-    def delete(order_id: int) -> None:
-        deleted, _ = Order.objects.filter(pk=order_id).delete()
-        if not deleted:
-            raise ValidationError(f"Order با id={order_id} یافت نشد.")
-
-    # ══════════════════════════════════════════════════════════════════════
-    #  SECTION-LEVEL PATCH (ویرایش بدون replace-all)
-    # ══════════════════════════════════════════════════════════════════════
-
-    @staticmethod
-    @transaction.atomic
-    def add_section(order_id: int, section_data: dict) -> OrderSection:
-        """اضافه کردن یک Section جدید به Order موجود."""
-        order = OrderService.get_order(order_id)
-        return OrderService._create_section(order, section_data)
-
-    @staticmethod
-    @transaction.atomic
-    def update_section(section_id: int, data: dict) -> OrderSection:
-        try:
-            section = OrderSection.objects.get(pk=section_id)
-        except OrderSection.DoesNotExist:
-            raise ValidationError(f"Section با id={section_id} یافت نشد.")
-
-        for field in ("title", "notes", "is_drug_section", "order_index", "color"):
-            if field in data:
-                setattr(section, field, data[field])
-        section.save()
-        return section
-
-    @staticmethod
-    @transaction.atomic
-    def delete_section(section_id: int) -> None:
-        deleted, _ = OrderSection.objects.filter(pk=section_id).delete()
-        if not deleted:
-            raise ValidationError(f"Section با id={section_id} یافت نشد.")
-
-    # ══════════════════════════════════════════════════════════════════════
+    # ──────────────────────────────────────────────
     #  PRIVATE HELPERS
-    # ══════════════════════════════════════════════════════════════════════
+    # ──────────────────────────────────────────────
 
     @staticmethod
-    def _attach_dynamic_field_groups(order: Order, group_ids: list[int]) -> None:
-        """
-        اتصال DynamicFieldGroup‌های موجود به Order از طریق M2M.
-        گروه‌هایی که در DB وجود ندارند نادیده گرفته می‌شوند (با log).
-        """
-        existing_ids = set(
-            DynamicFieldGroup.objects
-            .filter(pk__in=group_ids)
-            .values_list("pk", flat=True)
-        )
-        missing = set(group_ids) - existing_ids
-        if missing:
-            raise ValidationError(
-                f"DynamicFieldGroup‌های زیر یافت نشدند: {missing}"
-            )
-        order.dynamic_field_groups.set(existing_ids)
-
-    @staticmethod
-    def _create_section(order: Order, data: dict) -> OrderSection:
-        notes_table_data = data.pop("notes_table", [])
-        items_data = data.pop("items", [])
-        drug_items_data = data.pop("drug_items", [])
-
-        section = OrderSection.objects.create(
-            order=order,
-            title=data["title"],
-            notes=data.get("notes", ""),
-            is_drug_section=data.get("is_drug_section", False),
-            order_index=data.get("order_index", 0),
-            color=data.get("color", ""),
-        )
-
-        # notes در سطح Section
-        for note_data in notes_table_data:
-            ItemNote.objects.create(
-                section=section,
-                text=note_data["text"],
-                order_index=note_data.get("order_index", 0),
-            )
-
-        # آیتم‌های متنی
-        for item_data in items_data:
-            OrderService._create_section_item(section, item_data)
-
-        # آیتم‌های دارویی
-        for drug_data in drug_items_data:
-            OrderService._create_drug_item(section, drug_data)
-
+    def _upsert_section(order: Order, data: dict) -> OrderSection:
+        section_id = data.get('id')
+        defaults = {
+            'title': data.get('title', ''),
+            'notes': data.get('notes', ''),
+            'is_drug_section': data.get('is_drug_section', False),
+            'order_index': data.get('order_index', 0),
+            'color': data.get('color', ''),
+        }
+        if section_id:
+            section = get_object_or_404(OrderSection, id=section_id, order=order)
+            for k, v in defaults.items():
+                setattr(section, k, v)
+            section.save()
+        else:
+            section = OrderSection.objects.create(order=order, **defaults)
         return section
 
     @staticmethod
-    def _create_section_item(section: OrderSection, data: dict) -> SectionItem:
-        conditions_data = data.pop("conditions", [])
-        notes_table_data = data.pop("notes_table", [])
-
-        item = SectionItem.objects.create(
-            section=section,
-            text=data["text"],
-            notes=data.get("notes", ""),
-            order_index=data.get("order_index", 0),
-        )
-
-        for cond_data in conditions_data:
-            ItemCondition.objects.create(
-                item=item,
-                text=cond_data["text"],
-                order_index=cond_data.get("order_index", 0),
-            )
-
-        for note_data in notes_table_data:
-            ItemNote.objects.create(
-                item=item,
-                text=note_data["text"],
-                order_index=note_data.get("order_index", 0),
-            )
-
+    def _upsert_item(section: OrderSection, data: dict) -> SectionItem:
+        item_id = data.get('id')
+        defaults = {
+            'text': data.get('text', ''),
+            'notes': data.get('notes', ''),
+            'order_index': data.get('order_index', 0),
+        }
+        if item_id:
+            item = get_object_or_404(SectionItem, id=item_id, section=section)
+            for k, v in defaults.items():
+                setattr(item, k, v)
+            item.save()
+        else:
+            item = SectionItem.objects.create(section=section, **defaults)
         return item
 
     @staticmethod
-    def _create_drug_item(section: OrderSection, data: dict) -> DrugSectionItem:
-        conditions_data = data.pop("conditions", [])
+    def _upsert_drug_item(section: OrderSection, data: dict) -> DrugSectionItem:
+        di_id = data.get('id')
+        drug = get_object_or_404(Drug, id=data['drug_id'])
+        defaults = {
+            'drug': drug,
+            'notes': data.get('notes', ''),
+            'order_index': data.get('order_index', 0),
+        }
+        if di_id:
+            di = get_object_or_404(DrugSectionItem, id=di_id, section=section)
+            for k, v in defaults.items():
+                setattr(di, k, v)
+            di.save()
+        else:
+            di = DrugSectionItem.objects.create(section=section, **defaults)
+        return di
 
-        drug_item = DrugSectionItem.objects.create(
-            section=section,
-            drug_id=data["drug_id"],
-            notes=data.get("notes", ""),
-            order_index=data.get("order_index", 0),
+    @staticmethod
+    def _upsert_condition(
+        section: OrderSection,
+        data: dict,
+        item_id_map: Dict[str, int],
+        drug_item_id_map: Dict[str, int],
+    ) -> Condition:
+        cond_id = data.get('id')
+        defaults = {
+            'text': data.get('text', ''),
+            'order_index': data.get('order_index', 0),
+        }
+        if cond_id:
+            cond = get_object_or_404(Condition, id=cond_id)
+            for k, v in defaults.items():
+                setattr(cond, k, v)
+            cond.save()
+        else:
+            cond = Condition.objects.create(**defaults)
+
+        # ─── اتصال به آیتم‌های متنی ───
+        real_item_ids = SectionSyncService._resolve_ids(
+            data.get('item_temp_ids', []), item_id_map
         )
+        # فقط آیتم‌هایی که به این section تعلق دارند
+        valid_items = SectionItem.objects.filter(
+            section=section, id__in=real_item_ids
+        )
+        cond.section_items.set(valid_items)
 
-        for cond_data in conditions_data:
-            DrugItemCondition.objects.create(
-                drug_item=drug_item,
-                text=cond_data["text"],
-                order_index=cond_data.get("order_index", 0),
-            )
+        # ─── اتصال به آیتم‌های دارویی ───
+        real_drug_ids = SectionSyncService._resolve_ids(
+            data.get('drug_item_temp_ids', []), drug_item_id_map
+        )
+        valid_drug_items = DrugSectionItem.objects.filter(
+            section=section, id__in=real_drug_ids
+        )
+        cond.drug_items.set(valid_drug_items)
 
-        return drug_item
+        return cond
+
+    @staticmethod
+    def _cleanup_conditions(section: OrderSection, surviving_ids: set[int]) -> None:
+        """
+        حذف Condition هایی که فقط به این section وابسته بودند و در payload نیستند.
+        """
+        related_conditions = Condition.objects.filter(
+            Q(section_items__section=section) | Q(drug_items__section=section)
+        ).distinct()
+
+        for cond in related_conditions:
+            if cond.id in surviving_ids:
+                continue
+            # جدا کردن از این section
+            cond.section_items.remove(*cond.section_items.filter(section=section))
+            cond.drug_items.remove(*cond.drug_items.filter(section=section))
+            # اگر کلاً بی‌ربط شد، حذف کن
+            if not cond.section_items.exists() and not cond.drug_items.exists():
+                cond.delete()
+
+    @staticmethod
+    def _register_id_map(id_map: Dict[str, int], data: dict, real_id: int) -> None:
+        """ثبت mapping از temp_id / str(real_id) به real db id."""
+        if data.get('temp_id'):
+            id_map[str(data['temp_id'])] = real_id
+        if data.get('id'):
+            id_map[str(data['id'])] = real_id
+
+    @staticmethod
+    def _resolve_ids(raw_ids: List[str], id_map: Dict[str, int]) -> List[int]:
+        """تبدیل لیست temp/real id به لیست int."""
+        result = []
+        for raw in raw_ids:
+            raw_str = str(raw)
+            if raw_str in id_map:
+                result.append(id_map[raw_str])
+            elif raw_str.isdigit():
+                result.append(int(raw_str))
+        return result
