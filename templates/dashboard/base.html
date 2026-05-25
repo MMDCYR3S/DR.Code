@@ -111,10 +111,53 @@
             0%, 100% { transform: scale(1); opacity: 1; }
             50% { transform: scale(1.1); opacity: 0.8; }
         }
+
+        /* --- شخصی‌سازی اسکرول‌بار کل صفحه و المان‌های داخل آن --- */
+
+/* ۱. تنظیمات برای مرورگرهای مبتنی بر Webkit (مثل Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+    width: 8px; /* عرض اسکرول‌بار عمودی */
+    height: 8px; /* ارتفاع اسکرول‌بار افقی */
+}
+
+/* ریل یا مسیر حرکت اسکرول‌بار */
+::-webkit-scrollbar-track {
+    background: #f1f5f9; /* هماهنگ با رنگ bg-slate-50 محتوای شما */
+    border-radius: 20px;
+}
+
+/* دستگیره اسکرول‌بار */
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1; /* یک خاکستری ملایم برای حالت عادی */
+    border-radius: 20px;
+    border: 2px solid #f1f5f9; /* ایجاد یک فاصله ظریف بین دستگیره و دیواره */
+}
+
+/* تغییر رنگ دستگیره وقتی کاربر موس را روی آن می‌برد */
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8; /* کمی تیره‌تر در حالت هوور */
+}
+
+/* ۲. تنظیمات برای مرورگر Firefox */
+* {
+    scrollbar-width: thin; /* باریک کردن اسکرول‌بار */
+    scrollbar-color: #024699 #0070e000; /* رنگ دستگیره و رنگ ریل (به ترتیب) */
+}
+
+/* مخفی کردن اسکرول‌بار برای کروم، سافاری و اپرا */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* مخفی کردن اسکرول‌بار برای فایرفاکس و IE */
+.no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
     </style>
     {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-slate-100 text-slate-800">
+<body class="bg-blue-900 text-blue-950">
 
     <!-- سیستم نوتیفیکیشن موجود -->
     <div x-data="notificationManager" 
@@ -252,117 +295,222 @@
 
     <div x-data="{ sidebarOpen: false, modalController: null, headerNotificationData: null }" 
          x-init="modalController = $refs.modalController; headerNotificationData = $refs.headerNotificationData;"
-         class="flex h-screen bg-slate-100">
+         class="flex h-screen bg-slate-900 ">
         
-        <aside
-            :class="sidebarOpen ? 'translate-x-0' : 'translate-x-full'"
-            class="fixed inset-y-0 right-0 z-30 w-64 bg-slate-800 text-white shadow-lg transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 flex flex-col">
-            
-            <div class="flex-shrink-0 flex items-center justify-center px-6 py-4 border-b border-slate-700">
-                <i class="fa-solid fa-user-doctor text-2xl text-blue-700"></i>
-                <span class="ml-4 mr-2 text-xl font-bold">دکتر کد</span>
-            </div>
-
-            <nav class="flex-1 overflow-y-auto py-6">
-                <a href="{% url 'dashboard:index:index' %}" class="flex items-center px-6 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 {% if request.resolver_match.url_name == 'dashboard' %}bg-slate-700 text-blue-300{% endif %}">
-                    <i class="fa-solid fa-house sidebar-icon"></i>
-                    <span class="mx-3">داشبورد</span>
-                </a>
-                <a href="{% url 'dashboard:users:admin_users_list' %}" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 {% if request.resolver_match.url_name == 'admin_users_list' %}bg-slate-700 text-blue-300{% endif %}">
-                    <i class="fa-solid fa-users sidebar-icon"></i>
-                    <span class="mx-3">مدیریت کاربران</span>
-                </a>
-                <a href="{% url 'dashboard:users:admin_verification_queue' %}" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 {% if request.resolver_match.url_name == 'admin_verification_queue' %}bg-slate-700 text-blue-300{% endif %}">
-                    <i class="fa-solid fa-user-check sidebar-icon"></i>
-                    <span class="mx-3">احراز هویت</span>
-                </a>
-                <a href="{% url 'dashboard:drugs:drug_list' %}" 
-                    class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200
-                    {% if request.resolver_match.url_name == 'drug_list' %}bg-slate-700 text-blue-300{% endif %}">
-                    <i class="fa-solid fa-medkit sidebar-icon"></i>
-                    <span class="mx-3">مدیریت داروها</span>
-                </a>
-                <a href="{% url 'dashboard:prescriptions:prescription_list' %}" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 {% if request.resolver_match.url_name == 'prescription_list' %}bg-slate-700 text-blue-300{% endif %}">
-                    <i class="fa-solid fa-file-prescription sidebar-icon"></i>
-                    <span class="mx-3">مدیریت نسخه‌ها</span>
-                </a>
-                <a href="{% url 'dashboard:categories:category_list' %}" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 {% if request.resolver_match.url_name == 'category_list' %}bg-slate-700 text-blue-300{% endif %}">
-                    <i class="fa-solid fa-sitemap sidebar-icon"></i>
-                    <span class="mx-3">دسته‌بندی‌ها</span>
-                </a>
-                <a href="{% url 'dashboard:notifications:notifications_list' %}" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 {% if request.resolver_match.url_name == 'notifications_list' %}bg-slate-700 text-blue-300{% endif %}">
-                    <i class="fa-solid fa-bell sidebar-icon"></i>
-                    <span class="mx-3">مدیریت اعلان‌ها</span>
-                </a>
-                <a href="{% url 'dashboard:questions:questions_list' %}" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 {% if request.resolver_match.url_name == 'questions_list' %}bg-slate-700 text-blue-300{% endif %}">
-                    <i class="fa-solid fa-comments sidebar-icon"></i>
-                    <span class="mx-3">سوالات کاربران</span>
-                </a>
-                <a href="{% url 'dashboard:contacts:contacts_list' %}" class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white
-                 {% if request.resolver_match.url_name == 'contacts_list' %}bg-slate-700 text-blue-300{% endif %}">
-                    <i class="fa-solid fa-envelope sidebar-icon"></i>
-                    <span class="mx-3">پیام‌های تماس</span>
-                </a>
-                <a href="{% url 'dashboard:orders:discount_list' %}" 
-                    class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200
-                    {% if request.resolver_match.url_name == 'discount_list' %}bg-slate-700 text-blue-300{% endif %}">
-                    <i class="fa-solid fa-tags sidebar-icon"></i>
-                    <span class="mx-3">کدهای تخفیف</span>
-                </a>
-                <a href="{% url 'dashboard:plans:plan_list' %}" 
-                    class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200
-                    {% if request.resolver_match.url_name == 'plan_list' %}bg-slate-700 text-blue-300{% endif %}">
-                    <i class="fa-solid fa-shopping-cart sidebar-icon"></i>
-                    <span class="mx-3">مدیریت پلن‌ها</span>
-                </a>
-                <a href="{% url 'dashboard:tutorials:admin_tutorials' %}" 
-                    class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200
-                    {% if request.resolver_match.url_name == 'admin_tutorials' %}bg-slate-700 text-blue-300{% endif %}">
-                    <i class="fa-solid fa-video sidebar-icon"></i>
-                    <span class="mx-3">ویدیوهای آموزشی</span>
-                </a>
-                <a href="{% url 'dashboard:analysis:analysis' %}" 
-                    class="flex items-center px-6 py-2 mt-2 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200
-                    {% if request.resolver_match.url_name == 'analysis' %}bg-slate-700 text-blue-300{% endif %}">
-                    <i class="fa-solid fa-bar-chart sidebar-icon"></i>
-                    <span class="mx-3">گزارشات</span>
-                </a>
-
-                
-                <button type="button" onclick="logoutUser()" 
-                    class="flex items-center px-6 py-2 mt-2 text-slate-300 
-                        hover:bg-slate-700 hover:text-white 
-                        w-full text-left transition-colors duration-200">
-                    <i class="fa-solid fa-sign-out sidebar-icon"></i>
-                    <span class="mx-3">خروج</span>
-                </button>
-            </nav>
-        </aside>
+         <aside
+         :class="sidebarOpen ? 'translate-x-0' : 'translate-x-full'"
+         class="fixed inset-y-0 right-0 z-30 w-60 bg-slate-900 text-white  transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 flex flex-col justify-between select-none ">
+         
+         <div class="flex-shrink-0 flex items-center justify-between px-6 pt-4">
+             <div class="flex items-center relative">
+                 <i class="fa-solid fa-user-doctor text-[4rem] text-blue-500/30 "></i>
+                 <div class="flex flex-col absolute right-8">
+                     <span class="mr-3 text-lg font-bold tracking-wide text-white ">دکتر کد</span>
+                     <span class="mr-3 text-lg font-bold tracking-wide text-white italic">DrCode</span>
+                 </div>
+             </div>
+             
+             <div x-data="headerNotification" x-ref="headerNotificationData">
+                 <button @click="toggleNotificationModal()" 
+                         class="relative p-1 text-white/50 hover:text-white pt-2 hover:bg-slate-800 focus:outline-none rounded-xl transition-all duration-200"
+                         :class="{ 'notification-bell': hasUnread }">
+                     <i class="fa-solid fa-bell text-3xl"></i>
+                     <span x-show="unreadCount > 0" 
+                           x-text="unreadCount > 9 ? '9+' : unreadCount"
+                           class="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold leading-none text-white bg-red-600 rounded-full min-w-[18px]">
+                     </span>
+                 </button>
+             </div>
+         </div>
+     
+         <nav class="flex-1 overflow-y-auto py-4 space-y-1.5 pr-0 list-none scrollbar-none no-scrollbar ">
+             
+            <a href="{% url 'dashboard:index:index' %}" 
+            class="relative flex items-center px-6 py-3 transition-all duration-200 text-sm group
+            {% if request.path == '/dashboard/admin/' %} bg-white text-slate-900 font-bold rounded-r-3xl {% else %} text-slate-400 hover:border-r  hover:border-r-white hover:bg-gradient-to-l from-white/50 to-slate-900 rounded-2xl hover:text-slate-900 hover:ml-1 {% endif %}">
+             
+             {% if request.path == '/dashboard/admin/' %}
+                 <span class="absolute -top-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-bl-3xl"></span></span>
+             {% endif %}
+             
+             <i class="fa-solid fa-house text-base w-5 text-center transition-colors {% if request.path == '/dashboard/admin/' %}text-blue-600{% else %}text-slate-500 group-hover:text-slate-300{% endif %}"></i>
+             <span class="mx-3">داشبورد</span>
+             
+             {% if request.path == '/dashboard/admin/' %}
+                 <span class="absolute -bottom-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-tl-3xl"></span></span>
+             {% endif %}
+         </a>
+     
+             <a href="{% url 'dashboard:users:admin_users_list' %}" 
+                class="relative flex items-center px-6 py-3 transition-all duration-200 text-sm group
+                {% if '/users/list/' in request.path or request.resolver_match.url_name == 'admin_users_list' %} bg-white text-slate-900 font-bold rounded-r-3xl {% else %} text-slate-400 hover:border-r  hover:border-r-white hover:bg-gradient-to-l from-white/50 to-slate-900 rounded-2xl hover:text-slate-900 hover:ml-1 {% endif %}">
+                 {% if '/users/list/' in request.path or request.resolver_match.url_name == 'admin_users_list' %}
+                     <span class="absolute -top-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-bl-3xl"></span></span>
+                 {% endif %}
+                 <i class="fa-solid fa-users text-base w-5 text-center transition-colors {% if '/users/list/' in request.path or request.resolver_match.url_name == 'admin_users_list' %}text-blue-600{% else %}text-slate-500 group-hover:text-slate-300{% endif %}"></i>
+                 <span class="mx-3">مدیریت کاربران</span>
+                 {% if '/users/list/' in request.path or request.resolver_match.url_name == 'admin_users_list' %}
+                     <span class="absolute -bottom-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-tl-3xl"></span></span>
+                 {% endif %}
+             </a>
+     
+             <a href="{% url 'dashboard:users:admin_verification_queue' %}" 
+                class="relative flex items-center px-6 py-3 transition-all duration-200 text-sm group
+                {% if '/dashboard/admin/verification-queue/' in request.path or request.resolver_match.url_name == 'admin_verification_queue' %} bg-white text-slate-900 font-bold rounded-r-3xl {% else %} text-slate-400 hover:border-r  hover:border-r-white hover:bg-gradient-to-l from-white/50 to-slate-900 rounded-2xl hover:text-slate-900 hover:ml-1 {% endif %}">
+                 {% if '/verification' in request.path or request.resolver_match.url_name == 'admin_verification_queue' %}
+                     <span class="absolute -top-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-bl-3xl"></span></span>
+                 {% endif %}
+                 <i class="fa-solid fa-user-check text-base w-5 text-center transition-colors {% if '/verification' in request.path or request.resolver_match.url_name == 'admin_verification_queue' %}text-blue-600{% else %}text-slate-500 group-hover:text-slate-300{% endif %}"></i>
+                 <span class="mx-3">احراز هویت</span>
+                 {% if '/verification' in request.path or request.resolver_match.url_name == 'admin_verification_queue' %}
+                     <span class="absolute -bottom-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-tl-3xl"></span></span>
+                 {% endif %}
+             </a>
+     
+             <a href="{% url 'dashboard:drugs:drug_list' %}" 
+                class="relative flex items-center px-6 py-3 transition-all duration-200 text-sm group
+                {% if '/drugs/' in request.path or request.resolver_match.url_name == 'drug_list' %} bg-white text-slate-900 font-bold rounded-r-3xl {% else %} text-slate-400 hover:border-r  hover:border-r-white hover:bg-gradient-to-l from-white/50 to-slate-900 rounded-2xl hover:text-slate-900 hover:ml-1 {% endif %}">
+                 {% if '/drugs/' in request.path or request.resolver_match.url_name == 'drug_list' %}
+                     <span class="absolute -top-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-bl-3xl"></span></span>
+                 {% endif %}
+                 <i class="fa-solid fa-medkit text-base w-5 text-center transition-colors {% if '/drugs/' in request.path or request.resolver_match.url_name == 'drug_list' %}text-blue-600{% else %}text-slate-500 group-hover:text-slate-300{% endif %}"></i>
+                 <span class="mx-3">مدیریت داروها</span>
+                 {% if '/drugs/' in request.path or request.resolver_match.url_name == 'drug_list' %}
+                     <span class="absolute -bottom-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-tl-3xl"></span></span>
+                 {% endif %}
+             </a>
+     
+             <a href="{% url 'dashboard:prescriptions:prescription_list' %}" 
+                class="relative flex items-center px-6 py-3 transition-all duration-200 text-sm group
+                {% if '/prescriptions/' in request.path or request.resolver_match.url_name == 'prescription_list' %} bg-white text-slate-900 font-bold rounded-r-3xl {% else %} text-slate-400 hover:border-r  hover:border-r-white hover:bg-gradient-to-l from-white/50 to-slate-900 rounded-2xl hover:text-slate-900 hover:ml-1 {% endif %}">
+                 {% if '/prescriptions/' in request.path or request.resolver_match.url_name == 'prescription_list' %}
+                     <span class="absolute -top-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-bl-3xl"></span></span>
+                 {% endif %}
+                 <i class="fa-solid fa-file-prescription text-base w-5 text-center transition-colors {% if '/prescriptions/' in request.path or request.resolver_match.url_name == 'prescription_list' %}text-blue-600{% else %}text-slate-500 group-hover:text-slate-300{% endif %}"></i>
+                 <span class="mx-3">مدیریت نسخه‌ها</span>
+                 {% if '/prescriptions/' in request.path or request.resolver_match.url_name == 'prescription_list' %}
+                     <span class="absolute -bottom-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-tl-3xl"></span></span>
+                 {% endif %}
+             </a>
+     
+             <a href="{% url 'dashboard:categories:category_list' %}" 
+                class="relative flex items-center px-6 py-3 transition-all duration-200 text-sm group
+                {% if '/categories/' in request.path or request.resolver_match.url_name == 'category_list' %} bg-white text-slate-900 font-bold rounded-r-3xl {% else %} text-slate-400 hover:border-r  hover:border-r-white hover:bg-gradient-to-l from-white/50 to-slate-900 rounded-2xl hover:text-slate-900 hover:ml-1 {% endif %}">
+                 {% if '/categories/' in request.path or request.resolver_match.url_name == 'category_list' %}
+                     <span class="absolute -top-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-bl-3xl"></span></span>
+                 {% endif %}
+                 <i class="fa-solid fa-sitemap text-base w-5 text-center transition-colors {% if '/categories/' in request.path or request.resolver_match.url_name == 'category_list' %}text-blue-600{% else %}text-slate-500 group-hover:text-slate-300{% endif %}"></i>
+                 <span class="mx-3">دسته‌بندی‌ها</span>
+                 {% if '/categories/' in request.path or request.resolver_match.url_name == 'category_list' %}
+                     <span class="absolute -bottom-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-tl-3xl"></span></span>
+                 {% endif %}
+             </a>
+     
+             <a href="{% url 'dashboard:notifications:notifications_list' %}" 
+                class="relative flex items-center px-6 py-3 transition-all duration-200 text-sm group
+                {% if '/notifications/' in request.path or request.resolver_match.url_name == 'notifications_list' %} bg-white text-slate-900 font-bold rounded-r-3xl {% else %} text-slate-400 hover:border-r  hover:border-r-white hover:bg-gradient-to-l from-white/50 to-slate-900 rounded-2xl hover:text-slate-900 hover:ml-1 {% endif %}">
+                 {% if '/notifications/' in request.path or request.resolver_match.url_name == 'notifications_list' %}
+                     <span class="absolute -top-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-bl-3xl"></span></span>
+                 {% endif %}
+                 <i class="fa-solid fa-bell text-base w-5 text-center transition-colors {% if '/notifications/' in request.path or request.resolver_match.url_name == 'notifications_list' %}text-blue-600{% else %}text-slate-500 group-hover:text-slate-300{% endif %}"></i>
+                 <span class="mx-3">مدیریت اعلان‌ها</span>
+                 {% if '/notifications/' in request.path or request.resolver_match.url_name == 'notifications_list' %}
+                     <span class="absolute -bottom-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-tl-3xl"></span></span>
+                 {% endif %}
+             </a>
+     
+             <a href="{% url 'dashboard:questions:questions_list' %}" 
+                class="relative flex items-center px-6 py-3 transition-all duration-200 text-sm group
+                {% if '/questions/' in request.path or request.resolver_match.url_name == 'questions_list' %} bg-white text-slate-900 font-bold rounded-r-3xl {% else %} text-slate-400 hover:border-r  hover:border-r-white hover:bg-gradient-to-l from-white/50 to-slate-900 rounded-2xl hover:text-slate-900 hover:ml-1 {% endif %}">
+                 {% if '/questions/' in request.path or request.resolver_match.url_name == 'questions_list' %}
+                     <span class="absolute -top-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-bl-3xl"></span></span>
+                 {% endif %}
+                 <i class="fa-solid fa-comments text-base w-5 text-center transition-colors {% if '/questions/' in request.path or request.resolver_match.url_name == 'questions_list' %}text-blue-600{% else %}text-slate-500 group-hover:text-slate-300{% endif %}"></i>
+                 <span class="mx-3">سوالات کاربران</span>
+                 {% if '/questions/' in request.path or request.resolver_match.url_name == 'questions_list' %}
+                     <span class="absolute -bottom-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-tl-3xl"></span></span>
+                 {% endif %}
+             </a>
+     
+             <a href="{% url 'dashboard:contacts:contacts_list' %}" 
+                class="relative flex items-center px-6 py-3 transition-all duration-200 text-sm group
+                {% if '/contacts/' in request.path or request.resolver_match.url_name == 'contacts_list' %} bg-white text-slate-900 font-bold rounded-r-3xl {% else %} text-slate-400 hover:border-r  hover:border-r-white hover:bg-gradient-to-l from-white/50 to-slate-900 rounded-2xl hover:text-slate-900 hover:ml-1 {% endif %}">
+                 {% if '/contacts/' in request.path or request.resolver_match.url_name == 'contacts_list' %}
+                     <span class="absolute -top-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-bl-3xl"></span></span>
+                 {% endif %}
+                 <i class="fa-solid fa-envelope text-base w-5 text-center transition-colors {% if '/contacts/' in request.path or request.resolver_match.url_name == 'contacts_list' %}text-blue-600{% else %}text-slate-500 group-hover:text-slate-300{% endif %}"></i>
+                 <span class="mx-3">پیام‌های تماس</span>
+                 {% if '/contacts/' in request.path or request.resolver_match.url_name == 'contacts_list' %}
+                     <span class="absolute -bottom-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-tl-3xl"></span></span>
+                 {% endif %}
+             </a>
+     
+             <a href="{% url 'dashboard:orders:discount_list' %}" 
+                class="relative flex items-center px-6 py-3 transition-all duration-200 text-sm group
+                {% if '/discount' in request.path or request.resolver_match.url_name == 'discount_list' %} bg-white text-slate-900 font-bold rounded-r-3xl {% else %} text-slate-400 hover:border-r  hover:border-r-white hover:bg-gradient-to-l from-white/50 to-slate-900 rounded-2xl hover:text-slate-900 hover:ml-1 {% endif %}">
+                 {% if '/discount' in request.path or request.resolver_match.url_name == 'discount_list' %}
+                     <span class="absolute -top-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-bl-3xl"></span></span>
+                 {% endif %}
+                 <i class="fa-solid fa-tags text-base w-5 text-center transition-colors {% if '/discount' in request.path or request.resolver_match.url_name == 'discount_list' %}text-blue-600{% else %}text-slate-500 group-hover:text-slate-300{% endif %}"></i>
+                 <span class="mx-3">کدهای تخفیف</span>
+                 {% if '/discount' in request.path or request.resolver_match.url_name == 'discount_list' %}
+                     <span class="absolute -bottom-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-tl-3xl"></span></span>
+                 {% endif %}
+             </a>
+     
+             <a href="{% url 'dashboard:plans:plan_list' %}" 
+                class="relative flex items-center px-6 py-3 transition-all duration-200 text-sm group
+                {% if '/plans/' in request.path or request.resolver_match.url_name == 'plan_list' %} bg-white text-slate-900 font-bold rounded-r-3xl {% else %} text-slate-400 hover:border-r  hover:border-r-white hover:bg-gradient-to-l from-white/50 to-slate-900 rounded-2xl hover:text-slate-900 hover:ml-1 {% endif %}">
+                 {% if '/plans/' in request.path or request.resolver_match.url_name == 'plan_list' %}
+                     <span class="absolute -top-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-bl-3xl"></span></span>
+                 {% endif %}
+                 <i class="fa-solid fa-shopping-cart text-base w-5 text-center transition-colors {% if '/plans/' in request.path or request.resolver_match.url_name == 'plan_list' %}text-blue-600{% else %}text-slate-500 group-hover:text-slate-300{% endif %}"></i>
+                 <span class="mx-3">مدیریت پلن‌ها</span>
+                 {% if '/plans/' in request.path or request.resolver_match.url_name == 'plan_list' %}
+                     <span class="absolute -bottom-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-tl-3xl"></span></span>
+                 {% endif %}
+             </a>
+     
+             <a href="{% url 'dashboard:tutorials:admin_tutorials' %}" 
+                class="relative flex items-center px-6 py-3 transition-all duration-200 text-sm group
+                {% if '/tutorials/' in request.path or request.resolver_match.url_name == 'admin_tutorials' %} bg-white text-slate-900 font-bold rounded-r-3xl {% else %} text-slate-400 hover:border-r  hover:border-r-white hover:bg-gradient-to-l from-white/50 to-slate-900 rounded-2xl hover:text-slate-900 hover:ml-1 {% endif %}">
+                 {% if '/tutorials/' in request.path or request.resolver_match.url_name == 'admin_tutorials' %}
+                     <span class="absolute -top-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-bl-3xl"></span></span>
+                 {% endif %}
+                 <i class="fa-solid fa-video text-base w-5 text-center transition-colors {% if '/tutorials/' in request.path or request.resolver_match.url_name == 'admin_tutorials' %}text-blue-600{% else %}text-slate-500 group-hover:text-slate-300{% endif %}"></i>
+                 <span class="mx-3">ویدیوهای آموزشی</span>
+                 {% if '/tutorials/' in request.path or request.resolver_match.url_name == 'admin_tutorials' %}
+                     <span class="absolute -bottom-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-tl-3xl"></span></span>
+                 {% endif %}
+             </a>
+     
+             <a href="{% url 'dashboard:analysis:analysis' %}" 
+                class="relative flex items-center px-6 py-3 transition-all duration-200 text-sm group
+                {% if '/analysis/' in request.path or request.resolver_match.url_name == 'analysis' %} bg-white text-slate-900 font-bold rounded-r-3xl {% else %} text-slate-400 hover:border-r  hover:border-r-white hover:bg-gradient-to-l from-white/50 to-slate-900 rounded-2xl hover:text-slate-900 hover:ml-1 {% endif %}">
+                 {% if '/analysis/' in request.path or request.resolver_match.url_name == 'analysis' %}
+                     <span class="absolute -top-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-bl-3xl"></span></span>
+                 {% endif %}
+                 <i class="fa-solid fa-bar-chart text-base w-5 text-center transition-colors {% if '/analysis/' in request.path or request.resolver_match.url_name == 'analysis' %}text-blue-600{% else %}text-slate-500 group-hover:text-slate-300{% endif %}"></i>
+                 <span class="mx-3">گزارشات</span>
+                 {% if '/analysis/' in request.path or request.resolver_match.url_name == 'analysis' %}
+                     <span class="absolute -bottom-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-tl-3xl"></span></span>
+                 {% endif %}
+             </a>
+     
+         </nav>
+     
+         <div class="flex-shrink-0 pt-4 pb-6 border-t border-slate-800 px-3">
+             <button type="button" onclick="logoutUser()" 
+                 class="group flex items-center px-6 py-3.5 w-full text-right text-rose-400 hover:text-white hover:bg-rose-950/40 rounded-xl transition-all duration-200 text-sm font-medium">
+                 <i class="fa-solid fa-sign-out text-base w-5 text-center text-rose-400/80 group-hover:text-rose-300 transition-colors"></i>
+                 <span class="mx-3">خروج از سیستم</span>
+             </button>
+         </div>
+     
+     </aside>
 
         <div class="flex-1 flex flex-col overflow-hidden">
-            <header class="flex items-center justify-between p-4 bg-white border-b">
-                <!-- بخش سمت چپ هدر (موبایل) - شامل زنگوله -->
-                <div class="flex items-center">
-                    <!-- لوگو موبایل -->
-                    <div class="flex items-center lg:hidden mr-4">
-                        <i class="fa-solid fa-user-doctor text-2xl text-blue-700"></i>
-                        <span class="ml-4 mr-2 text-lg font-bold">دکتر کد</span>
-                    </div>
-                    
-                    <!-- زنگوله اعلان‌ها - در هر دو موبایل و دسکتاپ -->
-                    <div x-data="headerNotification" x-ref="headerNotificationData">
-                        <button @click="toggleNotificationModal()" 
-                                class="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg"
-                                :class="{ 'notification-bell': hasUnread }">
-                            <i class="fa-solid fa-bell text-xl"></i>
-                            <!-- شمارنده نوتیفیکیشن -->
-                            <span x-show="unreadCount > 0" 
-                                  x-text="unreadCount > 9 ? '9+' : unreadCount"
-                                  class="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full notification-badge min-w-[20px]">
-                            </span>
-                        </button>
-                    </div>
-                </div>
+
                 
                 <!-- دکمه منو (موبایل) -->
                 <button @click="sidebarOpen = !sidebarOpen" class="text-slate-500 focus:outline-none lg:hidden">
@@ -370,9 +518,13 @@
                 </button>
             </header>
 
-            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-4 sm:p-6">
-                {% block content %}{% endblock %}
-            </main>
+            <div class="flex-1 bg-white mb-3 ml-3 mt-4 rounded-4xl overflow-hidden ">
+    
+                <main class="h-full w-full overflow-x-hidden overflow-y-auto  no-scrollbar">
+                    {% block content %}{% endblock %}
+                </main>
+            
+            </div>
         </div>
 
         <!-- مرجع برای مودال کنترلر -->
