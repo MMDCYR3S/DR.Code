@@ -1,0 +1,95 @@
+{% comment %}
+_emergency_panel.html
+بخش سوم: تعیین تکلیف اورژانسی — EmergencyDisposition / EmergencyNode (درخت)
+{% endcomment %}
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+
+    <!-- Panel Header -->
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+            <i class="fas fa-ambulance text-red-500"></i>تعیین تکلیف اورژانسی
+        </h2>
+        {% if object %}
+        <div class="flex gap-2">
+            <button type="button" id="emergencySaveBtn"
+                    class="px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-lg text-sm font-semibold hover:from-red-700 hover:to-rose-700 transition-all shadow flex items-center gap-2">
+                <i class="fas fa-cloud-upload-alt"></i>ذخیره یکجا
+            </button>
+            <button type="button" id="addRootNodeBtn"
+                    class="px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg text-sm font-semibold hover:from-orange-600 hover:to-amber-600 transition-all shadow flex items-center gap-2">
+                <i class="fas fa-plus"></i>افزودن گره
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if not object %}
+    <!-- Locked state -->
+    <div class="text-center py-16">
+        <div class="w-fit mx-auto bg-red-50 rounded-full p-5 mb-4">
+            <i class="fas fa-lock text-4xl text-red-200"></i>
+        </div>
+        <h3 class="text-base font-semibold text-gray-600 mb-2">در انتظار ذخیره اوردر</h3>
+        <p class="text-sm text-gray-400 max-w-sm mx-auto">پس از ذخیره اطلاعات پایه اوردر، می‌توانید تعیین تکلیف اورژانسی را تنظیم کنید.</p>
+    </div>
+
+    {% else %}
+
+    <!-- Disposition Meta Fields -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-red-50 border border-red-100 rounded-xl">
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">عنوان کلی (اختیاری)</label>
+            <input type="text" id="emergencyTitle" dir="rtl"
+                   value="{% if emergency_disposition %}{{ emergency_disposition.title }}{% endif %}"
+                   placeholder="مثال: تعیین تکلیف STEMI..."
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-400 focus:outline-none transition">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">رنگ</label>
+            <select id="emergencyColor" dir="ltr"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-400 focus:outline-none transition">
+                <option value="">— بدون رنگ —</option>
+                {% for color_val, color_label in tailwind_colors %}
+                <option value="{{ color_val }}"
+                    {% if emergency_disposition and emergency_disposition.color == color_val %}selected{% endif %}>
+                    {{ color_label }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="md:col-span-2">
+            <label class="block text-xs font-medium text-gray-600 mb-1">توضیحات کلی (اختیاری)</label>
+            <textarea id="emergencyNotes" dir="rtl" rows="2"
+                      placeholder="توضیحات کلی تعیین تکلیف..."
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-400 focus:outline-none transition resize-none">{% if emergency_disposition %}{{ emergency_disposition.notes }}{% endif %}</textarea>
+        </div>
+    </div>
+
+    <!-- Nodes Tree Container -->
+    <div id="emergencyNodesContainer" class="space-y-3">
+
+        {% if emergency_disposition and emergency_disposition.nodes.all %}
+            {% for node in emergency_disposition.nodes.all %}
+                {% if node.parent_id is None %}
+                {% include "dashboard/ordering/partials/_emergency_node.html" with node=node depth=0 %}
+                {% endif %}
+            {% endfor %}
+        {% else %}
+        <div id="emergencyEmptyState" class="text-center py-14">
+            <div class="w-fit mx-auto bg-red-50 rounded-full p-5 mb-4">
+                <i class="fas fa-project-diagram text-4xl text-red-300"></i>
+            </div>
+            <h3 class="text-base font-semibold text-gray-600 mb-2">گره‌ای تعریف نشده</h3>
+            <p class="text-sm text-gray-400 mb-4">اولین گره تعیین تکلیف را ایجاد کنید.</p>
+            <button type="button" id="addFirstNodeBtn"
+                    class="px-5 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold text-sm">
+                <i class="fas fa-plus ml-1"></i>افزودن اولین گره
+            </button>
+        </div>
+        {% endif %}
+
+    </div>
+    {% endif %}
+
+</div>

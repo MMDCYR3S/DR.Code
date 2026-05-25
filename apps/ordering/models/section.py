@@ -1,0 +1,165 @@
+from django.db import models
+import jdatetime
+
+from .order import Order
+from .colors import TailwindColor
+
+
+class OrderSection(models.Model):
+    """
+    زیرمجموعه‌های پویای هر Order.
+    هر Order می‌تواند چندین Section داشته باشد.
+    هفت Section پیش‌فرض در زمان نصب اولیه از طریق data migration ثبت می‌شوند.
+    """
+
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="sections",
+        verbose_name="Order مرجع"
+    )
+    title = models.CharField(
+        max_length=200,
+        verbose_name="عنوان Section",
+        help_text='مثال: "Monitoring & nursing"، "Drugs"، "Imaging"'
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name="توضیحات کلی Section",
+        help_text="توضیحاتی که به کل Section مربوط است، نه به یک آیتم خاص"
+    )
+    is_drug_section = models.BooleanField(
+        default=False,
+        verbose_name="بخش داروهاست؟",
+        help_text="در صورت فعال بودن، امکان انتخاب دارو از بانک داروهای موجود فعال می‌شود"
+    )
+    order_index = models.PositiveIntegerField(
+        default=0,
+        verbose_name="ترتیب نمایش"
+    )
+
+    # ─────────────────────────── رنگ‌بندی ────────────────────────────────
+    color = models.CharField(
+        max_length=30,
+        choices=TailwindColor.choices,
+        blank=True,
+        verbose_name="رنگ Section",
+        help_text="رنگ نمایشی این Section در رابط کاربری"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ساخت")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="زمان بروزرسانی")
+
+    class Meta:
+        verbose_name = "Section"
+        verbose_name_plural = "Sections"
+        ordering = ["order_index"]
+
+    def __str__(self):
+        return f"{self.title} (Order: {self.order_id})"
+
+    @property
+    def shamsi_created_at(self):
+        if self.created_at is None:
+            return "—"
+        jdate = jdatetime.datetime.fromgregorian(datetime=self.created_at)
+        return jdate.strftime("%Y/%m/%d - %H:%M")
+
+    @property
+    def shamsi_updated_at(self):
+        if self.updated_at is None:
+            return "—"
+        jdate = jdatetime.datetime.fromgregorian(datetime=self.updated_at)
+        return jdate.strftime("%Y/%m/%d - %H:%M")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+
+class Condition(models.Model):
+    """
+    شرط‌های مشترک که می‌توانند روی چندین آیتم اعمال شوند.
+    """
+    text = models.TextField(
+        verbose_name="متن شرط",
+        help_text='مثال: "if SBP≥90, PR≥60"، "در صورت تهوع"'
+    )
+    order_index = models.PositiveIntegerField(
+        default=0,
+        verbose_name="ترتیب نمایش"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ساخت")
+
+    class Meta:
+        verbose_name = "شرط"
+        verbose_name_plural = "شرط‌ها"
+        ordering = ["order_index"]
+
+    def __str__(self):
+        return f"شرط: {self.text[:80]}"
+
+
+class SectionItem(models.Model):
+    section = models.ForeignKey(
+        OrderSection,
+        on_delete=models.CASCADE,
+        related_name="items",
+        verbose_name="Section مرجع"
+    )
+    text = models.TextField(verbose_name="متن آیتم")
+    notes = models.TextField(blank=True, verbose_name="توضیحات اختصاصی آیتم")
+    order_index = models.PositiveIntegerField(default=0, verbose_name="ترتیب نمایش")
+    
+    # ─── تغییر اصلی ───
+    conditions = models.ManyToManyField(
+        Condition,
+        related_name="section_items",
+        blank=True,
+        verbose_name="شرط‌ها"
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ساخت")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="زمان بروزرسانی")
+
+    class Meta:
+        verbose_name = "آیتم Section"
+        verbose_name_plural = "آیتم‌های Section"
+        ordering = ["order_index"]
+
+    def __str__(self):
+        return f"{self.text[:80]} — {self.section.title}"
+
+
+class DrugSectionItem(models.Model):
+    section = models.ForeignKey(
+        OrderSection,
+        on_delete=models.CASCADE,
+        related_name="drug_items",
+        verbose_name="Section مرجع"
+    )
+    drug = models.ForeignKey(
+        "prescriptions.Drug",
+        on_delete=models.CASCADE,
+        related_name="order_drug_items",
+        verbose_name="داروی انتخابی"
+    )
+    notes = models.TextField(blank=True, verbose_name="توضیحات اضافی دارو در این Order")
+    order_index = models.PositiveIntegerField(default=0, verbose_name="ترتیب نمایش")
+    
+    # ─── تغییر اصلی ───
+    conditions = models.ManyToManyField(
+        Condition,
+        related_name="drug_items",
+        blank=True,
+        verbose_name="شرط‌ها"
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ساخت")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="زمان بروزرسانی")
+
+    class Meta:
+        verbose_name = "دارو در Section"
+        verbose_name_plural = "داروهای Section"
+        ordering = ["order_index"]
+
+    def __str__(self):
+        return f"داروی «{self.drug.title}» در Section «{self.section.title}»"

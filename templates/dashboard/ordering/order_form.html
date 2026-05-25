@@ -1,0 +1,471 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}{% if object %}ویرایش اوردر: {{ object.name }}{% else %}ایجاد اوردر جدید{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ════════════════════════════════════
+   Layout & Panel
+   ════════════════════════════════════ */
+.section-disabled { opacity: 0.5; pointer-events: none; user-select: none; }
+
+/* ════════════════════════════════════
+   Section cards
+   ════════════════════════════════════ */
+.section-item { transition: box-shadow 0.2s; }
+.section-item:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+
+/* ════════════════════════════════════
+   Sortable
+   ════════════════════════════════════ */
+.sortable-ghost  { opacity: 0.4; background: #f3f4f6; }
+.sortable-drag   { box-shadow: 0 10px 30px rgba(0,0,0,0.18); transform: rotate(1deg); }
+.sortable-chosen { background: #eff6ff; }
+
+/* ════════════════════════════════════
+   Drag handles
+   ════════════════════════════════════ */
+.drag-handle-section, .drag-handle-item { cursor: grab; transition: color 0.15s; }
+.drag-handle-section:active, .drag-handle-item:active { cursor: grabbing; }
+.drag-handle-section:hover, .drag-handle-item:hover { color: #3b82f6 !important; }
+
+/* ════════════════════════════════════
+   Items & Conditions
+   ════════════════════════════════════ */
+.item-row { transition: box-shadow 0.15s, transform 0.15s; }
+.item-row:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,0.06); }
+
+.condition-item { transition: box-shadow 0.15s; }
+.condition-item:hover { box-shadow: 0 2px 8px rgba(147,51,234,0.12); }
+
+/* ════════════════════════════════════
+   Readonly fields
+   ════════════════════════════════════ */
+input[readonly], textarea[readonly], select:disabled {
+    background: #f8fafc !important;
+    color: #64748b;
+    cursor: default;
+}
+
+/* ════════════════════════════════════
+   Drug dropdown
+   ════════════════════════════════════ */
+.drug-dropdown::-webkit-scrollbar { width: 5px; }
+.drug-dropdown::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+/* ════════════════════════════════════
+   Animations
+   ════════════════════════════════════ */
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.condition-form-wrapper, .condition-edit-form { animation: slideDown 0.2s ease; }
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+.section-item { animation: fadeIn 0.25s ease; }
+
+/* ════════════════════════════════════
+   Responsive
+   ════════════════════════════════════ */
+@media (max-width: 768px) {
+    .drag-handle-section, .drag-handle-item { display: none; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6 max-w-5xl">
+
+    <!-- ══════════════════════════════════════════════
+         Header
+         ══════════════════════════════════════════════ -->
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <i class="fas fa-clipboard-list text-blue-600"></i>
+            {% if object %}
+                ویرایش اوردر: <span class="text-blue-600">{{ object.name }}</span>
+            {% else %}
+                ایجاد اوردر جدید
+            {% endif %}
+        </h1>
+        <a href="{% url 'dashboard:ordering:order_list' %}"
+           class="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm font-medium transition">
+            <i class="fas fa-arrow-right"></i>بازگشت به لیست
+        </a>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         Section 1: اطلاعات پایه Order
+         ══════════════════════════════════════════════ -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-5 flex items-center gap-2">
+            <i class="fas fa-info-circle text-blue-500"></i>اطلاعات پایه اوردر
+        </h2>
+
+        <form id="orderForm"
+              method="post"
+              action="{% if object %}{% url 'dashboard:ordering:order_update' object.pk %}{% else %}{% url 'dashboard:ordering:order_create' %}{% endif %}"
+              class="space-y-5">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                <!-- Name -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                        {{ form.name.label }} <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <p class="text-red-500 text-xs mt-1"><i class="fas fa-exclamation-circle ml-1"></i>{{ form.name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Category -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                        {{ form.category.label }} <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.category }}
+                    {% if form.category.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.category.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Color -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ form.color.label }}</label>
+                    {{ form.color }}
+                    {% if form.color.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.color.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- IMP -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ form.imp.label }}</label>
+                    {{ form.imp }}
+                    {% if form.imp.errors %}<p class="text-red-500 text-xs mt-1">{{ form.imp.errors.0 }}</p>{% endif %}
+                </div>
+
+                <!-- Condition -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ form.condition.label }}</label>
+                    {{ form.condition }}
+                    {% if form.condition.errors %}<p class="text-red-500 text-xs mt-1">{{ form.condition.errors.0 }}</p>{% endif %}
+                </div>
+
+                <!-- Diet -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ form.diet.label }}</label>
+                    {{ form.diet }}
+                    {% if form.diet.errors %}<p class="text-red-500 text-xs mt-1">{{ form.diet.errors.0 }}</p>{% endif %}
+                </div>
+
+                <!-- Action -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ form.action.label }}</label>
+                    {{ form.action }}
+                    {% if form.action.errors %}<p class="text-red-500 text-xs mt-1">{{ form.action.errors.0 }}</p>{% endif %}
+                </div>
+
+                <!-- Position -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ form.position.label }}</label>
+                    {{ form.position }}
+                    {% if form.position.errors %}<p class="text-red-500 text-xs mt-1">{{ form.position.errors.0 }}</p>{% endif %}
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ form.notes.label }}</label>
+                {{ form.notes }}
+                {% if form.notes.errors %}<p class="text-red-500 text-xs mt-1">{{ form.notes.errors.0 }}</p>{% endif %}
+            </div>
+
+            <!-- Submit -->
+            <div class="pt-4 border-t border-gray-100">
+                <button type="submit"
+                        class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md flex items-center justify-center gap-2">
+                    <i class="fas fa-save"></i>
+                    {% if object %}بروزرسانی اوردر{% else %}ایجاد اوردر{% endif %}
+                </button>
+                {% if not object %}
+                <p class="text-center text-xs text-gray-400 mt-2">
+                    <i class="fas fa-info-circle ml-1"></i>
+                    پس از ذخیره، می‌توانید بخش‌ها را اضافه کنید
+                </p>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         Section 2: مدیریت Sections
+         ══════════════════════════════════════════════ -->
+    <div id="sectionsPanel"
+         class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 {% if not object %}section-disabled{% endif %}">
+
+        <!-- Panel header -->
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <i class="fas fa-layer-group text-green-600"></i>مدیریت بخش‌ها (Sections)
+            </h2>
+            <div class="flex gap-2 {% if not object %}hidden{% endif %}" id="sectionPanelActions">
+                <button type="button" id="bulkSaveBtn"
+                        class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg text-sm font-semibold hover:from-purple-700 hover:to-pink-700 transition-all shadow flex items-center gap-2">
+                    <i class="fas fa-cloud-upload-alt"></i>ذخیره یکجا
+                </button>
+                <button type="button" id="addSectionBtn"
+                        class="px-4 py-2 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg text-sm font-semibold hover:from-green-700 hover:to-teal-700 transition-all shadow flex items-center gap-2">
+                    <i class="fas fa-plus"></i>افزودن بخش
+                </button>
+            </div>
+        </div>
+
+        {% if not object %}
+        <!-- Locked message — هنگام ایجاد -->
+        <div class="sections-locked-msg text-center py-14">
+            <div class="w-fit mx-auto bg-gray-100 rounded-full p-5 mb-4">
+                <i class="fas fa-lock text-4xl text-gray-300"></i>
+            </div>
+            <h3 class="text-base font-semibold text-gray-600 mb-2">بخش Sections در انتظار ذخیره اوردر</h3>
+            <p class="text-sm text-gray-400 max-w-sm mx-auto">
+                پس از ذخیره اطلاعات پایه اوردر، این بخش فعال می‌شود و می‌توانید Section اضافه کنید.
+            </p>
+        </div>
+
+        {% else %}
+        <!-- Sections container -->
+        <div id="sectionsContainer" class="space-y-4">
+
+            {% if object.sections.all %}
+                {% for section in object.sections.all %}
+                <div class="section-item bg-white border border-gray-200 rounded-xl p-5 shadow-sm"
+                     data-section-id="{{ section.id }}"
+                     data-temp-id="">
+
+                    <!-- Section Header -->
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3 flex-1 min-w-0">
+                            <div class="drag-handle-section text-gray-300 hover:text-blue-500">
+                                <i class="fas fa-grip-vertical text-lg"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <input type="text" dir="ltr" value="{{ section.title }}"
+                                       class="section-title w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-semibold text-gray-800 bg-gray-50 cursor-default"
+                                       readonly>
+                            </div>
+                            <span class="shrink-0 text-xs px-2 py-0.5 rounded-full font-medium {% if section.is_drug_section %}bg-green-100 text-green-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                                {% if section.is_drug_section %}<i class="fas fa-pills ml-1"></i>دارویی{% else %}<i class="fas fa-align-right ml-1"></i>متنی{% endif %}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-1 mr-2">
+                            <button type="button" class="edit-section-btn text-xs px-2.5 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition font-medium">
+                                <i class="fas fa-edit ml-1"></i>ویرایش
+                            </button>
+                            <button type="button" class="cancel-edit-section-btn hidden text-xs px-2.5 py-1 text-gray-600 hover:bg-gray-100 rounded-lg transition font-medium">
+                                <i class="fas fa-times ml-1"></i>انصراف
+                            </button>
+                            <button type="button" class="delete-section-btn text-xs px-2.5 py-1 text-red-600 hover:bg-red-50 rounded-lg transition font-medium">
+                                <i class="fas fa-trash ml-1"></i>حذف
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Hidden fields (ویرایش) -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4" style="display:none" data-edit-fields>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">رنگ</label>
+                            <select class="section-color w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" dir="ltr" disabled>
+                                {% for color_val, color_label in tailwind_colors %}
+                                <option value="{{ color_val }}" {% if section.color == color_val %}selected{% endif %}>{{ color_label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-2 pt-5">
+                            <input type="checkbox" class="is-drug-section w-4 h-4 text-green-600 rounded" {% if section.is_drug_section %}checked{% endif %} disabled>
+                            <label class="text-sm text-gray-700">بخش دارویی</label>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-medium text-gray-600 mb-1">توضیحات</label>
+                            <textarea dir="rtl" rows="2" class="section-notes w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm resize-none bg-gray-50 cursor-default" readonly>{{ section.notes }}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Items Container -->
+                    <div class="items-container border-t border-gray-100 pt-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-medium text-gray-600 flex items-center gap-1">
+                                <i class="fas fa-list text-gray-400"></i>آیتم‌ها
+                            </span>
+                            <div class="flex gap-1">
+                                <button type="button" class="add-text-item-btn text-xs px-2.5 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition font-medium {% if section.is_drug_section %}hidden{% endif %}">
+                                    <i class="fas fa-align-right ml-1"></i>متن
+                                </button>
+                                <button type="button" class="add-drug-item-btn text-xs px-2.5 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition font-medium {% if not section.is_drug_section %}hidden{% endif %}">
+                                    <i class="fas fa-pills ml-1"></i>دارو
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="items-list space-y-2 min-h-[2rem]">
+                            {% for item in section.items.all %}
+                            <div class="item-row bg-gray-50 border border-gray-200 rounded-lg p-3"
+                                 data-item-id="{{ item.id }}" data-item-type="text" data-temp-id="">
+                                <div class="flex items-start gap-2">
+                                    <div class="drag-handle-item text-gray-300 hover:text-blue-500 mt-2">
+                                        <i class="fas fa-grip-vertical text-sm"></i>
+                                    </div>
+                                    <i class="fas fa-align-right text-blue-500 mt-3 text-sm"></i>
+                                    <div class="flex-1 space-y-2">
+                                        <textarea rows="2" dir="ltr" class="item-text w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none bg-gray-50">{{ item.text }}</textarea>
+                                        <input type="text" dir="rtl" value="{{ item.notes }}" placeholder="یادداشت..."
+                                               class="item-notes w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-gray-50">
+                                    </div>
+                                    <button type="button" class="delete-item-btn text-red-400 hover:text-red-600 mt-2 p-1 rounded hover:bg-red-50 transition">
+                                        <i class="fas fa-trash text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+
+                            {% for drug_item in section.drug_items.all %}
+                            <div class="item-row bg-green-50 border border-green-200 rounded-lg p-3"
+                                 data-item-id="{{ drug_item.id }}" data-item-type="drug" data-temp-id="">
+                                <div class="flex items-start gap-2">
+                                    <div class="drag-handle-item text-gray-300 hover:text-green-500 mt-2">
+                                        <i class="fas fa-grip-vertical text-sm"></i>
+                                    </div>
+                                    <i class="fas fa-pills text-green-600 mt-3 text-sm"></i>
+                                    <div class="flex-1 space-y-2">
+                                        <div class="drug-search-container relative">
+                                            <input type="text" dir="ltr" autocomplete="off"
+                                                   value="{{ drug_item.drug.title }}"
+                                                   class="drug-search-input w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">
+                                            <input type="hidden" class="drug-id" value="{{ drug_item.drug.id }}">
+                                            <div class="drug-dropdown hidden absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto"></div>
+                                        </div>
+                                        <input type="text" dir="rtl" value="{{ drug_item.notes }}" placeholder="یادداشت..."
+                                               class="drug-notes w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-gray-50">
+                                    </div>
+                                    <button type="button" class="delete-item-btn text-red-400 hover:text-red-600 mt-2 p-1 rounded hover:bg-red-50 transition">
+                                        <i class="fas fa-trash text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+
+                            {% if not section.items.all and not section.drug_items.all %}
+                            <div class="empty-items-state text-center text-gray-400 text-xs py-3">آیتمی اضافه نشده</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Conditions Container -->
+                    <div class="conditions-container border-t border-gray-100 pt-4 mt-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-medium text-gray-600 flex items-center gap-1">
+                                <i class="fas fa-code-branch text-purple-500"></i>شرایط (Conditions)
+                            </span>
+                            <button type="button" class="add-condition-btn text-xs px-2.5 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition font-medium">
+                                <i class="fas fa-plus ml-1"></i>افزودن شرط
+                            </button>
+                        </div>
+                        <div class="conditions-list space-y-2 min-h-[1rem]">
+                            {% for cond in section.conditions.all %}
+                            <div class="condition-item bg-purple-50 border border-purple-200 rounded-lg p-3"
+                                 data-condition-id="{{ cond.id }}"
+                                 data-temp-id=""
+                                 data-item-temp-ids="{% for it in cond.section_items.all %}{{ it.id }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                                 data-drug-item-temp-ids="{% for di in cond.drug_items.all %}{{ di.id }}{% if not forloop.last %},{% endif %}{% endfor %}">
+                                <div class="flex justify-between items-start gap-2">
+                                    <div class="flex-1">
+                                        <div class="condition-text-display text-sm text-gray-800" dir="ltr">{{ cond.text }}</div>
+                                        <div class="related-badges flex flex-wrap gap-1 mt-2">
+                                            {% for it in cond.section_items.all %}
+                                            <span class="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded" dir="ltr">
+                                                <i class="fas fa-align-right text-xs ml-1"></i>{{ it.text|truncatechars:30 }}
+                                            </span>
+                                            {% endfor %}
+                                            {% for di in cond.drug_items.all %}
+                                            <span class="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded" dir="ltr">
+                                                <i class="fas fa-pills text-xs ml-1"></i>{{ di.drug.title|truncatechars:30 }}
+                                            </span>
+                                            {% endfor %}
+                                            {% if not cond.section_items.all and not cond.drug_items.all %}
+                                            <span class="text-xs text-gray-400 italic">بدون آیتم مرتبط</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-1 shrink-0">
+                                        <button type="button" class="edit-condition-btn text-yellow-600 hover:bg-yellow-100 p-1.5 rounded transition" title="ویرایش">
+                                            <i class="fas fa-pencil text-xs"></i>
+                                        </button>
+                                        <button type="button" class="delete-condition-btn text-red-600 hover:bg-red-100 p-1.5 rounded transition" title="حذف">
+                                            <i class="fas fa-trash text-xs"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="empty-conditions-state text-center text-gray-400 text-xs py-2">شرطی تعریف نشده</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                </div>
+                {% endfor %}
+
+            {% else %}
+            <div id="sectionsEmptyState" class="text-center py-14">
+                <div class="w-fit mx-auto bg-green-50 rounded-full p-5 mb-4">
+                    <i class="fas fa-layer-group text-4xl text-green-400"></i>
+                </div>
+                <h3 class="text-base font-semibold text-gray-600 mb-2">بخشی وجود ندارد</h3>
+                <p class="text-sm text-gray-400 mb-4">اولین بخش این اوردر را ایجاد کنید.</p>
+                <button type="button" id="addFirstSectionBtn"
+                        class="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold text-sm">
+                    <i class="fas fa-plus ml-1"></i>افزودن اولین بخش
+                </button>
+            </div>
+            {% endif %}
+
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+<script src="{% static 'js/dashboard/ordering/section_item.js' %}"></script>
+<script src="{% static 'js/dashboard/ordering/condition.js' %}"></script>
+<script src="{% static 'js/dashboard/ordering/section.js' %}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    SectionManager.init({
+        orderId:        "{{ object.id|default:'' }}",
+
+        // URL یکپارچه sync
+        syncUrl:        "{% if object %}{% url 'dashboard:ordering:section_sync' object.id %}{% else %}/orders/__ORDER_ID__/sections/sync/{% endif %}",
+
+        // URL ایجاد order (برای حالت create)
+        createOrderUrl: "{% url 'dashboard:ordering:order_create' %}",
+
+        // URL جستجوی دارو
+        searchUrl:      "{% url 'dashboard:ordering:drug_search' %}",
+    });
+
+});
+</script>
+{% endblock %}

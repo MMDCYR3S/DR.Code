@@ -1,7 +1,7 @@
 # payments/models.py
 from django.db import models
 from django.conf import settings
-from apps.subscriptions.models import Subscription
+# from apps.subscriptions.models import Subscription
 
 import uuid
 
@@ -38,7 +38,7 @@ class Payment(models.Model):
         verbose_name="کاربر"
     )
     subscription = models.ForeignKey(
-        Subscription,
+        "subscriptions.Subscription",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -99,6 +99,7 @@ class Payment(models.Model):
     paid_at = models.DateTimeField(null=True, blank=True, verbose_name="تاریخ پرداخت")
 
     class Meta:
+        app_label = 'payment'
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['user', 'status']),

@@ -206,8 +206,11 @@ class UserVerificationDetailView(LoginRequiredMixin, DetailView): # HasAdminAcce
         profile = user.profile
         action = request.POST.get('action')
         
-        # ثبت لاگ شروع عملیات
+        # ===== ثبت لاگ شروع عملیات ===== #
         logger.info(f"Verification Action Started | Admin: {admin_user.email} | Target: {user.phone_number} | Action: {action}")
+        
+        # ===== ایجاد سرویس آموت اس ام اس ===== #
+        sms_service = AmootSMSService()
         
         if action == 'approve':
             
@@ -234,7 +237,6 @@ class UserVerificationDetailView(LoginRequiredMixin, DetailView): # HasAdminAcce
             
             # ===== SMS Notification (UPDATED TO PATTERN) ===== #
             try:
-                sms_service = AmootSMSService()
                 
                 # نام کاربر (اگر خالی بود یک مقدار پیش‌فرض)
                 user_name = user.full_name if user.full_name else "همکار گرامی"
@@ -267,8 +269,17 @@ class UserVerificationDetailView(LoginRequiredMixin, DetailView): # HasAdminAcce
             profile.auth_status = AuthStatusChoices.REJECTED
             profile.rejection_reason = rejection_reason
             
+            message_for_phone = f"""
+            همکار گرامی، {user.full_name}
+            فرایند احراز هویت شما رد شده است.
+            علت: {rejection_reason}
+            لطفاً نسبت به احراز هویت مجدد اقدام فرمایید.
+            باتشکر - دکترکد
+            """
+            
             try:
                 resend_auth_email(user)
+                sms_service.send_message(mobile=user.phone_number, message_text=message_for_phone)
                 logger.info(f"Rejection Email Sent to {user.email}")
             except Exception as e:
                 logger.error(f"Failed to send Rejection Email to {user.email}: {e}")

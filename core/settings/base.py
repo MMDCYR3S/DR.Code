@@ -15,31 +15,22 @@ from pathlib import Path
 from datetime import timedelta
 import environ
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-# Initialize django-environ
 env = environ.Env(
-    # set casting, default value
     DEBUG=(bool, True)
 )
 
-# Take environment variables from .env file
-# Use different .env files based on the environment
-env_file = os.path.join(BASE_DIR, 'env\\.env.dev')  # Default to development
-environ.Env.read_env(env_file)
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
+env_file = os.path.join(BASE_DIR, 'env/.env.dev')
+environ.Env.read_env(env_file)
+
 SECRET_KEY = env("SECRET_KEY", default="your-default-secret-key")
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env("DEBUG", cast=bool, default=True)
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost"])
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost", "drcode-med.ir", "www.drcode-med.ir"])
 
-# Application definition
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -50,27 +41,30 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.sites",
     "django.contrib.humanize",
-    
-    "debug_toolbar",
+    'django.contrib.sitemaps',
+
     "rest_framework",
     "rest_framework_simplejwt",
     "drf_spectacular",
     "django_filters",
     "django_ckeditor_5",
-    "import_export",
-    
-    "apps.accounts.apps.AccountsConfig",
-    "apps.home.apps.HomeConfig",
-    "apps.prescriptions.apps.PrescriptionsConfig",
-    "apps.dashboard.apps.DashboardConfig",
-    "apps.order.apps.OrderConfig",
-    "apps.notifications.apps.NotificationsConfig",
-    "apps.payment.apps.PaymentConfig",
-    "apps.questions.apps.QuestionsConfig",
-    "apps.subscriptions.apps.SubscriptionsConfig",
+    "corsheaders",
+    'import_export',
+
+    "apps.accounts",
+    "apps.home",
+    "apps.prescriptions",
+    "apps.dashboard",
+    "apps.order",
+    "apps.notifications",
+    "apps.payment",
+    "apps.questions",
+    "apps.subscriptions",
+    "apps.ordering",
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -79,17 +73,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.accounts.middleware.SubscriptionCheckMiddleware",
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
-
-INTERNAL_IPS = [
-    '127.0.0.1',
-    'localhost',
-]
-
-DEBUG_TOOLBAR_CONFIG = {
-    'SHOW_TOOLBAR_CALLBACK': lambda request: True,
-}
 
 ROOT_URLCONF = "core.urls"
 
@@ -135,7 +119,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = "fa-ir"
+LANGUAGE_CODE = "en-us"
 
 TIME_ZONE = "UTC"
 
@@ -145,15 +129,14 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
-
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static"),
+    os.path.join(BASE_DIR, "static")
 ]
 
-MEDIA_URL = "media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+MEDIA_URL = "/media/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -198,8 +181,8 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=2),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=2),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=5),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
@@ -405,91 +388,7 @@ LOGGING = {
 
 # ========= Parspal Settings ========= #
 PARSPAL_CONFIG = {
-    # 9c455ad8e3b34ede9d1613cdfede7767
-    'API_KEY': env('PARSPAL_API_KEY', default='00000000aaaabbbbcccc000000000000'),
-    'CALLBACK_URL': env('PARSPAL_CALLBACK_URL', default='http://127.0.0.1:8000/api/v1/payment/parspal/callback/'),
-    'SANDBOX': env.bool('PARSPAL_SANDBOX', default=True),
-}
-
-DEBUG_TOOLBAR_CONFIG = {
-    # کنترل نمایش toolbar
-    'SHOW_TOOLBAR_CALLBACK': lambda request: True,
-    # یا برای کنترل شرطی:
-    'SHOW_TOOLBAR_CALLBACK': lambda request: request.user.is_superuser,
-    
-    # پنل‌های پیش‌فرض
-    'PANELS': [
-        'debug_toolbar.panels.history.HistoryPanel',
-        'debug_toolbar.panels.versions.VersionsPanel',
-        'debug_toolbar.panels.timer.TimerPanel',
-        'debug_toolbar.panels.settings.SettingsPanel',
-        'debug_toolbar.panels.headers.HeadersPanel',
-        'debug_toolbar.panels.request.RequestPanel',
-        'debug_toolbar.panels.sql.SQLPanel',
-        'debug_toolbar.panels.staticfiles.StaticFilesPanel',
-        'debug_toolbar.panels.templates.TemplatesPanel',
-        'debug_toolbar.panels.cache.CachePanel',
-        'debug_toolbar.panels.signals.SignalsPanel',
-        'debug_toolbar.panels.redirects.RedirectsPanel',
-        'debug_toolbar.panels.profiling.ProfilingPanel',
-    ],
-    
-    # غیرفعال کردن پنل‌های خاص
-    'DISABLE_PANELS': {
-        'debug_toolbar.panels.redirects.RedirectsPanel',
-        'debug_toolbar.panels.profiling.ProfilingPanel',
-    },
-    
-    # استایل و ظاهر
-    'TOOLBAR_LANGUAGE': 'en-us',  # یا 'fa-ir' برای فارسی
-    'TOOLBAR_TIME_FORMAT': 'H:i:s',
-    'RESULTS_CACHE_SIZE': 25,
-    
-    # تنظیمات SQL پنل
-    'SQL_WARNING_THRESHOLD': 100,  # میلی‌ثانیه
-    'SQL_WARNING_LOGGER': 'myproject.loggers.sql_logger',
-    'EXPLAIN_TYPES': ['SELECT', 'INSERT', 'UPDATE', 'DELETE'],
-    'EXPLAIN_STREAMLINED': True,
-    
-    # تنظیمات ریکوئست
-    'ENABLE_STACKTRACES': True,
-    'ENABLE_STACKTRACES_LOCALS': False,  # اگر True شود، اطلاعات local variables را نشان می‌دهد
-    
-    # تنظیمات نمایش
-    'SHOW_COLLAPSED': False,  # نمایش جمع‌شده یا باز
-    'SHOW_TEMPLATE_CONTEXT': True,
-    'ROOT_TAG_EXTRA_ATTRS': 'data-theme="dark"',  # اضافه کردن attribute به تگ root
-    
-    # AJAX
-    'RENDER_PANELS': True,  # رندر پنل‌ها در پاسخ‌های AJAX
-    'UPDATE_ON_FETCH': True,  # آپدیت toolbar در fetch requests
-    
-    # ظاهر و موقعیت
-    'TOOLBAR_POSITION': 'bottom',  # یا 'top', 'left', 'right'
-    'TOOLBAR_FLOAT': True,  # شناور بودن toolbar
-    
-    # اضافه کردن پنل‌های سفارشی
-    'EXTRA_PANELS': [
-        'myapp.panels.CustomPanel',
-    ],
-    
-    # کش
-    'SKIP_TEMPLATE_PREFIXES': (
-        'django/forms/widgets/',
-        'admin/widgets/',
-    ),
-    
-    # فیلتر کردن
-    'HIDE_IN_STACKTRACES': (
-        'socketserver',
-        'threading',
-        'wsgiref',
-        'debug_toolbar',
-        'django.db',
-        'django.core.handlers',
-        'django.core.servers',
-        'django.utils.decorators',
-        'django.utils.deprecation',
-        'django.utils.functional',
-    ),
+    'API_KEY': env('PARSPAL_API_KEY', default='9c455ad8e3b34ede9d1613cdfede7767'),
+    'CALLBACK_URL': env('PARSPAL_CALLBACK_URL', default='https://drcode-med.ir/api/v1/payment/parspal/callback/'),
+    'SANDBOX': env.bool('PARSPAL_SANDBOX', default=False),
 }

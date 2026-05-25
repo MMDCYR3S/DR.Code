@@ -19,11 +19,22 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic.base import TemplateView
+from django.contrib.sitemaps.views import sitemap
+
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularSwaggerView,
     SpectacularRedocView
 )
+
+from apps.home.sitemaps import StaticViewSitemap
+from apps.prescriptions.sitemaps import PrescriptionSitemap
+
+sitemaps = {
+    'static': StaticViewSitemap,
+    'prescriptions': PrescriptionSitemap,
+}
 
 
 urlpatterns = [
@@ -44,13 +55,14 @@ urlpatterns = [
     
     # === CK-EDITOR === #
     path("ckeditor5/", include('django_ckeditor_5.urls')),
+    
+    # === Sitemaps === #
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps},
+         name='django.contrib.sitemaps.views.sitemap'),
+    path('robots.txt', TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
 ]
 
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    import debug_toolbar
-    urlpatterns = [
-        path('__debug__/', include(debug_toolbar.urls)),
-    ] + urlpatterns
-
+    pass

@@ -16,7 +16,7 @@ from django.db import transaction
 
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("zarinpal")
 
 User = get_user_model()
 
@@ -73,10 +73,11 @@ class PaymentCreateView(CreateAPIView):
         )
         
         zarinpal = ZarinpalService()
-        callback_url = request.build_absolute_uri(
-            reverse('payment:payment-callback')
+        callback_url = settings.ZARINPAL_CONFIG.get(
+            'CALLBACK_URL', 
+            'https://drcode-med.ir/payment/status/'
         )
-        
+                
         result = zarinpal.create_payment_request(
             amount=int(final_amount),
             description=f"خرید اشتراک {plan.name}",

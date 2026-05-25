@@ -7,7 +7,7 @@ from django.conf import settings
 
 from apps.payment.models import Payment, PaymentStatus
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("zarinpal")
 
 
 class ParspalService:

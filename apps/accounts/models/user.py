@@ -14,22 +14,19 @@ class CustomUserManager(BaseUserManager):
     Custom user model manager where phone number is the unique identifier
     for authentication instead of usernames.
     """
-    def create_user(self, email, phone_number, password, **extra_fields):
+    def create_user(self, phone_number, password, **extra_fields):
         """
         Create and save a User with the given phone number and password.
         """
-        if not email:
-            raise ValueError(_('The Email must be set'))
-        
         if not phone_number:
             raise ValueError(_('The Phone Number must be set'))
             
-        user = self.model(email=email, phone_number=phone_number, **extra_fields)
+        user = self.model(phone_number=phone_number, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, phone_number, password, **extra_fields):
+    def create_superuser(self, phone_number, password, **extra_fields):
         """
         Create and save a SuperUser with the given phone number and password.
         """
@@ -42,7 +39,7 @@ class CustomUserManager(BaseUserManager):
         if extra_fields.get('is_superuser') is not True:
             raise ValueError(_('Superuser must have is_superuser=True.'))
             
-        return self.create_user(email, phone_number, password, **extra_fields)
+        return self.create_user(phone_number, password, **extra_fields)
 
 # ============= User Model ============= #
 class User(AbstractUser):
@@ -117,18 +114,6 @@ class User(AbstractUser):
             # تولید username یکتا بر اساس phone_number
             self.username = self.phone_number
         super().save(*args, **kwargs)
-        
-    # ===== اعتبارسنجی و صحت از یکتا بودن شماره تماس و ایمیل کاربر و در صورت نبود، ارور ===== #
-    def clean(self):
-        """Override clean method to validate unique phone_number and email"""
-        super().clean()
-        
-        if User.objects.filter(phone_number=self.phone_number).exclude(id=self.id).exists():
-            raise ValueError(_('این شماره تلفن همراه قبلا استفاده شده است.'))
-        
-        if User.objects.filter(email=self.email).exclude(id=self.id).exists():
-            raise ValueError(_('این ایمیل قبلا استفاده شده است.'))
-
         
     def has_active_membership(self):
         """

@@ -14,7 +14,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from apps.payment.models import Payment, PaymentStatus, PaymentGateway
 from apps.subscriptions.models import Subscription, SubscriptionStatusChoicesModel, Plan
@@ -203,7 +203,7 @@ class ParspalCallbackView(APIView):
 # ======= PARSPAL VERIFY VIEW (اصلاح شده با چک کردن وضعیت قبلی) ======= #
 class ParspalVerifyView(APIView):
     """تأیید پرداخت با استفاده از داده‌های callback"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         order_id = request.data.get("order_id")
@@ -222,7 +222,7 @@ class ParspalVerifyView(APIView):
                 'subscription',
                 'subscription__plan',
                 'user'
-            ).get(authority=order_id, user=request.user)
+            ).get(authority=order_id)
             logger.info(f"[PARSPAL_VERIFY] Payment found: ID={payment.id}, Status={payment.status}")
         except Payment.DoesNotExist:
             logger.error(f"[PARSPAL_VERIFY] Payment not found for order_id: {order_id}")
@@ -330,7 +330,7 @@ class ParspalVerifyView(APIView):
 
                     # 8️⃣ بررسی اشتراک فعلی
                     active_sub = Subscription.objects.filter(
-                        user=request.user,
+                        user=payment.user,
                         status=SubscriptionStatusChoicesModel.active,
                         end_date__gt=timezone.now()
                     ).order_by('-end_date').first()

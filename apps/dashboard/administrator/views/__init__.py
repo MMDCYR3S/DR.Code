@@ -68,3 +68,5 @@ from .notifications_views import (
     NotificationCreateView,
     UserSearchJsonView,
 )
+
+from .ordering_views import *
