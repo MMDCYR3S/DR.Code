@@ -1,6 +1,8 @@
 from django.db import models
 import jdatetime
 
+from django_ckeditor_5.fields import CKEditor5Field
+
 from .order import Order
 from .colors import TailwindColor
 
@@ -93,16 +95,15 @@ class EmergencyNode(models.Model):
         verbose_name="عنوان گره",
         help_text='مثال: "STEMI"، "اصل کلی"، "بیماران کم‌خطر"'
     )
-    content = models.TextField(
+
+    # ── محتوا با CKEditor 5 ──────────────────────────────────────────
+    content = CKEditor5Field(
         blank=True,
-        verbose_name="متن / محتوا",
-        help_text="محتوای اصلی این گره"
+        verbose_name="محتوا",
+        help_text="محتوای اصلی این گره — با فرمت‌بندی غنی",
+        config_name="default",
     )
-    internal_notes = models.TextField(
-        blank=True,
-        verbose_name="توضیحات داخلی",
-        help_text="توضیحات تکمیلی هر گره"
-    )
+
     order_index = models.PositiveIntegerField(
         default=0,
         verbose_name="ترتیب نمایش"

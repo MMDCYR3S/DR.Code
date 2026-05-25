@@ -10,17 +10,18 @@ _emergency_node.html
 
     <!-- Node Header -->
     <div class="flex items-start gap-3 p-4 border-b border-gray-100">
-        <div class="drag-handle-node text-gray-300 hover:text-orange-500 mt-1 cursor-grab">
+        <div class="drag-handle-node text-gray-300 hover:text-shadow-green-500 mt-1 cursor-grab">
             <i class="fas fa-grip-vertical"></i>
         </div>
-        <div class="flex-1 space-y-2">
+        <div class="flex-1 space-y-3">
+            <!-- عنوان + رنگ -->
             <div class="flex items-center gap-2">
                 {% if depth == 0 %}
-                <i class="fas fa-circle text-red-400 text-xs mt-0.5 shrink-0"></i>
+                <i class="fas fa-circle text-green-400 text-xs mt-0.5 shrink-0"></i>
                 {% elif depth == 1 %}
-                <i class="fas fa-circle text-orange-400 text-xs mt-0.5 shrink-0"></i>
+                <i class="fas fa-circle text-green-400 text-xs mt-0.5 shrink-0"></i>
                 {% else %}
-                <i class="fas fa-circle text-amber-400 text-xs mt-0.5 shrink-0"></i>
+                <i class="fas fa-circle text-green-400 text-xs mt-0.5 shrink-0"></i>
                 {% endif %}
                 <input type="text" dir="rtl" value="{{ node.title }}"
                        placeholder="عنوان گره..."
@@ -32,13 +33,19 @@ _emergency_node.html
                     {% endfor %}
                 </select>
             </div>
-            <textarea dir="ltr" rows="2" placeholder="محتوا / متن گره..."
-                      class="node-content w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs bg-gray-50 focus:bg-white focus:border-red-400 focus:outline-none transition resize-none">{{ node.content }}</textarea>
-            <input type="text" dir="rtl" value="{{ node.internal_notes }}" placeholder="توضیحات داخلی (اختیاری)..."
-                   class="node-notes w-full px-2 py-1 border border-gray-200 rounded-lg text-xs bg-gray-50 focus:bg-white focus:border-amber-400 focus:outline-none transition">
+
+            <!-- محتوا — CKEditor 5 -->
+            <div class="node-content-wrapper">
+                <label class="block text-xs text-gray-400 mb-1">محتوا</label>
+                <textarea class="node-content"
+                    id="node_content_{{ node.id }}"
+                    name="node_content_{{ node.id }}"
+                    dir="rtl">{{ node.content }}</textarea>
+
+            </div>
         </div>
         <div class="flex flex-col gap-1 shrink-0">
-            <button type="button" class="add-child-node-btn text-xs px-2 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 transition font-medium whitespace-nowrap">
+            <button type="button" class="add-child-node-btn text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition font-medium whitespace-nowrap">
                 <i class="fas fa-plus ml-1"></i>زیرگره
             </button>
             <button type="button" class="delete-node-btn text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition text-center">

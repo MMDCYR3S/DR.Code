@@ -71,6 +71,40 @@ class OrderSection(models.Model):
             return "—"
         jdate = jdatetime.datetime.fromgregorian(datetime=self.updated_at)
         return jdate.strftime("%Y/%m/%d - %H:%M")
+    
+    @property
+    def all_conditions(self):
+        """
+        تمام شرط‌های منحصر‌به‌فردِ مربوط به آیتم‌های عادی و داروهای این سکشن را جمع‌آوری می‌کند.
+        """
+        print(f"\n[DEBUG] === Start all_conditions for Section: {self.title} (ID: {self.id}) ===")
+        condition_ids = set()
+
+        # واکشی شرط‌های آیتم‌ها
+        items = self.items.all()
+        print(f"[DEBUG] Found {items.count()} text items in this section.")
+        for item in items:
+            for condition in item.conditions.all():
+                print(f"[DEBUG] -> Text Item (ID: {item.id}) has Condition ID: {condition.id}")
+                condition_ids.add(condition.id)
+                
+        # واکشی شرط‌های داروها
+        drug_items = self.drug_items.all()
+        print(f"[DEBUG] Found {drug_items.count()} drug items in this section.")
+        for drug_item in drug_items:
+            for condition in drug_item.conditions.all():
+                print(f"[DEBUG] -> Drug Item (ID: {drug_item.id}) has Condition ID: {condition.id}")
+                condition_ids.add(condition.id)
+        
+        print(f"[DEBUG] Total unique condition IDs collected: {list(condition_ids)}")
+        
+        if not condition_ids:
+            print("[DEBUG] === No conditions found. Returning empty queryset. ===\n")
+            return Condition.objects.none()
+
+        queryset = Condition.objects.filter(id__in=condition_ids).order_by('order_index')
+        print(f"[DEBUG] === Successfully returning {queryset.count()} conditions. ===\n")
+        return queryset
 
 
 # ─────────────────────────────────────────────────────────────────────────────

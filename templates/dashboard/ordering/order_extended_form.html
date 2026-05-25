@@ -4,6 +4,8 @@
 {% block title %}{% if object %}ویرایش اوردر: {{ object.name }}{% else %}ایجاد اوردر جدید{% endif %}{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{% static 'django_ckeditor_5/dist/styles.css' %}">
+<script src="{% static 'django_ckeditor_5/dist/bundle.js' %}"></script>
 <style>
 /* ════════════════════════════════════
    Tab Navigation
@@ -144,7 +146,7 @@ input[readonly], textarea[readonly], select:disabled {
     <!-- ══════════════════════════════════════════════
          Tab Navigation
          ══════════════════════════════════════════════ -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 overflow-hidden sticky top-0 z-20">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 overflow-hidden sticky top-0 z-3000">
         <div class="flex border-b border-gray-200 overflow-x-auto">
 
             <!-- Tab 1: اطلاعات پایه — همیشه فعال -->
@@ -223,7 +225,6 @@ input[readonly], textarea[readonly], select:disabled {
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
 
 <!-- JS بخش‌ها (Section + Item + Condition) -->
 <script src="{% static 'js/dashboard/ordering/section_item.js' %}"></script>
@@ -291,13 +292,14 @@ document.addEventListener('DOMContentLoaded', function () {
     if (ORDER_SAVED) {
         MediaManager.init({
             orderId:      ORDER_ID,
-            addImageUrl:  `/orders/${ORDER_ID}/media/image/add/`,
-            bulkImageUrl: `/orders/${ORDER_ID}/media/images/bulk/`,
-            addVideoUrl:  `/orders/${ORDER_ID}/media/video/add/`,
-            updateImageUrl: `/orders/media/image/<id>/update/`,
-            deleteImageUrl: `/orders/media/image/<id>/delete/`,
-            updateVideoUrl: `/orders/media/video/<id>/update/`,
-            deleteVideoUrl: `/orders/media/video/<id>/delete/`,
+            addImageUrl:  `/dashboard/admin/${ORDER_ID}/media/image/add/`,
+            bulkImageUrl: `/dashboard/admin/${ORDER_ID}/media/images/bulk/`,
+            addVideoUrl:  `/dashboard/admin/${ORDER_ID}/media/video/add/`,
+
+            updateImageUrl: `/dashboard/admin/media/image/<id>/update/`,
+            deleteImageUrl: `/dashboard/admin/media/image/<id>/delete/`,
+            updateVideoUrl: `/dashboard/admin/media/video/<id>/update/`,
+            deleteVideoUrl: `/dashboard/admin/media/video/<id>/delete/`,
         });
     }
 
@@ -326,13 +328,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
         MediaManager.init({
             orderId:      newOrderId,
-            addImageUrl:  `/orders/${newOrderId}/media/image/add/`,
-            bulkImageUrl: `/orders/${newOrderId}/media/images/bulk/`,
-            addVideoUrl:  `/orders/${newOrderId}/media/video/add/`,
-            updateImageUrl: `/orders/media/image/<id>/update/`,
-            deleteImageUrl: `/orders/media/image/<id>/delete/`,
-            updateVideoUrl: `/orders/media/video/<id>/update/`,
-            deleteVideoUrl: `/orders/media/video/<id>/delete/`,
+            addImageUrl:  `/dashboard/admin/${newOrderId}/media/image/add/`,
+            bulkImageUrl: `/dashboard/admin/${newOrderId}/media/images/bulk/`,
+            addVideoUrl:  `/dashboard/admin/${newOrderId}/media/video/add/`,
+
+            updateImageUrl: `/dashboard/admin/media/image/<id>/update/`,
+            deleteImageUrl: `/dashboard/admin/media/image/<id>/delete/`,
+            updateVideoUrl: `/dashboard/admin/media/video/<id>/update/`,
+            deleteVideoUrl: `/dashboard/admin/media/video/<id>/delete/`,
         });
 
         // 3. آپدیت پیام locked state بخش‌ها (optional — اگر کاربر تب را باز کند)

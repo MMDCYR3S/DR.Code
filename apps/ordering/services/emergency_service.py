@@ -5,26 +5,19 @@ services/emergency_service.py
 
 ویژگی کلیدی:
   - سرویس به‌صورت خودکار Order ساخته‌شده را پیدا می‌کند
-    (نیازی نیست کاربر order_id را دوباره وارد کند)
   - ساختار درختی EmergencyNode با رویکرد recursive پشتیبانی می‌شود
-
-جریان:
-  1. OrderService.create() → Order ساخته می‌شود و id برگردانده می‌شود
-  2. EmergencyService.create_for_order(order_id, data) →
-     تعیین تکلیف بدون نیاز به وارد کردن مجدد order_id توسط کاربر
 
 ساختار ورودی create_for_order:
 {
     "title": str,          # اختیاری
     "color": str,          # اختیاری
     "notes": str,          # اختیاری
-    "nodes": [             # درخت گره‌ها — اختیاری
+    "nodes": [
         {
             "title": str,
-            "content": str,         # اختیاری
-            "internal_notes": str,  # اختیاری
+            "content": str,         # HTML از CKEditor 5 — اختیاری
             "order_index": int,     # اختیاری
-            "color": str,          # اختیاری
+            "color": str,           # اختیاری
             "children": [           # زیرگره‌ها — recursive
                 { ...همان ساختار... }
             ]
@@ -52,10 +45,6 @@ class EmergencyService:
     def create_for_order(order_id: int, data: dict) -> EmergencyDisposition:
         """
         ایجاد EmergencyDisposition برای یک Order موجود.
-
-        سرویس Order را از DB پیدا می‌کند — کاربر فقط order_id را می‌دهد
-        (که از مرحله قبل در UI ذخیره شده).
-
         اگر Order از قبل دارای EmergencyDisposition باشد، خطا می‌دهد.
         """
         try:
@@ -78,7 +67,6 @@ class EmergencyService:
             notes=data.get("notes", ""),
         )
 
-        # ساخت درخت گره‌ها — بدون parent (گره‌های ریشه)
         for node_data in nodes_data:
             EmergencyService._create_node(disposition, node_data, parent=None)
 
@@ -120,7 +108,7 @@ class EmergencyService:
         except EmergencyNode.DoesNotExist:
             raise ValidationError(f"EmergencyNode با id={node_id} یافت نشد.")
 
-        for field in ("title", "content", "internal_notes", "order_index", "color"):
+        for field in ("title", "content", "order_index", "color"):
             if field in data:
                 setattr(node, field, data[field])
         node.save()
@@ -132,14 +120,10 @@ class EmergencyService:
 
     @staticmethod
     def get_for_order(order_id: int) -> EmergencyDisposition:
-        """
-        بازیابی تعیین تکلیف با درخت کامل گره‌ها برای یک Order.
-        این متد همچنین Order را verify می‌کند — اگر Order وجود نداشته باشد خطا می‌دهد.
-        """
         try:
             return (
                 EmergencyDisposition.objects
-                .prefetch_related("nodes__children__children")  # تا سه سطح عمق
+                .prefetch_related("nodes__children__children")
                 .get(order_id=order_id)
             )
         except EmergencyDisposition.DoesNotExist:
@@ -169,7 +153,6 @@ class EmergencyService:
         data: dict,
         parent_id: int | None = None,
     ) -> EmergencyNode:
-        """اضافه کردن گره جدید به تعیین تکلیف موجود."""
         try:
             disposition = EmergencyDisposition.objects.get(pk=disposition_id)
         except EmergencyDisposition.DoesNotExist:
@@ -187,7 +170,6 @@ class EmergencyService:
     @staticmethod
     @transaction.atomic
     def delete_node(node_id: int) -> None:
-        """حذف گره — فرزندان نیز به‌صورت cascade حذف می‌شوند."""
         deleted, _ = EmergencyNode.objects.filter(pk=node_id).delete()
         if not deleted:
             raise ValidationError(f"EmergencyNode با id={node_id} یافت نشد.")
@@ -209,9 +191,6 @@ class EmergencyService:
         data: dict,
         parent: EmergencyNode | None,
     ) -> EmergencyNode:
-        """
-        ساخت گره به‌صورت recursive — فرزندان را هم می‌سازد.
-        """
         children_data = data.pop("children", [])
 
         node = EmergencyNode.objects.create(
@@ -219,7 +198,6 @@ class EmergencyService:
             parent=parent,
             title=data["title"],
             content=data.get("content", ""),
-            internal_notes=data.get("internal_notes", ""),
             order_index=data.get("order_index", 0),
             color=data.get("color", ""),
         )

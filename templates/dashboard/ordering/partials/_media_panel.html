@@ -1,6 +1,5 @@
 {% comment %}
-_media_panel.html
-بخش چهارم: فایل‌های پیوست — تصاویر و ویدیوها
+_media_panel.html — بخش چهارم: فایل‌های پیوست
 {% endcomment %}
 
 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
@@ -10,127 +9,206 @@ _media_panel.html
         <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
             <i class="fas fa-paperclip text-purple-500"></i>فایل‌های پیوست
         </h2>
+
         {% if object %}
-        <div class="flex gap-2">
+        <div class="flex gap-2 shrink-0">
             <button type="button" id="addVideoBtn"
-                    class="px-4 py-2 bg-gradient-to-r from-pink-600 to-rose-600 text-white rounded-lg text-sm font-semibold hover:from-pink-700 hover:to-rose-700 transition-all shadow flex items-center gap-2">
+                    class="px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-semibold
+                           hover:bg-green-600 transition-all shadow flex items-center gap-2 whitespace-nowrap">
                 <i class="fas fa-video"></i>افزودن ویدیو
             </button>
             <label for="imageUploadInput"
-                   class="cursor-pointer px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg text-sm font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all shadow flex items-center gap-2">
+                   class="cursor-pointer px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold
+                          hover:bg-blue-700 transition-all shadow flex items-center gap-2 whitespace-nowrap">
                 <i class="fas fa-image"></i>آپلود تصویر
-                <input type="file" id="imageUploadInput" multiple accept="image/*" class="hidden">
+                                <input type="file" id="imageUploadInput" multiple accept="image/*" class="hidden">
             </label>
         </div>
         {% endif %}
     </div>
 
     {% if not object %}
-    <!-- Locked state -->
-    <div class="text-center py-16">
-        <div class="w-fit mx-auto bg-purple-50 rounded-full p-5 mb-4">
-            <i class="fas fa-lock text-4xl text-purple-200"></i>
-        </div>
-        <h3 class="text-base font-semibold text-gray-600 mb-2">در انتظار ذخیره اوردر</h3>
-        <p class="text-sm text-gray-400 max-w-sm mx-auto">پس از ذخیره اطلاعات پایه اوردر، می‌توانید فایل‌های پیوست اضافه کنید.</p>
+    <div class="text-center py-10 text-gray-400">
+        <i class="fas fa-save text-3xl mb-2"></i>
+        <p class="text-sm">ابتدا اوردر را ذخیره کنید تا بتوانید فایل پیوست اضافه کنید.</p>
     </div>
 
     {% else %}
 
-    <!-- Upload Zone (Drag & Drop) -->
-    <div id="uploadZone"
-         class="upload-zone rounded-xl p-8 text-center mb-6 cursor-pointer"
-         onclick="document.getElementById('imageUploadInput').click()">
-        <div class="w-fit mx-auto bg-purple-50 rounded-full p-4 mb-3">
-            <i class="fas fa-cloud-upload-alt text-3xl text-purple-400"></i>
-        </div>
-        <p class="text-sm font-medium text-gray-600">فایل‌های تصویری را اینجا بکشید یا کلیک کنید</p>
-        <p class="text-xs text-gray-400 mt-1">JPG، PNG، WebP — حداکثر ۱۰ مگابایت</p>
-    </div>
-
-    <!-- Upload Progress -->
-    <div id="uploadProgress" class="hidden mb-4">
-        <div class="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <i class="fas fa-spinner fa-spin text-blue-500"></i>
-            <span class="text-sm text-blue-700" id="uploadProgressText">در حال آپلود...</span>
-        </div>
-    </div>
-
-    <!-- ─── Images Grid ─── -->
-    <div class="mb-8">
-        <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            <i class="fas fa-images text-purple-500"></i>
-            تصاویر
-            <span class="text-xs text-gray-400 font-normal" id="imageCount">({{ media_images|length }} تصویر)</span>
+    <!-- فرم افزودن ویدیو -->
+    <div id="addVideoForm" class="hidden mb-6 bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+        <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+            <i class="fas fa-video text-green-500"></i>افزودن ویدیو جدید
         </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">لینک ویدیو <span class="text-red-500">*</span></label>
+                <input type="url" id="newVideoUrl" dir="ltr" placeholder="https://..."
+                       class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white
+                              focus:border-green-400 focus:outline-none transition">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">عنوان</label>
+                <input type="text" id="newVideoTitle" dir="rtl" placeholder="عنوان ویدیو..."
+                       class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white
+                              focus:border-green-400 focus:outline-none transition">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">توضیحات</label>
+                <textarea id="newVideoDesc" dir="rtl" rows="2" placeholder="توضیحات (اختیاری)..."
+                          class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white
+                                 focus:border-green-400 focus:outline-none transition resize-none"></textarea>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">ترتیب نمایش</label>
+                <input type="number" id="newVideoOrderIndex" min="0" value="1"
+                       class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white
+                              focus:border-green-400 focus:outline-none transition text-center">
+            </div>
+        </div>
+        <div class="flex gap-2 justify-end pt-1">
+            <button type="button" id="cancelAddVideoBtn"
+                    class="px-4 py-2 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg
+                           hover:bg-gray-50 transition">
+                انصراف
+            </button>
+            <button type="button" id="confirmAddVideoBtn"
+                    class="px-4 py-2 text-sm font-semibold text-white bg-green-500 rounded-lg
+                           hover:bg-green-600 transition shadow">
+                <i class="fas fa-plus ml-1"></i>افزودن
+            </button>
+        </div>
+    </div>
 
-        <div id="imagesGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {% for image in media_images %}
-            <div class="media-image-card relative group rounded-xl overflow-hidden border border-gray-200 shadow-sm"
+    <!-- ─────────────────────────────────────────────────────────────
+         بخش تصاویر
+    ───────────────────────────────────────────────────────────────── -->
+    <div class="mb-8">
+        <div class="flex items-center gap-2 mb-4">
+            <i class="fas fa-images text-blue-500"></i>
+            <h3 class="text-sm font-semibold text-gray-700">تصاویر</h3>
+            <span id="imageCount" class="text-xs text-gray-400">
+                ({{ object.images.count }} تصویر)
+            </span>
+        </div>
+
+        <!-- Upload Progress -->
+        <div id="uploadProgress" class="hidden mb-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2
+                                        flex items-center gap-2 text-sm text-blue-700">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span id="uploadProgressText">در حال آپلود...</span>
+        </div>
+
+        <!-- Upload Zone -->
+        <div id="uploadZone"
+             class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center text-gray-400
+                    hover:border-blue-300 hover:bg-blue-50 transition cursor-pointer mb-4"
+             onclick="document.getElementById('imageUploadInput').click()">
+            <i class="fas fa-cloud-upload-alt text-2xl mb-2 block"></i>
+            <p class="text-sm">تصاویر را اینجا رها کنید یا کلیک کنید</p>
+            <p class="text-xs mt-1">JPG، PNG، WebP — حداکثر ۱۰ فایل</p>
+        </div>
+
+        <!-- Grid تصاویر -->
+        <div id="imagesGrid"
+             class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+
+            {% for image in object.images.all %}
+            <div class="media-image-card relative rounded-xl overflow-hidden border border-gray-200
+                        shadow-sm bg-white"
                  data-image-id="{{ image.id }}">
+
+                <!-- تصویر -->
                 <div class="aspect-square bg-gray-100">
-                    <img src="{{ image.image.url }}" alt="{{ image.caption }}"
+                    <img src="{{ image.image.url }}"
+                         alt="{{ image.caption|default:'' }}"
                          class="w-full h-full object-cover">
                 </div>
-                <div class="p-2">
-                    <input type="text" dir="rtl" value="{{ image.caption }}" placeholder="کپشن..."
-                           class="image-caption w-full text-xs px-2 py-1 border border-gray-200 rounded focus:border-purple-400 focus:outline-none bg-gray-50">
+
+                <!-- فیلدهای ویرایش -->
+                <div class="p-2 space-y-1.5">
+                    <input type="text" dir="rtl"
+                           value="{{ image.caption|default:'' }}"
+                           placeholder="کپشن..."
+                           class="image-caption w-full text-xs px-2 py-1 border border-gray-200 rounded
+                                  focus:border-purple-400 focus:outline-none bg-gray-50 transition">
                 </div>
-                <!-- Overlay actions -->
-                <div class="absolute top-2 left-2 hidden group-hover:flex gap-1">
-                    <button type="button" class="save-caption-btn bg-green-500 text-white p-1.5 rounded-lg text-xs hover:bg-green-600 transition shadow"
-                            title="ذخیره کپشن">
-                        <i class="fas fa-check"></i>
+
+                <!-- دکمه‌های action — همیشه نمایش داده میشن -->
+                <div class="flex gap-1 px-2 pb-2">
+                    <button type="button"
+                            class="save-image-btn flex-1 bg-green-500 text-white py-1 rounded-lg text-xs
+                                   hover:bg-green-600 transition shadow flex items-center justify-center gap-1">
+                        <i class="fas fa-check"></i>ذخیره
                     </button>
-                    <button type="button" class="delete-image-btn bg-red-500 text-white p-1.5 rounded-lg text-xs hover:bg-red-600 transition shadow"
-                            title="حذف تصویر">
+                    <button type="button"
+                            class="delete-image-btn bg-red-500 text-white px-2 py-1 rounded-lg text-xs
+                                   hover:bg-red-600 transition shadow">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
-                <!-- Order badge -->
-                <div class="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-1.5 py-0.5 rounded">
-                    {{ forloop.counter }}
+
+                <!-- badge ترتیب -->
+                <div class="order-badge absolute top-2 right-2 bg-black bg-opacity-60 text-white
+                            text-xs px-1.5 py-0.5 rounded font-mono pointer-events-none">
+                    {{ image.order_index|default:0 }}
                 </div>
             </div>
             {% empty %}
-            <div id="imagesEmptyState" class="col-span-full text-center py-8 text-gray-400">
+            <div id="imagesEmptyState"
+                 class="col-span-full text-center py-8 text-gray-400">
                 <i class="fas fa-image text-3xl mb-2 block"></i>
-                <span class="text-sm">تصویری آپلود نشده</span>
+                <p class="text-sm">هنوز تصویری آپلود نشده.</p>
             </div>
             {% endfor %}
         </div>
     </div>
 
-    <!-- ─── Videos List ─── -->
+    <!-- ─────────────────────────────────────────────────────────────
+         بخش ویدیوها
+    ───────────────────────────────────────────────────────────────── -->
     <div>
-        <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+        <div class="flex items-center gap-2 mb-4">
             <i class="fas fa-video text-pink-500"></i>
-            ویدیوها
-            <span class="text-xs text-gray-400 font-normal" id="videoCount">({{ media_videos|length }} ویدیو)</span>
-        </h3>
+            <h3 class="text-sm font-semibold text-gray-700">ویدیوها</h3>
+            <span id="videoCount" class="text-xs text-gray-400">
+                ({{ object.videos.count }} ویدیو)
+            </span>
+        </div>
 
         <div id="videosList" class="space-y-3">
-            {% for video in media_videos %}
+            {% for video in object.videos.all %}
             <div class="video-card bg-gray-50 border border-gray-200 rounded-xl p-4"
                  data-video-id="{{ video.id }}">
                 <div class="flex items-start gap-3">
                     <div class="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center shrink-0">
                         <i class="fas fa-video text-pink-500"></i>
                     </div>
-                    <div class="flex-1 space-y-2">
-                        <input type="text" dir="rtl" value="{{ video.title }}" placeholder="عنوان ویدیو..."
-                               class="video-title w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:border-pink-400 focus:outline-none transition">
-                        <input type="url" dir="ltr" value="{{ video.video_url }}" placeholder="لینک embed..."
-                               class="video-url w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:border-pink-400 focus:outline-none transition">
-                        <textarea dir="rtl" rows="2"
-                                  placeholder="توضیحات (اختیاری)..."
-                                  class="video-description w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:border-pink-400 focus:outline-none transition resize-none">{{ video.description }}</textarea>
+                    <div class="flex-1 space-y-2 min-w-0">
+                        <input type="text" dir="rtl"
+                               value="{{ video.title|default:'' }}"
+                               placeholder="عنوان ویدیو..."
+                               class="video-title w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm
+                                      bg-white focus:border-pink-400 focus:outline-none transition">
+                        <input type="url" dir="ltr"
+                               value="{{ video.video_url }}"
+                               placeholder="لینک embed..."
+                               class="video-url w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm
+                                      bg-white focus:border-pink-400 focus:outline-none transition">
+                        <textarea dir="rtl" rows="2" placeholder="توضیحات (اختیاری)..."
+                                  class="video-description w-full px-3 py-1.5 border border-gray-200 rounded-lg
+                                         text-sm bg-white focus:border-pink-400 focus:outline-none transition
+                                         resize-none">{{ video.description|default:'' }}</textarea>
                     </div>
-                    <div class="flex flex-col gap-1">
-                        <button type="button" class="save-video-btn text-xs px-2.5 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition font-medium">
+                    <div class="flex flex-col gap-1 shrink-0">
+                        <button type="button"
+                                class="save-video-btn text-xs px-2.5 py-1 bg-green-600 text-white rounded-lg
+                                       hover:bg-green-700 transition font-medium whitespace-nowrap shadow">
                             <i class="fas fa-save ml-1"></i>ذخیره
                         </button>
-                        <button type="button" class="delete-video-btn text-red-400 hover:text-red-600 p-1.5 rounded hover:bg-red-50 transition text-center">
+                        <button type="button"
+                                class="delete-video-btn text-red-400 hover:text-red-600 p-1.5 rounded-lg
+                                       hover:bg-red-50 transition text-center">
                             <i class="fas fa-trash text-sm"></i>
                         </button>
                     </div>
@@ -139,36 +217,14 @@ _media_panel.html
             {% empty %}
             <div id="videosEmptyState" class="text-center py-8 text-gray-400">
                 <i class="fas fa-video text-3xl mb-2 block"></i>
-                <span class="text-sm">ویدیویی اضافه نشده</span>
+                <p class="text-sm">هنوز ویدیویی اضافه نشده.</p>
             </div>
             {% endfor %}
         </div>
     </div>
 
-    <!-- ─── Add Video Form (hidden) ─── -->
-    <div id="addVideoForm" class="hidden mt-4 bg-pink-50 border border-pink-200 rounded-xl p-4">
-        <h4 class="text-sm font-semibold text-pink-800 mb-3 flex items-center gap-2">
-            <i class="fas fa-video text-pink-500"></i>افزودن ویدیوی جدید
-        </h4>
-        <div class="space-y-2">
-            <input type="text" id="newVideoTitle" dir="rtl" placeholder="عنوان ویدیو (اختیاری)..."
-                   class="w-full px-3 py-2 border border-pink-300 rounded-lg text-sm bg-white focus:border-pink-500 focus:outline-none transition">
-            <input type="url" id="newVideoUrl" dir="ltr" placeholder="لینک embed (اجباری)..."
-                   class="w-full px-3 py-2 border border-pink-300 rounded-lg text-sm bg-white focus:border-pink-500 focus:outline-none transition">
-            <textarea id="newVideoDesc" dir="rtl" rows="2" placeholder="توضیحات (اختیاری)..."
-                      class="w-full px-3 py-2 border border-pink-300 rounded-lg text-sm bg-white focus:border-pink-500 focus:outline-none transition resize-none"></textarea>
-            <div class="flex gap-2 pt-1">
-                <button type="button" id="confirmAddVideoBtn"
-                        class="px-4 py-2 bg-pink-600 text-white rounded-lg text-sm font-semibold hover:bg-pink-700 transition">
-                    <i class="fas fa-plus ml-1"></i>افزودن
-                </button>
-                <button type="button" id="cancelAddVideoBtn"
-                        class="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg text-sm font-semibold hover:bg-gray-200 transition">
-                    انصراف
-                </button>
-            </div>
-        </div>
-    </div>
-
-    {% endif %}
+    {% endif %}{# end if object #}
 </div>
+
+<!-- CSRF token برای fetch requests -->
+{% csrf_token %}

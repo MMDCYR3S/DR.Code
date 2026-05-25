@@ -3,7 +3,8 @@
  * مدیریت درخت تعیین تکلیف اورژانسی
  * ساختار: EmergencyDisposition → EmergencyNode (recursive)
  *
- * سبک کد: دقیقاً شبیه DynamicFieldManager
+ * محتوای هر گره از طریق CKEditor 5 (django-ckeditor-5) ویرایش می‌شود.
+ * هر بار که گره جدیدی اضافه می‌شود، ادیتور روی textarea آن mount می‌شود.
  */
 
 const EmergencyManager = {
@@ -11,6 +12,9 @@ const EmergencyManager = {
     orderId: null,
     syncUrl: null,
     colors: [],
+
+    // نگهداری نگاشت nodeEl → editor instance
+    _editors: new WeakMap(),
 
     // ─────────────────────────────────────────────────────────────────
     //  INIT
@@ -21,12 +25,129 @@ const EmergencyManager = {
         this.syncUrl = config.syncUrl || null;
         this.colors  = config.colors  || [];
 
+        // اگر django-ckeditor-5 هنوز در حال init هست، کمی صبر کن
+        const initNodes = () => {
+            document.querySelectorAll('.emergency-node').forEach(nodeEl => {
+                this._mountEditor(nodeEl);
+            });
+        };
+
+        if (document.readyState === 'complete') {
+            initNodes();
+        } else {
+            window.addEventListener('load', initNodes);
+        }
+
         this.attachEventListeners();
         console.log('✅ EmergencyManager initialized');
     },
 
+
     generateId() {
         return `tmp_node_${Date.now()}_${++this.counter}`;
+    },
+
+    // ─────────────────────────────────────────────────────────────────
+    //  CKEDITOR HELPERS
+    // ─────────────────────────────────────────────────────────────────
+
+    _mountEditor(nodeEl) {
+        const textarea = nodeEl.querySelector(':scope > div > .flex-1 .node-content');
+        if (!textarea || textarea.dataset.editorMounted) return;
+
+        textarea.dataset.editorMounted = '1';
+
+        const EditorClass = window.ClassicEditor;
+        if (!EditorClass) {
+            console.warn('EmergencyManager: ClassicEditor not found.');
+            return;
+        }
+
+        EditorClass.create(textarea, {
+            licenseKey: 'GPL',
+            language: 'fa',
+            toolbar: {
+                items: [
+                    'heading', '|',
+                    'bold', 'italic', 'underline', 'strikethrough', '|',
+                    'alignment',                    // ← align
+                    '|',
+                    'bulletedList', 'numberedList', '|',
+                    'outdent', 'indent', '|',
+                    'blockQuote', 'link', '|',
+                    'insertTable', '|',
+                    'undo', 'redo',
+                ],
+            },
+            alignment: {
+                options: ['left', 'right', 'center', 'justify'],
+            },
+        })
+
+        .then(editor => {
+            this._editors.set(textarea, editor);
+            editor.model.document.on('change:data', () => {
+                textarea.value = editor.getData();
+            });
+        })
+        .catch(err => console.error('CKEditor5 mount error:', err));
+    },
+
+
+
+    /**
+     * گرفتن محتوای HTML از ادیتور یا مستقیم از textarea (fallback).
+     */
+    _getEditorData(nodeEl) {
+        const textarea = nodeEl.querySelector(':scope > div > .flex-1 .node-content');
+        if (!textarea) return '';
+        const editor = this._editors.get(textarea);
+        if (editor) return editor.getData();
+        return textarea.value || '';
+    },
+
+    /**
+     * destroy کردن ادیتور قبل از حذف گره — جلوگیری از memory leak.
+     */
+    _destroyEditor(nodeEl) {
+        const textarea = nodeEl.querySelector(':scope > div > .flex-1 .node-content');
+        if (!textarea) return;
+        const editor = this._editors.get(textarea);
+        if (editor) {
+            editor.destroy().catch(() => {});
+            this._editors.delete(textarea);
+        }
+        // فرزندان را هم destroy کن
+        nodeEl.querySelectorAll('.node-content').forEach(ta => {
+            const ed = this._editors.get(ta);
+            if (ed) {
+                ed.destroy().catch(() => {});
+                this._editors.delete(ta);
+            }
+        });
+    },
+
+    _waitForCKEditorInit(textarea) {
+        let attempts = 0;
+        const interval = setInterval(() => {
+            attempts++;
+            // django-ckeditor-5 معمولاً instance رو روی textarea.ckeditorInstance می‌ذاره
+            const editor = textarea.ckeditorInstance
+                || (window.CKEDITOR_5_INSTANCES && [...window.CKEDITOR_5_INSTANCES.values()]
+                    .find(ed => ed.sourceElement === textarea));
+
+            if (editor) {
+                clearInterval(interval);
+                textarea.dataset.editorMounted = '1';
+                this._editors.set(textarea, editor);
+                editor.model.document.on('change:data', () => {
+                    textarea.value = editor.getData();
+                });
+            } else if (attempts > 50) { // 5 ثانیه timeout
+                clearInterval(interval);
+                console.warn('CKEditor init timeout for', textarea.id);
+            }
+        }, 100);
     },
 
     // ─────────────────────────────────────────────────────────────────
@@ -79,17 +200,20 @@ const EmergencyManager = {
         const depth = isRoot ? 0 : this._getDepth(parentNodeEl) + 1;
 
         const dotColor = depth === 0 ? 'text-red-400' : depth === 1 ? 'text-orange-400' : 'text-amber-400';
-        const marginClass = depth > 0 ? `mr-${Math.min(depth * 4, 16)}` : '';
+        const marginStyle = depth > 0 ? `style="margin-right:${depth}rem"` : '';
+
+        // شناسه یکتا برای textarea تا CKEditor بتواند mount کند
+        const uid = this.generateId();
 
         const html = `
-        <div class="emergency-node bg-white border border-gray-200 rounded-xl shadow-sm ${marginClass}"
+        <div class="emergency-node bg-white border border-gray-200 rounded-xl shadow-sm" ${marginStyle}
              data-node-id=""
              data-node-order="0">
             <div class="flex items-start gap-3 p-4 border-b border-gray-100">
                 <div class="drag-handle-node text-gray-300 hover:text-orange-500 mt-1 cursor-grab">
                     <i class="fas fa-grip-vertical"></i>
                 </div>
-                <div class="flex-1 space-y-2">
+                <div class="flex-1 space-y-3">
                     <div class="flex items-center gap-2">
                         <i class="fas fa-circle ${dotColor} text-xs mt-0.5 shrink-0"></i>
                         <input type="text" dir="rtl" placeholder="عنوان گره..."
@@ -99,10 +223,12 @@ const EmergencyManager = {
                             ${colorOptions}
                         </select>
                     </div>
-                    <textarea dir="ltr" rows="2" placeholder="محتوا / متن گره..."
-                              class="node-content w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs bg-gray-50 focus:bg-white focus:border-red-400 focus:outline-none transition resize-none"></textarea>
-                    <input type="text" dir="rtl" placeholder="توضیحات داخلی (اختیاری)..."
-                           class="node-notes w-full px-2 py-1 border border-gray-200 rounded-lg text-xs bg-gray-50 focus:bg-white focus:border-amber-400 focus:outline-none transition">
+                    <div class="node-content-wrapper">
+                        <label class="block text-xs text-gray-400 mb-1">محتوا</label>
+                        <textarea class="node-content"
+                                  id="node_content_${uid}"
+                                  dir="rtl"></textarea>
+                    </div>
                 </div>
                 <div class="flex flex-col gap-1 shrink-0">
                     <button type="button" class="add-child-node-btn text-xs px-2 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 transition font-medium whitespace-nowrap">
@@ -116,17 +242,26 @@ const EmergencyManager = {
             <div class="node-children p-3 space-y-2 hidden"></div>
         </div>`;
 
+        let newNodeEl;
+
         if (isRoot) {
             const container = document.getElementById('emergencyNodesContainer');
             if (!container) return;
             container.insertAdjacentHTML('beforeend', html);
-            container.lastElementChild.querySelector('.node-title')?.focus();
+            newNodeEl = container.lastElementChild;
+            newNodeEl.querySelector('.node-title')?.focus();
         } else {
             const childrenContainer = parentNodeEl.querySelector(':scope > .node-children');
             if (!childrenContainer) return;
             childrenContainer.classList.remove('hidden');
             childrenContainer.insertAdjacentHTML('beforeend', html);
-            childrenContainer.lastElementChild.querySelector('.node-title')?.focus();
+            newNodeEl = childrenContainer.lastElementChild;
+            newNodeEl.querySelector('.node-title')?.focus();
+        }
+
+        // mount ادیتور روی گره جدید
+        if (newNodeEl) {
+            this._mountEditor(newNodeEl);
         }
     },
 
@@ -141,6 +276,9 @@ const EmergencyManager = {
             ? 'آیا از حذف این گره و تمام زیرگره‌هایش اطمینان دارید؟'
             : 'آیا از حذف این گره اطمینان دارید؟';
         if (!confirm(msg)) return;
+
+        // destroy تمام ادیتورهای داخل این گره قبل از حذف DOM
+        this._destroyEditor(nodeEl);
         nodeEl.remove();
         this._updateEmptyState();
     },
@@ -153,12 +291,10 @@ const EmergencyManager = {
         const container = document.getElementById('emergencyNodesContainer');
         if (!container) return { title: '', color: '', notes: '', nodes: [] };
 
-        // فیلدهای Disposition
         const title = document.getElementById('emergencyTitle')?.value?.trim() || '';
         const color = document.getElementById('emergencyColor')?.value || '';
         const notes = document.getElementById('emergencyNotes')?.value?.trim() || '';
 
-        // فقط گره‌های ریشه (مستقیم فرزند container)
         const rootNodes = [...container.querySelectorAll(':scope > .emergency-node')];
         const nodes = rootNodes.map((el, i) => this._collectNode(el, i));
 
@@ -168,9 +304,10 @@ const EmergencyManager = {
     _collectNode(nodeEl, index) {
         const nodeId = nodeEl.dataset.nodeId ? parseInt(nodeEl.dataset.nodeId) : null;
         const title   = nodeEl.querySelector(':scope > div > .flex-1 .node-title')?.value?.trim() || '';
-        const content = nodeEl.querySelector(':scope > div > .flex-1 .node-content')?.value?.trim() || '';
-        const notes   = nodeEl.querySelector(':scope > div > .flex-1 .node-notes')?.value?.trim() || '';
         const color   = nodeEl.querySelector(':scope > div > .flex-1 .node-color')?.value || '';
+
+        // محتوا از CKEditor یا مستقیم از textarea
+        const content = this._getEditorData(nodeEl);
 
         const childEls = [...(nodeEl.querySelector(':scope > .node-children')?.querySelectorAll(':scope > .emergency-node') || [])];
         const children = childEls.map((c, i) => this._collectNode(c, i));
@@ -179,7 +316,6 @@ const EmergencyManager = {
             id: nodeId,
             title,
             content,
-            internal_notes: notes,
             color,
             order_index: index,
             children,

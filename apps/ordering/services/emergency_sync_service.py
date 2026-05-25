@@ -20,8 +20,7 @@ services/emergency_sync_service.py
         {
             "id": int | null,
             "title": str,
-            "content": str,            # اختیاری
-            "internal_notes": str,     # اختیاری
+            "content": str,            # HTML از CKEditor 5
             "order_index": int,        # اختیاری
             "color": str,             # اختیاری
             "children": [              # recursive
@@ -160,7 +159,7 @@ class EmergencySyncService:
         except EmergencyNode.DoesNotExist:
             raise ValidationError(f"EmergencyNode با id={node_id} یافت نشد.")
 
-        for field in ("title", "content", "internal_notes", "order_index", "color"):
+        for field in ("title", "content", "order_index", "color"):
             if field in data:
                 setattr(node, field, data[field])
         node.save()
@@ -199,7 +198,6 @@ class EmergencySyncService:
             parent=parent,
             title=data.get("title", ""),
             content=data.get("content", ""),
-            internal_notes=data.get("internal_notes", ""),
             order_index=data.get("order_index", 0),
             color=data.get("color", ""),
         )

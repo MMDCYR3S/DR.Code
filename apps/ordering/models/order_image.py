@@ -1,5 +1,6 @@
 import os
 import random
+from venv import logger
 import jdatetime
 
 from django.db import models, transaction
@@ -66,7 +67,11 @@ class OrderImage(models.Model):
 
         if self.image and not self.is_compressed:
             def run_compression():
-                compress_prescription_image.delay(self.id)
+                try:
+                    from apps.prescriptions.tasks import compress_prescription_image
+                    compress_prescription_image.delay(self.id)
+                except Exception as e:
+                    pass
             transaction.on_commit(run_compression)
 
     @property

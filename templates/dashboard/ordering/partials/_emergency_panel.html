@@ -3,6 +3,8 @@ _emergency_panel.html
 بخش سوم: تعیین تکلیف اورژانسی — EmergencyDisposition / EmergencyNode (درخت)
 {% endcomment %}
 
+{% load static %}
+
 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
 
     <!-- Panel Header -->
@@ -13,11 +15,11 @@ _emergency_panel.html
         {% if object %}
         <div class="flex gap-2">
             <button type="button" id="emergencySaveBtn"
-                    class="px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-lg text-sm font-semibold hover:from-red-700 hover:to-rose-700 transition-all shadow flex items-center gap-2">
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-all shadow flex items-center gap-2">
                 <i class="fas fa-cloud-upload-alt"></i>ذخیره یکجا
             </button>
             <button type="button" id="addRootNodeBtn"
-                    class="px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg text-sm font-semibold hover:from-orange-600 hover:to-amber-600 transition-all shadow flex items-center gap-2">
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition-all shadow flex items-center gap-2">
                 <i class="fas fa-plus"></i>افزودن گره
             </button>
         </div>
@@ -83,7 +85,7 @@ _emergency_panel.html
             <h3 class="text-base font-semibold text-gray-600 mb-2">گره‌ای تعریف نشده</h3>
             <p class="text-sm text-gray-400 mb-4">اولین گره تعیین تکلیف را ایجاد کنید.</p>
             <button type="button" id="addFirstNodeBtn"
-                    class="px-5 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold text-sm">
+                    class="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold text-sm">
                 <i class="fas fa-plus ml-1"></i>افزودن اولین گره
             </button>
         </div>

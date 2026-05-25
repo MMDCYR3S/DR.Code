@@ -72,8 +72,17 @@ class OrderExtendedFormView(LoginRequiredMixin, TemplateView):
         media = {"images": [], "videos": []}
 
         if order_id:
-            order = get_object_or_404(Order, pk=order_id)
+            order = get_object_or_404(
+                Order.objects.select_related('category').prefetch_related(
+                    'sections__items__conditions',
+                    'sections__drug_items__conditions',
+                    'sections__drug_items__drug'
+                ),
+                pk=order_id
+            )
+            
             dynamic_groups = list(DynamicFieldSyncService.get_groups(order_id))
+            
             try:
                 emergency_disposition = EmergencySyncService.get_for_order(order_id)
             except Exception:
@@ -89,6 +98,9 @@ class OrderExtendedFormView(LoginRequiredMixin, TemplateView):
             form = OrderForm(instance=order)
         else:
             form = OrderForm()
+
+        print(order)
+        print(form)
 
         return {
             "object": order,
@@ -123,14 +135,6 @@ class DynamicFieldSyncView(LoginRequiredMixin, View):
 
 
 class DynamicFieldGroupDetailView(LoginRequiredMixin, View):
-    """
-    GET  /orders/<order_id>/dynamic-fields/
-        → دریافت تمام گروه‌های یک Order به صورت JSON
-
-    DELETE /orders/dynamic-fields/group/<group_id>/
-        → حذف یک گروه
-    """
-
     def get(self, request, order_id: int):
         try:
             groups = DynamicFieldSyncService.get_groups(order_id)
@@ -225,67 +229,90 @@ class EmergencyDeleteView(LoginRequiredMixin, View):
 # ═══════════════════════════════════════════════════════════════════════════
 
 class MediaAddImageView(LoginRequiredMixin, View):
-    """POST /orders/<order_id>/media/image/add/"""
+    """POST /dashboard/admin/<order_id>/media/image/add/"""
 
     def post(self, request, order_id: int):
-        try:
-            image_file = request.FILES.get("image")
-            if not image_file:
-                return JsonResponse({"success": False, "error": "فایل تصویر ارسال نشده."}, status=400)
+        image_file = request.FILES.get("image")
+        if not image_file:
+            return JsonResponse({"success": False, "error": "فایل تصویر ارسال نشده."}, status=400)
 
-            data = {
-                "caption": request.POST.get("caption", ""),
-                "order_index": int(request.POST.get("order_index", 0)),
-            }
+        data = {
+            "caption": request.POST.get("caption", ""),
+            "order_index": int(request.POST.get("order_index", 0)),
+        }
+
+        try:
             image = MediaService.add_image(order_id, image_file, data)
-            return JsonResponse({
-                "success": True,
-                "image": {
-                    "id": image.id,
-                    "url": image.image.url if image.image else "",
-                    "caption": image.caption,
-                    "order_index": image.order_index,
-                }
-            })
         except Exception as e:
             logger.exception("MediaAddImageView error")
             return JsonResponse({"success": False, "error": str(e)}, status=400)
 
+        warning = None
+        if not image.is_compressed:
+            warning = "تصویر ذخیره شد. فشرده‌سازی به دلیل عدم دسترسی به Celery انجام نشد."
+
+        return JsonResponse({
+            "success": True,
+            "image": {
+                "id": image.id,
+                "url": image.image.url if image.image else "",
+                "caption": image.caption,
+                "order_index": image.order_index,
+            },
+            **({"warning": warning} if warning else {})
+        })
+
 
 class MediaAddImageBulkView(LoginRequiredMixin, View):
-    """POST /orders/<order_id>/media/images/bulk/"""
+    """POST /dashboard/admin/<order_id>/media/images/bulk/"""
 
     def post(self, request, order_id: int):
+        files = request.FILES.getlist("images")
+        if not files:
+            return JsonResponse({"success": False, "error": "هیچ تصویری ارسال نشده."}, status=400)
+
+        captions = request.POST.getlist("captions")
+        # order_index برای هر فایل به ترتیب از سرور تعیین میشه
+        # (MediaService باید max order_index فعلی رو بگیره و ادامه بده)
+
         try:
-            files = request.FILES.getlist("images")
-            captions = request.POST.getlist("captions")
             images = MediaService.add_images_bulk(order_id, files, captions)
-            return JsonResponse({
-                "success": True,
-                "images": [
-                    {"id": img.id, "url": img.image.url if img.image else "", "caption": img.caption}
-                    for img in images
-                ]
-            })
         except Exception as e:
+            logger.exception("MediaAddImageBulkView error")
             return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+        return JsonResponse({
+            "success": True,
+            "images": [
+                {
+                    "id": img.id,
+                    "url": img.image.url if img.image else "",
+                    "caption": img.caption,
+                    "order_index": img.order_index,
+                }
+                for img in images
+            ]
+        })
 
 
 class MediaUpdateImageView(LoginRequiredMixin, View):
-    """POST /orders/media/image/<image_id>/update/"""
+    """POST /dashboard/admin/media/image/<image_id>/update/"""
 
     def post(self, request, image_id: int):
         try:
             payload = json.loads(request.body)
+            # هر دو فیلد رو پاس میدیم — سرویس هر کدوم که موجود بود آپدیت میکنه
             image = MediaService.update_image(image_id, payload)
-            return JsonResponse({"success": True, "caption": image.caption})
+            return JsonResponse({
+                "success": True,
+                "caption": image.caption,
+                "order_index": image.order_index,
+            })
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)}, status=400)
 
 
 class MediaDeleteImageView(LoginRequiredMixin, View):
-    """POST /orders/media/image/<image_id>/delete/"""
-
     def post(self, request, image_id: int):
         try:
             MediaService.delete_image(image_id)
@@ -295,8 +322,6 @@ class MediaDeleteImageView(LoginRequiredMixin, View):
 
 
 class MediaAddVideoView(LoginRequiredMixin, View):
-    """POST /orders/<order_id>/media/video/add/"""
-
     def post(self, request, order_id: int):
         try:
             payload = json.loads(request.body)
@@ -316,20 +341,20 @@ class MediaAddVideoView(LoginRequiredMixin, View):
 
 
 class MediaUpdateVideoView(LoginRequiredMixin, View):
-    """POST /orders/media/video/<video_id>/update/"""
-
     def post(self, request, video_id: int):
         try:
             payload = json.loads(request.body)
             video = MediaService.update_video(video_id, payload)
-            return JsonResponse({"success": True, "title": video.title})
+            return JsonResponse({
+                "success": True,
+                "title": video.title,
+                "order_index": video.order_index,
+            })
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)}, status=400)
 
 
 class MediaDeleteVideoView(LoginRequiredMixin, View):
-    """POST /orders/media/video/<video_id>/delete/"""
-
     def post(self, request, video_id: int):
         try:
             MediaService.delete_video(video_id)
@@ -377,8 +402,7 @@ def _serialize_disposition(disposition) -> dict:
         return {
             "id": node.id,
             "title": node.title,
-            "content": node.content,
-            "internal_notes": node.internal_notes,
+            "content": node.content,   # HTML از CKEditor 5
             "order_index": node.order_index,
             "color": node.color,
             "children": [serialize_node(c) for c in node.children.all()],

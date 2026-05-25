@@ -1,6 +1,8 @@
 /**
  * ConditionManager
  * مدیریت شرایط با temp_id و inline form
+ *
+ * رفع باگ: نمایش badge های شرط‌های موجود (DB ids) و شرط‌های جدید (temp ids)
  */
 
 const ConditionManager = {
@@ -13,12 +15,26 @@ const ConditionManager = {
     },
 
     _initExisting() {
-        document.querySelectorAll('.condition-item').forEach(el => {
-            if (!el.dataset.conditionId && !el.dataset.tempId) {
-                el.dataset.tempId = this.generateTempId();
-            }
-        });
-    },
+    document.querySelectorAll('.condition-item').forEach(el => {
+        // ۱. انتساب تمپ آی‌دی در صورت نبودن
+        if (!el.dataset.conditionId && !el.dataset.tempId) {
+            el.dataset.tempId = this.generateTempId();
+        }
+        
+        // ۲. اطمینان از وجود کانتینر بج‌ها
+        this._ensureBadgesContainer(el);
+        
+        // ۳. ✨ رندر کردن بج‌های مربوط به دیتای دیتابیس در لود اولیه
+        const sectionEl = el.closest('.section-item');
+        const itemTempIds = (el.dataset.itemTempIds || '').split(',').filter(Boolean);
+        const drugItemTempIds = (el.dataset.drugItemTempIds || '').split(',').filter(Boolean);
+        const badgesEl = el.querySelector('.related-badges');
+        
+        if (badgesEl && sectionEl) {
+            badgesEl.innerHTML = this._buildBadges(sectionEl, itemTempIds, drugItemTempIds);
+        }
+    });
+},
 
     generateTempId() {
         return `temp_cond_${Date.now()}_${++this.conditionCounter}`;
@@ -26,14 +42,12 @@ const ConditionManager = {
 
     attachEventListeners() {
         document.addEventListener('click', (e) => {
-            // افزودن
             const addBtn = e.target.closest('.add-condition-btn');
             if (addBtn) {
                 e.preventDefault(); e.stopPropagation();
                 this.showAddForm(addBtn.closest('.section-item'));
                 return;
             }
-            // ویرایش
             const editBtn = e.target.closest('.edit-condition-btn');
             if (editBtn) {
                 e.preventDefault(); e.stopPropagation();
@@ -43,7 +57,6 @@ const ConditionManager = {
                 );
                 return;
             }
-            // حذف
             const delBtn = e.target.closest('.delete-condition-btn');
             if (delBtn) {
                 e.preventDefault(); e.stopPropagation();
@@ -56,9 +69,8 @@ const ConditionManager = {
 
     // ─── فرم افزودن ────────────────────────────────────────────────
     showAddForm(sectionEl) {
+        if (!sectionEl) return;
         const list = this._getConditionsList(sectionEl);
-
-        // حذف فرم باز قبلی
         list.parentElement.querySelector('.condition-form-wrapper')?.remove();
 
         const html = `
@@ -101,10 +113,7 @@ const ConditionManager = {
 
     _submitAdd(wrapper, sectionEl, list) {
         const text = wrapper.querySelector('.condition-text').value.trim();
-        if (!text) {
-            wrapper.querySelector('.condition-text').focus();
-            return;
-        }
+        if (!text) { wrapper.querySelector('.condition-text').focus(); return; }
         const selected = this._getSelectedItems(wrapper);
         const tempId = this.generateTempId();
 
@@ -121,6 +130,7 @@ const ConditionManager = {
 
     // ─── فرم ویرایش ─────────────────────────────────────────────────
     showEditForm(condEl, sectionEl) {
+        if (!condEl || !sectionEl) return;
         const currentText = condEl.querySelector('.condition-text-display')?.textContent.trim() || '';
         const itemTempIds = (condEl.dataset.itemTempIds || '').split(',').filter(Boolean);
         const drugItemTempIds = (condEl.dataset.drugItemTempIds || '').split(',').filter(Boolean);
@@ -175,11 +185,12 @@ const ConditionManager = {
         });
     },
 
-    // ─── helpers ────────────────────────────────────────────────────
+    // ─── Conditions list container ───────────────────────────────────
     _getConditionsList(sectionEl) {
         let list = sectionEl.querySelector('.conditions-list');
         if (!list) {
-            sectionEl.querySelector('.items-container')?.insertAdjacentHTML('afterend', `
+            const anchor = sectionEl.querySelector('.items-container') || sectionEl;
+            anchor.insertAdjacentHTML('afterend', `
                 <div class="conditions-container mt-4 pt-4 border-t border-gray-200">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-sm font-medium text-gray-700 flex items-center">
@@ -196,25 +207,40 @@ const ConditionManager = {
         return list;
     },
 
+    /**
+     * _itemCheckboxes — checkboxهای آیتم‌ها برای انتخاب در فرم شرط
+     *
+     * FIX: هر آیتم یک uniqueId دارد که ترکیبی از tempId و itemId است.
+     *      وقتی شرط از DB لود می‌شود، data-item-temp-ids حاوی real itemId است.
+     *      پس باید هم با temp_id و هم با item_id مقایسه کنیم.
+     */
     _itemCheckboxes(sectionEl, selected = null) {
         const items = sectionEl.querySelectorAll('.items-list > .item-row');
         if (!items.length) return `<p class="text-xs text-gray-400 text-center py-2">هیچ آیتمی وجود ندارد</p>`;
 
         return [...items].map(item => {
-            const id = item.dataset.tempId || item.dataset.itemId;
-            if (!id) return '';
+            const tempId = item.dataset.tempId || '';
+            const itemId = item.dataset.itemId || '';
+            // uniqueId برای ذخیره در data-item-temp-ids — اولویت با tempId
+            const uniqueId = tempId || itemId;
+            if (!uniqueId) return '';
+
             const type = item.dataset.itemType;
             const text = type === 'drug'
                 ? (item.querySelector('.drug-search-input')?.value || 'دارو')
                 : (item.querySelector('.item-text')?.value || 'آیتم');
-            const checked = selected && (
-                selected.textItems?.includes(id) || selected.drugItems?.includes(id)
+
+            // بررسی: هم uniqueId هم itemId هم tempId باید چک شوند
+            const isChecked = selected && (
+                selected.textItems?.some(id => id === uniqueId || id === itemId || id === tempId) ||
+                selected.drugItems?.some(id => id === uniqueId || id === itemId || id === tempId)
             );
+
             const icon = type === 'drug' ? 'fa-pills text-green-600' : 'fa-align-right text-blue-500';
             return `
                 <label class="flex items-center gap-2 p-1.5 hover:bg-gray-50 rounded cursor-pointer text-sm">
                     <input type="checkbox" class="item-checkbox w-4 h-4 text-purple-600 rounded"
-                           value="${id}" data-item-type="${type}" ${checked ? 'checked' : ''}>
+                           value="${uniqueId}" data-item-type="${type}" ${isChecked ? 'checked' : ''}>
                     <i class="fas ${icon} text-xs"></i>
                     <span dir="ltr" class="truncate max-w-xs">${this.escapeHtml(text.substring(0, 60))}</span>
                 </label>`;
@@ -254,50 +280,82 @@ const ConditionManager = {
                 </div>
             </div>`;
 
-        // حذف empty state
         list.querySelector('.empty-conditions-state')?.remove();
         list.insertAdjacentHTML('beforeend', html);
     },
 
+    /**
+     * _buildBadges — FIX اصلی
+     *
+     * جستجو با data-temp-id یا data-item-id — هر کدام که match شد استفاده می‌شود.
+     * برای شرط‌های موجود از DB، ids در data-item-temp-ids حاوی real item_id هستند
+     * که در data-item-id آیتم‌ها ذخیره شده‌اند.
+     */
     _buildBadges(sectionEl, itemTempIds, drugItemTempIds) {
+        if (!sectionEl) return '<span class="text-xs text-gray-400 italic">بدون آیتم مرتبط</span>';
+
         let html = '';
-        [...itemTempIds, ...drugItemTempIds].forEach(id => {
-            const el = sectionEl.querySelector(`.item-row[data-temp-id="${id}"], .item-row[data-item-id="${id}"]`);
+        const allIds = [
+            ...itemTempIds.map(id => ({ id, expectedType: 'text' })),
+            ...drugItemTempIds.map(id => ({ id, expectedType: 'drug' })),
+        ];
+
+        allIds.forEach(({ id, expectedType }) => {
+            if (!id) return;
+            // جستجو با هر دو attribute
+            const el = sectionEl.querySelector(
+                `.item-row[data-temp-id="${CSS.escape(id)}"], .item-row[data-item-id="${CSS.escape(id)}"]`
+            );
             if (!el) return;
-            const type = el.dataset.itemType;
-            const text = type === 'drug'
+
+            const actualType = el.dataset.itemType || expectedType;
+            const text = actualType === 'drug'
                 ? (el.querySelector('.drug-search-input')?.value || 'دارو')
                 : (el.querySelector('.item-text')?.value || 'آیتم');
-            const cls = type === 'drug' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700';
-            const icon = type === 'drug' ? 'fa-pills' : 'fa-align-right';
+
+            const cls = actualType === 'drug' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700';
+            const icon = actualType === 'drug' ? 'fa-pills' : 'fa-align-right';
             html += `<span class="text-xs px-2 py-0.5 ${cls} rounded flex items-center gap-1" dir="ltr">
                         <i class="fas ${icon} text-xs"></i>${this.escapeHtml(text.substring(0, 30))}
                      </span>`;
         });
+
         return html || '<span class="text-xs text-gray-400 italic">بدون آیتم مرتبط</span>';
     },
 
     _updateBadges(condEl, sectionEl, selected) {
         const badgesEl = condEl.querySelector('.related-badges');
         if (badgesEl) {
-            badgesEl.innerHTML = this._buildBadges(
-                sectionEl,
-                selected.textItems,
-                selected.drugItems
-            );
+            badgesEl.innerHTML = this._buildBadges(sectionEl, selected.textItems, selected.drugItems);
+        }
+    },
+
+    _ensureBadgesContainer(condEl) {
+        // اگر .related-badges نیست (ساختار قدیمی)، اضافه کن
+        if (!condEl.querySelector('.related-badges')) {
+            const textDisplay = condEl.querySelector('.condition-text-display');
+            if (textDisplay) {
+                const div = document.createElement('div');
+                div.className = 'related-badges flex flex-wrap gap-1 mt-2';
+                div.innerHTML = '<span class="text-xs text-gray-400 italic">بدون آیتم مرتبط</span>';
+                textDisplay.insertAdjacentElement('afterend', div);
+            }
         }
     },
 
     /** استخراج برای bulk save */
     extractConditionsForSection(sectionEl) {
-        return [...sectionEl.querySelectorAll('.condition-item')].map((el, i) => ({
-            id: el.dataset.conditionId ? parseInt(el.dataset.conditionId) : null,
-            temp_id: el.dataset.tempId || null,
-            text: el.querySelector('.condition-text-display')?.textContent.trim() || '',
-            order_index: i,
-            item_temp_ids: (el.dataset.itemTempIds || '').split(',').filter(Boolean),
-            drug_item_temp_ids: (el.dataset.drugItemTempIds || '').split(',').filter(Boolean),
-        })).filter(c => c.text);
+        return [...sectionEl.querySelectorAll('.conditions-list > .condition-item')].map((el, i) => {
+            const conditionId = el.dataset.conditionId;
+            return {
+                id: conditionId ? parseInt(conditionId) : null,
+                temp_id: el.dataset.tempId || null,
+                text: el.querySelector('.condition-text-display')?.textContent.trim() || '',
+                order_index: i,
+                item_temp_ids: (el.dataset.itemTempIds || '').split(',').filter(Boolean),
+                drug_item_temp_ids: (el.dataset.drugItemTempIds || '').split(',').filter(Boolean),
+            };
+        }).filter(c => c.text)
     },
 
     escapeHtml(text) {
