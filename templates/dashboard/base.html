@@ -304,9 +304,9 @@
          <div class="flex-shrink-0 flex items-center justify-between px-6 pt-4">
              <div class="flex items-center relative">
                  <i class="fa-solid fa-user-doctor text-[4rem] text-blue-500/30 "></i>
-                 <div class="flex flex-col absolute right-8">
-                     <span class="mr-3 text-lg font-bold tracking-wide text-white ">دکتر کد</span>
-                     <span class="mr-3 text-lg font-bold tracking-wide text-white italic">DrCode</span>
+                 <div class="flex flex-col absolute right-8 -space-y-4 ">
+                     <span class="mr-3 text-2xl font-extrabold tracking-wide z-10 text-white text-shadow text-shadow-black ">دکتر کد</span>
+                     <span class="mr-3 text-2xl font-black tracking-wide text-white/50 italic text-left pr-2">DrCode</span>
                  </div>
              </div>
              
@@ -314,7 +314,7 @@
                  <button @click="toggleNotificationModal()" 
                          class="relative p-1 text-white/50 hover:text-white pt-2 hover:bg-slate-800 focus:outline-none rounded-xl transition-all duration-200"
                          :class="{ 'notification-bell': hasUnread }">
-                     <i class="fa-solid fa-bell text-3xl"></i>
+                     <i class="fa-solid fa-bell text-2xl"></i>
                      <span x-show="unreadCount > 0" 
                            x-text="unreadCount > 9 ? '9+' : unreadCount"
                            class="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold leading-none text-white bg-red-600 rounded-full min-w-[18px]">
@@ -518,7 +518,7 @@
                 </button>
             </header>
 
-            <div class="flex-1 bg-white mb-3 ml-3 mt-4 p-4 rounded-4xl overflow-hidden ">
+            <div class="flex-1 bg-white mb-3 ml-3 mt-4 p-6 rounded-4xl overflow-hidden ">
     
                 <main class="h-full w-full overflow-x-hidden overflow-y-auto  no-scrollbar">
                     {% block content %}{% endblock %}
