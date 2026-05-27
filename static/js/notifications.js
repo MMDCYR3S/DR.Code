@@ -41,7 +41,7 @@ function notificationsApp() {
                     // اصلاح مسیر دریافت داده‌ها بر اساس ساختار جدید API
                     // قبلاً: response.data.results
                     // الان: response.data.notifications
-                    this.notifications = response.data.notifications || [];
+                    this.notifications = response.data.notifications || response.data.results || [];
                     
                     this.totalCount = response.data.total_count || 0; // اصلاح نام فیلد
                     

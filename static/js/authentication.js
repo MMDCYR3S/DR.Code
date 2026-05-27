@@ -14,7 +14,7 @@ function authenticationForm() {
         
         // State
         isSubmitting: false,
-        maxTotalSize: 5 * 1024 * 1024, // 5MB in bytes
+        maxTotalSize: 2 * 1024 * 1024, // 5MB in bytes
         
         // Computed: Total Size
         get totalSize() {
@@ -212,13 +212,13 @@ function authenticationForm() {
                 } else {
 
                     console.error('Error during request setup:', error.message);
-                    errorMessage = 'فایل نباید بیش از 2 مگابایت باشد.';
+                    errorMessage = error.response.data.message
                 }
 
                 await Swal.fire({
                     icon: 'error',
                     title: 'خطا در ارسال درخواست',
-                    text: errorMessage,
+                    text: "خطایی رخ داد.",
                     confirmButtonColor: '#0077b6'
                 });
 

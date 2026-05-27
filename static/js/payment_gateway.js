@@ -40,9 +40,6 @@ document.addEventListener('alpine:init', () => {
             let profile = JSON.parse(localStorage.getItem('drcode_user_profile'));
             console.log(profile);
             
-            // alert(profile)
-            // alert(typeof(profile))
-            alert(profile.data.auth_status)
             if (!profile || profile.data.auth_status !== 'APPROVED') {
                 Swal.fire({
                     icon: 'error',
