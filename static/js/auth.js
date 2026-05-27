@@ -1,6 +1,6 @@
 const Auth = {
     
-    // ثبت‌نام کاربر
+// ثبت‌نام کاربر
     async register(formData) {
         try {
             // نمایش وضعیت در حال پردازش
@@ -10,36 +10,69 @@ const Auth = {
             const response = await API.register(formData);
             
             if (response.success) {
-                // ذخیره توکن‌ها
+                // --- (کدهای موفقیت قبلی شما بدون تغییر) ---
                 if (response.data.access_token) {
                     StorageManager.saveTokens({
                         access_token: response.data.access_token,
-                        refresh_token: response.data.refresh_token
+                        refresh_token: response.data.refresh_token,
+                        jti: response.data.jti
                     });
                 }
                 
-                // ذخیره اطلاعات کاربر
                 StorageManager.saveUserData({
                     user_id: response.data.user_id,
                     full_name: response.data.full_name,
                     phone_number: response.data.phone_number
                 });
                 
-                // پیام موفقیت
+                StorageManager.saveUserProfile(response.data.profile);
+                
                 this.showMessage('success', response.message);
                 
-                // بستن مودال و به‌روزرسانی UI
                 setTimeout(() => {
                     this.closeAuthModal();
                     this.updateUIForLoggedInUser();
+                    if (typeof updateAuthWarningBar === 'function') {
+                        updateAuthWarningBar();
+                    }
+                    window.dispatchEvent(new CustomEvent('user-logged-in'));
+                    window.location.href = '/';
+                    window.location.reload(true);
                 }, 1500);
-                
-                // اگر نیاز به احراز هویت تکمیلی دارد
-                if (response.data.next_step === 'authentication') {
-                    // فعلاً چیزی نمی‌کنیم (برای بعد)
+
+            } else {
+                // *** تغییرات جدید: مدیریت خطاهای ولیدیشن ***
+                let errorMessage = response.message || 'خطایی رخ داده است';
+
+                // بررسی وجود آبجکت errors در پاسخ سرور
+                if (response.errors) {
+                    const errors = [];
+                    
+                    // بررسی خطای شماره موبایل
+                    if (response.errors.phone_number) {
+                        errors.push('شماره موبایل وارد شده قبلاً ثبت شده است.');
+                    }
+                    
+                    // بررسی خطای ایمیل
+                    if (response.errors.email) {
+                        errors.push('ایمیل وارد شده قبلاً ثبت شده است.');
+                    }
+
+                    // اگر خطای دیگری بود (غیر از موبایل و ایمیل)
+                    // می‌توانیم آن‌ها را هم اضافه کنیم یا فقط همین دو مورد را نمایش دهیم
+                    
+                    if (errors.length > 0) {
+                        // اتصال خطاها با "و" یا نمایش اولین خطا
+                        errorMessage = errors.join(' و ');
+                    }
                 }
+                
+                // پرتاب خطا برای رفتن به catch و نمایش در showMessage
+                throw new Error(errorMessage);
             }
+
         } catch (error) {
+            // اینجا پیام خطای ساخته شده در بالا نمایش داده می‌شود
             this.showMessage('error', error.message);
         } finally {
             this.showLoading(false);
@@ -60,16 +93,27 @@ const Auth = {
                 // ذخیره اطلاعات کاربر
                 StorageManager.saveUserData(response.data.user);
                 
+                
                 // ذخیره پروفایل کاربر
                 StorageManager.saveUserProfile(response.data.profile);
                 
                 // پیام موفقیت
                 this.showMessage('success', response.message);
-                
+
                 // بستن مودال و به‌روزرسانی UI
                 setTimeout(() => {
                     this.closeAuthModal();
                     this.updateUIForLoggedInUser();
+                
+                    if (typeof updateAuthWarningBar === 'function') {
+                        updateAuthWarningBar();
+                    }
+                
+                    // به Alpine خبر بده که کاربر لاگین شده
+                    window.dispatchEvent(new CustomEvent('user-logged-in'));
+                    
+                    // رفرش کامل با پاک کردن کش (Ctrl+F5)
+                    window.location.reload(true);
                 }, 1500);
             }
         } catch (error) {
@@ -103,6 +147,8 @@ async logout() {
             // ریدایرکت به صفحه اصلی
             setTimeout(() => {
                 window.location.href = '/';
+                // Reload the page to ensure all state is cleared
+                window.location.reload();
             }, 1000);
             
         } catch (error) {
@@ -110,7 +156,9 @@ async logout() {
             // در صورت ارور هم خروج انجام بشه
             StorageManager.clearAll();
             this.updateUIForLoggedOutUser();
+            // ریدایرکت به صفحه اصلی و ریلود صفحه
             window.location.href = '/';
+            window.location.reload();
         }
     }
     
@@ -136,12 +184,6 @@ async logout() {
                             <i class="fas fa-user"></i>
                             پروفایل من
                         </a>
-                        ${profile?.role === 'premium' ? `
-                            <a href="/premium">
-                                <i class="fas fa-crown"></i>
-                                پنل ویژه
-                            </a>
-                        ` : ''}
                         <hr>
                         <a href="#" onclick="Auth.logout(); return false;">
                             <i class="fas fa-sign-out-alt"></i>
@@ -162,9 +204,6 @@ async logout() {
                 </button>
                 <div id="mobile-user-menu" class="mobile-dropdown-menu absolute px-8" style="display: none;">
                     <a href="/profile"><i class="fas fa-user"></i> پروفایل</a>
-                    ${profile?.role === 'premium' ? `
-                        <a href="/premium"><i class="fas fa-crown"></i> پنل ویژه</a>
-                    ` : ''}
                     <a href="#" onclick="Auth.logout(); return false;">
                         <i class="fas fa-sign-out-alt"></i> خروج
                     </a>
@@ -268,6 +307,10 @@ showLogoutMessage() {
             this.updateUIForLoggedInUser();
         } else {
             this.updateUIForLoggedOutUser();
+        }
+
+        if (typeof updateAuthWarningBar === 'function') {
+            updateAuthWarningBar();
         }
 
         // event listener برای کلیک خارج از منو
