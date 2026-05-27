@@ -1,0 +1,348 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}پیش‌بالینی — {{ order.name }}{% endblock %}
+
+{% block content %}
+<style>
+  .drag-handle {
+    cursor: grab;
+    color: #cbd5e1;
+    font-size: 1rem;
+    padding: 0 4px;
+    user-select: none;
+    line-height: 1;
+  }
+  .drag-handle:hover { color: #94a3b8; }
+  .drag-handle:active { cursor: grabbing; }
+
+  .item-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fff;
+  }
+  .item-row:nth-child(even) { background: #f8fafc; }
+  .item-row:hover { background: #f0f4ff; }
+
+  .item-row input[type="text"],
+  .item-row textarea {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    width: 100%;
+  }
+
+  /* مخفی کردن چک‌باکس DELETE اصلی */
+  .delete-checkbox { display: none !important; }
+
+  /* دکمه حذف واقعی */
+  .btn-delete-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    border: 1px solid #fecaca;
+    background: #fff5f5;
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    transition: all .15s;
+  }
+  .btn-delete-item:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
+  .btn-delete-item.active { background: #ef4444; color: #fff; border-color: #ef4444; }
+
+  /* دکمه حذف زیرگروه */
+  .btn-delete-subgroup {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid #fecaca;
+    background: #fff5f5;
+    color: #ef4444;
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .btn-delete-subgroup:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
+  .btn-delete-subgroup.active { background: #ef4444; color: #fff; border-color: #ef4444; }
+
+  .subgroup-card { border-right: 3px solid #818cf8; }
+</style>
+
+<div class="container mx-auto px-4 py-6 max-w-8xl">
+
+  <div class="flex justify-between items-center mb-5">
+    <h1 class="text-xl font-bold text-gray-800">پیش‌بالینی — {{ order.name }}</h1>
+    <a href="{% url 'dashboard:ordering:order_edit' order.pk %}" class="text-sm text-indigo-600 hover:underline">← بازگشت</a>
+  </div>
+
+  <!-- افزودن گروه -->
+  <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-6">
+    <form method="post" class="flex flex-wrap gap-3 items-end">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add_group">
+      <div class="flex-1 min-w-40">
+        <label class="block text-xs font-medium text-gray-600 mb-1">{{ new_group_form.title.label }}</label>
+        {{ new_group_form.title }}</div>
+      <div class="flex-1 min-w-32">
+        <label class="block text-xs font-medium text-gray-600 mb-1">{{ new_group_form.color.label }}</label>
+        {{ new_group_form.color }}
+      </div>
+      <button type="submit" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium whitespace-nowrap">
+        <i class="fas fa-plus ml-1"></i>گروه جدید
+      </button>
+    </form>
+  </div>
+
+  {% for item in nested %}
+  <form method="post" id="delete-group-form-{{ item.group.pk }}" onsubmit="return confirm('این گروه حذف شود؟')">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="delete_group">
+    <input type="hidden" name="group_pk" value="{{ item.group.pk }}">
+  </form>
+  {% endfor %}
+
+  <form method="post" id="save-all-form">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save_all">
+
+    {% for item in nested %}
+    <div class="mb-5 rounded-xl border border-gray-200 shadow-sm overflow-hidden bg-white">
+
+      <!-- Group Header -->
+      <div class="flex justify-between items-center px-4 py-2.5 bg-gradient-to-l from-gray-50 to-indigo-50 border-b border-gray-200">
+        <div class="flex items-center gap-3 flex-1">
+          <span class="w-2 h-2 rounded-full bg-indigo-400 inline-block flex-shrink-0"></span>
+          <div class="flex gap-3 flex-1 items-center">
+            <div class="flex-1">{{ item.group_form.title }}</div>
+            <div class="w-32">{{ item.group_form.color }}</div>
+          </div>{{ item.group_form.order_index.as_hidden }}
+        </div>
+        <button type="submit" form="delete-group-form-{{ item.group.pk }}"class="mr-3 flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 text-xs transition-all">
+          <i class="fas fa-trash-alt"></i><span>حذف گروه</span>
+        </button>
+      </div>
+
+      <!-- SubGroups -->
+      <div class="p-3">
+        {{ item.subgroup_fs.management_form }}
+        <div id="subgroups-container-{{ item.group.pk }}" class="space-y-2">
+
+          {% for sub in item.sub_nested %}
+          <div class="subgroup-card rounded-lg bg-slate-50 border border-gray-100" data-subgroup>
+
+            <!-- SubGroup Header -->
+            <div class="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
+              <span class="drag-handle" title="برای جابجایی بکشید">⠿</span>
+              <div class="flex-1 font-medium text-sm text-gray-700">{{ sub.sub_form.title }}</div>
+
+              <!-- دکمه حذف زیرگروه -->
+              <button type="button"
+                class="btn-delete-subgroup"
+                onclick="toggleDelete(this, '{{ sub.sub_form.DELETE.html_name }}')">
+                <i class="fas fa-trash-alt"></i><span>حذف</span>
+              </button>
+              <!-- چک‌باکس مخفی -->
+              <span style="display:none">{{ sub.sub_form.DELETE }}</span>
+            </div>
+
+            {{ sub.sub_form.order_index.as_hidden }}
+            {% for hidden in sub.sub_form.hidden_fields %}{{ hidden }}{% endfor %}
+
+            <!-- Items -->
+            {{ sub.item_fs.management_form }}
+            <div class="divide-y divide-gray-100" data-items-container="{{ item.group.pk }}-{{ sub.sub_form.instance.pk }}">
+              {% for item_form in sub.item_fs %}
+              <div class="item-row" data-item>
+                <span class="drag-handle" title="برای جابجایی بکشید">⠿</span>
+                <div style="flex:1">{{ item_form.key }}</div>
+                <div style="flex:1">{{ item_form.value }}</div>
+
+                <!-- دکمه حذف آیتم -->
+                <button type="button"
+                  class="btn-delete-item"
+                  title="حذف"
+                  onclick="toggleDelete(this, '{{ item_form.DELETE.html_name }}')">
+                  <i class="fas fa-times"></i>
+                </button>
+                <span style="display:none">{{ item_form.DELETE }}</span>
+
+                {{ item_form.order_index.as_hidden }}
+                {% for hidden in item_form.hidden_fields %}{{ hidden }}{% endfor %}
+              </div>
+              {% endfor %}
+            </div>
+
+            <div class="px-3 py-1.5"><button type="button"
+                class="text-xs text-indigo-500 hover:text-indigo-700 flex items-center gap-1"
+                data-add-item
+                data-prefix="group-{{ item.group.pk }}-sub-{{ sub.sub_form.instance.pk }}-items"
+                data-gid="{{ item.group.pk }}"
+                data-sid="{{ sub.sub_form.instance.pk }}">
+                <i class="fas fa-plus"></i>آیتم جدید
+              </button>
+            </div>
+          </div>
+          {% endfor %}</div>
+
+        <button type="button"
+          class="mt-2 text-xs text-green-600 hover:text-green-800 flex items-center gap-1 px-1"
+          data-add-subgroup
+          data-gid="{{ item.group.pk }}"
+          data-prefix="group-{{ item.group.pk }}-subgroups">
+          <i class="fas fa-plus"></i>زیرگروه جدید
+        </button>
+      </div>
+    </div>{% endfor %}<div class="flex justify-end pt-2 pb-4">
+      <button type="submit" class="px-5 py-2.5 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 text-sm">
+        <i class="fas fa-save ml-1"></i>ذخیره همه
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- ===== Hidden Templates ===== -->
+<template id="empty-subgroup-template">
+  <div class="subgroup-card rounded-lg bg-slate-50 border border-gray-100" data-subgroup>
+    <input type="hidden" name="group-__gid__-sub-__sid__-items-TOTAL_FORMS" value="0">
+    <input type="hidden" name="group-__gid__-sub-__sid__-items-INITIAL_FORMS" value="0">
+    <input type="hidden" name="group-__gid__-sub-__sid__-items-MIN_NUM_FORMS" value="0">
+    <input type="hidden" name="group-__gid__-sub-__sid__-items-MAX_NUM_FORMS" value="1000">
+    <input type="hidden" name="group-__gid__-subgroups-__prefix__-temp_sid" value="__sid__">
+    <input type="hidden" name="group-__gid__-subgroups-__prefix__-order_index" value="0">
+
+    <div class="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
+      <span class="drag-handle" title="برای جابجایی بکشید">⠿</span>
+      <div class="flex-1">
+        {% with empty_subgroup_fs.empty_form as ef %}{{ ef.title }}{% endwith %}
+      </div>
+      <span class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">زیرگروه جدید</span>
+    </div>
+
+    <div class="divide-y divide-gray-100" data-items-container="__gid__-__sid__"></div>
+    <div class="px-3 py-1.5">
+      <button type="button" class="text-xs text-indigo-500 hover:text-indigo-700 flex items-center gap-1"
+        data-add-item data-prefix="group-__gid__-sub-__sid__-items" data-gid="__gid__" data-sid="__sid__">
+        <i class="fas fa-plus"></i>آیتم جدید
+      </button>
+    </div>
+  </div>
+</template>
+
+<template id="empty-item-template">
+  {% with empty_item_fs.empty_form as ef %}
+  <div class="item-row" data-item>
+    <span class="drag-handle" title="برای جابجایی بکشید">⠿</span>
+    <div style="flex:1">{{ ef.key }}</div>
+    <div style="flex:1">{{ ef.value }}</div>
+    <button type="button" class="btn-delete-item" title="حذف"
+      onclick="toggleDelete(this, this.closest('[data-item]').querySelector('[name$=-DELETE]')?.name)">
+      <i class="fas fa-times"></i>
+    </button>
+    {{ ef.order_index.as_hidden }}
+  </div>
+  {% endwith %}
+</template>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/Sortable.min.js' %}"></script>
+<script>
+// toggle حذف: دکمه را فعال/غیرفعال می‌کند و چک‌باکس مخفی را تیک می‌زند
+function toggleDelete(btn, fieldName) {
+  const checkbox = document.querySelector(`[name="${fieldName}"]`);
+  if (!checkbox) return;
+  checkbox.checked = !checkbox.checked;
+  btn.classList.toggle('active', checkbox.checked);
+  // خط‌خوردگی روی ردیف
+  const row = btn.closest('[data-item], [data-subgroup]');
+  if (row) row.style.opacity = checkbox.checked ? '0.4' : '1';
+}
+
+function updateOrderIndexes(container, itemSelector) {
+  container.querySelectorAll(`:scope > ${itemSelector}`).forEach((el, i) => {
+    const input = el.querySelector('input[type="hidden"][name$="-order_index"]');
+    if (input) input.value = i;
+  });
+}
+
+function initItemsSortable(container) {
+  if (container._sortable) container._sortable.destroy();
+  container._sortable = Sortable.create(container, {
+    handle: '.drag-handle', animation: 150,
+    onEnd() { updateOrderIndexes(container, '[data-item]'); }
+  });
+}
+
+function initSubgroupsSortable(gid) {
+  const container = document.getElementById(`subgroups-container-${gid}`);
+  if (!container) return;
+  if (container._sortable) container._sortable.destroy();
+  container._sortable = Sortable.create(container, {
+    handle: '.drag-handle', animation: 150,
+    onEnd() { updateOrderIndexes(container, '[data-subgroup]'); }
+  });
+}
+
+document.querySelectorAll('[id^="subgroups-container-"]').forEach(c =>
+  initSubgroupsSortable(c.id.replace('subgroups-container-', ''))
+);
+document.querySelectorAll('[data-items-container]').forEach(c => initItemsSortable(c));
+
+document.addEventListener('click', function(e) {
+  const addItemBtn = e.target.closest('[data-add-item]');
+  if (addItemBtn) {
+    const { prefix, gid, sid } = addItemBtn.dataset;
+    const mgmt = document.querySelector(`[name="${prefix}-TOTAL_FORMS"]`);
+    if (!mgmt) return;
+    const idx = parseInt(mgmt.value);
+    const container = document.querySelector(`[data-items-container="${gid}-${sid}"]`);
+    const clone = document.getElementById('empty-item-template').content.cloneNode(true);
+    replaceAll(clone, { '__prefix__': idx, '__gid__': gid, '__sid__': sid });
+    container.appendChild(clone);
+    mgmt.value = idx + 1;
+    initItemsSortable(container);return;
+  }
+
+  const addSubBtn = e.target.closest('[data-add-subgroup]');
+  if (addSubBtn) {
+    const { gid, prefix } = addSubBtn.dataset;
+    const mgmt = document.querySelector(`[name="${prefix}-TOTAL_FORMS"]`);
+    if (!mgmt) return;
+    const idx = parseInt(mgmt.value);
+    const tempSid = `new${Date.now()}`;
+    const clone = document.getElementById('empty-subgroup-template').content.cloneNode(true);
+    replaceAll(clone, { '__prefix__': idx, '__gid__': gid, '__sid__': tempSid });
+    const subContainer = document.getElementById(`subgroups-container-${gid}`);
+    subContainer.appendChild(clone);
+    mgmt.value = idx + 1;
+    const newItemsContainer = subContainer.querySelector(`[data-items-container="${gid}-${tempSid}"]`);
+    if (newItemsContainer) initItemsSortable(newItemsContainer);
+  }
+});
+
+function replaceAll(fragment, replacements) {
+  const attrs = ['name', 'id', 'for', 'data-prefix', 'data-items-container', 'data-gid', 'data-sid', 'value'];
+  fragment.querySelectorAll('*').forEach(el => {
+    attrs.forEach(attr => {
+      const val = el.getAttribute(attr);
+      if (!val) return;
+      let newVal = val;
+      for (const [ph, rep] of Object.entries(replacements)) newVal = newVal.replaceAll(ph, rep);
+      if (newVal !== val) el.setAttribute(attr, newVal);
+    });
+  });
+}
+</script>
+{% endblock %}

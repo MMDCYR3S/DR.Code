@@ -101,7 +101,7 @@ class EmergencyNode(models.Model):
         blank=True,
         verbose_name="محتوا",
         help_text="محتوای اصلی این گره — با فرمت‌بندی غنی",
-        config_name="default",
+        config_name='extends'
     )
 
     order_index = models.PositiveIntegerField(

@@ -1,0 +1,423 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}تعیین تکلیف — {{ order.name }}{% endblock %}
+
+
+{% block extra_css %}
+{{ child_form.media }}
+{% endblock extra_css %}
+    
+{% block content %}
+
+<style>
+  .drag-handle {
+    cursor: grab; color: #cbd5e1; font-size: 1rem;
+    padding: 0 4px; user-select: none;
+  }
+  .drag-handle:hover { color: #94a3b8; }
+  .drag-handle:active { cursor: grabbing; }
+  .node-card { border-right: 3px solid #818cf8; }
+  .btn-delete-child {
+    display: flex; align-items: center; gap: 4px;
+    padding: 3px 8px; border-radius: 6px;
+    border: 1px solid #fecaca; background: #fff5f5;
+    color: #ef4444; font-size: 0.72rem; cursor: pointer;
+    transition: all .15s; white-space: nowrap;
+  }
+  .btn-delete-child:hover,
+  .btn-delete-child.active {
+    background: #ef4444; color: #fff; border-color: #ef4444;
+  }
+  /* CKEditor داخل فرم‌ها */
+  .ck-editor__editable { min-height: 120px !important; }
+</style>
+
+<div class="container mx-auto px-4 py-6 max-w-5xl">
+
+  <div class="flex justify-between items-center mb-5">
+    <h1 class="text-xl font-bold text-gray-800">
+      تعیین تکلیف — {{ order.name }}
+    </h1>
+    <a href="{% url 'dashboard:ordering:order_edit' order.pk %}"
+       class="text-sm text-blue-600 hover:underline">← بازگشت</a>
+  </div>
+
+  {# ── پیام‌ها ── #}
+  {% if messages %}
+  <div class="mb-4 space-y-2">
+    {% for msg in messages %}
+    <div class="px-4 py-2 rounded-lg text-sm
+      {% if msg.tags == 'error' %}bg-red-50 text-red-700 border border-red-200
+      {% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
+      {{ msg }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+
+  <form method="post"
+        class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 mb-6">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save_disp">
+    <h2 class="text-sm font-semibold text-gray-700 mb-3">
+      اطلاعات کلی تعیین تکلیف
+    </h2>
+    <div class="flex flex-wrap gap-3 items-end">
+      <div class="flex-1 min-w-40">
+        <label class="block text-xs text-gray-500 mb-1">
+          {{ disp_form.title.label }}
+        </label>
+        {{ disp_form.title }}
+        {% if disp_form.title.errors %}
+          <p class="text-xs text-red-500 mt-1">{{ disp_form.title.errors|join:", " }}</p>
+        {% endif %}
+      </div>
+      <div class="w-36">
+        <label class="block text-xs text-gray-500 mb-1">
+          {{ disp_form.color.label }}
+        </label>
+        {{ disp_form.color }}
+      </div>
+      <div class="w-full">
+        <label class="block text-xs text-gray-500 mb-1">
+          {{ disp_form.notes.label }}
+        </label>
+        {{ disp_form.notes }}
+      </div>
+    </div>
+    <div class="flex justify-end mt-3">
+      <button type="submit"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg
+               hover:bg-blue-700 text-sm font-medium">
+        <i class="fas fa-save ml-1"></i>ذخیره اطلاعات کلی
+      </button>
+    </div>
+  </form>
+
+  <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+    <h2 class="text-sm font-semibold text-gray-700 mb-3">افزودن گره ریشه</h2>
+    <form method="post" class="flex flex-wrap gap-3 items-end">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add_root_node">
+      <div class="flex-1 min-w-40">
+        <label class="block text-xs font-medium text-gray-600 mb-1">
+          عنوان گره جدید
+        </label>
+        <input type="text" name="new_root-title"
+          class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg
+                 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          placeholder="مثال: STEMI">
+      </div>
+      <div class="w-36">
+        <label class="block text-xs font-medium text-gray-600 mb-1">رنگ</label>
+        <select name="new_root-color"
+          class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg">
+          {% for val, label in color_choices %}
+            <option value="{{ val }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg
+               hover:bg-blue-700 text-sm font-medium whitespace-nowrap">
+        <i class="fas fa-plus ml-1"></i>گره جدید
+      </button>
+    </form>
+  </div>
+
+
+  {% for item in nested %}
+  <form method="post"
+        id="delete-node-form-{{ item.node.pk }}"
+        onsubmit="return confirm('این گره و تمام فرزندانش حذف شوند؟')">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="delete_node">
+    <input type="hidden" name="node_pk" value="{{ item.node.pk }}">
+  </form>
+  {% endfor %}
+
+
+  <form method="post" id="save-all-form">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save_all">
+
+    {% for item in nested %}
+    <div class="mb-5 rounded-xl border border-gray-200 shadow-sm
+                overflow-hidden bg-white"
+         data-root-node>
+
+      {# ── هدر گره ریشه ── #}
+      <div class="flex justify-between items-center px-4 py-2.5
+                  bg-gradient-to-l from-gray-50 to-blue-50
+                  border-b border-gray-200">
+        <div class="flex items-center gap-3 flex-1">
+          <span class="drag-handle" title="برای جابجایی بکشید">⠿</span>
+          <div class="flex gap-3 flex-1 items-center">
+            <div class="flex-1">
+              {{ item.node_form.title }}
+              {% if item.node_form.title.errors %}
+                <p class="text-xs text-red-500">
+                  {{ item.node_form.title.errors|join:", " }}
+                </p>
+              {% endif %}
+            </div>
+            <div class="w-32">{{ item.node_form.color }}</div>
+          </div>
+          {# فیلدهای hidden فرم گره ریشه #}
+          {{ item.node_form.order_index }}
+          {% for h in item.node_form.hidden_fields %}{{ h }}{% endfor %}
+        </div>
+        {# دکمه حذف گره ریشه — submit به فرم جداگانه #}
+        <button type="submit"
+          form="delete-node-form-{{ item.node.pk }}"
+          class="mr-3 flex items-center gap-1 px-2.5 py-1.5 rounded-lg
+                 border border-red-200 bg-red-50 text-red-500
+                 hover:bg-red-500 hover:text-white hover:border-red-500
+                 text-xs transition-all">
+          <i class="fas fa-trash-alt"></i><span>حذف گره</span>
+        </button>
+      </div>
+
+      {# ── فرزندان ── #}
+      <div class="p-3">
+        {{ item.child_fs.management_form }}
+
+        <div id="children-container-{{ item.node.pk }}"
+             class="space-y-2">
+
+          {% for child_form in item.child_fs %}
+            <div class="node-card rounded-lg bg-slate-50 border border-gray-100"
+               data-child>
+
+            {# هدر فرزند #}
+            <div class="flex items-center gap-2 px-3 py-2
+                        border-b border-gray-100">
+              <span class="drag-handle">⠿</span>
+              <div class="flex-1">
+                {{ child_form.title }}
+                {% if child_form.title.errors %}
+                  <p class="text-xs text-red-500">
+                    {{ child_form.title.errors|join:", " }}
+                  </p>
+                {% endif %}
+              </div>
+              {# دکمه حذف فرزند — چک‌باکس DELETE #}
+              <button type="button"
+                class="btn-delete-child"
+                onclick="toggleDelete(this, '{{ child_form.DELETE.html_name }}')">
+                <i class="fas fa-trash-alt"></i><span>حذف</span>
+              </button>
+              <span class="hidden">{{ child_form.DELETE }}</span>
+            </div>
+
+            {# بدنه فرزند #}
+            <div class="p-3 space-y-2">
+              <div>
+                <label class="text-xs text-gray-500 block mb-1">محتوا</label>
+                {{ child_form.content }}
+                {% if child_form.content.errors %}
+                  <p class="text-xs text-red-500">
+                    {{ child_form.content.errors|join:", " }}
+                  </p>
+                {% endif %}
+              </div>
+              <div class="w-36">
+                <label class="text-xs text-gray-500 block mb-1">رنگ</label>
+                {{ child_form.color }}
+              </div>
+              {{ child_form.order_index }}
+              {% for h in child_form.hidden_fields %}{{ h }}{% endfor %}
+            </div>
+
+          </div>
+          {% empty %}
+          <p class="text-xs text-gray-400 py-2 text-center">
+            هنوز فرزندی اضافه نشده.
+          </p>
+          {% endfor %}
+
+        </div>{# /children-container #}
+
+        <button type="button"
+          class="mt-2 text-xs text-blue-500 hover:text-blue-700
+                 flex items-center gap-1 px-1"
+          data-add-child
+          data-nid="{{ item.node.pk }}"
+          data-prefix="node-{{ item.node.pk }}-children">
+          <i class="fas fa-plus"></i> فرزند جدید
+        </button>
+      </div>{# /p-3 #}
+
+    </div>{# /data-root-node #}
+    {% empty %}
+    <div class="text-center py-10 text-gray-400 text-sm">
+      هنوز گره‌ای اضافه نشده. از بخش بالا یک گره ریشه اضافه کنید.
+    </div>
+    {% endfor %}
+
+    {% if nested %}
+    <div class="flex justify-end pt-2 pb-4">
+      <button type="submit"
+        class="px-5 py-2.5 bg-green-600 text-white rounded-xl
+               font-bold hover:bg-green-700 text-sm">
+        <i class="fas fa-save ml-1"></i>ذخیره همه
+      </button>
+    </div>
+    {% endif %}
+
+  </form>{# /save-all-form #}
+
+</div>{# /container #}
+
+
+<template id="empty-child-template">
+  <div class="node-card rounded-lg bg-slate-50 border border-gray-100"
+       data-child>
+    <div class="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
+      <span class="drag-handle">⠿</span>
+      <div class="flex-1">
+        <input type="text"
+          name="node-__nid__-children-__prefix__-title"
+          id="id_node-__nid__-children-__prefix__-title"
+          class="w-full text-sm px-2 py-1.5 border border-gray-300 rounded-lg
+                 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          placeholder="عنوان فرزند...">
+      </div>
+      <span class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+        جدید
+      </span>
+    </div>
+    <div class="p-3 space-y-2">
+      <div>
+        <label class="text-xs text-gray-500 block mb-1">محتوا</label>
+        {# textarea ساده — CKEditor بعد از clone روش init میشه #}
+        <textarea
+          name="node-__nid__-children-__prefix__-content"
+          id="id_node-__nid__-children-__prefix__-content"
+          class="w-full border border-gray-300 rounded-lg p-2 text-sm"
+          rows="4"
+          placeholder="محتوا..."></textarea>
+      </div>
+      <div class="w-36">
+        <label class="text-xs text-gray-500 block mb-1">رنگ</label>
+        <select
+          name="node-__nid__-children-__prefix__-color"
+          id="id_node-__nid__-children-__prefix__-color"
+          class="w-full text-sm px-2 py-1.5 border border-gray-300 rounded-lg">
+          {% for val, label in color_choices %}
+            <option value="{{ val }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <input type="hidden"
+        name="node-__nid__-children-__prefix__-order_index"
+        id="id_node-__nid__-children-__prefix__-order_index"
+        value="0">
+      <input type="hidden"
+        name="node-__nid__-children-__prefix__-id"
+        id="id_node-__nid__-children-__prefix__-id">
+    </div>
+  </div>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/Sortable.min.js' %}"></script>
+<script>
+// ── حذف فرزند (toggle DELETE checkbox) ──────────────────────────────────
+function toggleDelete(btn, fieldName) {
+  const cb = document.querySelector(`[name="${fieldName}"]`);
+  if (!cb) return;
+  cb.checked = !cb.checked;
+  btn.classList.toggle('active', cb.checked);
+  const row = btn.closest('[data-child]');
+  if (row) row.style.opacity = cb.checked ? '0.4' : '1';
+}
+
+// ── بروزرسانی order_index بعد از drag ────────────────────────────────────
+function updateOrderIndexes(container) {
+  container.querySelectorAll(':scope > [data-child]').forEach((el, i) => {
+    const inp = el.querySelector('input[type="hidden"][name$="-order_index"]');
+    if (inp) inp.value = i;
+  });
+}
+
+// ── Sortable روی همه children-container ──────────────────────────────────
+document.querySelectorAll('[id^="children-container-"]').forEach(c => {
+  Sortable.create(c, {
+    handle: '.drag-handle',
+    animation: 150,
+    onEnd() { updateOrderIndexes(c); },
+  });
+});
+
+// ── init CKEditor روی یک textarea ────────────────────────────────────────
+function initCKEditor(textarea) {
+  if (!textarea || textarea.dataset.ckInitialized) return;
+
+  const Editor = window.ClassicEditor 
+    ?? window.CKEDITOR?.ClassicEditor;
+
+  if (!Editor) {
+    setTimeout(() => initCKEditor(textarea), 200);
+    return;
+  }
+
+  textarea.dataset.ckInitialized = '1';
+  const configName = textarea.dataset.ckConfigName ?? 'extends';
+  const config = window.CKEDITOR_5_CONFIGS?.[configName] ?? {};
+
+  Editor.create(textarea, config)
+    .then(editor => {
+      editor.model.document.on('change:data', () => {
+        textarea.value = editor.getData();
+      });
+      textarea._ckEditor = editor;
+    })
+    .catch(err => console.error('CKEditor init error:', err));
+}
+
+// ── init CKEditor روی همه textarea های موجود در صفحه ─────────────────────
+document.querySelectorAll('textarea.django_ckeditor_5').forEach(initCKEditor);
+
+// ── sync همه CKEditor ها قبل از submit ───────────────────────────────────
+document.getElementById('save-all-form').addEventListener('submit', () => {
+  document.querySelectorAll('textarea[data-ck-initialized]').forEach(ta => {
+    if (ta._ckEditor) ta.value = ta._ckEditor.getData();
+  });
+});
+
+// ── افزودن فرزند جدید ────────────────────────────────────────────────────
+document.querySelectorAll('[data-add-child]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const nid    = btn.dataset.nid;
+    const prefix = btn.dataset.prefix;
+    const mgmt   = document.querySelector(`[name="${prefix}-TOTAL_FORMS"]`);
+    if (!mgmt) return;
+
+    const idx  = parseInt(mgmt.value);
+    const tmpl = document.getElementById('empty-child-template');
+    const html = tmpl.innerHTML
+      .replaceAll('__nid__',    nid)
+      .replaceAll('__prefix__', idx);
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = html;
+    const newEl = wrapper.firstElementChild;
+
+    const container = document.getElementById(`children-container-${nid}`);
+    // حذف پیام "هنوز فرزندی اضافه نشده"
+    container.querySelector('p')?.remove();
+    container.appendChild(newEl);
+
+    mgmt.value = idx + 1;
+
+    // init CKEditor روی textarea جدید
+    const ta = newEl.querySelector('textarea');
+    if (ta) initCKEditor(ta);
+  });
+});
+</script>
+{% endblock %}

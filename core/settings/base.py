@@ -280,7 +280,7 @@ CKEDITOR_5_CONFIGS = {
                 'removeFormat', 'insertTable',
                 '|', 'alignment'  # اضافه کردن ابزار راست/چپ‌چین در Toolbar
             ],
-            'shouldNotGroupWhenFull': 'true'
+            'shouldNotGroupWhenFull': True
         },
         'language': {
             'content': 'fa',
@@ -328,11 +328,11 @@ CKEDITOR_5_CONFIGS = {
 
     'list': {
         'properties': {
-            'styles': 'true',
-            'startIndex': 'true',
-            'reversed': 'true',
+            'styles': True,
+            'startIndex': True,
+            'reversed': True,
         }
-    }
+    },
 }
 
 

@@ -1,19 +1,40 @@
 import json
 import logging
-from django.shortcuts import render, redirect, get_object_or_404
+
+from django.shortcuts import (
+    render, redirect, get_object_or_404
+)
 from django.views import View
 from django.db import transaction
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.http import JsonResponse
-from django.db.models import Q  
+from django.db.models import Q, Max
+from django.contrib import messages
 
 from apps.prescriptions.models import Drug
-from apps.ordering.models import Order, Condition
+from apps.ordering.models import (
+    Order, Condition,
+    DynamicFieldGroup, DynamicFieldSubGroup,
+    EmergencyDisposition, EmergencyNode,
+    TailwindColor,
+)
 from ..forms import (
+    # ===== Ordering ===== #
     OrderForm, 
     OrderSectionFormSet, 
     SectionItemFormSet, 
-    DrugSectionItemFormSet
+    DrugSectionItemFormSet,
+
+    # ===== Dynamic ===== #
+    DynamicFieldGroupForm,
+    DynamicFieldSubGroupFormSet,
+    DynamicFieldItemFormSet,
+
+    # ===== Emergency ===== #
+    EmergencyDispositionForm,
+    EmergencyRootNodeForm,
+    EmergencyChildNodeForm,
+    ChildNodeFormSet,
 )
 
 logger = logging.getLogger(__name__)
@@ -43,11 +64,11 @@ class OrderManageView(View):
             item_fs = SectionItemFormSet(instance=section_form.instance, prefix=f"{section_form.prefix}-items")
             drug_fs = DrugSectionItemFormSet(instance=section_form.instance, prefix=f"{section_form.prefix}-drugs")
 
-            # ساخت map از instance.pk به prefix فرم
+            # ===== مپ کردن Instance به Prefix جهت نمایش آیتم‌ها و داروها ===== #
             item_prefix_map = {f.instance.pk: f.prefix for f in item_fs if f.instance.pk}
             drug_prefix_map = {f.instance.pk: f.prefix for f in drug_fs if f.instance.pk}
 
-            # جمع‌آوری شرط‌ها
+            # ===== جمع‌آوری شرط‌ها جهت نمایش در حین ویرایش ===== #
             seen_conditions = {}
             for item_form in item_fs:
                 if not item_form.instance.pk:
@@ -70,7 +91,7 @@ class OrderManageView(View):
                 'item_fs': item_fs,
                 'drug_fs': drug_fs,
                 'index': i,
-                'conditions': list(seen_conditions.values()),  # <-- اضافه شد
+                'conditions': list(seen_conditions.values()),
             })
 
 
@@ -222,3 +243,304 @@ class DrugSearchAjaxView(View):
         ]
         
         return JsonResponse({'results': results})
+
+
+# ====================================================== #
+# ==================== Dynamic View ==================== #
+# ====================================================== #
+class PreClinicalManageView(View):
+    template_name = 'dashboard/ordering/preclinical_form.html'
+
+    def get_order(self, order_pk):
+        return get_object_or_404(Order, pk=order_pk)
+
+    def _build_nested(self, order, post_data=None):
+        groups = DynamicFieldGroup.objects.filter(order=order).prefetch_related('subgroups__items')
+        nested = []
+        for group in groups:
+            subgroup_fs = DynamicFieldSubGroupFormSet(
+                post_data or None,
+                instance=group,
+                prefix=f'group-{group.pk}-subgroups'
+            )
+            sub_nested = []
+            for sub_form in subgroup_fs:
+                if not sub_form.instance.pk:
+                    continue
+                item_fs = DynamicFieldItemFormSet(
+                    post_data or None,
+                    instance=sub_form.instance,
+                    prefix=f'group-{group.pk}-sub-{sub_form.instance.pk}-items'
+                )
+                sub_nested.append({'sub_form': sub_form, 'item_fs': item_fs})
+            nested.append({
+                'group': group,
+                'group_form': DynamicFieldGroupForm(post_data or None, instance=group, prefix=f'group-{group.pk}'),
+                'subgroup_fs': subgroup_fs,
+                'sub_nested': sub_nested,
+            })
+        return nested
+
+    def get(self, request, order_pk):
+        order = self.get_order(order_pk)
+        context = {
+            'order': order,
+            'nested': self._build_nested(order),
+            'new_group_form': DynamicFieldGroupForm(prefix='new_group'),
+            'empty_subgroup_fs': DynamicFieldSubGroupFormSet(instance=DynamicFieldGroup(), prefix='group-__gid__-subgroups'),
+            'empty_item_fs': DynamicFieldItemFormSet(instance=DynamicFieldSubGroup(), prefix='group-__gid__-sub-__sid__-items'),
+        }
+        return render(request, self.template_name, context)
+
+    @transaction.atomic
+    def post(self, request, order_pk):
+        order = self.get_order(order_pk)
+        action = request.POST.get('action')
+
+        if action == 'add_group':
+            form = DynamicFieldGroupForm(request.POST, prefix='new_group')
+            if form.is_valid():
+                group = form.save(commit=False)
+                group.order = order
+                group.save()
+            return redirect(reverse('dashboard:ordering:preclinical', kwargs={'order_pk': order_pk}))
+
+        if action == 'delete_group':
+            DynamicFieldGroup.objects.filter(pk=request.POST.get('group_pk'), order=order).delete()
+            return redirect(reverse('dashboard:ordering:preclinical', kwargs={'order_pk': order_pk}))
+
+        if action == 'save_all':
+            groups = DynamicFieldGroup.objects.filter(order=order)
+            all_valid = True
+            nested_data = []
+
+            for group in groups:
+                group_form = DynamicFieldGroupForm(request.POST, instance=group, prefix=f'group-{group.pk}')
+                subgroup_fs = DynamicFieldSubGroupFormSet(request.POST, instance=group, prefix=f'group-{group.pk}-subgroups')
+
+                gf_valid = group_form.is_valid()
+                sf_valid = subgroup_fs.is_valid()
+
+                if not gf_valid:
+                    print(f"[INVALID] group_form {group.pk}: {group_form.errors}")
+                if not sf_valid:
+                    print(f"[INVALID] subgroup_fs {group.pk}: {subgroup_fs.errors} | non_form: {subgroup_fs.non_form_errors()}")
+
+                if not gf_valid or not sf_valid:
+                    all_valid = False
+
+                nested_data.append({'group_form': group_form, 'subgroup_fs': subgroup_fs})
+
+            if not all_valid:
+                nested = self._build_nested(order)
+                return render(request, self.template_name, {
+                    'order': order,
+                    'nested': nested,
+                    'new_group_form': DynamicFieldGroupForm(prefix='new_group'),
+                    'empty_subgroup_fs': DynamicFieldSubGroupFormSet(instance=DynamicFieldGroup(), prefix='group-__gid__-subgroups'),
+                    'empty_item_fs': DynamicFieldItemFormSet(instance=DynamicFieldSubGroup(), prefix='group-__gid__-sub-__sid__-items'),
+                })
+
+            if all_valid:
+                for data in nested_data:
+                    data['group_form'].save()
+                    
+                    new_sub_temp_sids = {}
+                    for sub_form in data['subgroup_fs']:
+                        if not sub_form.instance.pk:
+                            prefix = sub_form.prefix 
+                            temp_sid = request.POST.get(f'{prefix}-temp_sid')
+                            if temp_sid:
+                                new_sub_temp_sids[sub_form.prefix] = temp_sid
+                    
+                    saved_subs = data['subgroup_fs'].save()
+                    
+                    for sub_form in data['subgroup_fs']:
+                        sub = sub_form.instance
+                        if not sub.pk or sub_form in data['subgroup_fs'].deleted_forms:
+                            continue
+
+                        temp_sid = new_sub_temp_sids.get(sub_form.prefix)
+                        item_prefix = f'group-{sub.group_id}-sub-{temp_sid or sub.pk}-items'
+                        item_fs = DynamicFieldItemFormSet(request.POST, instance=sub, prefix=item_prefix)
+                        if item_fs.is_valid():
+                            item_fs.save()
+                messages.success(self.request, 'پیش‌بالینی با موفقیت ذخیره شد.')
+                return redirect(reverse('dashboard:ordering:preclinical', kwargs={'order_pk': order_pk}))
+
+# ======================================================== #
+# ==================== Emergency View ==================== #
+# ======================================================== #
+class EmergencyDispositionManageView(View):
+    template_name = 'dashboard/ordering/emergency_disposition_form.html'
+
+    def get_order(self, order_pk):
+        return get_object_or_404(Order, pk=order_pk)
+
+    def _get_or_create_disposition(self, order):
+        disp, _ = EmergencyDisposition.objects.get_or_create(order=order)
+        return disp
+
+    def _build_nested(self, disposition, post_data=None):
+        root_nodes = EmergencyNode.objects.filter(
+            disposition=disposition, parent=None
+        ).prefetch_related('children').order_by('order_index')
+
+        nested = []
+        for node in root_nodes:
+            child_fs = ChildNodeFormSet(
+                post_data or None,
+                instance=node,
+                prefix=f'node-{node.pk}-children',
+            )
+            nested.append({
+                'node': node,
+                'node_form': EmergencyRootNodeForm(
+                    post_data or None,
+                    instance=node,
+                    prefix=f'node-{node.pk}',
+                ),
+                'child_fs': child_fs,
+            })
+        return nested
+
+    def _base_context(self, order, disposition, post_data=None):
+        return {
+            'order': order,
+            'disposition': disposition,
+            'disp_form': EmergencyDispositionForm(
+                post_data or None,
+                instance=disposition,
+                prefix='disp',
+            ),
+            'nested': self._build_nested(disposition, post_data),
+            'color_choices': TailwindColor.choices,
+            'child_form': EmergencyChildNodeForm(),
+        }
+
+    # ===== GET ===== #
+    def get(self, request, order_pk):
+        order = self.get_order(order_pk)
+        disposition = self._get_or_create_disposition(order)
+        return render(
+            request,
+            self.template_name,
+            self._base_context(order, disposition),
+        )
+
+    # ===== POST ===== #
+    @transaction.atomic
+    def post(self, request, order_pk):
+        order = self.get_order(order_pk)
+        disposition = self._get_or_create_disposition(order)
+        action = request.POST.get('action', '')
+
+        redirect_url = reverse(
+            'dashboard:ordering:emergency_disposition',
+            kwargs={'order_pk': order_pk},
+        )
+
+        # ===== افزودن گره ریشه ===== #
+        if action == 'add_root_node':
+            title = request.POST.get('new_root-title', '').strip()
+            color = request.POST.get('new_root-color', '')
+            if title:
+                max_idx = EmergencyNode.objects.filter(
+                    disposition=disposition, parent=None
+                ).aggregate(m=Max('order_index'))['m'] or 0
+                EmergencyNode.objects.create(
+                    disposition=disposition,
+                    parent=None,
+                    title=title,
+                    color=color,
+                    order_index=max_idx + 1,
+                )
+                messages.success(request, f'گره «{title}» اضافه شد.')
+            else:
+                messages.error(request, 'عنوان گره نمی‌تواند خالی باشد.')
+            return redirect(redirect_url)
+
+        # ===== حذف گره ===== #
+        if action == 'delete_node':
+            node_pk = request.POST.get('node_pk')
+            deleted, _ = EmergencyNode.objects.filter(
+                pk=node_pk,
+                disposition=disposition,
+            ).delete()
+            if deleted:
+                messages.success(request, 'گره حذف شد.')
+            return redirect(redirect_url)
+
+        # ===== ذخیره اطلاعات پایه ===== #
+        if action == 'save_disp':
+            disp_form = EmergencyDispositionForm(
+                request.POST,
+                instance=disposition,
+                prefix='disp',
+            )
+            if disp_form.is_valid():
+                disp_form.save()
+                messages.success(request, 'اطلاعات کلی ذخیره شد.')
+                return redirect(redirect_url)
+            ctx = self._base_context(order, disposition)
+            ctx['disp_form'] = disp_form
+            return render(request, self.template_name, ctx)
+
+        # ===== ذخیره تمامی گره‌ها ===== #
+        if action == 'save_all':
+            root_nodes = EmergencyNode.objects.filter(
+                disposition=disposition, parent=None
+            ).order_by('order_index')
+
+            all_node_forms = []
+            all_child_formsets = []
+            all_valid = True
+
+            for node in root_nodes:
+                nf = EmergencyRootNodeForm(
+                    request.POST,
+                    instance=node,
+                    prefix=f'node-{node.pk}',
+                )
+                cf = ChildNodeFormSet(
+                    request.POST,
+                    instance=node,
+                    prefix=f'node-{node.pk}-children',
+                )
+                if not nf.is_valid():
+                    all_valid = False
+                if not cf.is_valid():
+                    all_valid = False
+                all_node_forms.append((node, nf))
+                all_child_formsets.append((node, cf))
+
+            if not all_valid:
+                nested = []
+                for (node, nf), (_, cf) in zip(all_node_forms, all_child_formsets):
+                    nested.append({
+                        'node': node,
+                        'node_form': nf,
+                        'child_fs': cf,
+                    })
+                ctx = self._base_context(order, disposition)
+                ctx['nested'] = nested
+                messages.error(request, 'لطفاً خطاها را برطرف کنید.')
+                return render(request, self.template_name, ctx)
+
+            # ذخیره
+            for node, nf in all_node_forms:
+                nf.save()
+
+            for node, cf in all_child_formsets:
+                new_children = cf.save(commit=False)
+                for child in new_children:
+                    child.disposition = disposition
+                    child.parent = node
+                    child.save()
+                for obj in cf.deleted_objects:
+                    obj.delete()
+
+            messages.success(request, 'تعیین تکلیف با موفقیت ذخیره شد.')
+            return redirect(redirect_url)
+
+        return redirect(redirect_url)
