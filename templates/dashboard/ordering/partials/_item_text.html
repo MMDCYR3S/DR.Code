@@ -1,0 +1,26 @@
+<div class="row item-row item-row-helper bg-gray-50 p-3 rounded border border-gray-200 mb-2" data-prefix="{{ item_form.prefix }}">
+    {% for hidden in item_form.hidden_fields %}{{ hidden }}{% endfor %}
+    <div class="grid grid-cols-12 gap-3 items-center">
+        <!-- درگ هندلر برای آیتم‌ها -->
+        <div class="col-span-1 cursor-move text-gray-400 hover:text-gray-600 item-drag-handle">
+            <i class="fas fa-grip-vertical"></i>
+        </div>
+        <div class="col-span-4">
+            <label class="text-xs text-gray-500 mb-1 block">متن آیتم</label>
+            {{ item_form.text }}
+        </div>
+        <div class="col-span-6">
+            <label class="text-xs text-gray-500 mb-1 block">توضیحات (Notes)</label>
+            {{ item_form.notes }}
+        </div>
+        <div class="col-span-1 flex justify-end mt-4">
+            <button type="button" onclick="removeItem(this)" class="text-red-500 hover:text-red-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="hidden">
+            {{ item_form.DELETE }}
+            {{ item_form.order_index }}
+        </div>
+    </div>
+</div>

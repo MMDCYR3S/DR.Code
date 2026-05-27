@@ -18,7 +18,7 @@ import environ
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 env = environ.Env(
-    DEBUG=(bool, True)
+    DEBUG=(bool, False)
 )
 
 
@@ -27,7 +27,7 @@ environ.Env.read_env(env_file)
 
 SECRET_KEY = env("SECRET_KEY", default="your-default-secret-key")
 
-DEBUG = env("DEBUG", cast=bool, default=True)
+DEBUG = env("DEBUG", cast=bool, default=False)
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost", "drcode-med.ir", "www.drcode-med.ir"])
 

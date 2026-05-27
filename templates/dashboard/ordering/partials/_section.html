@@ -1,0 +1,82 @@
+<div class="section-item section-block bg-white border border-gray-200 rounded-lg p-4 shadow-sm mb-6" data-section-index="{{ section_index }}">
+    {% for hidden in section_form.hidden_fields %}{{ hidden }}{% endfor %}
+    
+    <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
+        <!-- درگ هندلر برای کل Section -->
+        <div class="cursor-move text-gray-400 hover:text-gray-600 mr-3 section-drag-handle text-xl">
+            <i class="fas fa-grip-vertical"></i>
+        </div>
+        
+        <div class="flex-1 grid grid-cols-3 gap-4 mr-4">
+            <div>
+                <label class="text-xs text-gray-500 mb-1 block">عنوان بخش</label>
+                {{ section_form.title }}
+            </div>
+            <div>
+                <label class="text-xs text-gray-500 mb-1 block">رنگ بخش</label>
+                {{ section_form.color }}
+            </div>
+            <div>
+                <label class="text-xs text-gray-500 mb-1 block">توضیحات بخش</label>
+                {{ section_form.notes }}
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-4 space-x-reverse ml-4 mt-4">
+            <label class="flex items-center text-sm text-gray-600">
+                {{ section_form.is_drug_section }}<span class="mr-2">بخش دارویی؟</span>
+            </label>
+            <button type="button" onclick="removeSection(this)" class="text-red-500 hover:text-red-700 text-sm">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+    
+    <div class="hidden">
+        {{ section_form.DELETE }}
+        {{ section_form.order_index }}
+    </div>
+
+    {{ item_fs.management_form }}
+    {{ drug_fs.management_form }}
+
+    <!-- آیتم‌های متنی -->
+    <div class="items-wrapper {% if section_form.is_drug_section.value %}hidden{% endif %}">
+        <div class="mb-2"><button type="button" onclick="addItem(this, 'text')" class="text-sm text-green-600"><i class="fas fa-plus"></i> افزودن متن</button></div>
+        <div class="item-list space-y-2">
+            {% for item_form in item_fs %} 
+                {% include 'dashboard/ordering/partials/_item_text.html' with item_form=item_form %} 
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- آیتم‌های دارویی -->
+    <div class="drugs-wrapper {% if not section_form.is_drug_section.value %}hidden{% endif %}">
+        <div class="mb-2"><button type="button" onclick="addItem(this, 'drug')" class="text-sm text-green-600"><i class="fas fa-plus"></i> افزودن دارو</button></div>
+        <div class="item-list space-y-2">
+            {% for drug_form in drug_fs %} 
+                {% include 'dashboard/ordering/partials/_item_drug.html' with drug_form=drug_form %} 
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- بخش مدیریت شرط‌ها -->
+    <hr class="my-6 border-gray-200">
+    <div class="conditions-wrapper p-4 bg-blue-50 border border-blue-100 rounded-lg">
+        <h6 class="text-sm font-semibold text-blue-800 mb-3"><i class="fas fa-project-diagram ml-1"></i> شرط‌های گروهی این بخش</h6>
+        <div id="conditions-list-{{ section_index }}" class="mb-3 space-y-3">
+            {% for cond in existing_conditions %}
+            <div class="condition-item-block border border-gray-200 p-3 bg-white rounded shadow-sm relative">
+                <button type="button" onclick="this.closest('.condition-item-block').remove()" class="absolute top-2 left-2 text-red-400 hover:text-red-600"><i class="fas fa-times"></i></button>
+                <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-gray-50 focus:bg-white condition-text-input mb-2" value="{{ cond.text }}" placeholder="متن شرط">
+                <div class="text-xs text-gray-500 mb-1">کدام آیتم‌ها به این شرط مربوط هستند؟ تیک بزنید:</div>
+                <div class="flex flex-wrap existing-condition-items" data-linked-items="{{ cond.items|join:',' }}"></div>
+            </div>
+            {% endfor %}
+        </div>
+        <button type="button" class="text-xs px-3 py-1.5 bg-white border border-blue-300 text-blue-600 rounded hover:bg-blue-600 hover:text-white transition" onclick="addCondition('{{ section_index }}', this)">
+            + افزودن شرط جدید
+        </button>
+        <input type="hidden" name="section_conditions_{{ section_index }}" id="hidden-conditions-{{ section_index }}">
+    </div>
+</div>
