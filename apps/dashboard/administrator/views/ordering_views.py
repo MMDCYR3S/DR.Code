@@ -5,17 +5,21 @@ from django.shortcuts import (
     render, redirect, get_object_or_404
 )
 from django.views import View
+from django.views.generic import DetailView
 from django.db import transaction
 from django.urls import reverse_lazy, reverse
 from django.http import JsonResponse
-from django.db.models import Q, Max
+from django.db.models import Q, Max, Prefetch
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 from apps.prescriptions.models import Drug
 from apps.ordering.models import (
-    Order, Condition,
+    Order, Condition, OrderSection,
+    SectionItem, DrugSectionItem, DynamicFieldItem,
     DynamicFieldGroup, DynamicFieldSubGroup,
     EmergencyDisposition, EmergencyNode,
+    OrderImage, OrderVideo,
     TailwindColor,
 )
 from ..forms import (
@@ -45,7 +49,7 @@ from ..forms import (
 logger = logging.getLogger(__name__)
 
 # ===================================================== #
-# ==================== Order List ==================== #
+# ==================== Order List ===================== #
 # ===================================================== #
 class OrderListView(View):
     template_name = 'dashboard/ordering/orders.html'
@@ -82,6 +86,117 @@ class OrderListView(View):
         }
         return render(request, self.template_name, context)
 
+# =========================================================== #
+# ==================== Order Detail List ==================== #
+# =========================================================== #
+class OrderDetailView(LoginRequiredMixin, DetailView):
+    """
+    نمایش جزئیات کامل یک اوردر شامل:
+      - اطلاعات پایه (imp, condition, diet, action, position, notes)
+      - بخش‌ها (Sections) با آیتم‌های متنی، داروها و شرط‌ها
+      - اطلاعات پیش‌بالینی (DynamicFieldGroups)
+      - تعیین تکلیف اورژانس (EmergencyDisposition + درخت گره‌ها)
+      - تصاویر (OrderImage)
+      - ویدیوها (OrderVideo)
+    """
+ 
+    model = Order
+    template_name = "dashboard/ordering/order_detail.html"
+    context_object_name = "order"
+ 
+    def get_queryset(self):
+        """
+        یک queryset بهینه با prefetch_related برای تمام روابط مورد نیاز.
+        از N+1 query جلوگیری می‌کند.
+        """
+ 
+        # ── Prefetch شرط‌های آیتم‌های متنی ──────────────────────────────
+        items_prefetch = Prefetch(
+            "items",
+            queryset=SectionItem.objects.prefetch_related(
+                Prefetch(
+                    "conditions",
+                    queryset=Condition.objects.order_by("order_index"),
+                )
+            ).order_by("order_index"),
+        )
+ 
+        # ── Prefetch شرط‌های آیتم‌های دارویی ────────────────────────────
+        drug_items_prefetch = Prefetch(
+            "drug_items",
+            queryset=DrugSectionItem.objects.select_related("drug").prefetch_related(
+                Prefetch(
+                    "conditions",
+                    queryset=Condition.objects.order_by("order_index"),
+                )
+            ).order_by("order_index"),
+        )
+ 
+        # ── Prefetch بخش‌ها ──────────────────────────────────────────────
+        sections_prefetch = Prefetch(
+            "sections",
+            queryset=OrderSection.objects.prefetch_related(
+                items_prefetch,
+                drug_items_prefetch,
+            ).order_by("order_index"),
+        )
+ 
+        # ── Prefetch آیتم‌های KEY-VALUE پیش‌بالینی ──────────────────────
+        field_items_prefetch = Prefetch(
+            "items",
+            queryset=DynamicFieldItem.objects.order_by("order_index"),
+        )
+        subgroups_prefetch = Prefetch(
+            "subgroups",
+            queryset=DynamicFieldSubGroup.objects.prefetch_related(
+                field_items_prefetch
+            ).order_by("order_index"),
+        )
+        dynamic_groups_prefetch = Prefetch(
+            "dynamic_field_groups",
+            queryset=DynamicFieldGroup.objects.prefetch_related(
+                subgroups_prefetch
+            ).order_by("order_index"),
+        )
+ 
+        # ── Prefetch گره‌های تعیین تکلیف (یک سطح فرزند) ────────────────
+        # برای درخت چندسطحی، Template با include بازگشتی رندر می‌شود.
+        children_prefetch = Prefetch(
+            "children",
+            queryset=EmergencyNode.objects.order_by("order_index"),
+        )
+        nodes_prefetch = Prefetch(
+            "nodes",
+            queryset=EmergencyNode.objects.prefetch_related(
+                children_prefetch
+            ).order_by("order_index"),
+        )
+        disposition_prefetch = Prefetch(
+            "emergency_disposition",
+            queryset=EmergencyDisposition.objects.prefetch_related(nodes_prefetch),
+        )
+ 
+        return (
+            Order.objects.select_related("category")
+            .prefetch_related(
+                sections_prefetch,
+                dynamic_groups_prefetch,
+                disposition_prefetch,
+                Prefetch(
+                    "images",
+                    queryset=OrderImage.objects.order_by("order_index"),
+                ),
+                Prefetch(
+                    "videos",
+                    queryset=OrderVideo.objects.order_by("order_index"),
+                ),
+            )
+        )
+ 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["is_detail"] = True
+        return context
 
 # ====================================================== #
 # ==================== Order Delete ==================== #

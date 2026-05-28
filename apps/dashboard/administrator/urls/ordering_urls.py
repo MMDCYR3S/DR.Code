@@ -2,6 +2,7 @@ from django.urls import path
 from ..views import (
     # ===== Ordering ===== #
     OrderListView,
+    OrderDetailView,
     OrderManageView,
     OrderDeleteView,
     DrugSearchAjaxView,
@@ -21,6 +22,7 @@ app_name = 'ordering'
 urlpatterns = [
     # ===== Read & Delete ===== #
     path('orders/', OrderListView.as_view(), name='order_list'),
+    path('order/<int:pk>', OrderDetailView.as_view(), name='order_detail'),
     path('orders/<int:pk>/delete/', OrderDeleteView.as_view(), name='order_delete'),
 
     # ===== Ordering ===== #
