@@ -1,182 +1,180 @@
 {% extends 'dashboard/base.html' %}
-{% load static %}
+{% load static dashboard_tags %}
 
 {% block title %}مدیریت اوردرها{% endblock %}
 
 {% block content %}
-<main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-4 sm:p-6 lg:p-8">
-    <div class="container mx-auto">
-        <form method="GET" class="bg-white p-4 rounded-xl shadow-sm mb-6">
-            {% csrf_token %}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 items-center">
-                <div class="relative lg:col-span-4">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
-                        <i class="fa-solid fa-search text-slate-400"></i>
-                    </span>
-                    {{ filter_form.search }}
-                </div>
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-4 sm:p-6 lg:p-8"
+      x-data="{ ...deleteModal() }">
+  <div class="container mx-auto">
 
-                <div class="lg:col-span-2">
-                    {{ filter_form.category }}
-                </div>
-                
-                <div class="lg:col-span-2">
-                    {{ filter_form.color }}
-                </div>
-                
-                <div class="lg:col-span-2">
-                    {{ filter_form.sort_by }}
-                </div>
-                
-                <div class="lg:col-span-1">
-                    <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2.5 text-sm font-semibold text-white bg-slate-700 rounded-lg hover:bg-slate-800 shadow-sm transition-colors">
-                        <span>فیلتر</span>
-                    </button>
-                </div>
-
-                <div class="lg:col-span-1">
-                    <a href="{% url 'dashboard:ordering:order_create' %}" class="w-full inline-flex items-center justify-center px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition-colors">
-                        <i class="fa-solid fa-plus ml-2"></i>
-                        <span>جدید</span>
-                    </a>
-                </div>
-            </div>
-        </form>
-
-        {% if orders %}
-            <!-- Desktop Table -->
-            <div class="hidden lg:block bg-white rounded-xl shadow-sm overflow-hidden">
-                <table class="min-w-full text-sm">
-                    <thead class="bg-slate-50 text-slate-600">
-                        <tr>
-                            <th scope="col" class="px-6 py-4 text-right font-semibold">نام اوردر</th>
-                            <th scope="col" class="px-6 py-4 text-right font-semibold">دسته‌بندی</th>
-                            <th scope="col" class="px-6 py-4 text-right font-semibold">IMP</th>
-                            <th scope="col" class="px-6 py-4 text-right font-semibold">رنگ</th>
-                            <th scope="col" class="px-6 py-4 text-center font-semibold">عملیات</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-200">
-                        {% for order_data in orders_data %}
-                        <tr class="hover:bg-slate-50 transition-colors border-r-4 {{ order_data.order_color }} border-opacity-40">
-                            <td class="px-6 py-4 font-bold text-slate-800">{{ order_data.object.name }}</td>
-                            <td class="px-6 py-4 text-slate-600">
-                                <div class="flex items-center space-x-2 space-x-reverse">
-                                    <div class="w-3 h-3 rounded-full {{ order_data.category_color }}"></div>
-                                    <span>{{ order_data.category_title }}</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-slate-600">
-                                <span class="text-sm" dir="rtl">{{ order_data.object.imp|truncatewords:5 }}</span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center space-x-2 space-x-reverse">
-                                    <div class="w-3 h-3 rounded-full {{ order_data.order_color }}"></div>
-                                    <span class="text-xs text-slate-600">{{ order_data.object.color|default:"gray" }}</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex justify-center items-center space-x-2 space-x-reverse">
-                                    <a href="{% url 'dashboard:ordering:order_update' order_data.object.pk %}" class="p-2 text-slate-500 hover:text-yellow-600 rounded-md hover:bg-yellow-100" title="ویرایش">
-                                        <i class="fa-solid fa-pencil"></i>
-                                    </a>
-                                    <a href="{% url 'dashboard:ordering:order_delete' order_data.object.pk %}" class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-red-100" title="حذف">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Mobile Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:hidden">
-                {% for order_data in orders_data %}
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-200">
-                    <!-- Color Bar -->
-                    <div class="h-2 {{ order_data.order_color }}"></div>
-                    
-                    <!-- Card Content -->
-                    <div class="p-4">
-                        <h3 class="text-base font-extrabold text-slate-800 leading-tight mb-3">{{ order_data.object.name }}</h3>
-                        
-                        <div class="space-y-2 mb-4">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs text-slate-500">دسته‌بندی:</span>
-                                <div class="flex items-center space-x-2 space-x-reverse">
-                                    <div class="w-3 h-3 rounded-full {{ order_data.category_color }}"></div>
-                                    <span class="text-xs text-slate-600">{{ order_data.category_title }}</span>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs text-slate-500">رنگ:</span>
-                                <div class="flex items-center space-x-2 space-x-reverse">
-                                    <div class="w-3 h-3 rounded-full {{ order_data.order_color }}"></div>
-                                    <span class="text-xs text-slate-600">{{ order_data.object.color|default:"gray" }}</span>
-                                </div>
-                            </div>
-                            
-                            {% if order_data.object.imp %}
-                            <div class="mt-2 pt-2 border-t border-slate-100">
-                                <span class="text-xs text-slate-500">IMP:</span>
-                                <p class="text-xs text-slate-600 mt-1" dir="rtl">{{ order_data.object.imp|truncatewords:8 }}</p>
-                            </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="pt-4 border-t border-slate-200/60 flex items-center justify-end space-x-4 space-x-reverse">
-                            <a href="{% url 'dashboard:ordering:order_update' order_data.object.pk %}" class="p-2 text-slate-500 hover:text-yellow-600" title="ویرایش">
-                                <i class="fa-solid fa-pencil h-6 w-6"></i>
-                            </a>
-                            <a href="{% url 'dashboard:ordering:order_delete' order_data.object.pk %}" class="p-2 text-slate-500 hover:text-red-600" title="حذف">
-                                <i class="fa-solid fa-trash h-6 w-6"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-
-            <!-- Pagination -->
-            {% if is_paginated %}
-            <div class="mt-6 flex justify-center">
-                <nav class="flex items-center space-x-2 space-x-reverse shadow-sm">
-                    {% if page_obj.has_previous %}
-                        <a href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode|cut:'page=' }}" class="px-3 py-2 text-slate-500 bg-white rounded-md hover:bg-slate-100">قبلی</a>
-                    {% endif %}
-                    
-                    {% for num in page_obj.paginator.page_range %}
-                        {% if page_obj.number == num %}
-                            <span class="px-4 py-2 text-white bg-blue-600 rounded-md shadow">{{ num }}</span>
-                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                            <a href="?page={{ num }}&{{ request.GET.urlencode|cut:'page=' }}" class="px-4 py-2 text-slate-600 bg-white rounded-md hover:bg-slate-100">{{ num }}</a>
-                        {% endif %}
-                    {% endfor %}
-
-                    {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode|cut:'page=' }}" class="px-3 py-2 text-slate-500 bg-white rounded-md hover:bg-slate-100">بعدی</a>
-                    {% endif %}
-                </nav>
-            </div>
-            {% endif %}
-
-        {% else %}
-            <!-- Empty State -->
-            <div class="text-center bg-white rounded-xl shadow-sm p-8 sm:p-12">
-                <div class="mx-auto w-fit bg-slate-100 rounded-full p-4">
-                    <i class="fa-solid fa-clipboard-list h-12 w-12 text-slate-400"></i>
-                </div>
-                <h2 class="mt-4 text-xl font-bold text-slate-800">هیچ اوردری یافت نشد</h2>
-                <p class="mt-2 text-sm text-slate-500 max-w-sm mx-auto">به نظر می‌رسد هنوز هیچ اوردری ایجاد نکرده‌اید یا نتیجه‌ای برای جستجوی شما وجود ندارد.</p>
-                <a href="{% url 'dashboard:ordering:order_create' %}" class="mt-6 inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm">
-                    <i class="fa-solid fa-plus ml-2"></i>
-                    <span>ایجاد اولین اوردر</span>
-                </a>
-            </div>
-        {% endif %}
+    {# ── نوار پیام‌های Django messages ── #}
+    {% if messages %}
+    <div class="mb-4 space-y-2">
+      {% for message in messages %}
+      <div class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium shadow-sm
+                  {% if message.tags == 'success' %}bg-green-50 text-green-700 border border-green-200
+                  {% elif message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200
+                  {% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
+        <i class="fa-solid {% if message.tags == 'success' %}fa-circle-check{% elif message.tags == 'error' %}fa-circle-xmark{% else %}fa-circle-info{% endif %}"></i>
+        {{ message }}
+      </div>
+      {% endfor %}
     </div>
+    {% endif %}
+
+    {# ── فیلتر و جستجو ── #}
+    <form method="GET" class="bg-white p-4 rounded-xl shadow-sm mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 items-center">
+
+        <div class="relative lg:col-span-4">
+          <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            <i class="fa-solid fa-search text-slate-400 text-sm"></i>
+          </span>
+          <input type="text" name="search" value="{{ filter_form.search.value|default:'' }}"
+                 placeholder="جستجو در نام اوردر..."
+                 class="w-full pr-9 pl-3 py-2.5 border border-slate-200 rounded-lg text-sm
+                        focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400">
+        </div>
+
+        <div class="lg:col-span-3">
+          {{ filter_form.category }}
+        </div>
+
+        <div class="lg:col-span-2">
+          {{ filter_form.sort_by }}
+        </div>
+
+        <div class="lg:col-span-1">
+          <button type="submit"
+                  class="w-full inline-flex items-center justify-center px-4 py-2.5 text-sm
+                         font-semibold text-white bg-slate-700 rounded-lg hover:bg-slate-800
+                         shadow-sm transition-colors">
+            فیلتر
+          </button>
+        </div>
+
+        <div class="lg:col-span-2">
+          <a href="{% url 'dashboard:ordering:order_create' %}"
+             class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm
+                    font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700
+                    shadow-sm transition-colors">
+            <i class="fa-solid fa-plus"></i>
+            اوردر جدید
+          </a>
+        </div>
+      </div>
+    </form>
+
+    {# ── محتوا ── #}
+    {% if orders %}
+
+      {# ── Desktop Table ── #}
+      <div class="hidden lg:block bg-white rounded-xl shadow-sm overflow-hidden">
+        <table class="min-w-full text-sm">
+          <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
+            <tr>
+              <th scope="col" class="px-6 py-4 text-right font-semibold">نام اوردر</th>
+              <th scope="col" class="px-6 py-4 text-right font-semibold">وضعیت</th>
+              <th scope="col" class="px-6 py-4 text-right font-semibold">تاریخ ایجاد</th>
+              <th scope="col" class="px-6 py-4 text-center font-semibold">عملیات</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for order in orders %}
+            <tr class="hover:bg-slate-50 transition-colors group">
+
+              {# نام اوردر #}
+              <td class="px-6 py-4">
+                <span class="font-bold text-slate-800">{{ order.name }}</span>
+              </td>
+
+              {# وضعیت #}
+              <td class="px-6 py-4">
+                {% access_level_badge order %}
+              </td>
+
+              {# تاریخ ایجاد #}
+              <td class="px-6 py-4 text-slate-500 text-xs">
+                {{ order.created_at|jalali_date }}
+              </td>
+
+              {# عملیات #}
+              <td class="px-6 py-4">
+                <div class="flex justify-center items-center gap-1">
+                  <a href="{% url 'dashboard:ordering:order_edit' order.pk %}"
+                     class="p-2 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50
+                            transition-colors" title="ویرایش اوردر">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </a>
+                  <button @click="open({{ order.pk }}, '{{ order.name|escapejs }}', '{% url 'dashboard:ordering:order_delete' order.pk %}')"
+                          class="p-2 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50
+                                 transition-colors" title="حذف">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {# ── Mobile Cards ── #}
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:hidden">
+        {% for order in orders %}
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-200">
+          {# نوار رنگی بالا #}
+          <div class="h-1.5 bg-indigo-400"></div>
+          <div class="p-4">
+            <div class="flex items-start justify-between gap-2 mb-3">
+              <h3 class="text-base font-extrabold text-slate-800 leading-tight">{{ order.name }}</h3>
+              {% access_level_badge order %}
+            </div>
+
+            <p class="text-xs text-slate-400 mb-4">{{ order.created_at|jalali_date }}</p>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+              {# ویرایش و حذف #}
+              <div class="flex items-center gap-1">
+                <a href="{% url 'dashboard:ordering:order_edit' order.pk %}"
+                   class="p-1.5 text-slate-400 hover:text-indigo-600 rounded-md hover:bg-indigo-50
+                          transition-colors text-sm" title="ویرایش">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </a>
+                <button @click="open({{ order.pk }}, '{{ order.name|escapejs }}', '{% url 'dashboard:ordering:order_delete' order.pk %}')"
+                        class="p-1.5 text-slate-400 hover:text-red-600 rounded-md hover:bg-red-50
+                               transition-colors text-sm" title="حذف">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {# ── Pagination ── #}
+      {% include "dashboard/partials/_pagination.html" %}
+
+    {% else %}
+      {# ── Empty State ── #}
+      {% empty_state
+         icon="fa-file-medical"
+         title="هیچ اوردری یافت نشد"
+         description="به نظر می‌رسد هنوز هیچ اوردری ایجاد نشده یا نتیجه‌ای برای جستجوی شما وجود ندارد."
+         action_url="/dashboard/ordering/orders/create/"
+         action_label="ایجاد اولین اوردر" %}
+    {% endif %}
+
+  </div>{# /.container #}
+
+  {# ── Delete Modal ── #}
+  {% include "dashboard/partials/_delete_modal.html" with delete_modal_entity="اوردر" %}
+
 </main>
+{% endblock %}
+
+{% block extra_js %}
+{% include "dashboard/partials/_delete_modal_js.html" %}
 {% endblock %}

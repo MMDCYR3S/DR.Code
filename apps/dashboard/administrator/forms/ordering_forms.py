@@ -5,7 +5,8 @@ from django_ckeditor_5.widgets import CKEditor5Widget
 from apps.ordering.models import (
     Order, OrderSection, SectionItem, DrugSectionItem,
     DynamicFieldGroup, DynamicFieldSubGroup, DynamicFieldItem,
-    EmergencyDisposition, EmergencyNode
+    EmergencyDisposition, EmergencyNode,
+    OrderImage, OrderVideo
 )
 from apps.prescriptions.models.category import PrescriptionCategory
 from apps.prescriptions.models.drug import Drug
@@ -15,6 +16,50 @@ from apps.prescriptions.models.drug import Drug
 INPUT_CLASSES_LTR = 'w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition text-left'
 INPUT_CLASSES_RTL = 'w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition text-right'
 CHECKBOX_CLASSES = 'form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500'
+
+
+class CleanFileInput(forms.ClearableFileInput):
+    """
+    مثل ClearableFileInput هست ولی بخش "Currently: … / Change:" رو
+    حذف می‌کنه و فقط یک <input type="file"> ساده رندر می‌کنه.
+    پیش‌نمایش تصویر موجود را HTML مستقیماً در تمپلیت نشون می‌ده.
+    """
+    template_name = 'django/forms/widgets/file.html'  # فقط input خام
+
+# ====================================================== #
+# ==================== Order Filter Form =============== #
+# ====================================================== #
+class OrderFilterForm(forms.Form):
+    search = forms.CharField(
+        required=False,
+        label="",
+        widget=forms.TextInput(attrs={
+            'class': INPUT_CLASSES_RTL,
+            'placeholder': 'جستجو در نام اوردر...'
+        })
+    )
+    category = forms.ModelChoiceField(
+        queryset=PrescriptionCategory.objects.all().order_by('title'),
+        required=False,
+        label="",
+        empty_label="همه دسته‌بندی‌ها",
+        widget=forms.Select(attrs={
+            'class': INPUT_CLASSES_RTL
+        })
+    )
+    sort_by = forms.ChoiceField(
+        choices=[
+            ('-created_at', 'جدیدترین'),
+            ('created_at', 'قدیمی‌ترین'),
+            ('name', 'نام (الفبایی)'),
+        ],
+        required=False,
+        label="",
+        widget=forms.Select(attrs={
+            'class': INPUT_CLASSES_RTL
+        })
+    )
+
 
 # ==================================================== #
 # ==================== Order Form ==================== #
@@ -333,7 +378,6 @@ class EmergencyChildNodeForm(forms.ModelForm):
     def clean_order_index(self):
         return self.cleaned_data.get('order_index') or 0
 
-
 class SkipEmptyNodeFormSet(BaseInlineFormSet):
     def full_clean(self):
         super().full_clean()
@@ -351,4 +395,78 @@ ChildNodeFormSet = inlineformset_factory(
     extra=0,
     can_delete=True,
     fk_name='parent',
+)
+
+
+# ==================================================== #
+# ==================== Media Form ==================== #
+# ==================================================== #
+class OrderImageForm(forms.ModelForm):
+    class Meta:
+        model = OrderImage
+        fields = ['image', 'caption', 'order_index']
+        widgets = {
+            'image': CleanFileInput(attrs={'class': INPUT_CLASSES_LTR}),
+            'caption': forms.TextInput(attrs={'class': INPUT_CLASSES_RTL, 'placeholder': 'کپشن تصویر...'}),
+            'order_index': forms.NumberInput(attrs={'class': INPUT_CLASSES_LTR}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['order_index'].required = False
+        self.fields['order_index'].initial = 0
+
+    def clean_order_index(self):
+        return self.cleaned_data.get('order_index') or 0
+
+
+class OrderVideoForm(forms.ModelForm):
+    class Meta:
+        model = OrderVideo
+        fields = ['video_url', 'title', 'description', 'order_index']
+        widgets = {
+            'video_url': forms.URLInput(attrs={'class': INPUT_CLASSES_LTR, 'placeholder': 'https://www.aparat.com/v/...'}),
+            'title': forms.TextInput(attrs={'class': INPUT_CLASSES_RTL, 'placeholder': 'عنوان ویدیو...'}),
+            'description': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 2, 'placeholder': 'توضیحات...'}),
+            'order_index': forms.NumberInput(attrs={'class': INPUT_CLASSES_LTR}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['order_index'].required = False
+        self.fields['order_index'].initial = 0
+
+    def clean_order_index(self):
+        return self.cleaned_data.get('order_index') or 0
+
+
+class SkipEmptyMediaFormSet(BaseInlineFormSet):
+    empty_field = 'image'
+
+    def full_clean(self):
+        super().full_clean()
+        for form in self.forms:
+            if not form.instance.pk and not form.cleaned_data.get(self.empty_field):
+                form._errors = {}
+                form.cleaned_data = {}
+
+
+class SkipEmptyVideoFormSet(SkipEmptyMediaFormSet):
+    empty_field = 'video_url'
+
+
+OrderImageFormSet = inlineformset_factory(
+    Order, OrderImage,
+    form=OrderImageForm,
+    formset=SkipEmptyMediaFormSet,
+    extra=0,
+    can_delete=True,
+)
+
+OrderVideoFormSet = inlineformset_factory(
+    Order, OrderVideo,
+    form=OrderVideoForm,
+    formset=SkipEmptyVideoFormSet,
+    extra=0,
+    can_delete=True,
 )

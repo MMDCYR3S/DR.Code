@@ -392,6 +392,19 @@
                      <span class="absolute -bottom-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-tl-3xl"></span></span>
                  {% endif %}
              </a>
+
+             <a href="{% url 'dashboard:ordering:order_list' %}" 
+                class="relative flex items-center px-6 py-3 transition-all duration-200 text-sm group
+                {% if '/orders/' in request.path or request.resolver_match.url_name == 'order_list' %} bg-white text-slate-900 font-bold rounded-r-3xl {% else %} text-slate-400 hover:border-r  hover:border-r-white hover:bg-gradient-to-l from-white/50 to-slate-900 rounded-2xl hover:text-slate-900 hover:ml-1 {% endif %}">
+                 {% if '/orders/' in request.path or request.resolver_match.url_name == 'order_list' %}
+                     <span class="absolute -top-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-bl-3xl"></span></span>
+                 {% endif %}
+                 <i class="fa-solid fa-flask text-base w-5 text-center transition-colors {% if '/orders/' in request.path or request.resolver_match.url_name == 'order_list' %}text-blue-600{% else %}text-slate-500 group-hover:text-slate-300{% endif %}"></i>
+                 <span class="mx-3">مدیریت اوردرها</span>
+                 {% if '/orders/' in request.path or request.resolver_match.url_name == 'order_list' %}
+                     <span class="absolute -bottom-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-tl-3xl"></span></span>
+                 {% endif %}
+             </a>
      
              <a href="{% url 'dashboard:categories:category_list' %}" 
                 class="relative flex items-center px-6 py-3 transition-all duration-200 text-sm group

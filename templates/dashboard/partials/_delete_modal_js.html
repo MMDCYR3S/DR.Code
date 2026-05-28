@@ -1,0 +1,91 @@
+{% comment %}
+  Partial: _delete_modal_js.html
+  اسکریپت Alpine.js برای modal حذف همگانی
+  این فایل رو در block extra_js هر صفحه‌ای که از _delete_modal.html استفاده می‌کنه include کن.
+
+  نحوه استفاده در Alpine component:
+  ──────────────────────────────────────────────────────
+  می‌تونی deleteModal رو به عنوان یک Alpine store/component جداگانه صدا بزنی،
+  یا اون رو با spread داخل component موجودت merge کنی:
+
+  مثال standalone:
+    <div x-data="deleteModal()">
+      ...
+      {% include "dashboard/partials/_delete_modal.html" %}
+    </div>
+
+  مثال merge با component موجود:
+    <div x-data="{ ...myComponent(), ...deleteModal() }">
+      ...
+    </div>
+{% endcomment %}
+
+<script>
+document.addEventListener('alpine:init', () => {
+  Alpine.data('deleteModal', () => ({
+    isOpen: false,
+    loading: false,
+    itemId: null,
+    itemName: '',
+    deleteUrl: '',
+
+    /**
+     * باز کردن modal حذف
+     * @param {number|string} id  - شناسه آیتم
+     * @param {string} name       - نام آیتم برای نمایش
+     * @param {string} url        - آدرس DELETE endpoint
+     */
+    open(id, name, url) {
+      this.itemId   = id;
+      this.itemName = name;
+      this.deleteUrl = url;
+      this.isOpen   = true;
+      this.loading  = false;
+    },
+
+    close() {
+      if (this.loading) return;
+      this.isOpen = false;
+    },
+
+    getCSRF() {
+      return document.querySelector('[name=csrfmiddlewaretoken]')?.value ?? '';
+    },
+
+    notify(message, type = 'success') {
+      window.dispatchEvent(new CustomEvent('notify', { detail: { message, type } }));
+    },
+
+    async confirm() {
+      if (!this.deleteUrl) return;
+      this.loading = true;
+
+      try {
+        const res  = await fetch(this.deleteUrl, {
+          method : 'POST',
+          headers: {
+            'X-CSRFToken'  : this.getCSRF(),
+            'Content-Type' : 'application/json',
+          },
+        });
+        const data = await res.json();
+
+        this.isOpen  = false;
+        this.loading = false;
+
+        if (data.success) {
+          this.notify(data.message ?? 'با موفقیت حذف شد.', 'success');
+          setTimeout(() => window.location.reload(), 1200);
+        } else {
+          this.notify(data.message ?? 'خطایی در حذف رخ داد.', 'error');
+        }
+      } catch (err) {
+        this.loading = false;
+        this.isOpen  = false;
+        this.notify('یک خطای پیش‌بینی‌نشده رخ داد.', 'error');
+        console.error(err);
+      }
+    },
+  }));
+});
+</script>

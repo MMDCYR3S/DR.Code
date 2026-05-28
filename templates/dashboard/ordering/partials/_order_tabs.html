@@ -1,0 +1,97 @@
+{% comment %}
+  Partial: _order_tabs.html
+  متغیرهای مورد نیاز:
+    - order      : instance یا None (موقع create)
+    - active_tab : یکی از 'order' | 'preclinical' | 'emergency' | 'media'
+{% endcomment %}
+
+<div class="mb-6">
+  <div class="flex items-center justify-between gap-4">
+
+    <nav class="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit">
+
+      {# ── تب اوردر ── #}
+      {% if order %}
+        {% url 'dashboard:ordering:order_edit' order.pk as url_order %}
+      {% else %}
+        {% url 'dashboard:ordering:order_create' as url_order %}
+      {% endif %}
+
+      <a href="{{ url_order }}"
+         class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all
+                {% if active_tab == 'order' %}bg-white text-indigo-700 shadow-sm
+                {% else %}text-gray-500 hover:text-gray-700 hover:bg-white/60{% endif %}">
+        <i class="fas fa-file-medical text-xs"></i>
+        اوردر
+      </a>
+
+      {# ── سه تب باقی‌مانده — فقط وقتی order وجود داشته باشه فعال‌اند ── #}
+      {% if order %}
+        {% url 'dashboard:ordering:preclinical'              order_pk=order.pk as url_pre %}
+        {% url 'dashboard:ordering:emergency_disposition'    order_pk=order.pk as url_emg %}
+        {% url 'dashboard:ordering:order_media'              order_pk=order.pk as url_med %}
+      {% endif %}
+
+      {% if order %}
+      <a href="{{ url_pre }}"
+         class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all
+                {% if active_tab == 'preclinical' %}bg-white text-indigo-700 shadow-sm
+                {% else %}text-gray-500 hover:text-gray-700 hover:bg-white/60{% endif %}">
+        <i class="fas fa-flask text-xs"></i>
+        پیش‌بالینی
+      </a>
+      {% else %}
+      <span class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-gray-300 cursor-not-allowed select-none"
+            title="ابتدا اوردر را ذخیره کنید">
+        <i class="fas fa-flask text-xs"></i>پیش‌بالینی
+      </span>
+      {% endif %}
+
+      {% if order %}
+      <a href="{{ url_emg }}"
+         class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all
+                {% if active_tab == 'emergency' %}bg-white text-indigo-700 shadow-sm
+                {% else %}text-gray-500 hover:text-gray-700 hover:bg-white/60{% endif %}">
+        <i class="fas fa-heartbeat text-xs"></i>
+        تعیین تکلیف
+      </a>
+      {% else %}
+      <span class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-gray-300 cursor-not-allowed select-none"
+            title="ابتدا اوردر را ذخیره کنید">
+        <i class="fas fa-heartbeat text-xs"></i>تعیین تکلیف
+      </span>
+      {% endif %}
+
+      {% if order %}
+      <a href="{{ url_med }}"
+         class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all
+                {% if active_tab == 'media' %}bg-white text-indigo-700 shadow-sm
+                {% else %}text-gray-500 hover:text-gray-700 hover:bg-white/60{% endif %}">
+        <i class="fas fa-photo-video text-xs"></i>
+        رسانه‌ها
+      </a>
+      {% else %}
+      <span class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-gray-300 cursor-not-allowed select-none"
+            title="ابتدا اوردر را ذخیره کنید">
+        <i class="fas fa-photo-video text-xs"></i>رسانه‌ها
+      </span>
+      {% endif %}
+
+    </nav>
+
+    <a href="{% url 'dashboard:ordering:order_list' %}"
+       class="flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-800
+              hover:underline transition-colors whitespace-nowrap">
+      <i class="fas fa-arrow-right text-xs"></i>
+      بازگشت به لیست
+    </a>
+
+  </div>
+
+  {% if not order %}
+  <p class="mt-2 text-xs text-amber-600 flex items-center gap-1">
+    <i class="fas fa-info-circle"></i>
+    پس از ذخیره اوردر، تب‌های دیگر فعال می‌شوند.
+  </p>
+  {% endif %}
+</div>

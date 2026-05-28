@@ -1,0 +1,23 @@
+{% comment %}
+  Partial: _empty_state.html
+  برای استفاده با template tag: {% empty_state ... %}
+  یا مستقیم با include و ست کردن متغیرها.
+{% endcomment %}
+<div class="text-center bg-white rounded-xl shadow-sm p-8 sm:p-12">
+  <div class="mx-auto w-fit bg-slate-100 rounded-full p-5 mb-4">
+    <i class="fa-solid {{ icon|default:'fa-inbox' }} text-3xl text-slate-400"></i>
+  </div>
+  <h2 class="text-xl font-bold text-slate-800">{{ title|default:"موردی یافت نشد" }}</h2>
+  {% if description %}
+  <p class="mt-2 text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">{{ description }}</p>
+  {% endif %}
+  {% if action_url and action_label %}
+  <a href="{{ action_url }}"
+     class="mt-6 inline-flex items-center justify-center gap-2 px-5 py-2.5
+            text-sm font-semibold text-white bg-blue-600 rounded-lg
+            hover:bg-blue-700 shadow-sm transition-colors">
+    <i class="fa-solid fa-plus"></i>
+    {{ action_label }}
+  </a>
+  {% endif %}
+</div>

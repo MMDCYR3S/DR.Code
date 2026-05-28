@@ -217,9 +217,9 @@ async logout() {
         const authBtn = document.getElementById('auth-btn');
         if (authBtn) {
             authBtn.innerHTML = `
-                <button class="login-register-btn" onclick="Auth.showAuthModal()">
-                    <i class="fas fa-sign-in-alt"></i>
-                    ورود / ثبت‌نام
+                <button class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-gray-900 to-gray-800 hover:from-c1 hover:to-c1 shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_20px_rgba(var(--c1-rgb,0,102,204),0.3)] transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0" onclick="Auth.showAuthModal()">
+                    <i class="fas fa-sign-in-alt text-xs opacity-90"></i>
+                    <span>ورود / ثبت‌نام</span>
                 </button>
             `;
         }
@@ -227,9 +227,9 @@ async logout() {
         const authBtnMobile = document.getElementById('auth-btn-mobile');
         if (authBtnMobile) {
             authBtnMobile.innerHTML = `
-                <button class="login-register-btn bg-c1 px-4 py-2 rounded-lg text-white" onclick="Auth.showAuthModal()">
-                    <i class="fas fa-sign-in-alt"></i>
-                    ورود / ثبت‌نام
+                <button class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-gray-900 to-gray-800 hover:from-c1 hover:to-c1 shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_20px_rgba(var(--c1-rgb,0,102,204),0.3)] transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0" onclick="Auth.showAuthModal()">
+                    <i class="fas fa-sign-in-alt text-xs opacity-90"></i>
+                    <span>ورود / ثبت‌نام</span>
                 </button>
             `;
         }

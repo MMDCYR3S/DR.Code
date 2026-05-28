@@ -1,10 +1,11 @@
 {% extends 'dashboard/base.html' %}
-{% load static %}
+{% load static dashboard_tags %}
 
-{% block title %}مدیریت نسخه‌ها{% endblock %}
+{% block title %}مدیریت نسخه‌ها{% include "dashboard/partials/_delete_modal_js.html" %}
+{% endblock %}
 
 {% block content %}
-<main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-4 sm:p-6 lg:p-8" x-data="prescriptionManager()">
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-4 sm:p-6 lg:p-8" x-data="{ ...prescriptionManager(), ...deleteModal() }">
     <div class="container mx-auto">
         <form method="GET" class="bg-white p-4 rounded-xl shadow-sm mb-6">
             {% csrf_token %}
@@ -75,7 +76,7 @@
                                     <a href="{% url 'dashboard:prescriptions:prescription_update' prescription_data.object.pk %}" class="p-2 text-slate-500 hover:text-yellow-600 rounded-md hover:bg-yellow-100" title="ویرایش">
                                         <i class="fa-solid fa-pencil"></i>
                                     </a>
-                                    <button @click="openDeleteModal({{ prescription_data.object.id }}, '{{ prescription_data.object.title|escapejs }}')" class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-red-100" title="حذف">
+                                    <button @click="open({{ prescription_data.object.id }}, '{{ prescription_data.object.title|escapejs }}', '{% url 'dashboard:prescriptions:prescription_delete' prescription_data.object.pk %}')" class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-red-100" title="حذف">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>
                                 </div>
@@ -117,7 +118,7 @@
                             <a href="{% url 'dashboard:prescriptions:prescription_update' prescription_data.object.pk %}" class="p-2 text-slate-500 hover:text-yellow-600" title="ویرایش">
                                 <i class="fa-solid fa-pencil h-6 w-6"></i>
                             </a>
-                            <button @click="openDeleteModal({{ prescription_data.object.id }}, '{{ prescription_data.object.title|escapejs }}')" class="p-2 text-slate-500 hover:text-red-600" title="حذف">
+                            <button @click="open({{ prescription_data.object.id }}, '{{ prescription_data.object.title|escapejs }}', '{% url 'dashboard:prescriptions:prescription_delete' prescription_data.object.pk %}')" class="p-2 text-slate-500 hover:text-red-600" title="حذف">
                                 <i class="fa-solid fa-trash h-6 w-6"></i>
                             </button>
                         </div>
@@ -126,28 +127,8 @@
                 {% endfor %}
             </div>
 
-            <!-- Pagination -->
-            {% if is_paginated %}
-            <div class="mt-6 flex justify-center">
-                <nav class="flex items-center space-x-2 space-x-reverse shadow-sm">
-                    {% if page_obj.has_previous %}
-                        <a href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode|cut:'page=' }}" class="px-3 py-2 text-slate-500 bg-white rounded-md hover:bg-slate-100">قبلی</a>
-                    {% endif %}
-                    
-                    {% for num in page_obj.paginator.page_range %}
-                        {% if page_obj.number == num %}
-                            <span class="px-4 py-2 text-white bg-blue-600 rounded-md shadow">{{ num }}</span>
-                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                            <a href="?page={{ num }}&{{ request.GET.urlencode|cut:'page=' }}" class="px-4 py-2 text-slate-600 bg-white rounded-md hover:bg-slate-100">{{ num }}</a>
-                        {% endif %}
-                    {% endfor %}
-
-                    {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode|cut:'page=' }}" class="px-3 py-2 text-slate-500 bg-white rounded-md hover:bg-slate-100">بعدی</a>
-                    {% endif %}
-                </nav>
-            </div>
-            {% endif %}
+            {# ── Pagination ── #}
+            {% include "dashboard/partials/_pagination.html" %}
 
         {% else %}
             <!-- Empty State -->
@@ -428,23 +409,8 @@
         </div>
     </div>
 
-    <!-- Delete Modal -->
-    <div x-show="isDeleteModalOpen" x-cloak @keydown.escape.window="isDeleteModalOpen = false" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div @click="isDeleteModalOpen = false" class="absolute inset-0 bg-slate-800/60 backdrop-blur-sm"></div>
-        <div x-show="isDeleteModalOpen" @click.stop x-transition class="relative bg-white rounded-xl shadow-lg w-full max-w-md">
-            <div class="p-6 text-center">
-                <div class="mx-auto w-fit bg-red-100 rounded-full p-3">
-                    <i class="fa-solid fa-triangle-exclamation h-8 w-8 text-red-600"></i>
-                </div>
-                <h3 class="text-lg font-bold text-slate-800 mt-4">آیا از حذف نسخه مطمئن هستید؟</h3>
-                <p class="mt-2 text-sm text-slate-500">شما در حال حذف نسخه "<strong class="font-bold" x-text="itemToDeleteName"></strong>" هستید. این عمل قابل بازگشت نیست.</p>
-            </div>
-            <div class="px-6 py-4 bg-slate-50 rounded-b-xl grid grid-cols-2 gap-3">
-                <button @click="isDeleteModalOpen = false" class="py-2.5 px-5 text-sm font-semibold bg-white border border-slate-300 rounded-lg hover:bg-slate-100">انصراف</button>
-                <button @click="deleteItem()" class="py-2.5 px-5 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700">بله، حذف کن</button>
-            </div>
-        </div>
-    </div>
+  {# ── Delete Modal همگانی ── #}
+  {% include "dashboard/partials/_delete_modal.html" with delete_modal_entity="نسخه" %}
 </main>
 {% endblock %}
 
@@ -452,11 +418,6 @@
 <script>
 document.addEventListener('alpine:init', () => {
     Alpine.data('prescriptionManager', () => ({
-        // Delete Modal
-        isDeleteModalOpen: false,
-        itemToDeleteId: null,
-        itemToDeleteName: '',
-        
         // Detail Modal
         isDetailModalOpen: false,
         loadingDetail: false,
@@ -588,42 +549,6 @@ document.addEventListener('alpine:init', () => {
             return csrfInput ? csrfInput.value : '';
         },
 
-        // Delete Modal Methods
-        openDeleteModal(id, name) {
-            this.itemToDeleteId = id;
-            this.itemToDeleteName = name;
-            this.isDeleteModalOpen = true;
-        },
-
-        deleteItem() {
-            if (!this.itemToDeleteId) return;
-            
-            const url = `{% url 'dashboard:prescriptions:prescription_delete' 0 %}`.replace('0', this.itemToDeleteId);
-            
-            fetch(url, {
-                method: 'POST',
-                headers: { 
-                    'X-CSRFToken': this.getCSRFToken(),
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(res => res.json())
-            .then(data => {
-                this.isDeleteModalOpen = false;
-                if(data.success) {
-                    this.notify(data.message, 'success');
-                    setTimeout(() => window.location.reload(), 1500);
-                } else {
-                    this.notify(data.message || 'خطایی در هنگام حذف رخ داد', 'error');
-                }
-            })
-            .catch(err => {
-                this.isDeleteModalOpen = false;
-                this.notify('یک خطای پیش‌بینی نشده رخ داد.', 'error');
-                console.error(err);
-            });
-        },
-
         // Detail Modal Methods
         openDetailModal(id) {
             console.log('Opening detail modal for ID:', id); // Debug
@@ -701,7 +626,7 @@ document.addEventListener('alpine:init', () => {
 // Global function برای compatibility
 function copyDrugCode(event, code) {
     // پیدا کردن Alpine component
-    const alpineData = Alpine.$data(document.querySelector('[x-data="prescriptionManager()"]'));
+    const alpineData = Alpine.$data(document.querySelector('[x-data]'));
     if (alpineData && alpineData.copyDrugCode) {
         alpineData.copyDrugCode(event, code);
     } else {
@@ -724,4 +649,3 @@ function copyDrugCode(event, code) {
 }
 </script>
 {% endblock %}
-

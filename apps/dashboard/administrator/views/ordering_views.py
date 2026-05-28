@@ -20,6 +20,7 @@ from apps.ordering.models import (
 )
 from ..forms import (
     # ===== Ordering ===== #
+    OrderFilterForm,
     OrderForm, 
     OrderSectionFormSet, 
     SectionItemFormSet, 
@@ -35,9 +36,67 @@ from ..forms import (
     EmergencyRootNodeForm,
     EmergencyChildNodeForm,
     ChildNodeFormSet,
+
+    # ===== Media ===== #
+    OrderImageFormSet,
+    OrderVideoFormSet,
 )
 
 logger = logging.getLogger(__name__)
+
+# ===================================================== #
+# ==================== Order List ==================== #
+# ===================================================== #
+class OrderListView(View):
+    template_name = 'dashboard/ordering/orders.html'
+    paginate_by = 15
+
+    def get(self, request):
+        from django.core.paginator import Paginator
+
+        qs = Order.objects.all()
+
+        filter_form = OrderFilterForm(request.GET or None)
+
+        if filter_form.is_valid():
+            search = filter_form.cleaned_data.get('search', '').strip()
+            category = filter_form.cleaned_data.get('category')
+            sort_by = filter_form.cleaned_data.get('sort_by') or '-created_at'
+
+            if search:
+                qs = qs.filter(Q(name__icontains=search))
+            if category:
+                qs = qs.filter(category=category)
+            qs = qs.order_by(sort_by)
+        else:
+            qs = qs.order_by('-created_at')
+
+        paginator = Paginator(qs, self.paginate_by)
+        page_obj = paginator.get_page(request.GET.get('page', 1))
+
+        context = {
+            'orders': page_obj,
+            'page_obj': page_obj,
+            'is_paginated': page_obj.has_other_pages(),
+            'filter_form': filter_form,
+        }
+        return render(request, self.template_name, context)
+
+
+# ====================================================== #
+# ==================== Order Delete ==================== #
+# ====================================================== #
+class OrderDeleteView(View):
+    def post(self, request, pk):
+        order = get_object_or_404(Order, pk=pk)
+        order_name = order.name
+        try:
+            order.delete()
+            return JsonResponse({'success': True, 'message': f'اوردر «{order_name}» با موفقیت حذف شد.'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': 'خطا در حذف اوردر.', 'error': str(e)}, status=500)
+
+
 
 # ==================================================== #
 # ==================== Order View ==================== #
@@ -100,12 +159,14 @@ class OrderManageView(View):
 
         context = {
             'form': form,
+            'order': order,
             'section_formset': section_formset,
             'nested_sections': nested_sections,
             'is_update': bool(order),
             'empty_section_form': section_formset.empty_form,
             'empty_item_fs': empty_item_fs,
             'empty_drug_fs': empty_drug_fs,
+            'active_tab': 'order',
         }
         return render(request, self.template_name, context)
     
@@ -201,20 +262,25 @@ class OrderManageView(View):
                         except json.JSONDecodeError:
                             pass
 
-                return redirect(self.success_url)
+                messages.success(request, 'اوردر با موفقیت ذخیره شد.')
+                return redirect(reverse('dashboard:ordering:order_edit', kwargs={'pk': saved_order.pk}))
             else:
                 logger.error("❌ all_nested_valid is FALSE!")
+                messages.error(request, 'خطا در ذخیره اوردر. لطفاً فیلدها را بررسی کنید.')
         else:
             logger.error("❌ Main form or Section formset is invalid!")
+            messages.error(request, 'خطا در ذخیره اوردر. لطفاً فیلدها را بررسی کنید.')
         
         context = {
             'form': form,
+            'order': order,
             'section_formset': section_formset,
             'nested_sections': nested_sections,
             'is_update': bool(order),
             'empty_section_form': section_formset.empty_form,
             'empty_item_fs': SectionItemFormSet(prefix='sections-__section_prefix__-items'),
             'empty_drug_fs': DrugSectionItemFormSet(prefix='sections-__section_prefix__-drugs'),
+            'active_tab': 'order',
         }
         return render(request, self.template_name, context)
 
@@ -289,6 +355,7 @@ class PreClinicalManageView(View):
             'new_group_form': DynamicFieldGroupForm(prefix='new_group'),
             'empty_subgroup_fs': DynamicFieldSubGroupFormSet(instance=DynamicFieldGroup(), prefix='group-__gid__-subgroups'),
             'empty_item_fs': DynamicFieldItemFormSet(instance=DynamicFieldSubGroup(), prefix='group-__gid__-sub-__sid__-items'),
+            'active_tab': 'preclinical',
         }
         return render(request, self.template_name, context)
 
@@ -303,10 +370,15 @@ class PreClinicalManageView(View):
                 group = form.save(commit=False)
                 group.order = order
                 group.save()
+                messages.success(request, 'گروه جدید با موفقیت اضافه شد.')
+            else:
+                messages.error(request, 'خطا در افزودن گروه. لطفاً عنوان را وارد کنید.')
             return redirect(reverse('dashboard:ordering:preclinical', kwargs={'order_pk': order_pk}))
 
         if action == 'delete_group':
-            DynamicFieldGroup.objects.filter(pk=request.POST.get('group_pk'), order=order).delete()
+            deleted, _ = DynamicFieldGroup.objects.filter(pk=request.POST.get('group_pk'), order=order).delete()
+            if deleted:
+                messages.success(request, 'گروه با موفقیت حذف شد.')
             return redirect(reverse('dashboard:ordering:preclinical', kwargs={'order_pk': order_pk}))
 
         if action == 'save_all':
@@ -339,6 +411,7 @@ class PreClinicalManageView(View):
                     'new_group_form': DynamicFieldGroupForm(prefix='new_group'),
                     'empty_subgroup_fs': DynamicFieldSubGroupFormSet(instance=DynamicFieldGroup(), prefix='group-__gid__-subgroups'),
                     'empty_item_fs': DynamicFieldItemFormSet(instance=DynamicFieldSubGroup(), prefix='group-__gid__-sub-__sid__-items'),
+                    'active_tab': 'preclinical',
                 })
 
             if all_valid:
@@ -416,6 +489,7 @@ class EmergencyDispositionManageView(View):
             'nested': self._build_nested(disposition, post_data),
             'color_choices': TailwindColor.choices,
             'child_form': EmergencyChildNodeForm(),
+            'active_tab': 'emergency',
         }
 
     # ===== GET ===== #
@@ -542,5 +616,49 @@ class EmergencyDispositionManageView(View):
 
             messages.success(request, 'تعیین تکلیف با موفقیت ذخیره شد.')
             return redirect(redirect_url)
+
+        return redirect(redirect_url)
+
+# ==================================================== #
+# ==================== Media View ==================== #
+# ==================================================== #
+class OrderMediaManageView(View):
+    template_name = 'dashboard/ordering/order_media_form.html'
+
+    def get_order(self, order_pk):
+        return get_object_or_404(Order, pk=order_pk)
+
+    def _context(self, order, image_fs=None, video_fs=None):
+        return {
+            'order': order,
+            'image_fs': image_fs or OrderImageFormSet(instance=order, prefix='images'),
+            'video_fs': video_fs or OrderVideoFormSet(instance=order, prefix='videos'),
+            'active_tab': 'media',
+        }
+
+    def get(self, request, order_pk):
+        order = self.get_order(order_pk)
+        return render(request, self.template_name, self._context(order))
+
+    def post(self, request, order_pk):
+        order = self.get_order(order_pk)
+        action = request.POST.get('action', '')
+        redirect_url = request.path
+
+        if action == 'save_images':
+            fs = OrderImageFormSet(request.POST, request.FILES, instance=order, prefix='images')
+            if fs.is_valid():
+                fs.save()
+                messages.success(request, 'تصاویر با موفقیت ذخیره شدند.')
+                return redirect(redirect_url)
+            return render(request, self.template_name, self._context(order, image_fs=fs))
+
+        if action == 'save_videos':
+            fs = OrderVideoFormSet(request.POST, instance=order, prefix='videos')
+            if fs.is_valid():
+                fs.save()
+                messages.success(request, 'ویدیوها با موفقیت ذخیره شدند.')
+                return redirect(redirect_url)
+            return render(request, self.template_name, self._context(order, video_fs=fs))
 
         return redirect(redirect_url)

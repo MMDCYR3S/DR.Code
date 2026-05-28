@@ -1,0 +1,90 @@
+{% comment %}
+  Partial: _delete_modal.html
+  یک modal حذف همگانی با Alpine.js
+
+  نحوه استفاده:
+  ─────────────────────────────────────────────────
+  ۱) در تگ بیرونی x-data اضافه کن (یا در wrapper):
+       x-data="deleteModal()"
+
+  ۲) دکمه حذف هر ردیف:
+       <button @click="open({{ item.pk }}, '{{ item.title|escapejs }}', '{% url 'your:delete_url' item.pk %}')"
+               class="...">حذف</button>
+
+  ۳) این partial را در انتهای صفحه include کن:
+       {% include "dashboard/partials/_delete_modal.html" %}
+
+  ۴) اسکریپت Alpine رو در extra_js یا پایین صفحه داشته باش:
+       {% include "dashboard/partials/_delete_modal_js.html" %}
+
+  متغیرهای اختیاری:
+    - delete_modal_title   : عنوان پیش‌فرض modal  (پیش‌فرض: «آیا مطمئن هستید؟»)
+    - delete_modal_entity  : نوع موجودیت (پیش‌فرض: «این مورد»)
+{% endcomment %}
+
+<div x-show="isOpen"
+     x-cloak
+     @keydown.escape.window="close()"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4"
+     role="dialog" aria-modal="true">
+
+  {# Backdrop #}
+  <div @click="close()"
+       class="absolute inset-0 bg-slate-800/60 backdrop-blur-sm"
+       aria-hidden="true">
+  </div>
+
+  {# Modal Panel #}
+  <div @click.stop
+       x-show="isOpen"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0 scale-95"
+       x-transition:enter-end="opacity-100 scale-100"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="opacity-100 scale-100"
+       x-transition:leave-end="opacity-0 scale-95"
+       class="relative bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+
+    {# Icon + Title #}
+    <div class="px-6 pt-6 pb-4 text-center">
+      <div class="mx-auto w-fit bg-red-100 rounded-full p-4 mb-4">
+        <i class="fa-solid fa-triangle-exclamation text-2xl text-red-500"></i>
+      </div>
+      <h3 class="text-lg font-bold text-slate-800">
+        {{ delete_modal_title|default:"آیا از حذف مطمئن هستید؟" }}
+      </h3>
+      <p class="mt-2 text-sm text-slate-500 leading-relaxed">
+        در حال حذف
+        <strong class="font-semibold text-slate-700" x-text="itemName">...</strong>
+        هستید.
+        <br>
+        <span class="text-red-500 font-medium">این عمل غیرقابل بازگشت است.</span>
+      </p>
+    </div>
+
+    {# Loading bar #}
+    <div x-show="loading" class="h-1 bg-slate-100 overflow-hidden">
+      <div class="h-full bg-red-400 animate-pulse w-full"></div>
+    </div>
+
+    {# Actions #}
+    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex gap-3">
+      <button @click="close()"
+              :disabled="loading"
+              class="flex-1 py-2.5 px-4 text-sm font-semibold rounded-xl border border-slate-300
+                     bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-50
+                     transition-colors focus:outline-none focus:ring-2 focus:ring-slate-300">
+        انصراف
+      </button>
+      <button @click="confirm()"
+              :disabled="loading"
+              class="flex-1 py-2.5 px-4 text-sm font-semibold rounded-xl
+                     bg-red-600 text-white hover:bg-red-700 disabled:opacity-50
+                     transition-colors focus:outline-none focus:ring-2 focus:ring-red-400
+                     flex items-center justify-center gap-2">
+        <i x-show="loading" class="fa-solid fa-spinner fa-spin text-xs"></i>
+        <span x-text="loading ? 'در حال حذف...' : 'بله، حذف کن'">بله، حذف کن</span>
+      </button>
+    </div>
+  </div>
+</div>

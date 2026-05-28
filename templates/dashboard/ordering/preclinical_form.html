@@ -81,9 +81,10 @@
 
 <div class="container mx-auto px-4 py-6 max-w-8xl">
 
+  {% include "dashboard/ordering/partials/_order_tabs.html" %}
+
   <div class="flex justify-between items-center mb-5">
     <h1 class="text-xl font-bold text-gray-800">پیش‌بالینی — {{ order.name }}</h1>
-    <a href="{% url 'dashboard:ordering:order_edit' order.pk %}" class="text-sm text-indigo-600 hover:underline">← بازگشت</a>
   </div>
 
   <!-- افزودن گروه -->

@@ -33,29 +33,15 @@
   .ck-editor__editable { min-height: 120px !important; }
 </style>
 
-<div class="container mx-auto px-4 py-6 max-w-5xl">
+<div class="container mx-auto px-4 py-6 max-w-8xl">
+
+  {% include "dashboard/ordering/partials/_order_tabs.html" %}
 
   <div class="flex justify-between items-center mb-5">
     <h1 class="text-xl font-bold text-gray-800">
       تعیین تکلیف — {{ order.name }}
     </h1>
-    <a href="{% url 'dashboard:ordering:order_edit' order.pk %}"
-       class="text-sm text-blue-600 hover:underline">← بازگشت</a>
   </div>
-
-  {# ── پیام‌ها ── #}
-  {% if messages %}
-  <div class="mb-4 space-y-2">
-    {% for msg in messages %}
-    <div class="px-4 py-2 rounded-lg text-sm
-      {% if msg.tags == 'error' %}bg-red-50 text-red-700 border border-red-200
-      {% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
-      {{ msg }}
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
-
 
   <form method="post"
         class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 mb-6">
@@ -324,7 +310,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/Sortable.min.js' %}"></script>
 <script>
 // ── حذف فرزند (toggle DELETE checkbox) ──────────────────────────────────
 function toggleDelete(btn, fieldName) {
@@ -352,6 +337,26 @@ document.querySelectorAll('[id^="children-container-"]').forEach(c => {
     onEnd() { updateOrderIndexes(c); },
   });
 });
+
+// ── بروزرسانی order_index گره‌های ریشه ──────────────────────────────────
+function updateRootOrderIndexes() {
+  document.querySelectorAll('#save-all-form > [data-root-node]').forEach((el, i) => {
+    // input hidden مربوط به order_index گره ریشه
+    const inp = el.querySelector('input[type="hidden"][name$="-order_index"]');
+    if (inp) inp.value = i;
+  });
+}
+
+// ── Sortable روی گره‌های ریشه ────────────────────────────────────────────
+const rootContainer = document.getElementById('save-all-form');
+if (rootContainer) {
+  Sortable.create(rootContainer, {
+    handle: '.drag-handle',
+    animation: 150,
+    draggable: '[data-root-node]',
+    onEnd() { updateRootOrderIndexes(); },
+  });
+}
 
 // ── init CKEditor روی یک textarea ────────────────────────────────────────
 function initCKEditor(textarea) {

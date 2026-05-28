@@ -1,0 +1,273 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}رسانه‌ها — {{ order.name }}{% endblock %}
+
+{% block content %}
+<style>
+  .btn-delete-item {
+    display: flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 6px;
+    border: 1px solid #fecaca; background: #fff5f5;
+    color: #ef4444; cursor: pointer; font-size: 0.75rem;
+    flex-shrink: 0; transition: all .15s;
+  }
+  .btn-delete-item:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
+  .drag-handle {
+    cursor: grab; color: #cbd5e1; font-size: 1rem;
+    padding: 0 4px; user-select: none; flex-shrink: 0;
+  }
+  .drag-handle:hover { color: #94a3b8; }
+  .drag-handle:active { cursor: grabbing; }
+</style>
+
+<div class="container mx-auto px-4 py-6 max-w-8xl">
+
+  {% include "dashboard/ordering/partials/_order_tabs.html" %}
+
+  <div class="flex justify-between items-center mb-5">
+    <h1 class="text-xl font-bold text-gray-800">رسانه‌ها — {{ order.name }}</h1>
+  </div>
+
+  {# ===== تصاویر ===== #}
+  <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-5">
+    <div class="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-l from-gray-50 to-blue-50 border-b border-gray-200">
+      <span class="w-2 h-2 rounded-full bg-blue-400 inline-block flex-shrink-0"></span>
+      <h2 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+        <i class="fas fa-images text-blue-500"></i> تصاویر
+      </h2>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="images-form" class="p-4">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="save_images">
+      {{ image_fs.management_form }}
+
+      <div id="images-container" class="space-y-2">
+        {% for form in image_fs %}
+        <div class="flex flex-wrap gap-3 items-center p-3 border border-gray-100 rounded-lg bg-slate-50" data-image-row>
+          <span class="drag-handle self-center" title="برای جابجایی بکشید">⠿</span>
+
+          {# پیش‌نمایش تصویر موجود #}
+          {% if form.instance.pk and form.instance.image %}
+          <div class="relative flex-shrink-0">
+            <img src="{{ form.instance.image.url }}"
+                 class="h-14 w-14 object-cover rounded-lg border border-gray-200 shadow-sm">
+          </div>
+          {% else %}
+          <div class="h-14 w-14 flex-shrink-0 rounded-lg border-2 border-dashed border-gray-200
+                      flex items-center justify-center bg-white text-gray-300 text-xl">
+            <i class="fas fa-image"></i>
+          </div>
+          {% endif %}
+
+          <div class="flex-1 min-w-48">
+            <label class="text-xs text-gray-500 block mb-1">فایل تصویر</label>
+            {{ form.image }}
+            {% if form.image.errors %}<p class="text-xs text-red-500 mt-1">{{ form.image.errors|join:", " }}</p>{% endif %}
+          </div>
+          <div class="flex-1 min-w-40">
+            <label class="text-xs text-gray-500 block mb-1">کپشن</label>
+            {{ form.caption }}
+          </div>
+          {% if form.instance.pk %}
+            <label class="flex items-center gap-1 cursor-pointer">
+              <span style="display:none">{{ form.DELETE }}</span>
+              <button type="button" class="btn-delete-item" title="حذف"
+                onclick="toggleDeleteRow(this, '{{ form.DELETE.html_name }}')">
+                <i class="fas fa-times"></i>
+              </button>
+            </label>
+          {% endif %}
+          {% for h in form.hidden_fields %}{{ h }}{% endfor %}
+        </div>
+        {% empty %}
+        <p class="text-xs text-gray-400 text-center py-3" id="no-images-msg">هنوز تصویری اضافه نشده.</p>
+        {% endfor %}
+      </div>
+
+      <div class="flex justify-between items-center mt-4">
+        <button type="button" id="add-image-btn"
+          class="text-xs text-indigo-500 hover:text-indigo-700 flex items-center gap-1">
+          <i class="fas fa-plus"></i> افزودن تصویر
+        </button>
+        <button type="submit"
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+          <i class="fas fa-save ml-1"></i>ذخیره تصاویر
+        </button>
+      </div>
+    </form>
+  </div>
+
+  {# ===== ویدیوها ===== #}
+  <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+    <div class="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-l from-gray-50 to-purple-50 border-b border-gray-200">
+      <span class="w-2 h-2 rounded-full bg-purple-400 inline-block flex-shrink-0"></span>
+      <h2 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+        <i class="fas fa-film text-purple-500"></i> ویدیوها (آپارات)
+      </h2>
+    </div>
+
+    <form method="post" id="videos-form" class="p-4">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="save_videos">
+      {{ video_fs.management_form }}
+
+      <div id="videos-container" class="space-y-2">
+        {% for form in video_fs %}
+        <div class="p-3 border border-gray-100 rounded-lg bg-slate-50" data-video-row>
+          <div class="flex flex-wrap gap-3 items-end">
+            <span class="drag-handle self-center" title="برای جابجایی بکشید">⠿</span>
+            <div class="flex-1 min-w-60">
+              <label class="text-xs text-gray-500 block mb-1">لینک ویدیو</label>
+              {{ form.video_url }}
+              {% if form.video_url.errors %}<p class="text-xs text-red-500 mt-1">{{ form.video_url.errors|join:", " }}</p>{% endif %}
+            </div>
+            <div class="flex-1 min-w-40">
+              <label class="text-xs text-gray-500 block mb-1">عنوان</label>
+              {{ form.title }}
+            </div>
+            {% if form.instance.pk %}
+            <label class="flex items-center gap-1 cursor-pointer">
+              <span style="display:none">{{ form.DELETE }}</span>
+              <button type="button" class="btn-delete-item" title="حذف"
+                onclick="toggleDeleteRow(this, '{{ form.DELETE.html_name }}')">
+                <i class="fas fa-times"></i>
+              </button>
+            </label>
+            {% endif %}
+          </div>
+          <div class="mt-2">
+            <label class="text-xs text-gray-500 block mb-1">توضیحات</label>
+            {{ form.description }}
+          </div>
+          {% for h in form.hidden_fields %}{{ h }}{% endfor %}
+        </div>
+        {% empty %}
+        <p class="text-xs text-gray-400 text-center py-3" id="no-videos-msg">هنوز ویدیویی اضافه نشده.</p>
+        {% endfor %}
+      </div>
+
+      <div class="flex justify-between items-center mt-4">
+        <button type="button" id="add-video-btn"
+          class="text-xs text-indigo-500 hover:text-indigo-700 flex items-center gap-1">
+          <i class="fas fa-plus"></i> افزودن ویدیو
+        </button>
+        <button type="submit"
+          class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium">
+          <i class="fas fa-save ml-1"></i>ذخیره ویدیوها
+        </button>
+      </div>
+    </form>
+  </div>
+
+{# Templates for dynamic rows #}
+<template id="image-row-template">
+  <div class="flex flex-wrap gap-3 items-end p-3 border border-gray-100 rounded-lg bg-slate-50" data-image-row>
+    <span class="drag-handle self-center" title="برای جابجایی بکشید">⠿</span>
+    <div class="flex-1 min-w-48">
+      <label class="text-xs text-gray-500 block mb-1">فایل تصویر</label>
+      <input type="file" name="images-__idx__-image" id="id_images-__idx__-image"
+        class="w-full px-3 py-1.5 border border-gray-200 rounded-lg bg-white text-xs">
+    </div>
+    <div class="flex-1 min-w-40">
+      <label class="text-xs text-gray-500 block mb-1">کپشن</label>
+      <input type="text" name="images-__idx__-caption" id="id_images-__idx__-caption"
+        class="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs"
+        placeholder="کپشن تصویر...">
+    </div>
+    <input type="hidden" name="images-__idx__-id" id="id_images-__idx__-id">
+  </div>
+</template>
+
+<template id="video-row-template">
+  <div class="p-3 border border-gray-100 rounded-lg bg-slate-50" data-video-row>
+    <div class="flex flex-wrap gap-3 items-end">
+      <span class="drag-handle self-center" title="برای جابجایی بکشید">⠿</span>
+      <div class="flex-1 min-w-60">
+        <label class="text-xs text-gray-500 block mb-1">لینک ویدیو</label>
+        <input type="url" name="videos-__idx__-video_url" id="id_videos-__idx__-video_url"
+          class="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs"
+          placeholder="https://www.aparat.com/v/...">
+      </div>
+      <div class="flex-1 min-w-40">
+        <label class="text-xs text-gray-500 block mb-1">عنوان</label>
+        <input type="text" name="videos-__idx__-title" id="id_videos-__idx__-title"
+          class="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs"
+          placeholder="عنوان ویدیو...">
+      </div>
+    </div>
+    <div class="mt-2">
+      <label class="text-xs text-gray-500 block mb-1">توضیحات</label>
+      <textarea name="videos-__idx__-description" id="id_videos-__idx__-description"
+        class="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs"
+        rows="2" placeholder="توضیحات..."></textarea>
+    </div>
+    <input type="hidden" name="videos-__idx__-id" id="id_videos-__idx__-id">
+  </div>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+<script>
+function toggleDeleteRow(btn, fieldName) {
+  const cb = document.querySelector(`[name="${fieldName}"]`);
+  if (!cb) return;
+  cb.checked = !cb.checked;
+  btn.classList.toggle('active', cb.checked);
+  const row = btn.closest('[data-image-row], [data-video-row]');
+  if (row) row.style.opacity = cb.checked ? '0.4' : '1';
+}
+
+// ── آپدیت order_index بعد از drag ────────────────────────────────────────
+function updateOrderIndexes(container, rowAttr, fieldSuffix) {
+  container.querySelectorAll(`:scope > [${rowAttr}]`).forEach((el, i) => {
+    const inp = el.querySelector(`input[name$="${fieldSuffix}"]`);
+    if (inp) inp.value = i;
+  });
+}
+
+// ── Sortable تصاویر ──────────────────────────────────────────────────────
+const imagesContainer = document.getElementById('images-container');
+if (imagesContainer) {
+  Sortable.create(imagesContainer, {
+    handle: '.drag-handle',
+    animation: 150,
+    draggable: '[data-image-row]',
+    onEnd() { updateOrderIndexes(imagesContainer, 'data-image-row', '-order_index'); },
+  });
+}
+
+// ── Sortable ویدیوها ─────────────────────────────────────────────────────
+const videosContainer = document.getElementById('videos-container');
+if (videosContainer) {
+  Sortable.create(videosContainer, {
+    handle: '.drag-handle',
+    animation: 150,
+    draggable: '[data-video-row]',
+    onEnd() { updateOrderIndexes(videosContainer, 'data-video-row', '-order_index'); },
+  });
+}
+
+function addRow(containerId, templateId, totalFormsName, noMsgId) {
+  const container = document.getElementById(containerId);
+  const mgmt = document.querySelector(`[name="${totalFormsName}"]`);
+  const idx = parseInt(mgmt.value);
+  const tmpl = document.getElementById(templateId);
+  const html = tmpl.innerHTML.replaceAll('__idx__', idx);
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = html;
+  document.getElementById(noMsgId)?.remove();
+  container.appendChild(wrapper.firstElementChild);
+  mgmt.value = idx + 1;
+}
+
+document.getElementById('add-image-btn').addEventListener('click', () =>
+  addRow('images-container', 'image-row-template', 'images-TOTAL_FORMS', 'no-images-msg')
+);
+document.getElementById('add-video-btn').addEventListener('click', () =>
+  addRow('videos-container', 'video-row-template', 'videos-TOTAL_FORMS', 'no-videos-msg')
+);
+</script>
+{% endblock %}
