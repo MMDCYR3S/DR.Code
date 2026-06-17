@@ -15,4 +15,10 @@ urlpatterns = [
     path('membership/<int:pk>/', MembershipDetailView.as_view(), name='membership_detail'),
     path('membership/<int:pk>/update/', MembershipUpdateView.as_view(), name='membership_update'),
     path('membership/<int:pk>/delete/', MembershipDeleteView.as_view(), name='membership_delete'),
+    
+    # Feature URLs  ← این‌ها رو اضافه کن
+    path('features/create/', FeatureCreateView.as_view(), name='feature_create'),
+    path('features/<int:pk>/detail/', FeatureDetailView.as_view(), name='feature_detail'),
+    path('features/<int:pk>/update/', FeatureUpdateView.as_view(), name='feature_update'),
+    path('features/<int:pk>/delete/', FeatureDeleteView.as_view(), name='feature_delete'),
 ]

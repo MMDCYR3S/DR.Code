@@ -264,453 +264,193 @@
 </div>
 {% endblock %}
 
+
+
+
 {% block extra_js %}
 <script>
 document.addEventListener('alpine:init', () => {
     Alpine.data('planManager', () => ({
-        // Modal states
-        isPlanModalOpen: false,
-        isMembershipModalOpen: false,
+        // State
+        modals: { plan: false, membership: false, feature: false },
         isEditMode: false,
         isLoading: false,
-        modalTitle: '',
-        editingPlanId: null,
-        editingMembershipId: null,
+        editingId: null,
         
+        // Forms
+        planForm: { membership: '', name: '', duration_days: '', price: '', is_active: true },
+        membershipForm: { title: '', description: '', features: [], is_active: true },
+        featureForm: { name: '', description: '' },
 
-        isFeatureModalOpen: false,
-        isFeatureEditMode: false,
-        featureModalTitle: 'افزودن ویژگی جدید',
-        editingFeatureId: null,
-        featureFormData: {
-            name: '',
-            description: ''
-        },
-        
-        // Form data
-        planFormData: {
-            membership: '',
-            name: '',
-            duration_days: '',
-            price: '',
-            is_active: true
-        },
-        
-        membershipFormData: {
-            title: '',
-            description: '',
-            features: [],
-            is_active: true
+        // Generic Methods
+        openModal(type, id = null) {
+            this.modals[type] = true;
+            this.isEditMode = !!id;
+            this.editingId = id;
+            
+            if (id) this.loadData(type, id);
+            else this.resetForm(type);
         },
 
-
-        openAddFeatureModal() {
-            this.isFeatureEditMode = false;
-            this.featureModalTitle = 'افزودن ویژگی جدید';
-            this.editingFeatureId = null;
-            this.featureFormData = { name: '', description: '' };
-            this.isFeatureModalOpen = true;
+        closeModal(type) {
+            this.modals[type] = false;
+            this.resetForm(type);
         },
 
-        async openEditFeatureModal(id) {
+        resetForm(type) {
+            const forms = {
+                plan: { membership: '', name: '', duration_days: '', price: '', is_active: true },
+                membership: { title: '', description: '', features: [], is_active: true },
+                feature: { name: '', description: '' }
+            };
+            this[`${type}Form`] = forms[type];
+            this.editingId = null;
+        },
+
+        async loadData(type, id) {
             this.isLoading = true;
+            const urls = {
+                plan: `{% url 'dashboard:plans:plan_detail' 0 %}`.replace('0', id),
+                membership: `{% url 'dashboard:plans:membership_detail' 0 %}`.replace('0', id),
+                feature: `{% url 'dashboard:plans:feature_detail' 0 %}`.replace('0', id)
+            };
+
             try {
-                const response = await fetch(`/api/features/${id}/detail/`);
+                const response = await fetch(urls[type]);
                 const data = await response.json();
+                
                 if (data.success) {
-                    this.featureFormData = {
-                        name: data.data.name,
-                        description: data.data.description
-                    };
-                    this.isFeatureEditMode = true;
-                    this.featureModalTitle = 'ویرایش ویژگی';
-                    this.editingFeatureId = id;
-                    this.isFeatureModalOpen = true;
+                    const formData = data.data;
+                    if (type === 'plan') {
+                        this.planForm = {
+                            membership: formData.membership.toString(),
+                            name: formData.name,
+                            duration_days: formData.duration_days.toString(),
+                            price: formData.price,
+                            is_active: formData.is_active
+                        };
+                    } else if (type === 'membership') {
+                        this.membershipForm = {
+                            title: formData.title,
+                            description: formData.description,
+                            features: formData.features.map(String),
+                            is_active: formData.is_active
+                        };
+                    } else {
+                        this.featureForm = { name: formData.name, description: formData.description };
+                    }
                 }
             } catch (error) {
                 console.error(error);
+                this.notify('error', 'خطا در دریافت اطلاعات');
             } finally {
                 this.isLoading = false;
             }
         },
 
-        closeFeatureModal() {
-            this.isFeatureModalOpen = false;
-        },
-
-         async submitFeatureForm() {
+        async submitForm(type) {
             this.isLoading = true;
-            const url = this.isFeatureEditMode 
-                ? `/api/features/${this.editingFeatureId}/update/` 
-                : `/api/features/create/`;
-            
+            const urls = {
+                plan: this.isEditMode 
+                    ? `{% url 'dashboard:plans:plan_update' 0 %}`.replace('0', this.editingId)
+                    : `{% url 'dashboard:plans:plan_create' %}`,
+                membership: this.isEditMode 
+                    ? `{% url 'dashboard:plans:membership_update' 0 %}`.replace('0', this.editingId)
+                    : `{% url 'dashboard:plans:membership_create' %}`,
+                feature: this.isEditMode 
+                    ? `{% url 'dashboard:plans:feature_update' 0 %}`.replace('0', this.editingId)
+                    : `{% url 'dashboard:plans:feature_create' %}`
+            };
+
             try {
-                const response = await fetch(url, {
+                const response = await fetch(urls[type], {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        // استفاده از getCookie به جای this.getCookie
-                        'X-CSRFToken': getCookie('csrftoken') 
+                        'X-CSRFToken': getCookie('csrftoken')
                     },
-                    body: JSON.stringify(this.featureFormData)
+                    body: JSON.stringify(this[`${type}Form`])
                 });
+
                 const data = await response.json();
+                
                 if (data.success) {
-                    window.location.reload();
+                    this.notify('success', data.message);
+                    this.closeModal(type);
+                    setTimeout(() => window.location.reload(), type === 'feature' ? 0 : 1500);
                 } else {
-                    alert('خطا در فرم');
+                    const msg = data.message + (data.errors ? '<br>' + Object.values(data.errors).flat().join('<br>') : '');
+                    this.notify('error', msg);
                 }
             } catch (error) {
                 console.error(error);
+                this.notify('error', type === 'feature' ? 'خطا در فرم' : 'خطا در ارتباط با سرور');
             } finally {
                 this.isLoading = false;
             }
         },
 
-        async deleteFeature(id) {
-            if(confirm('آیا از حذف این ویژگی اطمینان دارید؟')) {
-                try {
-                    const response = await fetch(`/api/features/${id}/delete/`, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': this.getCookie('csrftoken')
-                        }
-                    });
-                    const data = await response.json();
-                    if (data.success) {
-                        window.location.reload();
-                    }
-                } catch (error) {
-                    console.error(error);
-                }
-            }
-        },
+        async deleteItem(type, id) {
+            if (!confirm('آیا از حذف اطمینان دارید؟')) return;
 
-        // Plan Modal Methods
-        openAddPlanModal() {
-            this.resetPlanForm();
-            this.isPlanModalOpen = true;
-            this.isEditMode = false;
-            this.modalTitle = 'افزودن پلن جدید';
-        },
-
-        async openEditPlanModal(planId) {
-            this.isLoading = true;
-            try {
-                const response = await fetch(`{% url 'dashboard:plans:plan_detail' 0 %}`.replace('0', planId));
-                const data = await response.json();
-                
-                if (data.success) {
-                    this.planFormData = {
-                        membership: data.data.membership.toString(),
-                        name: data.data.name,
-                        duration_days: data.data.duration_days.toString(),
-                        price: data.data.price,
-                        is_active: data.data.is_active
-                    };
-                    this.isPlanModalOpen = true;
-                    this.isEditMode = true;
-                    this.modalTitle = 'ویرایش پلن';
-                    this.editingPlanId = planId;
-                } else {
-                    window.dispatchEvent(new CustomEvent('notify', {
-                        detail: {
-                            type: 'error',
-                            message: data.message || 'خطا در دریافت اطلاعات پلن'
-                        }
-                    }));
-                }
-            } catch (error) {
-                console.error('Error fetching plan data:', error);
-                window.dispatchEvent(new CustomEvent('notify', {
-                    detail: {
-                        type: 'error',
-                        message: 'خطا در ارتباط با سرور'
-                    }
-                }));
-            } finally {
-                this.isLoading = false;
-            }
-        },
-
-        // Membership Modal Methods
-        openAddMembershipModal() {
-            this.resetMembershipForm();
-            this.isMembershipModalOpen = true;
-            this.isEditMode = false;
-            this.modalTitle = 'افزودن Membership جدید';
-        },
-
-        async openEditMembershipModal(id) {
-            this.isLoading = true;
-            try {
-                const response = await fetch(`{% url 'dashboard:plans:membership_detail' 0 %}`.replace('0', id));
-                const data = await response.json();
-                
-                if (data.success) {
-                    this.membershipFormData = {
-                        title: data.data.title,
-                        description: data.data.description,
-                        // باید آیدی‌ها به صورت String باشند تا در SelectMultiple درایو شوند
-                        features: data.data.features.map(String), 
-                        is_active: data.data.is_active
-                    };
-                    this.isMembershipModalOpen = true;
-                    this.isEditMode = true;
-                    this.modalTitle = 'ویرایش Membership';
-                    this.editingMembershipId = id;
-                } else {
-                    // هندل خطا
-                }
-            } catch (error) {
-                // هندل خطا
-            } finally {
-                this.isLoading = false;
-            }
-        },
-
-        // Close Modals
-        closePlanModal() {
-            this.isPlanModalOpen = false;
-            this.resetPlanForm();
-        },
-
-        closeMembershipModal() {
-            this.isMembershipModalOpen = false;
-            this.resetMembershipForm();
-        },
-
-        // Reset Forms
-        resetPlanForm() {
-            this.planFormData = {
-                membership: '',
-                name: '',
-                duration_days: '',
-                price: '',
-                is_active: true
+            const urls = {
+                plan: `{% url 'dashboard:plans:plan_delete' 0 %}`.replace('0', id),
+                membership: `{% url 'dashboard:plans:membership_delete' 0 %}`.replace('0', id),
+                feature: `{% url 'dashboard:plans:feature_delete' 0 %}`.replace('0', id)
             };
-            this.editingPlanId = null;
-        },
-
-        resetMembershipForm() {
-            this.membershipFormData = {
-                title: '',
-                description: '',
-                features: [], // ریست کردن ویژگی‌ها
-                is_active: true
-            };
-            this.editingMembershipId = null;
-        },
-
-        // Form Submissions
-        async submitPlanForm() {
-            this.isLoading = true;
-            
-            const url = this.isEditMode 
-                ? `{% url 'dashboard:plans:plan_update' 0 %}`.replace('0', this.editingPlanId)
-                : `{% url 'dashboard:plans:plan_create' %}`;
-            
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken'),
-                    },
-                    body: JSON.stringify(this.planFormData)
-                });
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    window.dispatchEvent(new CustomEvent('notify', {
-                        detail: {
-                            type: 'success',
-                            message: data.message
-                        }
-                    }));
-                    
-                    this.closePlanModal();
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
-                } else {
-                    let errorMessage = data.message;
-                    if (data.errors) {
-                        errorMessage += '<br>' + Object.values(data.errors).flat().join('<br>');
-                    }
-                    window.dispatchEvent(new CustomEvent('notify', {
-                        detail: {
-                            type: 'error',
-                            message: errorMessage
-                        }
-                    }));
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                window.dispatchEvent(new CustomEvent('notify', {
-                    detail: {
-                        type: 'error',
-                        message: 'خطا در ارتباط با سرور'
-                    }
-                }));
-            } finally {
-                this.isLoading = false;
-            }
-        },
-
-        async submitMembershipForm() {
-            this.isLoading = true;
-            
-            const url = this.isEditMode 
-                ? `{% url 'dashboard:plans:membership_update' 0 %}`.replace('0', this.editingMembershipId)
-                : `{% url 'dashboard:plans:membership_create' %}`;
-            
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken'),
-                    },
-                    body: JSON.stringify(this.membershipFormData)
-                });
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    window.dispatchEvent(new CustomEvent('notify', {
-                        detail: {
-                            type: 'success',
-                            message: data.message
-                        }
-                    }));
-                    
-                    this.closeMembershipModal();
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
-                } else {
-                    let errorMessage = data.message;
-                    if (data.errors) {
-                        errorMessage += '<br>' + Object.values(data.errors).flat().join('<br>');
-                    }
-                    window.dispatchEvent(new CustomEvent('notify', {
-                        detail: {
-                            type: 'error',
-                            message: errorMessage
-                        }
-                    }));
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                window.dispatchEvent(new CustomEvent('notify', {
-                    detail: {
-                        type: 'error',
-                        message: 'خطا در ارتباط با سرور'
-                    }
-                }));
-            } finally {
-                this.isLoading = false;
-            }
-        },
-
-        // Delete Operations
-        async deletePlan(planId) {
-            if (!confirm('آیا از حذف این پلن اطمینان دارید؟')) {
-                return;
-            }
 
             try {
-                const response = await fetch(`{% url 'dashboard:plans:plan_delete' 0 %}`.replace('0', planId), {
+                const response = await fetch(urls[type], {
                     method: 'POST',
-                    headers: {
-                        'X-CSRFToken': getCookie('csrftoken'),
-                        'Content-Type': 'application/json',
-                    }
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') }
                 });
-
-                const data = await response.json();
                 
+                const data = await response.json();
                 if (data.success) {
-                    window.dispatchEvent(new CustomEvent('notify', {
-                        detail: {
-                            type: 'success',
-                            message: data.message
-                        }
-                    }));
-                    
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
-                } else {
-                    window.dispatchEvent(new CustomEvent('notify', {
-                        detail: {
-                            type: 'error',
-                            message: data.message || 'خطا در حذف پلن'
-                        }
-                    }));
+                    this.notify('success', data.message);
+                    setTimeout(() => window.location.reload(), type === 'feature' ? 0 : 1500);
                 }
             } catch (error) {
-                console.error('Error:', error);
-                window.dispatchEvent(new CustomEvent('notify', {
-                    detail: {
-                        type: 'error',
-                        message: 'خطا در ارتباط با سرور'
-                    }
-                }));
+                console.error(error);
             }
         },
 
-        async deleteMembership(membershipId) {
-            if (!confirm('آیا از حذف این Membership اطمینان دارید؟')) {
-                return;
-            }
+        notify(type, message) {
+            if (type === 'feature') return;
+            window.dispatchEvent(new CustomEvent('notify', { detail: { type, message } }));
+        },
 
-            try {
-                const response = await fetch(`{% url 'dashboard:plans:membership_delete' 0 %}`.replace('0', membershipId), {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': getCookie('csrftoken'),
-                        'Content-Type': 'application/json',
-                    }
-                });
+        // Wrapper methods for HTML compatibility
+        openAddPlanModal() { this.openModal('plan'); },
+        openEditPlanModal(id) { this.openModal('plan', id); },
+        closePlanModal() { this.closeModal('plan'); },
+        submitPlanForm() { this.submitForm('plan'); },
+        deletePlan(id) { this.deleteItem('plan', id); },
+        
+        openAddMembershipModal() { this.openModal('membership'); },
+        openEditMembershipModal(id) { this.openModal('membership', id); },
+        closeMembershipModal() { this.closeModal('membership'); },
+        submitMembershipForm() { this.submitForm('membership'); },
+        deleteMembership(id) { this.deleteItem('membership', id); },
+        
+        openAddFeatureModal() { this.openModal('feature'); },
+        openEditFeatureModal(id) { this.openModal('feature', id); },
+        closeFeatureModal() { this.closeModal('feature'); },
+        submitFeatureForm() { this.submitForm('feature'); },
+        deleteFeature(id) { this.deleteItem('feature', id); },
 
-                const data = await response.json();
-                
-                if (data.success) {
-                    window.dispatchEvent(new CustomEvent('notify', {
-                        detail: {
-                            type: 'success',
-                            message: data.message
-                        }
-                    }));
-                    
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
-                } else {
-                    window.dispatchEvent(new CustomEvent('notify', {
-                        detail: {
-                            type: 'error',
-                            message: data.message || 'خطا در حذف Membership'
-                        }
-                    }));
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                window.dispatchEvent(new CustomEvent('notify', {
-                    detail: {
-                        type: 'error',
-                        message: 'خطا در ارتباط با سرور'
-                    }
-                }));
-            }
-        }
+        // Computed properties for modal titles
+        get modalTitle() {
+            if (!this.modals.plan && !this.modals.membership && !this.modals.feature) return '';
+            const type = this.modals.plan ? 'پلن' : this.modals.membership ? 'Membership' : 'ویژگی';
+            return this.isEditMode ? `ویرایش ${type}` : `افزودن ${type} جدید`;
+        },
+        get isPlanModalOpen() { return this.modals.plan; },
+        get isMembershipModalOpen() { return this.modals.membership; },
+        get isFeatureModalOpen() { return this.modals.feature; }
     }));
 });
 
-// تابع کمکی برای گرفتن CSRF token
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -727,3 +467,4 @@ function getCookie(name) {
 }
 </script>
 {% endblock %}
+
