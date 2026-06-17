@@ -68,6 +68,47 @@
             </div>
         </div>
 
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                <h2 class="text-lg font-bold text-slate-800">
+                    <i class="fa-solid fa-star text-yellow-500 ml-2"></i>ویژگی‌ها (Features)
+                </h2>
+                <button @click="openAddFeatureModal()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    <i class="fa-solid fa-plus ml-1"></i> افزودن ویژگی
+                </button>
+            </div>
+            <div class="p-6 overflow-x-auto">
+                <table class="w-full text-right border-collapse">
+                    <thead>
+                        <tr class="text-slate-500 text-sm border-b-2 border-slate-100">
+                            <th class="pb-3 font-semibold">نام ویژگی</th>
+                            <th class="pb-3 font-semibold">Slug</th>
+                            <th class="pb-3 font-semibold">عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for feature in features %}
+                        <tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                            <td class="py-4 text-slate-800 font-medium">{{ feature.name }}</td>
+                            <td class="py-4 text-slate-500 text-sm" dir="ltr">{{ feature.slug }}</td>
+                            <td class="py-4">
+                                <div class="flex gap-2">
+                                    <button @click="openEditFeatureModal({{ feature.id }})" class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                    <button @click="deleteFeature({{ feature.id }})" class="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+
         <!-- Plan Management Section -->
         <div class="bg-white rounded-xl shadow-sm p-6">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -236,6 +277,16 @@ document.addEventListener('alpine:init', () => {
         editingPlanId: null,
         editingMembershipId: null,
         
+
+        isFeatureModalOpen: false,
+        isFeatureEditMode: false,
+        featureModalTitle: 'افزودن ویژگی جدید',
+        editingFeatureId: null,
+        featureFormData: {
+            name: '',
+            description: ''
+        },
+        
         // Form data
         planFormData: {
             membership: '',
@@ -248,7 +299,91 @@ document.addEventListener('alpine:init', () => {
         membershipFormData: {
             title: '',
             description: '',
+            features: [],
             is_active: true
+        },
+
+
+        openAddFeatureModal() {
+            this.isFeatureEditMode = false;
+            this.featureModalTitle = 'افزودن ویژگی جدید';
+            this.editingFeatureId = null;
+            this.featureFormData = { name: '', description: '' };
+            this.isFeatureModalOpen = true;
+        },
+
+        async openEditFeatureModal(id) {
+            this.isLoading = true;
+            try {
+                const response = await fetch(`/api/features/${id}/detail/`);
+                const data = await response.json();
+                if (data.success) {
+                    this.featureFormData = {
+                        name: data.data.name,
+                        description: data.data.description
+                    };
+                    this.isFeatureEditMode = true;
+                    this.featureModalTitle = 'ویرایش ویژگی';
+                    this.editingFeatureId = id;
+                    this.isFeatureModalOpen = true;
+                }
+            } catch (error) {
+                console.error(error);
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        closeFeatureModal() {
+            this.isFeatureModalOpen = false;
+        },
+
+         async submitFeatureForm() {
+            this.isLoading = true;
+            const url = this.isFeatureEditMode 
+                ? `/api/features/${this.editingFeatureId}/update/` 
+                : `/api/features/create/`;
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // استفاده از getCookie به جای this.getCookie
+                        'X-CSRFToken': getCookie('csrftoken') 
+                    },
+                    body: JSON.stringify(this.featureFormData)
+                });
+                const data = await response.json();
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('خطا در فرم');
+                }
+            } catch (error) {
+                console.error(error);
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        async deleteFeature(id) {
+            if(confirm('آیا از حذف این ویژگی اطمینان دارید؟')) {
+                try {
+                    const response = await fetch(`/api/features/${id}/delete/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': this.getCookie('csrftoken')
+                        }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        window.location.reload();
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
+            }
         },
 
         // Plan Modal Methods
@@ -306,16 +441,32 @@ document.addEventListener('alpine:init', () => {
             this.modalTitle = 'افزودن Membership جدید';
         },
 
-        openEditMembershipModal(id, title, description, isActive) {
-            this.membershipFormData = {
-                title: title,
-                description: description || '',
-                is_active: isActive
-            };
-            this.isMembershipModalOpen = true;
-            this.isEditMode = true;
-            this.modalTitle = 'ویرایش Membership';
-            this.editingMembershipId = id;
+        async openEditMembershipModal(id) {
+            this.isLoading = true;
+            try {
+                const response = await fetch(`{% url 'dashboard:plans:membership_detail' 0 %}`.replace('0', id));
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.membershipFormData = {
+                        title: data.data.title,
+                        description: data.data.description,
+                        // باید آیدی‌ها به صورت String باشند تا در SelectMultiple درایو شوند
+                        features: data.data.features.map(String), 
+                        is_active: data.data.is_active
+                    };
+                    this.isMembershipModalOpen = true;
+                    this.isEditMode = true;
+                    this.modalTitle = 'ویرایش Membership';
+                    this.editingMembershipId = id;
+                } else {
+                    // هندل خطا
+                }
+            } catch (error) {
+                // هندل خطا
+            } finally {
+                this.isLoading = false;
+            }
         },
 
         // Close Modals
@@ -345,6 +496,7 @@ document.addEventListener('alpine:init', () => {
             this.membershipFormData = {
                 title: '',
                 description: '',
+                features: [], // ریست کردن ویژگی‌ها
                 is_active: true
             };
             this.editingMembershipId = null;

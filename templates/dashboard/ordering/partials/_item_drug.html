@@ -1,10 +1,12 @@
 <div class="item-row item-row-helper" data-prefix="{{ drug_form.prefix }}">
   {% for hidden in drug_form.hidden_fields %}{{ hidden }}{% endfor %}
   <span class="item-braille-handle" title="برای جابجایی بکشید">⠿</span>
+  
   <div style="flex:2">
     <label class="text-xs text-gray-500 mb-1 block">نام دارو</label>
-    <div x-data="drugSearch('{{ drug_form.instance.drug.id|default:'' }}', '{{ drug_form.instance.drug.name|default:'' }}')" class="relative w-full">
+    <div x-data="drugSearch('{{ drug_form.instance.drug.id|default:'' }}', '{{ drug_form.instance.drug.title|default:'' }}')" class="relative w-full">
       <input type="hidden" name="{{ drug_form.drug.html_name }}" x-model="selectedId">
+      
       <input type="text"
         x-model="searchQuery"
         @input.debounce.500ms="fetchDrugs()"
@@ -12,25 +14,39 @@
         @click.away="isOpen = false"
         placeholder="نام دارو را جستجو کنید..."
         class="item-name-input w-full px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-indigo-400">
+        
       <div x-show="isOpen" style="display:none"
         class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+        
         <template x-for="item in results" :key="item.id">
           <div @click="selectDrug(item)"
-            class="px-3 py-2 cursor-pointer hover:bg-indigo-50 text-xs text-gray-700"
+            class="px-3 py-2 cursor-pointer hover:bg-indigo-50 text-xs text-gray-700 border-b border-gray-50"
             x-text="item.text"></div>
         </template>
+        
         <div x-show="isLoading" class="px-3 py-2 text-xs text-gray-500">در حال جستجو...</div>
-        <div x-show="!isLoading && results?.length === 0 && (searchQuery?.length || 0) > 1" class="px-3 py-2 text-xs text-red-500">موردی یافت نشد.</div>
+        
+        <!-- دکمه باز کردن مودال -->
+        <div x-show="!isLoading && (searchQuery?.length || 0) > 1" class="px-3 py-2 bg-gray-50">
+            <div x-show="results?.length === 0" class="text-xs text-red-500 mb-2">موردی یافت نشد.</div>
+            <button type="button" @click.stop.prevent="openCreateModal()" class="text-xs text-indigo-600 hover:text-indigo-800 font-bold w-full text-right flex items-center gap-1">
+                <i class="fas fa-plus-circle"></i>
+                <span>افزودن سریع دارو</span>
+            </button>
+        </div>
+
       </div>
     </div>
   </div>
+  
   <div style="flex:2">
     <label class="text-xs text-gray-500 mb-1 block">توضیحات</label>
     {{ drug_form.notes }}
   </div>
-  <button type="button" class="btn-delete-item mt-4" title="حذف"
-    onclick="removeItem(this)">
+  
+  <button type="button" class="btn-delete-item mt-4" title="حذف" onclick="removeItem(this)">
     <i class="fas fa-times"></i>
   </button>
+  
   <div style="display:none">{{ drug_form.DELETE }}</div>
 </div>

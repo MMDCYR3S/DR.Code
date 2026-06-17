@@ -1,7 +1,6 @@
 from import_export import resources, fields
 from import_export.widgets import ForeignKeyWidget
 from .models import User
-from apps.accounts.models import Profile # مسیر پروفایل را متناسب با پروژه خود تغییر دهید
 
 class UserExportResource(resources.ModelResource):
     # --- تعریف فیلدهای مدل User ---

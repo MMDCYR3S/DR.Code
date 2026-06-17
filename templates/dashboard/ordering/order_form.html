@@ -123,6 +123,37 @@
   </form>
 </div>
 
+
+<!-- ======================= Modal Create Drug ======================= -->
+<div x-data="drugModal" 
+     @open-drug-modal.window="openModal($event.detail.title, $event.detail.callbackId)"
+     x-show="isOpen" 
+     class="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50" 
+     style="display: none;">
+    <div @click.away="closeModal()" class="bg-white p-6 rounded-xl shadow-xl w-96 max-w-[90vw]">
+        <h3 class="text-base font-bold mb-4 text-gray-800 border-b pb-2">افزودن سریع دارو</h3>
+        
+        <div class="mb-4">
+            <label class="block text-xs text-gray-600 mb-1">نام دارو <span class="text-red-500">*</span></label>
+            <input type="text" x-model="title" class="w-full border border-gray-200 px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-indigo-500">
+        </div>
+        
+        <div class="mb-5">
+            <label class="block text-xs text-gray-600 mb-1">کد دارو (اختیاری)</label>
+            <input type="text" x-model="code" class="w-full border border-gray-200 px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-indigo-500">
+        </div>
+        
+        <div class="flex justify-end gap-2">
+            <button @click="closeModal()" type="button" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-semibold">انصراف</button>
+            <button @click="submitDrug()" type="button" :disabled="isLoading" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-xs font-bold flex items-center gap-2">
+                <span x-show="!isLoading">ذخیره و انتخاب</span>
+                <span x-show="isLoading">در حال ذخیره...</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+
 <!-- ======================= HIDDEN TEMPLATES FOR JS ======================= -->
 <div id="empty-section-template" class="hidden">
     {% include 'dashboard/ordering/partials/_section.html' with section_form=empty_section_form item_fs=empty_item_fs drug_fs=empty_drug_fs section_index='__section_prefix__' %}
@@ -141,12 +172,22 @@
 <script>
 // ==================== تنظیمات Alpine.js ====================
 document.addEventListener('alpine:init', () => {
+    // کامپوننت جستجوی دارو برای هر ردیف
     Alpine.data('drugSearch', (initialId = '', initialName = '') => ({
         searchQuery: initialName || '',
         selectedId: initialId || '',
         results: [],
         isOpen: false,
         isLoading: false,
+        // یک آیدی یکتا برای دریافت رویداد پس از ساخت دارو
+        instanceId: 'drug-cb-' + Math.random().toString(36).substr(2, 9),
+
+        init() {
+            // گوش دادن به پیامی که از مودال برمی‌گردد
+            window.addEventListener(this.instanceId, (e) => {
+                this.selectDrug(e.detail);
+            });
+        },
 
         fetchDrugs() {
             if (!this.searchQuery || this.searchQuery.length < 2) {
@@ -171,9 +212,78 @@ document.addEventListener('alpine:init', () => {
             this.selectedId = item.id;
             this.searchQuery = item.text || '';
             this.isOpen = false;
+        },
+
+        openCreateModal() {
+            this.isOpen = false;
+            // ارسال پیام به مودال اصلی برای باز شدن
+            window.dispatchEvent(new CustomEvent('open-drug-modal', {
+                detail: {
+                    title: this.searchQuery,
+                    callbackId: this.instanceId
+                }
+            }));
+        }
+    }));
+
+    // کامپوننت کنترل مودال ساخت دارو (سراسری)
+    Alpine.data('drugModal', () => ({
+        isOpen: false,
+        title: '',
+        code: '',
+        isLoading: false,
+        callbackEventName: '',
+
+        openModal(title, callbackId) {
+            this.title = title;
+            this.code = '';
+            this.callbackEventName = callbackId;
+            this.isOpen = true;
+        },
+
+        closeModal() {
+            this.isOpen = false;
+            this.title = '';
+            this.code = '';
+        },
+
+        async submitDrug() {
+            if (!this.title.trim()) {
+                alert('لطفا نام دارو را وارد کنید.');
+                return;
+            }
+            this.isLoading = true;
+            
+            try {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const response = await fetch('/dashboard/admin/orders/drugs/quick-create/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ title: this.title, code: this.code })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    // ارسال اطلاعات داروی جدید به همان فیلدی که دکمه را زده است
+                    window.dispatchEvent(new CustomEvent(this.callbackEventName, {
+                        detail: { id: data.id, text: data.text }
+                    }));
+                    this.closeModal();
+                } else {
+                    alert('خطا در ایجاد داروی جدید: ' + (data.error || ''));
+                }
+            } catch(e) {
+                console.error(e);
+                alert('خطا در برقراری ارتباط!');
+            }
+            this.isLoading = false;
         }
     }));
 });
+
 
 // ==================== لاجیک فرم ====================
 document.addEventListener('DOMContentLoaded', function() {
@@ -228,9 +338,42 @@ document.addEventListener('DOMContentLoaded', function() {
 
             container.insertAdjacentHTML('beforeend', template);
             totalFormsInput.value = sectionCount + 1;
+            initSortable();
         });
     }
+
+    initSortable();
 });
+
+function initSortable() {
+    if (typeof Sortable === 'undefined') {
+        console.warn('Sortable.js is not loaded!');
+        return;
+    }
+
+    // 1. Sortable برای کل سکشن‌ها
+    const sectionsContainer = document.getElementById('sectionsContainer');
+    if (sectionsContainer && !sectionsContainer.dataset.sortableInit) {
+        new Sortable(sectionsContainer, {
+            animation: 150,
+            handle: '.section-drag-handle', // کلاس هندل برای کشیدن سکشن (باید در هدر سکشن اضافه کنید)
+            ghostClass: 'opacity-50',
+        });
+        sectionsContainer.dataset.sortableInit = 'true';
+    }
+
+    // 2. Sortable برای لیست آیتم‌ها و داروها
+    document.querySelectorAll('.items-wrapper .item-list, .drugs-wrapper .item-list').forEach(list => {
+        if (!list.dataset.sortableInit) {
+            new Sortable(list, {
+                animation: 150,
+                handle: '.item-braille-handle', // دستگیره‌ای که گذاشته بودید: ⠿
+                ghostClass: 'bg-indigo-50',
+            });
+            list.dataset.sortableInit = 'true';
+        }
+    });
+}
 
 // افزودن آیتم
 function addItem(btn, type) {
@@ -251,6 +394,7 @@ function addItem(btn, type) {
 
     container.insertAdjacentHTML('beforeend', templateHtml);
     totalFormsInput.value = itemCount + 1;
+    initSortable();
 }
 
 // حذف سکشن — toggle با opacity
@@ -322,9 +466,35 @@ function addCondition(sectionIndex, btnElement) {
 
 // رهگیری Submit
 document.getElementById('orderForm').addEventListener('submit', function(e) {
-    const sections = document.querySelectorAll('.conditions-wrapper');
+    
+    // --- بخش جدید: بروزرسانی order_index ها قبل از ارسال فرم ---
+    const sectionItems = document.querySelectorAll('#sectionsContainer > .section-item');
+    sectionItems.forEach((section, sIndex) => {
+        // آپدیت ایندکس خود سکشن
+        const sectionOrderInput = section.querySelector('input[name$="-order_index"]');
+        if (sectionOrderInput) {
+            sectionOrderInput.value = sIndex;
+        }
 
-    sections.forEach(wrapper => {
+        // آپدیت ایندکس آیتم‌های متنی این سکشن
+        const textItems = section.querySelectorAll('.items-wrapper .item-row');
+        textItems.forEach((item, iIndex) => {
+            const itemOrderInput = item.querySelector('input[name$="-order_index"]');
+            if (itemOrderInput) itemOrderInput.value = iIndex;
+        });
+
+        // آپدیت ایندکس آیتم‌های دارویی این سکشن
+        const drugItems = section.querySelectorAll('.drugs-wrapper .item-row');
+        drugItems.forEach((drug, dIndex) => {
+            const drugOrderInput = drug.querySelector('input[name$="-order_index"]');
+            if (drugOrderInput) drugOrderInput.value = dIndex;
+        });
+    });
+    // -----------------------------------------------------------
+
+    // منطق قبلی شما برای مدیریت شرط‌ها
+    const conditionsSections = document.querySelectorAll('.conditions-wrapper');
+    conditionsSections.forEach(wrapper => {
         const hiddenInput = wrapper.querySelector('input[type="hidden"]');
         const conditionBlocks = wrapper.querySelectorAll('.condition-item-block');
         let conditionsData = [];
@@ -344,5 +514,6 @@ document.getElementById('orderForm').addEventListener('submit', function(e) {
         }
     });
 });
+
 </script>
 {% endblock %}

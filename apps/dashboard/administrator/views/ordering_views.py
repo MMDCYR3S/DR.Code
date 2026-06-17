@@ -6,18 +6,20 @@ from django.shortcuts import (
 )
 from django.views import View
 from django.views.generic import DetailView
+from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
-from django.urls import reverse_lazy, reverse
-from django.http import JsonResponse
 from django.db.models import Q, Max, Prefetch
+from django.urls import reverse_lazy, reverse
+from django.utils.decorators import method_decorator
+from django.http import JsonResponse
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from apps.prescriptions.models import Drug
 from apps.ordering.models import (
     Order, Condition, OrderSection,
-    SectionItem, DrugSectionItem, DynamicFieldItem,
-    DynamicFieldGroup, DynamicFieldSubGroup,
+    SectionItem, DrugSectionItem,
+    DynamicFieldGroup, DynamicFieldNode,
     EmergencyDisposition, EmergencyNode,
     OrderImage, OrderVideo,
     TailwindColor,
@@ -32,8 +34,9 @@ from ..forms import (
 
     # ===== Dynamic ===== #
     DynamicFieldGroupForm,
-    DynamicFieldSubGroupFormSet,
-    DynamicFieldItemFormSet,
+    DynamicFieldChildNodeFormSet,
+    DynamicFieldRootNodeForm,
+    DynamicFieldChildNodeForm,
 
     # ===== Emergency ===== #
     EmergencyDispositionForm,
@@ -47,6 +50,97 @@ from ..forms import (
 )
 
 logger = logging.getLogger(__name__)
+
+# ===================================================== #
+# ==================== Order List ===================== #
+# ===================================================== #
+class OrderCopyView(LoginRequiredMixin, View):
+    @transaction.atomic
+    def post(self, request, pk):
+        original_order = get_object_or_404(Order, pk=pk)
+
+        new_order = Order.objects.get(pk=pk)
+        new_order.pk = None
+        new_order.name = f"{new_order.name} (کپی)"
+        new_order.save()
+
+        for old_section in original_order.sections.all():
+            old_section_id = old_section.pk
+            
+            new_section = OrderSection.objects.get(pk=old_section_id)
+            new_section.pk = None
+            new_section.order = new_order
+            new_section.save()
+
+            for item in SectionItem.objects.filter(section_id=old_section_id):
+                old_conditions = list(item.conditions.all())
+                item.pk = None
+                item.section = new_section
+                item.save()
+                if old_conditions:
+                    item.conditions.set(old_conditions)
+
+            for drug_item in DrugSectionItem.objects.filter(section_id=old_section_id):
+                old_conditions = list(drug_item.conditions.all())
+                drug_item.pk = None
+                drug_item.section = new_section
+                drug_item.save()
+                if old_conditions:
+                    drug_item.conditions.set(old_conditions)
+
+        for old_group in original_order.dynamic_field_groups.all():
+            old_group_id = old_group.pk
+            
+            new_group = DynamicFieldGroup.objects.get(pk=old_group_id)
+            new_group.pk = None
+            new_group.order = new_order
+            new_group.save()
+
+            old_nodes = DynamicFieldNode.objects.filter(group_id=old_group_id)
+            node_mapping = {}
+            
+            for old_node in old_nodes:
+                new_node = DynamicFieldNode.objects.get(pk=old_node.pk)
+                new_node.pk = None
+                new_node.group = new_group
+                new_node.parent = None
+                new_node.save()
+                node_mapping[old_node.pk] = new_node
+                
+            for old_node in old_nodes:
+                if old_node.parent_id:
+                    new_node = node_mapping[old_node.pk]
+                    new_node.parent = node_mapping[old_node.parent_id]
+                    new_node.save()
+
+        if hasattr(original_order, 'emergency_disposition'):
+            old_disp = original_order.emergency_disposition
+            old_disp_id = old_disp.pk
+            
+            new_disp = EmergencyDisposition.objects.get(pk=old_disp_id)
+            new_disp.pk = None
+            new_disp.order = new_order
+            new_disp.save()
+
+            old_nodes = EmergencyNode.objects.filter(disposition_id=old_disp_id)
+            node_mapping = {}
+            
+            for old_node in old_nodes:
+                new_node = EmergencyNode.objects.get(pk=old_node.pk)
+                new_node.pk = None
+                new_node.disposition = new_disp
+                new_node.parent = None
+                new_node.save()
+                node_mapping[old_node.pk] = new_node
+                
+            for old_node in old_nodes:
+                if old_node.parent_id:
+                    new_node = node_mapping[old_node.pk]
+                    new_node.parent = node_mapping[old_node.parent_id]
+                    new_node.save()
+
+        messages.success(request, f'اوردر با موفقیت کپی شد. اکنون در حال ویرایش نسخه کپی هستید.')
+        return redirect(reverse('dashboard:ordering:order_edit', kwargs={'pk': new_order.pk}))
 
 # ===================================================== #
 # ==================== Order List ===================== #
@@ -142,20 +236,20 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         )
  
         # ── Prefetch آیتم‌های KEY-VALUE پیش‌بالینی ──────────────────────
-        field_items_prefetch = Prefetch(
-            "items",
-            queryset=DynamicFieldItem.objects.order_by("order_index"),
+        preclinical_children_prefetch = Prefetch(
+            "children",
+            queryset=DynamicFieldNode.objects.order_by("order_index"),
         )
-        subgroups_prefetch = Prefetch(
-            "subgroups",
-            queryset=DynamicFieldSubGroup.objects.prefetch_related(
-                field_items_prefetch
+        preclinical_nodes_prefetch = Prefetch(
+            "nodes",
+            queryset=DynamicFieldNode.objects.filter(parent=None).prefetch_related(
+                preclinical_children_prefetch
             ).order_by("order_index"),
         )
         dynamic_groups_prefetch = Prefetch(
             "dynamic_field_groups",
             queryset=DynamicFieldGroup.objects.prefetch_related(
-                subgroups_prefetch
+                preclinical_nodes_prefetch
             ).order_by("order_index"),
         )
  
@@ -409,8 +503,7 @@ class DrugSearchAjaxView(View):
         if len(query) < 2:
             return JsonResponse({'results': []})
         
-        # جستجو در نام دارو "یا" کد دارو
-        drugs = Drug.objects.filter(
+        drugs = Drug.objects.filter(is_for_order=True).filter(
             Q(title__icontains=query) | Q(code__icontains=query)
         )[:20]
         
@@ -425,6 +518,31 @@ class DrugSearchAjaxView(View):
         
         return JsonResponse({'results': results})
 
+@method_decorator(csrf_exempt, name='dispatch')
+class DrugQuickCreateAjaxView(View):
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+            title = data.get('title', '').strip()
+            code = data.get('code', '').strip()
+            
+            if title:
+                drug, created = Drug.objects.get_or_create(
+                    title=title, 
+                    defaults={'is_for_order': True, 'code': code}
+                )
+                
+                if not created:
+                    drug.is_for_order = True
+                    if code and not drug.code:
+                        drug.code = code
+                    drug.save()
+                    
+                return JsonResponse({'success': True, 'id': drug.id, 'text': drug.title})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+            
+        return JsonResponse({'success': False, 'error': 'اطلاعات نامعتبر است'})
 
 # ====================================================== #
 # ==================== Dynamic View ==================== #
@@ -436,125 +554,166 @@ class PreClinicalManageView(View):
         return get_object_or_404(Order, pk=order_pk)
 
     def _build_nested(self, order, post_data=None):
-        groups = DynamicFieldGroup.objects.filter(order=order).prefetch_related('subgroups__items')
+        groups = DynamicFieldGroup.objects.filter(order=order).order_by('order_index')
         nested = []
         for group in groups:
-            subgroup_fs = DynamicFieldSubGroupFormSet(
-                post_data or None,
-                instance=group,
-                prefix=f'group-{group.pk}-subgroups'
-            )
-            sub_nested = []
-            for sub_form in subgroup_fs:
-                if not sub_form.instance.pk:
-                    continue
-                item_fs = DynamicFieldItemFormSet(
+            root_nodes = DynamicFieldNode.objects.filter(
+                group=group, parent=None
+            ).prefetch_related('children').order_by('order_index')
+
+            node_entries = []
+            for node in root_nodes:
+                child_fs = DynamicFieldChildNodeFormSet(
                     post_data or None,
-                    instance=sub_form.instance,
-                    prefix=f'group-{group.pk}-sub-{sub_form.instance.pk}-items'
+                    instance=node,
+                    prefix=f'group-{group.pk}-node-{node.pk}-children',
                 )
-                sub_nested.append({'sub_form': sub_form, 'item_fs': item_fs})
+                node_entries.append({
+                    'node': node,
+                    'node_form': DynamicFieldRootNodeForm(
+                        post_data or None,
+                        instance=node,
+                        prefix=f'group-{group.pk}-node-{node.pk}',
+                    ),
+                    'child_fs': child_fs,
+                })
             nested.append({
                 'group': group,
-                'group_form': DynamicFieldGroupForm(post_data or None, instance=group, prefix=f'group-{group.pk}'),
-                'subgroup_fs': subgroup_fs,
-                'sub_nested': sub_nested,
+                'group_form': DynamicFieldGroupForm(
+                    post_data or None,
+                    instance=group,
+                    prefix=f'group-{group.pk}',
+                ),
+                'node_entries': node_entries,
             })
         return nested
 
+    def _base_context(self, order, post_data=None):
+        return {
+            'order': order,
+            'nested': self._build_nested(order, post_data),
+            'new_group_form': DynamicFieldGroupForm(prefix='new_group'),
+            'child_form': DynamicFieldChildNodeForm(),
+            'color_choices': TailwindColor.choices,
+            'active_tab': 'preclinical',}
+
     def get(self, request, order_pk):
         order = self.get_order(order_pk)
-        context = {
-            'order': order,
-            'nested': self._build_nested(order),
-            'new_group_form': DynamicFieldGroupForm(prefix='new_group'),
-            'empty_subgroup_fs': DynamicFieldSubGroupFormSet(instance=DynamicFieldGroup(), prefix='group-__gid__-subgroups'),
-            'empty_item_fs': DynamicFieldItemFormSet(instance=DynamicFieldSubGroup(), prefix='group-__gid__-sub-__sid__-items'),
-            'active_tab': 'preclinical',
-        }
-        return render(request, self.template_name, context)
+        return render(request, self.template_name, self._base_context(order))
 
     @transaction.atomic
     def post(self, request, order_pk):
         order = self.get_order(order_pk)
-        action = request.POST.get('action')
+        action = request.POST.get('action', '')
+        redirect_url = reverse('dashboard:ordering:preclinical', kwargs={'order_pk': order_pk})
 
+        # ===== افزودن گروه ===== #
         if action == 'add_group':
-            form = DynamicFieldGroupForm(request.POST, prefix='new_group')
-            if form.is_valid():
-                group = form.save(commit=False)
-                group.order = order
-                group.save()
-                messages.success(request, 'گروه جدید با موفقیت اضافه شد.')
+            title = request.POST.get('new_group-title', '').strip()
+            color = request.POST.get('new_group-color', '')
+            if title:
+                max_idx = DynamicFieldGroup.objects.filter(order=order).aggregate(
+                    m=Max('order_index'))['m'] or 0
+                DynamicFieldGroup.objects.create(
+                    order=order, title=title, color=color, order_index=max_idx + 1
+                )
+                messages.success(request, f'گروه «{title}» اضافه شد.')
             else:
-                messages.error(request, 'خطا در افزودن گروه. لطفاً عنوان را وارد کنید.')
-            return redirect(reverse('dashboard:ordering:preclinical', kwargs={'order_pk': order_pk}))
+                messages.error(request, 'عنوان گروه نمی‌تواند خالی باشد.')
+            return redirect(redirect_url)
 
+        # ===== حذف گروه ===== #
         if action == 'delete_group':
-            deleted, _ = DynamicFieldGroup.objects.filter(pk=request.POST.get('group_pk'), order=order).delete()
+            deleted, _ = DynamicFieldGroup.objects.filter(
+                pk=request.POST.get('group_pk'), order=order
+            ).delete()
             if deleted:
-                messages.success(request, 'گروه با موفقیت حذف شد.')
-            return redirect(reverse('dashboard:ordering:preclinical', kwargs={'order_pk': order_pk}))
+                messages.success(request, 'گروه حذف شد.')
+            return redirect(redirect_url)
 
+        # ===== افزودن گره ریشه ===== #
+        if action == 'add_root_node':
+            group_pk = request.POST.get('group_pk')
+            group = get_object_or_404(DynamicFieldGroup, pk=group_pk, order=order)
+            title = request.POST.get('new_root-title', '').strip()
+            color = request.POST.get('new_root-color', '')
+            if title:
+                max_idx = DynamicFieldNode.objects.filter(
+                    group=group, parent=None
+                ).aggregate(m=Max('order_index'))['m'] or 0
+                DynamicFieldNode.objects.create(
+                    group=group, parent=None,
+                    title=title, color=color, order_index=max_idx + 1,
+                )
+                messages.success(request, f'گره «{title}» اضافه شد.')
+            else:
+                messages.error(request, 'عنوان گره نمی‌تواند خالی باشد.')
+            return redirect(redirect_url)
+
+        # ===== حذف گره ===== #
+        if action == 'delete_node':
+            DynamicFieldNode.objects.filter(
+                pk=request.POST.get('node_pk'),
+                group__order=order,
+            ).delete()
+            messages.success(request, 'گره حذف شد.')
+            return redirect(redirect_url)
+
+        # ===== ذخیره همه ===== #
         if action == 'save_all':
             groups = DynamicFieldGroup.objects.filter(order=order)
             all_valid = True
-            nested_data = []
+            all_group_forms = []
+            all_node_data = []
 
             for group in groups:
-                group_form = DynamicFieldGroupForm(request.POST, instance=group, prefix=f'group-{group.pk}')
-                subgroup_fs = DynamicFieldSubGroupFormSet(request.POST, instance=group, prefix=f'group-{group.pk}-subgroups')
-
-                gf_valid = group_form.is_valid()
-                sf_valid = subgroup_fs.is_valid()
-
-                if not gf_valid:
-                    print(f"[INVALID] group_form {group.pk}: {group_form.errors}")
-                if not sf_valid:
-                    print(f"[INVALID] subgroup_fs {group.pk}: {subgroup_fs.errors} | non_form: {subgroup_fs.non_form_errors()}")
-
-                if not gf_valid or not sf_valid:
+                gf = DynamicFieldGroupForm(request.POST, instance=group, prefix=f'group-{group.pk}')
+                if not gf.is_valid():
                     all_valid = False
+                all_group_forms.append((group, gf))
 
-                nested_data.append({'group_form': group_form, 'subgroup_fs': subgroup_fs})
+                for node in DynamicFieldNode.objects.filter(group=group, parent=None):
+                    nf = DynamicFieldRootNodeForm(
+                        request.POST, instance=node, prefix=f'group-{group.pk}-node-{node.pk}'
+                    )
+                    cf = DynamicFieldChildNodeFormSet(
+                        request.POST, instance=node, prefix=f'group-{group.pk}-node-{node.pk}-children'
+                    )
+                    if not nf.is_valid() or not cf.is_valid():
+                        all_valid = False
+                    all_node_data.append((group, node, nf, cf))
 
             if not all_valid:
-                nested = self._build_nested(order)
-                return render(request, self.template_name, {
-                    'order': order,
-                    'nested': nested,
-                    'new_group_form': DynamicFieldGroupForm(prefix='new_group'),
-                    'empty_subgroup_fs': DynamicFieldSubGroupFormSet(instance=DynamicFieldGroup(), prefix='group-__gid__-subgroups'),
-                    'empty_item_fs': DynamicFieldItemFormSet(instance=DynamicFieldSubGroup(), prefix='group-__gid__-sub-__sid__-items'),
-                    'active_tab': 'preclinical',
-                })
+                nested = []
+                for group, gf in all_group_forms:
+                    node_entries = [
+                        {'node': node, 'node_form': nf, 'child_fs': cf}
+                        for g, node, nf, cf in all_node_data if g.pk == group.pk
+                    ]
+                    nested.append({'group': group, 'group_form': gf, 'node_entries': node_entries})
+                ctx = self._base_context(order)
+                ctx['nested'] = nested
+                messages.error(request, 'لطفاً خطاها را برطرف کنید.')
+                return render(request, self.template_name, ctx)
 
-            if all_valid:
-                for data in nested_data:
-                    data['group_form'].save()
-                    
-                    new_sub_temp_sids = {}
-                    for sub_form in data['subgroup_fs']:
-                        if not sub_form.instance.pk:
-                            prefix = sub_form.prefix 
-                            temp_sid = request.POST.get(f'{prefix}-temp_sid')
-                            if temp_sid:
-                                new_sub_temp_sids[sub_form.prefix] = temp_sid
-                    
-                    saved_subs = data['subgroup_fs'].save()
-                    
-                    for sub_form in data['subgroup_fs']:
-                        sub = sub_form.instance
-                        if not sub.pk or sub_form in data['subgroup_fs'].deleted_forms:
-                            continue
+            for group, gf in all_group_forms:
+                gf.save()
 
-                        temp_sid = new_sub_temp_sids.get(sub_form.prefix)
-                        item_prefix = f'group-{sub.group_id}-sub-{temp_sid or sub.pk}-items'
-                        item_fs = DynamicFieldItemFormSet(request.POST, instance=sub, prefix=item_prefix)
-                        if item_fs.is_valid():
-                            item_fs.save()
-                messages.success(self.request, 'پیش‌بالینی با موفقیت ذخیره شد.')
-                return redirect(reverse('dashboard:ordering:preclinical', kwargs={'order_pk': order_pk}))
+            for group, node, nf, cf in all_node_data:
+                nf.save()
+                new_children = cf.save(commit=False)
+                for child in new_children:
+                    child.group = group
+                    child.parent = node
+                    child.save()
+                    
+                for obj in cf.deleted_objects:
+                    obj.delete()
+                cf.save_m2m()
+
+            messages.success(request, 'پیش‌بالینی با موفقیت ذخیره شد.')
+            return redirect(redirect_url)
+
 
 # ======================================================== #
 # ==================== Emergency View ==================== #

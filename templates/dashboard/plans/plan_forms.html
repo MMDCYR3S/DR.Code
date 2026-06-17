@@ -108,6 +108,23 @@
                         </div>
                     </div>
 
+                    <!-- داخل فرم Membership Modal قبل از قسمت "فعال بودن" این را اضافه کنید -->
+                    <div class="form-field mb-6">
+                        <label class="block text-sm font-semibold text-slate-700 mb-3">
+                            <i class="fa-solid fa-list-check ml-2 text-purple-500"></i>
+                            ویژگی‌ها و دسترسی‌ها (چند انتخاب)
+                        </label>
+                        <select multiple
+                                x-model="membershipFormData.features" 
+                                class="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
+                                style="min-height: 120px;">
+                            {% for feature in features %}
+                                <option value="{{ feature.id }}">{{ feature.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <p class="text-xs text-slate-500 mt-2">برای انتخاب چند مورد، کلید Ctrl (یا Cmd در مک) را نگه دارید.</p>
+                    </div>
+
                     <!-- فعال بودن -->
                     <div class="bg-gradient-to-r from-slate-50 to-green-50 rounded-xl p-5 mb-6 border border-slate-200">
                         <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -274,3 +291,37 @@
         </div>
     </div>
 </div>
+
+<!-- Feature Modal -->
+<div x-show="isFeatureModalOpen" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div x-show="isFeatureModalOpen" class="fixed inset-0 bg-slate-900 bg-opacity-50 transition-opacity" @click="closeFeatureModal()"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div x-show="isFeatureModalOpen" class="inline-block align-bottom bg-white rounded-2xl text-right overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="text-lg font-bold text-slate-800" x-text="featureModalTitle"></h3>
+                <button @click="closeFeatureModal()" class="text-slate-400 hover:text-slate-600 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="p-6">
+                <form @submit.prevent="submitFeatureForm">
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">نام ویژگی</label>
+                        <input type="text" x-model="featureFormData.name" required class="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">توضیحات (اختیاری)</label>
+                        <textarea x-model="featureFormData.description" rows="3" class="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"></textarea>
+                    </div>
+                    <div class="flex justify-end gap-3 mt-6">
+                        <button type="button" @click="closeFeatureModal()" class="px-5 py-2.5 rounded-lg text-slate-700 font-medium hover:bg-slate-100 transition-colors">انصراف</button>
+                        <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm flex items-center justify-center min-w-[100px]">
+                            <span x-show="!isLoading">ذخیره</span>
+                            <i x-show="isLoading" class="fa-solid fa-spinner fa-spin"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+

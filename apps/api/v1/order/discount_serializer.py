@@ -1,4 +1,3 @@
-# api/v1/marketing/serializers.py
 from rest_framework import serializers
 from apps.accounts.models import User
 from apps.order.models import DiscountCode

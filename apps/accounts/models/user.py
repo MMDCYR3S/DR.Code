@@ -117,14 +117,25 @@ class User(AbstractUser):
         
     def has_active_membership(self):
         """
-        بررسی بهینه برای اینکه کاربر اشتراک فعال دارد یا نه.
+        بررسی اینکه آیا کاربر حداقل یک اشتراک فعال (از هر نوعی) دارد یا خیر.
         """
-        
         if self.is_staff or self.is_superuser:
             return True
         
         return self.subscriptions.filter(
-            status=SubscriptionStatusChoicesModel.active.value,
+            status=SubscriptionStatusChoicesModel.active,
             end_date__gte=timezone.now()
         ).exists()
+
+    def has_feature_access(self, feature_slug):
+        """
+        بررسی اینکه آیا کاربر به یک فیچر خاص (مثلا orders-access) دسترسی دارد یا خیر.
+        """
+        if self.is_staff or self.is_superuser:
+            return True
             
+        return self.subscriptions.filter(
+            status=SubscriptionStatusChoicesModel.active,
+            end_date__gte=timezone.now(),
+            plan__membership__features__slug=feature_slug
+        ).exists()

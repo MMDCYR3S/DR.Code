@@ -11,6 +11,7 @@ class Drug(models.Model):
     """
     title = models.CharField(max_length=150, verbose_name="نام دارو", unique=True)
     code = models.CharField(max_length=50, blank=True, verbose_name="کد دارو")
+    is_for_order = models.BooleanField(verbose_name="آیا برای اوردر است؟", default=False)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='زمان ساخت')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='زمان بروزرسانی')
 
@@ -32,7 +33,6 @@ class Drug(models.Model):
             
         jdate = jdatetime.datetime.fromgregorian(datetime=self.updated_at)
         return jdate.strftime("%Y/%m/%d - %H:%M")
-
 
 class PrescriptionDrug(models.Model):
     """

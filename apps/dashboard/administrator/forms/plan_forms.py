@@ -1,10 +1,26 @@
 from django import forms
-from apps.subscriptions.models import Plan, Membership
+from apps.subscriptions.models import Plan, Membership, Feature
+
+class FeatureForm(forms.ModelForm):
+    class Meta:
+        model = Feature
+        fields = ['name', 'description']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200',
+                'placeholder': 'مثال: دانلود فایل PDF'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200',
+                'placeholder': 'توضیحات (اختیاری)',
+                'rows': 3
+            }),
+        }
 
 class MembershipForm(forms.ModelForm):
     class Meta:
         model = Membership
-        fields = ['title', 'description', 'is_active']
+        fields = ['title', 'description', 'features', 'is_active'] 
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200',
@@ -14,6 +30,10 @@ class MembershipForm(forms.ModelForm):
                 'class': 'w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200',
                 'placeholder': 'توضیحات درباره نوع اشتراک',
                 'rows': 3
+            }),
+            'features': forms.SelectMultiple(attrs={
+                'class': 'w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200',
+                'size': '4'
             }),
         }
 

@@ -38,11 +38,11 @@ def access_level_badge(obj, field_name='access_level'):
     """
     level = getattr(obj, field_name, None)
     if level == 'PREMIUM':
-        return format_html(
+        return mark_safe(
             '<span class="px-2.5 py-0.5 text-xs font-semibold text-white '
             'bg-green-500 rounded-full">ویژه</span>'
         )
-    return format_html(
+    return mark_safe(
         '<span class="px-2.5 py-0.5 text-xs font-semibold text-blue-700 '
         'bg-blue-100 rounded-full">رایگان</span>'
     )

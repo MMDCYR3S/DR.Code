@@ -4,7 +4,7 @@ from django_ckeditor_5.widgets import CKEditor5Widget
 
 from apps.ordering.models import (
     Order, OrderSection, SectionItem, DrugSectionItem,
-    DynamicFieldGroup, DynamicFieldSubGroup, DynamicFieldItem,
+    DynamicFieldGroup, DynamicFieldNode,
     EmergencyDisposition, EmergencyNode,
     OrderImage, OrderVideo
 )
@@ -198,17 +198,18 @@ DrugSectionItemFormSet = inlineformset_factory(
     can_delete=True,
 )
 
-# ====================================================== #
-# ==================== Dynamic Form ==================== #
-# ====================================================== #
+# ======================================================= #
+# ==================== Dynamic Forms ==================== #
+# ======================================================= #
+
 class DynamicFieldGroupForm(forms.ModelForm):
     class Meta:
         model = DynamicFieldGroup
         fields = ['title', 'order_index', 'color']
         widgets = {
             'title': forms.TextInput(attrs={'class': INPUT_CLASSES_RTL, 'placeholder': 'عنوان گروه...'}),
-            'order_index': forms.NumberInput(attrs={'class': INPUT_CLASSES_LTR}),
             'color': forms.Select(attrs={'class': INPUT_CLASSES_LTR}),
+            'order_index': forms.HiddenInput(),
         }
 
     def __init__(self, *args, **kwargs):
@@ -220,13 +221,15 @@ class DynamicFieldGroupForm(forms.ModelForm):
         return self.cleaned_data.get('order_index') or 0
 
 
-class DynamicFieldSubGroupForm(forms.ModelForm):
+class DynamicFieldRootNodeForm(forms.ModelForm):
+    """گره‌های ریشه (parent=None)"""
     class Meta:
-        model = DynamicFieldSubGroup
-        fields = ['title', 'order_index']
+        model = DynamicFieldNode
+        fields = ['title', 'color', 'order_index']
         widgets = {
-            'title': forms.TextInput(attrs={'class': INPUT_CLASSES_RTL, 'placeholder': 'عنوان زیرگروه...'}),
-            'order_index': forms.NumberInput(attrs={'class': INPUT_CLASSES_LTR}),
+            'title': forms.TextInput(attrs={'class': INPUT_CLASSES_RTL, 'placeholder': 'عنوان گره...'}),
+            'color': forms.Select(attrs={'class': INPUT_CLASSES_LTR}),
+            'order_index': forms.HiddenInput(),
         }
 
     def __init__(self, *args, **kwargs):
@@ -238,71 +241,48 @@ class DynamicFieldSubGroupForm(forms.ModelForm):
         return self.cleaned_data.get('order_index') or 0
 
 
-class DynamicFieldItemForm(forms.ModelForm):
+class DynamicFieldChildNodeForm(forms.ModelForm):
+    """گره‌های فرزند"""
     class Meta:
-        model = DynamicFieldItem
-        fields = ['key', 'value', 'order_index']
+        model = DynamicFieldNode
+        fields = ['title', 'content', 'color', 'order_index']
         widgets = {
-            'key': forms.TextInput(attrs={'class': INPUT_CLASSES_RTL, 'placeholder': 'تعریف...'}),
-            'value': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 2, 'placeholder': 'توضیحات...'}),
-            'order_index': forms.NumberInput(attrs={'class': INPUT_CLASSES_LTR}),
+            'title': forms.TextInput(attrs={'class': INPUT_CLASSES_RTL, 'placeholder': 'عنوان فرزند...'}),
+            'content': CKEditor5Widget(
+                attrs={'class': 'django_ckeditor_5'},
+                config_name='extends',
+            ),
+            'color': forms.Select(attrs={'class': INPUT_CLASSES_LTR}),
+            'order_index': forms.HiddenInput(),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['order_index'].required = False
         self.fields['order_index'].initial = 0
+        self.fields['content'].required = False
 
     def clean_order_index(self):
         return self.cleaned_data.get('order_index') or 0
 
 
-class SkipEmptyFormSet(BaseInlineFormSet):
-    empty_field: str = 'title'
-
+class SkipEmptyNodeFormSet(BaseInlineFormSet):
     def full_clean(self):
         super().full_clean()
         for form in self.forms:
-            if not form.instance.pk and not form.cleaned_data.get(self.empty_field):
+            if not form.instance.pk and not form.cleaned_data.get('title'):
                 form._errors = {}
                 form.cleaned_data = {}
 
-class BaseGroupFormSet(SkipEmptyFormSet):
-    empty_field = 'title'
 
-class BaseSubGroupFormSet(SkipEmptyFormSet):
-    empty_field = 'title'
-
-
-class BaseItemFormSet(SkipEmptyFormSet):
-    empty_field = 'key'
-
-
-DynamicFieldGroupFormSet = inlineformset_factory(
-    Order,
-    DynamicFieldGroup,
-    form=DynamicFieldGroupForm,
-    formset=BaseGroupFormSet,
+DynamicFieldChildNodeFormSet = inlineformset_factory(
+    DynamicFieldNode,
+    DynamicFieldNode,
+    form=DynamicFieldChildNodeForm,
+    formset=SkipEmptyNodeFormSet,
     extra=0,
     can_delete=True,
-)
-
-DynamicFieldSubGroupFormSet = inlineformset_factory(
-    DynamicFieldGroup,
-    DynamicFieldSubGroup,
-    form=DynamicFieldSubGroupForm,
-    formset=BaseSubGroupFormSet,
-    extra=0,
-    can_delete=True,
-)
-
-DynamicFieldItemFormSet = inlineformset_factory(
-    DynamicFieldSubGroup,
-    DynamicFieldItem,
-    form=DynamicFieldItemForm,
-    formset=BaseItemFormSet,
-    extra=0,
-    can_delete=True,
+    fk_name='parent',
 )
 
 # ====================================================== #
@@ -385,7 +365,6 @@ class SkipEmptyNodeFormSet(BaseInlineFormSet):
             if not form.instance.pk and not form.cleaned_data.get('title'):
                 form._errors = {}
                 form.cleaned_data = {}
-
 
 ChildNodeFormSet = inlineformset_factory(
     EmergencyNode,

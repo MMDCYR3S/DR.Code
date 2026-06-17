@@ -30,7 +30,7 @@ from .section import (
 
 from .emergency_disposition import EmergencyDisposition, EmergencyNode
 
-from .dynamic_fields import DynamicFieldGroup, DynamicFieldSubGroup, DynamicFieldItem
+from .dynamic_fields import DynamicFieldGroup, DynamicFieldNode
 
 from .order_image import OrderImage
 from .order_video import OrderVideo
@@ -54,8 +54,7 @@ __all__ = [
 
     # فیلدهای پویا
     "DynamicFieldGroup",
-    "DynamicFieldSubGroup",
-    "DynamicFieldItem",
+    "DynamicFieldNode",
 
     # مدیا
     "OrderImage",

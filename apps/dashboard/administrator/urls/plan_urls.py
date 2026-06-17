@@ -12,6 +12,7 @@ urlpatterns = [
     
     # Membership URLs
     path('membership/create/', MembershipCreateView.as_view(), name='membership_create'),
+    path('membership/<int:pk>/', MembershipDetailView.as_view(), name='membership_detail'),
     path('membership/<int:pk>/update/', MembershipUpdateView.as_view(), name='membership_update'),
     path('membership/<int:pk>/delete/', MembershipDeleteView.as_view(), name='membership_delete'),
 ]

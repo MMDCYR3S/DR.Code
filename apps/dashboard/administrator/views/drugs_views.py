@@ -34,6 +34,7 @@ class DrugListView(LoginRequiredMixin, HasAdminAccessPermission, ListView):
                 'id': drug.id,
                 'title': drug.title,
                 'code': drug.code or '',
+                'is_for_order': drug.is_for_order,
                 'created_at': drug.shamsi_created_at,
                 'updated_at': drug.shamsi_updated_at,
             }
@@ -172,6 +173,7 @@ class DrugSearchView(LoginRequiredMixin, HasAdminAccessPermission, View):
                 'id': drug.id,
                 'title': drug.title,
                 'code': drug.code or '',
+                'is_for_order': drug.is_for_order,
                 'created_at': drug.shamsi_created_at,
                 'updated_at': drug.shamsi_updated_at,
             }

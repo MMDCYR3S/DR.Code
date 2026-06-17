@@ -112,6 +112,12 @@
                             transition-colors" title="ویرایش اوردر">
                     <i class="fa-solid fa-pen-to-square"></i>
                   </a>
+                  <form method="POST" action="{% url 'dashboard:ordering:order_copy' order.pk %}" class="inline" onsubmit="return confirm('آیا از کپی کردن این اوردر اطمینان دارید؟');">
+                      {% csrf_token %}
+                      <button type="submit" class="p-2 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors" title="کپی اوردر">
+                          <i class="fa-solid fa-copy"></i>
+                      </button>
+                  </form>
                   <button @click="open({{ order.pk }}, '{{ order.name|escapejs }}', '{% url 'dashboard:ordering:order_delete' order.pk %}')"
                           class="p-2 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50
                                  transition-colors" title="حذف">
@@ -152,6 +158,12 @@
                           transition-colors text-sm" title="ویرایش">
                   <i class="fa-solid fa-pen-to-square"></i>
                 </a>
+                <form method="POST" action="{% url 'dashboard:ordering:order_copy' order.pk %}" class="inline" onsubmit="return confirm('آیا از کپی کردن این اوردر اطمینان دارید؟');">
+                    {% csrf_token %}
+                    <button type="submit" class="p-1.5 text-slate-400 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-colors text-sm" title="کپی اوردر">
+                        <i class="fa-solid fa-copy"></i>
+                    </button>
+                </form>
                 <button @click="open({{ order.pk }}, '{{ order.name|escapejs }}', '{% url 'dashboard:ordering:order_delete' order.pk %}')"
                         class="p-1.5 text-slate-400 hover:text-red-600 rounded-md hover:bg-red-50
                                transition-colors text-sm" title="حذف">

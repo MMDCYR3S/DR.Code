@@ -58,3 +58,29 @@ class HasAdminAccessPermission(UserPassesTestMixin):
                 getattr(user.profile, "role", None) == "admin"
             )
         )
+    
+class HasFeaturePermission(permissions.BasePermission):
+    """
+    پرمیشن داینامیک برای بررسی دسترسی به یک ویژگی خاص (Feature).
+    ویو مربوطه باید یک اتربیوت به نام `required_feature` داشته باشد.
+    """
+    
+    def __init__(self):
+        self.message = "شما به این قابلیت دسترسی ندارید. لطفاً اشتراک خود را ارتقا دهید."
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            self.message = "لطفاً ابتدا وارد حساب کاربری خود شوید."
+            return False
+            
+        required_feature = getattr(view, 'required_feature', None)
+        
+        if not required_feature:
+            return True
+            
+        has_access = request.user.has_feature_access(required_feature)
+        
+        if not has_access:
+            self.message = f"برای استفاده از این بخش نیاز به فعال‌سازی دسترسی '{required_feature}' دارید."
+            
+        return has_access
