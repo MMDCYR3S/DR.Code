@@ -67,15 +67,29 @@ class OrderFilterForm(forms.Form):
 class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
-        fields = ['name', 'imp', 'condition', 'diet', 'action', 'position', 'notes', 'category', 'color']
+        fields = [
+            'name',
+            'imp', 'imp_notes',
+            'condition', 'condition_notes',
+            'diet', 'diet_notes',
+            'action', 'action_notes',
+            'position', 'position_notes',
+            'notes',
+            'category', 'color',
+        ]
         widgets = {
             'name': forms.TextInput(attrs={'class': INPUT_CLASSES_RTL, 'placeholder': 'نام اوردر...'}),
-            'imp': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 2}),
-            'condition': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 2}),
-            'diet': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 2}),
-            'action': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 2}),
-            'position': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 2}),
-            'notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3}),
+            'imp': forms.TextInput(attrs={'class': INPUT_CLASSES_LTR}),
+            'imp_notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3, 'placeholder': 'توضیحات تکمیلی Impression...'}),
+            'condition': forms.TextInput(attrs={'class': INPUT_CLASSES_LTR}),
+            'condition_notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3, 'placeholder': 'توضیحات تکمیلی Condition...'}),
+            'diet': forms.TextInput(attrs={'class': INPUT_CLASSES_LTR}),
+            'diet_notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3, 'placeholder': 'توضیحات تکمیلی Diet...'}),
+            'action': forms.TextInput(attrs={'class': INPUT_CLASSES_LTR,}),
+            'action_notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3, 'placeholder': 'توضیحات تکمیلی Action...'}),
+            'position': forms.TextInput(attrs={'class': INPUT_CLASSES_LTR}),
+            'position_notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3, 'placeholder': 'توضیحات تکمیلی Position...'}),
+            'notes': forms.TextInput(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3, 'placeholder': 'توضیحات تکمیلی اوردر...'}),
             'category': forms.Select(attrs={'class': INPUT_CLASSES_RTL}),
             'color': forms.Select(attrs={'class': INPUT_CLASSES_LTR}),
         }
@@ -84,13 +98,12 @@ class OrderForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['category'].queryset = PrescriptionCategory.objects.all().order_by('title')
 
-
 class OrderSectionForm(forms.ModelForm):
     class Meta:
         model = OrderSection
         fields = ['title', 'notes', 'is_drug_section', 'order_index', 'color']
         widgets = {
-            'title': forms.TextInput(attrs={'class': INPUT_CLASSES_RTL, 'placeholder': 'عنوان بخش...'}),
+            'title': forms.TextInput(attrs={'class': INPUT_CLASSES_LTR, 'placeholder': 'عنوان بخش...'}),
             'notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 1}),
             'is_drug_section': forms.CheckboxInput(attrs={'class': CHECKBOX_CLASSES}),
             'order_index': forms.NumberInput(attrs={'class': INPUT_CLASSES_LTR}),

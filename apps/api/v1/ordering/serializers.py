@@ -172,8 +172,13 @@ class OrderBaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = [
-            'id', 'name', 'imp', 'condition', 'diet',
-            'action', 'position', 'notes', 'category', 'color'
+            'id', 'name',
+            'imp', 'imp_notes',
+            'condition', 'condition_notes',
+            'diet', 'diet_notes',
+            'action', 'action_notes',
+            'position', 'position_notes',
+            'notes', 'category', 'color',
         ]
 
 # ========== ORDER SECTIONS SERIALIZER ========== #
