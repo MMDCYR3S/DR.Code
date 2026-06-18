@@ -22,7 +22,7 @@ class IsPrescriptionAccessible(permissions.BasePermission):
             if not user.is_authenticated:
                 self.message = "برای دسترسی به این محتوا باید وارد حساب کاربری خود شوید."
                 return False
-
+    
             profile_approved = hasattr(user, 'profile') and user.profile.auth_status == AuthStatusChoices.APPROVED.value
             if not profile_approved:
                 self.message = "حساب کاربری شما هنوز تایید نشده است. لطفا منتظر بمانید."

@@ -5,19 +5,16 @@ from rest_framework import status, throttling
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.filters import SearchFilter
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema_view, extend_schema
 
 from apps.prescriptions.models import Prescription
 from ..serializers import SavedPrescriptionListSerializer
 from ...prescriptions.views.pagination import PrescriptionPagination
 
 # ============= PRESCRIPTION SAVE/UNSAVE VIEW ============= #
-class PrescriptionSaveToggleView(APIView):
-    """
-    برای ذخیره (Bookmark) کردن یا حذف ذخیره‌سازی یک نسخه توسط کاربر لاگین شده.
-    """
-    
-    permission_classes = [IsAuthenticated]
-    
+@extend_schema_view(
+    post=extend_schema(tags=['Profile'], summary='ذخیره/حذف نسخه در لیست علاقه‌مندی‌ها (Toggle)')
+)   
 class PrescriptionSaveToggleView(APIView):
     """
     برای ذخیره (Bookmark) کردن یا حذف ذخیره‌سازی یک نسخه توسط کاربر لاگین شده.
@@ -54,9 +51,11 @@ class PrescriptionSaveToggleView(APIView):
             },
             status=response_status
         )
-            
-            
+
 # ============= SAVED PRESCRIPTION LIST VIEW ============= #
+@extend_schema_view(
+    get=extend_schema(tags=['Profile'], summary='لیست نسخه‌های ذخیره‌شده توسط کاربر')
+)
 class SavedPrescriptionListView(ListAPIView):
     """
     نمایش لیست نسخه‌های ذخیره‌شده (Bookmarked) توسط کاربر فعلی.

@@ -1,12 +1,16 @@
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, View
+from django.views.generic import ListView, View
 from django.urls import reverse_lazy
 from django.http import JsonResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404
 import json
-from apps.subscriptions.models import Plan, Membership, Feature
+from apps.subscriptions.models import Plan, Membership, Feature, FeatureType
 from ..forms import PlanForm, MembershipForm, FeatureForm
 
+
+# ========================== #
+# ========== PLAN ========== #
+# ========================== #
 class PlanListView(LoginRequiredMixin, ListView):
     model = Plan
     template_name = 'dashboard/plans/plan_list.html'
@@ -16,6 +20,7 @@ class PlanListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['memberships'] = Membership.objects.prefetch_related('features').all() 
         context['features'] = Feature.objects.all()
+        context['feature_types'] = FeatureType.choices
         return context
 
 class PlanCreateView(LoginRequiredMixin, View):
@@ -80,6 +85,10 @@ class PlanDeleteView(LoginRequiredMixin, View):
                 'message': f'خطا در حذف پلن: {str(e)}'
             })
 
+
+# ================================ #
+# ========== MEMBERSHIP ========== #
+# ================================ #
 class MembershipDetailView(LoginRequiredMixin, View):
     def get(self, request, pk, *args, **kwargs):
         try:
@@ -181,18 +190,45 @@ class PlanDetailView(LoginRequiredMixin, View):
                 'success': False,
                 'message': f'خطا در دریافت اطلاعات پلن: {str(e)}'
             })
-            
+
+# ============================== #
+# ========== FEATURES ========== #
+# ============================== #
 class FeatureCreateView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
             form = FeatureForm(data)
+            
             if form.is_valid():
-                form.save()
-                return JsonResponse({'success': True, 'message': 'ویژگی با موفقیت اضافه شد.'})
-            return JsonResponse({'success': False, 'errors': form.errors})
+                feature = form.save()
+                return JsonResponse({
+                    'success': True,
+                    'message': 'ویژگی با موفقیت اضافه شد.',
+                    'data': {
+                        'id': feature.id,
+                        'name': feature.name,
+                        'slug': feature.slug,
+                        'feature_type': feature.get_feature_type_display()
+                    }
+                })
+            
+            return JsonResponse({
+                'success': False,
+                'errors': form.errors
+            }, status=400)
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'message': 'فرمت JSON نامعتبر است.'
+            }, status=400)
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)})
+            return JsonResponse({
+                'success': False,
+                'message': f'خطای سرور: {str(e)}'
+            }, status=500)
+
 
 class FeatureDetailView(LoginRequiredMixin, View):
     def get(self, request, pk, *args, **kwargs):
@@ -200,10 +236,15 @@ class FeatureDetailView(LoginRequiredMixin, View):
         return JsonResponse({
             'success': True,
             'data': {
+                'id': feature.id,
                 'name': feature.name,
-                'description': feature.description
+                'slug': feature.slug,
+                'feature_type': feature.feature_type,
+                'description': feature.description,
+                'is_active': feature.is_active
             }
         })
+
 
 class FeatureUpdateView(LoginRequiredMixin, View):
     def post(self, request, pk, *args, **kwargs):
@@ -211,18 +252,51 @@ class FeatureUpdateView(LoginRequiredMixin, View):
             feature = get_object_or_404(Feature, pk=pk)
             data = json.loads(request.body)
             form = FeatureForm(data, instance=feature)
+            
             if form.is_valid():
-                form.save()
-                return JsonResponse({'success': True, 'message': 'ویژگی با موفقیت ویرایش شد.'})
-            return JsonResponse({'success': False, 'errors': form.errors})
+                updated_feature = form.save()
+                return JsonResponse({
+                    'success': True,
+                    'message': 'ویژگی با موفقیت ویرایش شد.',
+                    'data': {
+                        'id': updated_feature.id,
+                        'name': updated_feature.name,
+                        'slug': updated_feature.slug,
+                        'feature_type': updated_feature.get_feature_type_display()
+                    }
+                })
+            
+            return JsonResponse({
+                'success': False,
+                'errors': form.errors
+            }, status=400)
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'message': 'فرمت JSON نامعتبر است.'
+            }, status=400)
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)})
+            return JsonResponse({
+                'success': False,
+                'message': f'خطای سرور: {str(e)}'
+            }, status=500)
+
 
 class FeatureDeleteView(LoginRequiredMixin, View):
     def post(self, request, pk, *args, **kwargs):
         try:
             feature = get_object_or_404(Feature, pk=pk)
+            feature_name = feature.name
             feature.delete()
-            return JsonResponse({'success': True, 'message': 'ویژگی با موفقیت حذف شد.'})
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'ویژگی "{feature_name}" با موفقیت حذف شد.'
+            })
+            
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)})
+            return JsonResponse({
+                'success': False,
+                'message': f'خطا در حذف: {str(e)}'
+            }, status=500)

@@ -1,6 +1,7 @@
 from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+from drf_spectacular.utils import extend_schema_view, extend_schema
 
 from django.core.cache import cache
 from django.utils.decorators import method_decorator
@@ -13,7 +14,10 @@ from ..serializers import (
 
 from .base_views import BaseAPIView
 
-# ================= TUTORIAL LIST VIEW ================= #
+# ========= RECENT TUTORIAL VIEW  ========= #
+@extend_schema_view(
+    get=extend_schema(tags=['Home'], summary='نمایش ۴ آموزش اخیر')
+)
 class TutorialListView(BaseAPIView):
     """
     لیست ویدیوهای آموزشی

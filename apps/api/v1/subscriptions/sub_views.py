@@ -4,6 +4,7 @@ from django.views.decorators.vary import vary_on_headers
 
 from rest_framework import generics, filters, permissions
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
+from drf_spectacular.utils import extend_schema_view, extend_schema
 
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -11,6 +12,10 @@ from apps.subscriptions.models import Plan
 from .sub_serializers import PlanPublicSerializer
 
 # ========== PUBLIC PLAN LIST VIEW ========== #
+@extend_schema_view(
+    get=extend_schema(tags=['Order'], summary='نسخه‌های پزشکی'),
+    post=extend_schema(tags=["Order"]),
+)
 class PublicPlanListView(generics.ListAPIView):
     """
     API برای نمایش لیست پلن‌های فعال در صفحات عمومی

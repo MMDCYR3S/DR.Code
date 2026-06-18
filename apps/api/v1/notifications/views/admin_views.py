@@ -1,5 +1,6 @@
 from rest_framework import permissions, status, generics
 from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema_view, extend_schema
 
 from apps.notifications.models import Notification
 from ..serializers import NotificationSerializer
@@ -7,6 +8,9 @@ from ..serializers import NotificationSerializer
 # ======================================== #
 # ======== NOTIFICATION LIST VIEW ======== #
 # ======================================== #
+@extend_schema_view(
+    get=extend_schema(tags=['Notifications'], summary='دریافت لیست تمامی اعلان‌های کاربر')
+)
 class NotificationListView(generics.ListAPIView):
     """
     API برای نمایش لیست اعلان‌های کاربر لاگین کرده.
@@ -24,9 +28,13 @@ class NotificationListView(generics.ListAPIView):
         user = self.request.user
         return Notification.objects.filter(recipient=user).order_by('is_read', '-created_at')
 
-# ================================================== #
+# ================================================ #
 # ======== NOTIFICATION MARK AS READ VIEW ======== #
-# ================================================== #
+# ================================================ #
+@extend_schema_view(
+    get=extend_schema(tags=['Notifications'], summary='مشاهده جزئیات و تغییر وضعیت اعلان به خوانده شده'),
+    post=extend_schema(tags=['Notifications'], summary='تغییر وضعیت اعلان به خوانده شده (متد جایگزین)')
+)
 class NotificationMarkAsReadView(generics.GenericAPIView):
     """
     API برای تعامل با یک اعلان خاص.

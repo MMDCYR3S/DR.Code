@@ -1,6 +1,7 @@
 from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.utils import extend_schema_view, extend_schema
 
 from django.utils import timezone
 from django.db import transaction
@@ -14,6 +15,9 @@ from ..serializers import ContactListSerializer, ContactSerializer
 logger = logging.getLogger(__name__)
 
 # =========== CONTACT VIEW =========== #
+@extend_schema_view(
+    post=extend_schema(tags=['Home'], summary='ارسال پیام تماس با ما')
+)
 class ContactView(BaseAPIView):
     """
     ارسال پیام تماس با ما
@@ -75,18 +79,15 @@ class ContactView(BaseAPIView):
     def _notify_admins(self, contact):
         """اطلاع‌رسانی به ادمین‌ها (می‌توان توسعه داد)"""
         try:
-            # اینجا می‌توان ایمیل، پیامک یا اطلاعیه تلگرام به ادمین‌ها ارسال کرد
             logger.info(f"اطلاع‌رسانی پیام جدید: {contact.id} - {contact.subject_display}")
-            
-            # TODO: پیاده‌سازی ارسال اطلاعیه
-            # - ارسال ایمیل به ادمین‌ها
-            # - ارسال پیام تلگرام
-            # - ذخیره notification در سیستم
             
         except Exception as e:
             logger.error(f"خطا در اطلاع‌رسانی به ادمین‌ها: {str(e)}")
 
 # ========= CONTACT INFO VIEW  ========= #
+@extend_schema_view(
+    get=extend_schema(tags=['Home'], summary='دریافت اطلاعات تماس و کانال‌های ارتباطی')
+)
 class ContactInfoView(BaseAPIView):
     """
     دریافت اطلاعات تماس و راهنمایی

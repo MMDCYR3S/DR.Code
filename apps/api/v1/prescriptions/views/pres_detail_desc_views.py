@@ -1,11 +1,16 @@
 from rest_framework import generics, permissions
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
+from drf_spectacular.utils import extend_schema_view, extend_schema
 
 from apps.prescriptions.models import Prescription
 from ..serializers import PrescriptionDescriptionSerializer
 from .permissions import IsPrescriptionAccessible
 
 # ========= PRESCRIPTION DESCRIPTION VIEW ========== #
+@extend_schema_view(
+    get=extend_schema(tags=['Prescriptions'], summary='نسخه‌های پزشکی'),
+    post=extend_schema(tags=["Prescriptions"]),
+)
 class PrescriptionDescriptionView(generics.RetrieveAPIView):
     """
     View جداگانه برای نمایش توضیحات کامل (detailed_description) نسخه

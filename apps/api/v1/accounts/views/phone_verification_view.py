@@ -4,14 +4,20 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from django.core.cache import cache
+from drf_spectacular.utils import extend_schema_view, extend_schema
 
 # ===== Local Services ===== #
 from apps.accounts.services import AmootSMSService
 from ..serializers import PhoneVerificationSerializer
 
-# فراخوانی همان لاگر
+
 logger = logging.getLogger('user_verification')
 
+# ================= PHONE VERIFICATION ================= #
+@extend_schema_view(
+    get=extend_schema(tags=['Accounts'], summary='درخواست کد تایید موبایل (ارسال پیامک)'),
+    post=extend_schema(tags=['Accounts'], summary='تایید شماره موبایل با کد وارد شده')
+)
 class PhoneVerificationView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = PhoneVerificationSerializer

@@ -3,6 +3,7 @@ from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework.filters import OrderingFilter
 
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema_view, extend_schema
 
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
@@ -14,6 +15,10 @@ from .filters import PrescriptionFilter
 from .pagination import PrescriptionPagination
 
 # ========= PRESCRIPTION LIST VIEW ========== #
+@extend_schema_view(
+    get=extend_schema(tags=['Prescriptions'], summary='نسخه‌های پزشکی'),
+    post=extend_schema(tags=["Prescriptions"]),
+)
 class PrescriptionListView(generics.ListAPIView):
     """
     لیست نسخه‌ها با قابلیت جستجو، فیلتر و صفحه‌بندی

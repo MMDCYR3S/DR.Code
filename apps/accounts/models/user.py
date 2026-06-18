@@ -1,9 +1,10 @@
+# apps/accounts/models.py
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
 from django.db import models
 from django.core.validators import RegexValidator
 from django.utils import timezone
-import uuid
+from django.core.cache import cache
 
 import jdatetime
 
@@ -57,7 +58,6 @@ class User(AbstractUser):
         verbose_name='نسخه‌های ذخیره‌شده'
     )
     
-    # اضافه کردن validator برای شماره تلفن
     phone_regex = RegexValidator(
         regex=r'^09\d{9}$',
         message="شماره تلفن باید با 09 شروع شده و 11 رقم باشد."
@@ -70,18 +70,13 @@ class User(AbstractUser):
     )
     is_phone_verified = models.BooleanField('تایید شماره تلفن', default=False)
     
-    # تاریخ ثبت‌نام
     date_joined = models.DateTimeField('تاریخ ثبت‌نام', default=timezone.now)
-    
-    # وضعیت فعال/غیرفعال
     is_active = models.BooleanField('فعال', default=True)
     
     active_jti = models.CharField(max_length=255, null=True, blank=True, unique=True, db_index=True)
-    # آخرین ورود
     last_login_ip = models.GenericIPAddressField('آی پی آخرین ورود', blank=True, null=True)
     last_login_device = models.CharField('دستگاه آخرین ورود', max_length=255, blank=True, null=True)
     
-    # استفاده از phone_number به عنوان username
     USERNAME_FIELD = 'phone_number'
     REQUIRED_FIELDS = ['first_name', 'last_name']
     
@@ -100,7 +95,6 @@ class User(AbstractUser):
         jdate = jdatetime.datetime.fromgregorian(datetime=self.date_joined)
         return jdate.strftime("%Y/%m/%d - %H:%M")
 
-    
     def __str__(self):
         return f"{self.first_name} {self.last_name} - {self.phone_number}"
     
@@ -111,31 +105,115 @@ class User(AbstractUser):
     def save(self, *args, **kwargs):
         """Override save method to generate unique username"""
         if not self.username:
-            # تولید username یکتا بر اساس phone_number
             self.username = self.phone_number
         super().save(*args, **kwargs)
         
     def has_active_membership(self):
         """
         بررسی اینکه آیا کاربر حداقل یک اشتراک فعال (از هر نوعی) دارد یا خیر.
+        با کش برای بهینه‌سازی.
         """
         if self.is_staff or self.is_superuser:
             return True
         
-        return self.subscriptions.filter(
+        cache_key = f"user_{self.id}_has_active_membership"
+        cached_result = cache.get(cache_key)
+        
+        if cached_result is not None:
+            return cached_result
+        
+        has_active = self.subscriptions.filter(
             status=SubscriptionStatusChoicesModel.active,
             end_date__gte=timezone.now()
         ).exists()
+        
+        # کش برای 5 دقیقه
+        cache.set(cache_key, has_active, 300)
+        return has_active
 
-    def has_feature_access(self, feature_slug):
+    def has_feature_access(self, feature_type):
         """
-        بررسی اینکه آیا کاربر به یک فیچر خاص (مثلا orders-access) دسترسی دارد یا خیر.
+        بررسی اینکه آیا کاربر به یک فیچر خاص دسترسی دارد یا خیر.
+        
+        Args:
+            feature_type: یکی از مقادیر FeatureType (مثلا FeatureType.PRESCRIPTION_ACCESS)
+        
+        Returns:
+            bool: True اگر دسترسی داشته باشد، False در غیر این صورت
         """
         if self.is_staff or self.is_superuser:
             return True
+        
+        cache_key = f"user_{self.id}_feature_{feature_type}"
+        cached_result = cache.get(cache_key)
+        
+        if cached_result is not None:
+            return cached_result
             
-        return self.subscriptions.filter(
+        has_access = self.subscriptions.filter(
             status=SubscriptionStatusChoicesModel.active,
             end_date__gte=timezone.now(),
-            plan__membership__features__slug=feature_slug
+            plan__membership__features__feature_type=feature_type,
+            plan__membership__features__is_active=True
         ).exists()
+        
+        # کش برای 5 دقیقه
+        cache.set(cache_key, has_access, 300)
+        return has_access
+    
+    def get_active_features(self):
+        """
+        لیست تمام فیچرهایی که کاربر به آن‌ها دسترسی دارد را برمی‌گرداند.
+        
+        Returns:
+            QuerySet: لیست Feature هایی که کاربر دسترسی دارد
+        """
+        if self.is_staff or self.is_superuser:
+            from apps.subscriptions.models import Feature
+            return Feature.objects.filter(is_active=True)
+        
+        cache_key = f"user_{self.id}_active_features"
+        cached_result = cache.get(cache_key)
+        
+        if cached_result is not None:
+            return cached_result
+        
+        from apps.subscriptions.models import Feature
+        
+        features = Feature.objects.filter(
+            memberships__plans__subscriptions__user=self,
+            memberships__plans__subscriptions__status=SubscriptionStatusChoicesModel.active,
+            memberships__plans__subscriptions__end_date__gte=timezone.now(),
+            is_active=True
+        ).distinct()
+        
+        # کش برای 5 دقیقه
+        cache.set(cache_key, features, 300)
+        return features
+    
+    def get_feature_status_dict(self):
+        """
+        دیکشنری از وضعیت دسترسی به هر فیچر را برمی‌گرداند.
+        
+        Returns:
+            dict: {'prescription_access': True, 'ordering_access': False, ...}
+        """
+        from apps.subscriptions.models import FeatureType
+        
+        return {
+            feature_type: self.has_feature_access(feature_type)
+            for feature_type, _ in FeatureType.choices
+        }
+    
+    def clear_feature_cache(self):
+        """
+        کش مربوط به فیچرها و اشتراک کاربر را پاک می‌کند.
+        باید بعد از خرید یا انقضای اشتراک فراخوانی شود.
+        """
+        from apps.subscriptions.models import FeatureType
+        
+        cache.delete(f"user_{self.id}_has_active_membership")
+        cache.delete(f"user_{self.id}_active_features")
+        
+        for feature_type, _ in FeatureType.choices:
+            cache.delete(f"user_{self.id}_feature_{feature_type}")

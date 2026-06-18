@@ -6,6 +6,11 @@ from .question_serializers import QuestionCreateSerializer
 from apps.accounts.permissions import HasActiveSubscription
 
 # ======== QUESTION CREATE VIEW ========= #
+from drf_spectacular.utils import extend_schema_view, extend_schema
+@extend_schema_view(
+    get=extend_schema(tags=['Quesions'], summary='سوالات پزشکی'),
+    post=extend_schema(tags=["Quesions"]),
+)
 class QuestionCreateView(generics.CreateAPIView):
     """
     ایجاد سوال جدید - فقط کاربران با اشتراک فعال

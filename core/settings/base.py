@@ -335,6 +335,31 @@ CKEDITOR_5_CONFIGS = {
     },
 }
 
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'DrCode Medicine',
+    'VERSION': '1.0.0',
+    
+    'SWAGGER_UI_SETTINGS': {
+        'docExpansion': 'none',
+        'tagsSorter': 'alpha',
+        'operationsSorter': 'alpha',
+    },
+    
+    'TAGS': [
+        {'name': 'Home', 'description': 'اطلاعات صفحه اصلی، آموزش‌ها و تماس با ما'},
+        {'name': 'Authentication', 'description': 'عملیات ورود، ثبت‌نام و احراز هویت'},
+        {'name': 'Accounts', 'description': 'تایید موبایل و بازنشانی رمز عبور'},
+        {'name': 'Profile', 'description': 'مدیریت پروفایل کاربری'},
+        {'name': 'Ordering', 'description': 'عملیات مربوط به اوردرهای پزشکی'},
+        {'name': 'Order', 'description': 'عملیات مربوط به سفارش‌گیری'},
+        {'name': 'Payment', 'description': 'درگاه پرداخت'},
+        {'name': 'Questions', 'description': 'سوالات کاربران'},
+        {'name': 'Prescriptions', 'description': 'مدیریت و ذخیره نسخه‌ها'},
+        {'name': 'Notifications', 'description': 'مدیریت و مشاهده اعلان‌های سیستم'},
+    ],
+}
+
+
 
 # ========= Logging  And Debug ========= #
 LOGGING = {

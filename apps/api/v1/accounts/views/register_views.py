@@ -9,6 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model, login
 from django.db import transaction
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema_view, extend_schema
 
 from apps.accounts.models import Profile, AuthStatusChoices, AuthenticationDocument
 from ..serializers import RegisterSerializer, AuthenticationSerializer
@@ -19,6 +20,13 @@ User = get_user_model()
 logger = logging.getLogger(__name__)
 
 # ============ REGISTER VIEW ============ #
+@extend_schema_view(
+    post=extend_schema(
+        tags=['Authentication'],
+        summary='ثبت‌نام کاربر جدید',
+        description='مرحله اول: دریافت اطلاعات پایه کاربر'
+    )
+)
 class RegisterView(CreateAPIView, BaseAPIView):
     """
     ثبت‌نام کاربر جدید
@@ -91,6 +99,13 @@ class RegisterView(CreateAPIView, BaseAPIView):
             return self.handle_exception(e)
 
 # =============== AUTHENTICATION VIEW =============== #
+@extend_schema_view(
+    post=extend_schema(
+        tags=['Authentication'],
+        summary='احراز هویت پزشکی',
+        description='مرحله دوم: ارسال مدارک احراز هویت'
+    )
+)
 class AuthenticationView(BaseAPIView):
     """
     احراز هویت پزشکی
@@ -164,6 +179,13 @@ class AuthenticationView(BaseAPIView):
             return self.handle_exception(e)
 
 # ========== LOGOUT VIEW ========== #
+@extend_schema_view(
+    post=extend_schema(
+        tags=['Authentication'],
+        summary='خروج کاربر از سیستم',
+        description='پاک کردن session key برای امنیت بیشتر'
+    )
+)
 class LogoutView(BaseAPIView):
     """
     خروج کاربر از سیستم
@@ -199,7 +221,13 @@ class LogoutView(BaseAPIView):
         except Exception as e:
             return self.handle_exception(e)
 
-
+# ========== CHECK AUTH STATUS VIEW ========== #
+@extend_schema_view(
+    get=extend_schema(
+        tags=['Authentication'],
+        summary='بررسی وضعیت احراز هویت کاربر'
+    )
+)
 class CheckAuthStatusView(BaseAPIView):
     """
     بررسی وضعیت احراز هویت کاربر
@@ -225,7 +253,14 @@ class CheckAuthStatusView(BaseAPIView):
         except Exception as e:
             return self.handle_exception(e)
 
-
+# ========== RESEND AUTHENTICATION VIEW ========== #
+@extend_schema_view(
+    post=extend_schema(
+        tags=['Authentication'],
+        summary='ارسال مجدد مدارک احراز هویت',
+        description='برای کاربرانی که مدارکشان رد شده است'
+    )
+)
 class ResendAuthenticationView(BaseAPIView):
     """
     ارسال مجدد مدارک احراز هویت
@@ -284,6 +319,3 @@ class ResendAuthenticationView(BaseAPIView):
                 
         except Exception as e:
             return self.handle_exception(e)
-
-
-

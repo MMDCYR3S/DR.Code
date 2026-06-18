@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from drf_spectacular.utils import extend_schema_view, extend_schema
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
@@ -21,8 +22,10 @@ from .base_view import BaseAPIView
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
-
 # ============ PROFILE VIEWS ============ #
+@extend_schema_view(
+    get=extend_schema(tags=['Profile'], summary='مشاهده اطلاعات کامل پروفایل کاربر')
+)
 class ProfileView(RetrieveAPIView, BaseAPIView):
     """
     نمایش اطلاعات پروفایل کاربر
@@ -48,6 +51,10 @@ class ProfileView(RetrieveAPIView, BaseAPIView):
             return self.handle_exception(e)
 
 # ============= UPDATE PROFILE VIEWS ============= #
+@extend_schema_view(
+    get=extend_schema(tags=['Profile'], summary='دریافت اطلاعات پایه جهت نمایش در فرم ویرایش'),
+    patch=extend_schema(tags=['Profile'], summary='بروزرسانی اطلاعات پروفایل (نام، عکس و...)')
+)
 class UpdateProfileView(BaseAPIView):
     """
     بروزرسانی اطلاعات پایه پروفایل

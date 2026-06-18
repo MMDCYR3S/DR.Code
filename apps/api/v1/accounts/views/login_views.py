@@ -6,6 +6,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken, UntypedToken, AccessToken
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+from drf_spectacular.utils import extend_schema_view, extend_schema
 
 from django.contrib.auth import login, logout
 from django.contrib.auth import get_user_model
@@ -28,6 +29,12 @@ logger = logging.getLogger(__name__)
 # ================================ #
 # ========== LOGIN VIEW ========== #
 # ================================ #
+@extend_schema_view(
+    post=extend_schema(
+        tags=['Authentication'],
+        summary='ورود کاربر به سیستم'
+    )
+)
 class LoginView(BaseAPIView):
     """
     ورود کاربر به سیستم
@@ -121,6 +128,12 @@ class LoginView(BaseAPIView):
 # ====================================== #
 # ============ LOGOUT VIEW ============ # 
 # ====================================== #
+@extend_schema_view(
+    post=extend_schema(
+        tags=['Authentication'],
+        summary='خروج از دستگاه'
+    )
+)
 class LogoutView(BaseAPIView):
     """
     خروج کاربر از سیستم
@@ -164,6 +177,12 @@ class LogoutView(BaseAPIView):
 # ===================================================== #
 # ============ REFRESH ACCESS TOKEN VIEW ============ #
 # ===================================================== #
+@extend_schema_view(
+    post=extend_schema(
+        tags=['Authentication'],
+        summary='بازسازی Access Token با استفاده از Refresh Token'
+    )
+)
 class RefreshAccessTokenView(TokenRefreshView, BaseAPIView):
     """
     بازسازی Access Token با استفاده از Refresh Token
@@ -216,6 +235,12 @@ class RefreshAccessTokenView(TokenRefreshView, BaseAPIView):
 # ============================================= #
 # ============ FORCE LOGOUT VIEW ============ #
 # ============================================= #
+@extend_schema_view(
+    post=extend_schema(
+        tags=['Authentication'],
+        summary='خروج اجباری از تمام دستگاه‌ها'
+    )
+)
 class ForceLogoutView(BaseAPIView):
     """
     خروج اجباری از تمام دستگاه‌ها
@@ -253,9 +278,15 @@ class ForceLogoutView(BaseAPIView):
         except Exception as e:
             return self.handle_exception(e)
 
-# ============================================ #
+# =========================================== #
 # ============ LOGIN STATUS VIEW ============ #
-# ============================================ #
+# =========================================== #
+@extend_schema_view(
+    get=extend_schema(
+        tags=['Authentication'],
+        summary='بررسی وضعیت ورود کاربر'
+    )
+)
 class LoginStatusView(BaseAPIView):
     """
     بررسی وضعیت ورود کاربر

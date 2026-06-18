@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from drf_spectacular.utils import extend_schema_view, extend_schema
 
 from django.views import View
 from django.shortcuts import get_object_or_404, render
@@ -26,6 +27,10 @@ from ..serializers import PaymentCreateSerializer
 from apps.subscriptions.models import Subscription, SubscriptionStatusChoicesModel, Plan
 
 # ====== Payment Create View ====== #
+@extend_schema_view(
+    get=extend_schema(tags=['Payment'], summary='درگاه پرداخت و عملیات آن'),
+    post=extend_schema(tags=["Payment"]),
+)
 class PaymentCreateView(CreateAPIView):
     """
     ایجاد درخواست پرداخت نهایی بر اساس اطلاعات خلاصه خرید.
@@ -114,7 +119,10 @@ class PaymentCreateView(CreateAPIView):
             ip = request.META.get('REMOTE_ADDR')
         return ip
 
- 
+@extend_schema_view(
+    get=extend_schema(tags=['Payment'], summary='درگاه پرداخت و عملیات آن'),
+    post=extend_schema(tags=["Payment"]),
+)
 class PaymentVerifyView(APIView):
     authentication_classes = [] 
     permission_classes = []

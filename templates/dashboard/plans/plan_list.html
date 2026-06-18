@@ -68,37 +68,74 @@
             </div>
         </div>
 
+        <!-- در داخل بخش Features -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-8">
             <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
                 <h2 class="text-lg font-bold text-slate-800">
                     <i class="fa-solid fa-star text-yellow-500 ml-2"></i>ویژگی‌ها (Features)
                 </h2>
-                <button @click="openAddFeatureModal()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                <button @click="openAddFeatureModal()" 
+                        class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                     <i class="fa-solid fa-plus ml-1"></i> افزودن ویژگی
                 </button>
             </div>
+            
             <div class="p-6 overflow-x-auto">
                 <table class="w-full text-right border-collapse">
                     <thead>
                         <tr class="text-slate-500 text-sm border-b-2 border-slate-100">
                             <th class="pb-3 font-semibold">نام ویژگی</th>
+                            <th class="pb-3 font-semibold">نوع</th>
                             <th class="pb-3 font-semibold">Slug</th>
-                            <th class="pb-3 font-semibold">عملیات</th>
+                            <th class="pb-3 font-semibold text-center">وضعیت</th>
+                            <th class="pb-3 font-semibold text-center">عملیات</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for feature in features %}
                         <tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors">
                             <td class="py-4 text-slate-800 font-medium">{{ feature.name }}</td>
-                            <td class="py-4 text-slate-500 text-sm" dir="ltr">{{ feature.slug }}</td>
                             <td class="py-4">
-                                <div class="flex gap-2">
-                                    <button @click="openEditFeatureModal({{ feature.id }})" class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                    {{ feature.get_feature_type_display }}
+                                </span>
+                            </td>
+                            <td class="py-4 text-slate-500 text-sm font-mono" dir="ltr">{{ feature.slug }}</td>
+                            <td class="py-4 text-center">
+                                {% if feature.is_active %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fa-solid fa-check ml-1"></i>
+                                        فعال
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        <i class="fa-solid fa-times ml-1"></i>
+                                        غیرفعال
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="py-4">
+                                <div class="flex gap-2 justify-center">
+                                    <button @click="openEditFeatureModal({{ feature.id }})" 
+                                            class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                                            title="ویرایش">
                                         <i class="fa-solid fa-pen"></i>
                                     </button>
-                                    <button @click="deleteFeature({{ feature.id }})" class="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                                    <button @click="deleteFeature({{ feature.id }})" 
+                                            class="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                                            title="حذف">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="py-8 text-center text-slate-500">
+                                <div class="flex flex-col items-center">
+                                    <i class="fa-solid fa-star text-4xl mb-3 text-slate-300"></i>
+                                    <p class="text-lg font-medium">هیچ ویژگی‌ای وجود ندارد</p>
+                                    <p class="text-sm">برای شروع، اولین ویژگی را اضافه کنید.</p>
                                 </div>
                             </td>
                         </tr>
@@ -107,6 +144,7 @@
                 </table>
             </div>
         </div>
+
 
 
         <!-- Plan Management Section -->
@@ -280,7 +318,119 @@ document.addEventListener('alpine:init', () => {
         // Forms
         planForm: { membership: '', name: '', duration_days: '', price: '', is_active: true },
         membershipForm: { title: '', description: '', features: [], is_active: true },
-        featureForm: { name: '', description: '' },
+        featureForm: { 
+            name: '', 
+            feature_type: '', 
+            description: '', 
+            is_active: true 
+        },
+
+        // Feature Methods
+        openAddFeatureModal() {
+            this.modals.feature = true;
+            this.isEditMode = false;
+            this.editingId = null;
+            this.featureForm = { name: '', feature_type: '', description: '', is_active: true };
+        },
+
+        async openEditFeatureModal(id) {
+            this.modals.feature = true;
+            this.isEditMode = true;
+            this.editingId = id;
+            this.isLoading = true;
+
+            try {
+                const url = `{% url 'dashboard:plans:feature_detail' 0 %}`.replace('0', id);
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.featureForm = {
+                        name: data.data.name,
+                        feature_type: data.data.feature_type,
+                        description: data.data.description || '',
+                        is_active: data.data.is_active
+                    };
+                }
+            } catch (error) {
+                console.error('Error loading feature:', error);
+                this.showNotification('error', 'خطا در دریافت اطلاعات ویژگی');
+                this.closeFeatureModal();
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        closeFeatureModal() {
+            this.modals.feature = false;
+            this.featureForm = { name: '', feature_type: '', description: '', is_active: true };
+            this.editingId = null;
+            this.isEditMode = false;
+        },
+
+        async submitFeatureForm() {
+            if (!this.featureForm.name.trim() || !this.featureForm.feature_type) {
+                this.showNotification('error', 'لطفاً فیلدهای الزامی را پر کنید');
+                return;
+            }
+
+            this.isLoading = true;
+            
+            const url = this.isEditMode 
+                ? `{% url 'dashboard:plans:feature_update' 0 %}`.replace('0', this.editingId)
+                : `{% url 'dashboard:plans:feature_create' %}`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.getCookie('csrftoken')
+                    },
+                    body: JSON.stringify(this.featureForm)
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.showNotification('success', data.message);
+                    this.closeFeatureModal();
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    const errorMsg = this.formatErrors(data.errors);
+                    this.showNotification('error', errorMsg || data.message);
+                }
+            } catch (error) {
+                console.error('Error submitting feature:', error);
+                this.showNotification('error', 'خطا در ارتباط با سرور');
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        async deleteFeature(id) {
+            if (!confirm('آیا از حذف این ویژگی اطمینان دارید؟')) return;
+
+            try {
+                const url = `{% url 'dashboard:plans:feature_delete' 0 %}`.replace('0', id);
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': this.getCookie('csrftoken') }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.showNotification('success', data.message);
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    this.showNotification('error', data.message);
+                }
+            } catch (error) {
+                console.error('Error deleting feature:', error);
+                this.showNotification('error', 'خطا در حذف ویژگی');
+            }
+        },
 
         // Generic Methods
         openModal(type, id = null) {

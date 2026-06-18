@@ -1,4 +1,5 @@
 from rest_framework import generics, throttling
+from drf_spectacular.utils import extend_schema_view, extend_schema
 
 from django.db.models import Prefetch
 
@@ -8,6 +9,10 @@ from ..serializers import PrescriptionDetailSerializer
 from .permissions import IsPrescriptionAccessible
 
 # ========== PRESCRIPTION DETAIL VIEW ========== #
+@extend_schema_view(
+    get=extend_schema(tags=['Prescriptions'], summary='نسخه‌های پزشکی'),
+    post=extend_schema(tags=["Prescriptions"]),
+)
 class PrescriptionDetailView(generics.RetrieveAPIView):
     """
     جزئیات کامل یک نسخه

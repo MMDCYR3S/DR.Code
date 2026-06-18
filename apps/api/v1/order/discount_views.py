@@ -1,7 +1,8 @@
 from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+from rest_framework.throttling import UserRateThrottle
+from drf_spectacular.utils import extend_schema_view, extend_schema
 
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
@@ -13,6 +14,20 @@ from apps.accounts.permissions import IsTokenJtiActive
 from .discount_serializer import PurchaseDetailSerializer, PurchaseSummarySerializer
 
 # ========== PURCHASE DETAIL VIEW ========== #
+@extend_schema_view(
+    get=extend_schema(
+        tags=['Order'], 
+        summary='دریافت اطلاعات اولیه پلن',
+        description='دریافت اطلاعات اولیه پلن انتخابی پیش از خرید'
+    ),
+    post=extend_schema(
+        tags=['Order'], 
+        summary='محاسبه قیمت با تخفیف',
+        description='ارسال کد تخفیف یا کد معرف و دریافت قیمت نهایی محاسبه‌شده'
+    ),
+    put=extend_schema(tags=['Order']),
+    patch=extend_schema(tags=['Order'])
+)
 class PurchaseDetailView(generics.RetrieveUpdateAPIView):
     """
     نمایش جزئیات خرید پلن با امکان اعمال کدهای تخفیف
