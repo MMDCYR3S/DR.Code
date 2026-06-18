@@ -68,8 +68,8 @@ class OrderListView(generics.ListAPIView):
         ),
         parameters=[
             OpenApiParameter(
-                name='pk',
-                type=OpenApiTypes.INT,
+                name='slug',
+                type=OpenApiTypes.STR,
                 location=OpenApiParameter.PATH,
                 description='شناسه یکتای سفارش',
             ),
@@ -85,7 +85,7 @@ class OrderBaseView(generics.RetrieveAPIView):
     serializer_class = OrderBaseSerializer
     permission_classes = [IsOrderAccessible, IsTokenJtiActive]
     throttle_classes = [throttling.AnonRateThrottle, throttling.UserRateThrottle]
-    lookup_field = 'pk'
+    lookup_field = 'slug'
 
     def get_queryset(self):
         return Order.objects.select_related('category')
@@ -103,8 +103,8 @@ class OrderBaseView(generics.RetrieveAPIView):
         ),
         parameters=[
             OpenApiParameter(
-                name='pk',
-                type=OpenApiTypes.INT,
+                name='slug',
+                type=OpenApiTypes.STR,
                 location=OpenApiParameter.PATH,
                 description='شناسه یکتای سفارش',
             ),
@@ -120,7 +120,7 @@ class OrderSectionsView(generics.RetrieveAPIView):
     serializer_class = OrderSectionsSerializer
     permission_classes = [IsOrderAccessible, IsTokenJtiActive]
     throttle_classes = [throttling.AnonRateThrottle, throttling.UserRateThrottle]
-    lookup_field = 'pk'
+    lookup_field = 'slug'
 
     def get_queryset(self):
         return Order.objects.prefetch_related(
@@ -151,8 +151,8 @@ class OrderSectionsView(generics.RetrieveAPIView):
         ),
         parameters=[
             OpenApiParameter(
-                name='pk',
-                type=OpenApiTypes.INT,
+                name='slug',
+                type=OpenApiTypes.STR,
                 location=OpenApiParameter.PATH,
                 description='شناسه یکتای سفارش',
             ),
@@ -168,7 +168,7 @@ class OrderDispositionView(generics.RetrieveAPIView):
     serializer_class = OrderDispositionSerializer
     permission_classes = [IsOrderAccessible, IsTokenJtiActive]
     throttle_classes = [throttling.AnonRateThrottle, throttling.UserRateThrottle]
-    lookup_field = 'pk'
+    lookup_field = 'slug'
 
     def get_queryset(self):
         return Order.objects.prefetch_related(
@@ -190,8 +190,8 @@ class OrderDispositionView(generics.RetrieveAPIView):
         ),
         parameters=[
             OpenApiParameter(
-                name='pk',
-                type=OpenApiTypes.INT,
+                name='slug',
+                type=OpenApiTypes.STR,
                 location=OpenApiParameter.PATH,
                 description='شناسه یکتای سفارش',
             ),
@@ -207,7 +207,7 @@ class OrderDynamicFieldsView(generics.RetrieveAPIView):
     serializer_class = OrderDynamicFieldsSerializer
     permission_classes = [IsOrderAccessible, IsTokenJtiActive]
     throttle_classes = [throttling.AnonRateThrottle, throttling.UserRateThrottle]
-    lookup_field = 'pk'
+    lookup_field = 'slug'
 
     def get_queryset(self):
         return Order.objects.prefetch_related(
@@ -226,8 +226,8 @@ class OrderDynamicFieldsView(generics.RetrieveAPIView):
         description='لیست تصاویر و لینک‌های ویدیویی مرتبط با سفارش.',
         parameters=[
             OpenApiParameter(
-                name='pk',
-                type=OpenApiTypes.INT,
+                name='slug',
+                type=OpenApiTypes.STR,
                 location=OpenApiParameter.PATH,
                 description='شناسه یکتای سفارش',
             ),
@@ -243,7 +243,7 @@ class OrderMediaView(generics.RetrieveAPIView):
     serializer_class = OrderMediaSerializer
     permission_classes = [IsOrderAccessible, IsTokenJtiActive]
     throttle_classes = [throttling.AnonRateThrottle, throttling.UserRateThrottle]
-    lookup_field = 'pk'
+    lookup_field = 'slug'
 
     def get_queryset(self):
         return Order.objects.prefetch_related('images', 'videos')

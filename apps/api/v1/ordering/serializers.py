@@ -28,7 +28,7 @@ class OrderListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = [
-            'id', 'name', 'color', 'category',
+            'id', 'name', 'slug', 'color', 'category',
             'url_base', 'url_sections', 'url_disposition',
             'url_dynamic_fields', 'url_media',
         ]
@@ -37,7 +37,7 @@ class OrderListSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if request:
             return request.build_absolute_uri(
-                reverse(f'api:v1:ordering_api:{url_name}', kwargs={'pk': obj.pk})
+                reverse(f'api:v1:ordering_api:{url_name}', kwargs={'slug': obj.slug})
             )
         return None
 
@@ -172,7 +172,7 @@ class OrderBaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = [
-            'id', 'name',
+            'id', 'name', 'slug',
             'imp', 'imp_notes',
             'condition', 'condition_notes',
             'diet', 'diet_notes',
@@ -188,7 +188,7 @@ class OrderSectionsSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Order
-        fields = ['id', 'sections']
+        fields = ['id', 'slug', 'sections']
 
 # ========== ORDER DISPOSITION SERIALIZER ========== #
 class OrderDispositionSerializer(serializers.ModelSerializer):
@@ -197,7 +197,7 @@ class OrderDispositionSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Order
-        fields = ['id', 'emergency_disposition']
+        fields = ['id', 'slug', 'emergency_disposition']
 
 # ========== ORDER DYNAMIC FIELDS SERIALIZER ========== #
 class OrderDynamicFieldsSerializer(serializers.ModelSerializer):
@@ -206,7 +206,7 @@ class OrderDynamicFieldsSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Order
-        fields = ['id', 'dynamic_field_groups']
+        fields = ['id', 'slug', 'dynamic_field_groups']
 
 # ========== ORDER MEDIA SERIALIZER ========== #
 class OrderMediaSerializer(serializers.ModelSerializer):
@@ -216,4 +216,4 @@ class OrderMediaSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Order
-        fields = ['id', 'images', 'videos']
+        fields = ['id', 'slug', 'images', 'videos']

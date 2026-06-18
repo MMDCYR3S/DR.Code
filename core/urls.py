@@ -43,6 +43,7 @@ urlpatterns = [
     
     path('', include('apps.home.urls')),
     path('prescriptions/', include('apps.prescriptions.urls')),
+    path('ordering/', include('apps.ordering.urls')),
     path('', include('apps.accounts.urls')),
     path('dashboard/', include('apps.dashboard.urls')),
     path("order/", include("apps.order.urls")),

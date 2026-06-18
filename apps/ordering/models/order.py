@@ -1,5 +1,8 @@
-from django.db import models
 import jdatetime
+from slugify import slugify
+
+from django.db import models
+from django.core.exceptions import ValidationError
 
 from apps.prescriptions.models.category import PrescriptionCategory
 from .colors import TailwindColor
@@ -19,12 +22,22 @@ class Order(models.Model):
         و بعد از ساخت Order به آن متصل شود.
       - اضافه شد: فیلدهای توضیحات جداگانه برای هر فیلد اصلی
         (imp_notes, condition_notes, diet_notes, action_notes, position_notes)
+      - اضافه شد: slug برای URL-friendly identifier
     """
 
     name = models.CharField(
         verbose_name="نام اوردر",
         max_length=150,
         help_text="نام اوردر در حال ایجاد",
+    )
+    
+    slug = models.SlugField(
+        verbose_name="اسلاگ",
+        max_length=200,
+        unique=True,
+        blank=True,
+        null=True,
+        help_text="شناسه یکتای URL-friendly برای Order",
     )
 
     # ─────────────────────────── فیلدهای ثابت ───────────────────────────
@@ -119,6 +132,18 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order [{self.category}]: {self.imp[:60]}"
+
+    def save(self, *args, **kwargs):
+        """
+        ساخت خودکار slug از روی name اگر خالی باشد
+        و بررسی تکراری نبودن slug
+        """
+        self.slug = slugify(self.name, allow_unicode=False)
+        
+        if Order.objects.filter(slug=self.slug).exclude(pk=self.pk).exists():
+            raise ValidationError(f'نام "{self.name}" قبلاً در یک سفارش دیگر استفاده شده است.')
+        
+        super().save(*args, **kwargs)
 
     # ─────────────────────────── تاریخ شمسی ──────────────────────────────
     @property
