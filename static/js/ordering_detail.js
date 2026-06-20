@@ -23,13 +23,14 @@
 // فرق داره فقط همینجا اصلاحش کن.)
 // =============================================================================
 
-const ORDER_VALID_COLORS = new Set([
-  "slate", "gray", "zinc", "neutral", "stone",
-  "red", "orange", "amber", "yellow", "lime",
-  "green", "emerald", "teal", "cyan", "sky",
-  "blue", "indigo", "violet", "purple", "fuchsia",
-  "pink", "rose",
-]);
+// رنگ‌ها از بک‌اند بصورت کد هگز می‌آیند (مثلاً "#ec4899")، نه دیگر اسم
+// تیلویندی. این تابع فقط معتبر بودن فرمت هگز را چک می‌کند؛ منطق روشن/تیره و
+// شفافیت‌سازی با color-mix() در CSS (کلاس‌های dyn-* / dsec-*) انجام می‌شود.
+const ORDER_DEFAULT_COLOR = "#64748b"; // slate-500 — فال‌بک وقتی رنگ نامعتبر/خالی باشد
+
+function isValidHexColor(value) {
+  return typeof value === "string" && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value.trim());
+}
 
 function orderDetailApp() {
   return {
@@ -199,48 +200,56 @@ function orderDetailApp() {
       ];
     },
 
-    // تم رنگی داینامیک بر اساس order.color — مجزا از رنگ دسته‌بندی (category.color_code)
+    // تم رنگی داینامیک بر اساس order.color (کد هگز) — مجزا از رنگ دسته‌بندی (category.color_code)
+    // رنگ واقعی با :style روی --theme-c ست می‌شه و کلاس‌های dyn-* (تعریف‌شده در
+    // <style> صفحه) با color-mix() روشنی/شفافیت مناسب رو از همون رنگ می‌سازن.
     theme() {
-      const c = ORDER_VALID_COLORS.has(this.order?.color) ? this.order.color : "slate";
+      const c = isValidHexColor(this.order?.color) ? this.order.color.trim() : ORDER_DEFAULT_COLOR;
       return {
         name: c,
-        dot: `bg-${c}-500`,
-        gradient: `bg-gradient-to-br from-${c}-500 to-${c}-600`,
-        gradientText: `bg-gradient-to-r from-${c}-600 to-${c}-700 bg-clip-text text-transparent`,
-        softBg: `bg-${c}-50`,
-        softBorder: `border-${c}-200`,
-        iconBg: `bg-${c}-100`,
-        iconText: `text-${c}-600`,
-        ring: `focus:ring-${c}-300`,
-        chip: `bg-${c}-100 text-${c}-700`,
-        hoverBorder: `hover:border-${c}-400`,
-        hoverText: `hover:text-${c}-600`,
-        headerAccent: `border-${c}-400`,
-        primaryBtn: `bg-${c}-600 hover:bg-${c}-700`,
-        glow: `shadow-${c}-500/20`,
+        color: c,
+        style: `--theme-c: ${c};`,
+        dot: "dyn-dot",
+        gradient: "dyn-gradient",
+        gradientText: "dyn-gradient-text",
+        softBg: "dyn-soft-bg",
+        softBorder: "dyn-soft-border",
+        iconBg: "dyn-icon-bg",
+        iconText: "dyn-icon-text",
+        ring: "dyn-ring",
+        chip: "dyn-chip",
+        hoverBorder: "dyn-hover-border",
+        hoverText: "dyn-hover-text",
+        headerAccent: "dyn-header-accent",
+        primaryBtn: "dyn-primary-btn",
+        glow: "dyn-glow",
       };
     },
 
     // ----- Section / Item Helpers -----
 
-    // تم رنگی داینامیک بر اساس رنگ هر section (مستقل از تم کلی اوردر)
+    // تم رنگی داینامیک بر اساس رنگ هر section (کد هگز، مستقل از تم کلی اوردر)
+    // رنگ واقعی با :style روی --section-c همون wrapper section ست می‌شه و
+    // کلاس‌های dsec-* با color-mix() نسخه‌های روشن/تیره/شفاف می‌سازن.
     sectionTheme(color) {
-      const c = ORDER_VALID_COLORS.has(color) ? color : "slate";
+      const c = isValidHexColor(color) ? color.trim() : ORDER_DEFAULT_COLOR;
       return {
         name: c,
-        gradient: `bg-gradient-to-br from-${c}-500 to-${c}-600`,
-        softBg: `bg-${c}-50`,
-        softBorder: `border-${c}-200`,
-        iconBg: `bg-${c}-100`,
-        iconText: `text-${c}-600`,
-        headerBorder: `border-${c}-400`,
-        chip: `bg-${c}-100 text-${c}-700`,
-        conditionBg: `bg-${c}-50`,
-        conditionBorder: `border-${c}-300`,
-        conditionText: `text-${c}-800`,
-        drugBg: `bg-${c}-50`,
-        drugBorder: `border-${c}-200`,
-        drugCodeText: `text-${c}-600`,
+        color: c,
+        style: `--section-c: ${c};`,
+        gradient: "dsec-gradient",
+        softBg: "dsec-soft-bg",
+        softBorder: "dsec-soft-border",
+        iconBg: "dsec-icon-bg",
+        iconText: "dsec-icon-text",
+        headerBorder: "dsec-header-border",
+        chip: "dsec-chip",
+        conditionBg: "dsec-condition-bg",
+        conditionBorder: "dsec-condition-border",
+        conditionText: "dsec-condition-text",
+        drugBg: "dsec-drug-bg",
+        drugBorder: "dsec-drug-border",
+        drugCodeText: "dsec-drug-code-text",
       };
     },
 

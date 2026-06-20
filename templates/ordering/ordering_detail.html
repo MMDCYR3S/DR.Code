@@ -180,9 +180,64 @@ img, a, button {
     .order-header { border-bottom-width: 3px; }
     .btn-action { width: 100%; justify-content: center; }
 }
+
+/* ============================================================
+   🎨 تم رنگی داینامیک — رنگ‌ها مستقیماً از بک‌اند بصورت کد هگز
+   می‌آیند. هر بخش (--section-c) و کل اوردر (--theme-c) با
+   color-mix() شفافیت/روشنی/تیرگی مناسب می‌گیرند، بدون نیاز
+   به نگاشت روی پالت ثابت Tailwind.
+   ============================================================ */
+
+/* --- تم کلی اوردر (order.color) --- */
+.dyn-dot { background-color: var(--theme-c); }
+
+.dyn-gradient {
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--theme-c) 94%, black) 0%,
+        color-mix(in srgb, var(--theme-c) 66%, black) 100%);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+.dyn-gradient-text {
+    background: linear-gradient(90deg, var(--theme-c) 0%, color-mix(in srgb, var(--theme-c) 60%, black) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+.dyn-soft-bg     { background-color: color-mix(in srgb, var(--theme-c) 8%, white); }
+.dyn-soft-border { border-color: color-mix(in srgb, var(--theme-c) 28%, white); }
+.dyn-icon-bg     { background-color: color-mix(in srgb, var(--theme-c) 15%, white); }
+.dyn-icon-text   { color: color-mix(in srgb, var(--theme-c) 72%, black); }
+.dyn-ring        { --tw-ring-color: color-mix(in srgb, var(--theme-c) 55%, white); }
+.dyn-chip        { background-color: color-mix(in srgb, var(--theme-c) 16%, white); color: color-mix(in srgb, var(--theme-c) 78%, black); }
+.dyn-hover-border:hover { border-color: color-mix(in srgb, var(--theme-c) 55%, white); }
+.dyn-hover-text:hover   { color: color-mix(in srgb, var(--theme-c) 68%, black); }
+.dyn-header-accent { border-color: var(--theme-c); }
+.dyn-primary-btn   { background-color: var(--theme-c); }
+.dyn-primary-btn:hover { background-color: color-mix(in srgb, var(--theme-c) 85%, black); }
+.dyn-glow { box-shadow: 0 8px 28px color-mix(in srgb, var(--theme-c) 30%, transparent); }
+
+/* --- تم مستقل هر section (section.color) --- */
+.dsec-gradient {
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--section-c) 94%, black) 0%,
+        color-mix(in srgb, var(--section-c) 64%, black) 100%);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+.dsec-soft-bg      { background-color: color-mix(in srgb, var(--section-c) 6%, white); }
+.dsec-soft-border  { border-color: color-mix(in srgb, var(--section-c) 26%, white); }
+.dsec-header-border{ border-color: var(--section-c); }
+.dsec-icon-bg      { background-color: color-mix(in srgb, var(--section-c) 16%, white); }
+.dsec-icon-text    { color: color-mix(in srgb, var(--section-c) 70%, black); }
+.dsec-chip         { background-color: color-mix(in srgb, var(--section-c) 18%, white); color: color-mix(in srgb, var(--section-c) 80%, black); }
+.dsec-condition-bg     { background-color: color-mix(in srgb, var(--section-c) 11%, white); }
+.dsec-condition-border { border-color: color-mix(in srgb, var(--section-c) 36%, white); }
+.dsec-condition-text   { color: color-mix(in srgb, var(--section-c) 85%, black); }
+.dsec-drug-bg      { background-color: color-mix(in srgb, var(--section-c) 6%, white); }
+.dsec-drug-border  { border-color: color-mix(in srgb, var(--section-c) 26%, white); }
+.dsec-drug-code-text { color: color-mix(in srgb, var(--section-c) 65%, black); }
 </style>
 
-<div x-data="orderDetailApp()" x-init="init()" class="min-h-screen pt-16 bg-gray-50">
+<div x-data="orderDetailApp()" x-init="init()" class="min-h-screen  bg-gray-50" :style="theme().style">
 
     <!-- ⏳ Loading State -->
     <div x-show="loading" class="max-w-7xl mx-auto px-4 py-12">
@@ -433,6 +488,7 @@ img, a, button {
                             <template x-for="section in sections.sections" :key="section.id">
                             <div class="mb-6 rounded-2xl shadow-sm border relative"
                                      x-data="{ sectionNotesOpen: false }"
+                                     :style="sectionTheme(section.color).style"
                                      :class="[
                                          sectionNotesOpen ? 'z-50' : 'z-0',
                                          sectionTheme(section.color).softBorder
@@ -465,7 +521,7 @@ img, a, button {
                                                 <div x-show="sectionNotesOpen"
                                                      x-transition.duration.150ms
                                                      @click.outside="sectionNotesOpen = false"
-                                                     class="absolute left-0 top-full mt-2 w-80 max-w-[90vw] bg-white border border-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 z-30  "
+                                                     class="absolute left-0 top-full mt-2 w-80 max-w-[90vw] bg-white border border-gray-200 rounded-2xl shadow-2xl z-30  "
                                                      dir="rtl" style="display: none;">
                                                     <div class="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-gray-100"
                                                          :class="sectionTheme(section.color).softBg">
@@ -535,7 +591,7 @@ img, a, button {
                                                                             <div x-show="itemTipOpen"
                                                                                  x-transition.duration.150ms
                                                                                  @click.outside="itemTipOpen = false"
-                                                                                 class="absolute left-0 top-full mt-2 w-72 max-w-[88vw] bg-white border border-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 z-30  "
+                                                                                 class="absolute left-0 top-full mt-2 w-72 max-w-[88vw] bg-white border border-gray-200 rounded-2xl shadow-2xl  z-30  "
                                                                                  dir="rtl" style="display: none;">
                                                                                 <div class="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-gray-100"
                                                                                      :class="sectionTheme(section.color).softBg">
@@ -610,7 +666,7 @@ img, a, button {
                                                                             <div x-show="drugTipOpen"
                                                                                  x-transition.duration.150ms
                                                                                  @click.outside="drugTipOpen = false"
-                                                                                 class="absolute left-0 top-full mt-2 w-72 max-w-[88vw] bg-white border border-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 z-30  "
+                                                                                 class="absolute left-0 top-full mt-2 w-72 max-w-[88vw] bg-white border border-gray-200 rounded-2xl shadow-2xl z-30  "
                                                                                  dir="rtl" style="display: none;">
                                                                                 <div class="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-gray-100"
                                                                                      :class="sectionTheme(section.color).softBg">
