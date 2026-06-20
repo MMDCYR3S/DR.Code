@@ -298,7 +298,7 @@ img, a, button {
                 <template x-if="order?.notes && order.notes.trim() !== ''">
                     <aside class="w-full lg:w-80 lg:flex-shrink-0 order-1 lg:order-2">
                         <div class="lg:sticky lg:top-24">
-                            <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                            <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 shadow-sm  ">
                                 <div class="px-5 py-4 text-white" :class="theme().gradient">
                                     <h3 class="text-lg font-bold flex items-center gap-2">
                                         <i class="fas fa-notes-medical"></i>
@@ -337,8 +337,9 @@ img, a, button {
                         <template x-for="field in infoFields()" :key="field.key">
                             <div
                                 x-data="{ tipOpen: false }"
-                                class="info-card p-5"
+                                class="info-card p-5 relative"
                                 :class="[
+                                    tipOpen ? 'z-50' : 'z-0',
                                     (field.key === 'imp' || field.key === 'condition') ? 'sm:col-span-2 lg:col-span-3' : '',
                                     field.key === 'condition' ? 'condition-card border-r-4 ' + theme().headerAccent : '',
                                     field.key === 'imp' ? 'border-r-4 ' + theme().headerAccent : ''
@@ -373,7 +374,7 @@ img, a, button {
                                             <i class="fas fa-circle-info text-base"></i>
                                         </button>
                                         <div x-show="tipOpen" x-transition.duration.150ms
-                                             class="absolute left-0 top-full mt-2 w-72 max-w-[88vw] bg-white border border-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 z-30 overflow-hidden"
+                                             class="absolute left-0 top-full mt-2  w-96 max-w-[88vw] bg-white border border-gray-200 rounded-2xl shadow-2xl  !z-[1000]  "
                                              dir="rtl" style="display: none;">
                                             <div class="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-gray-100" :class="theme().softBg">
                                                 <span class="text-xs font-bold flex items-center gap-1.5" :class="theme().iconText">
@@ -430,9 +431,12 @@ img, a, button {
 
                             <!-- loop روی هر section -->
                             <template x-for="section in sections.sections" :key="section.id">
-                                <div class="mb-6 rounded-2xl overflow-hidden shadow-sm border"
+                            <div class="mb-6 rounded-2xl shadow-sm border relative"
                                      x-data="{ sectionNotesOpen: false }"
-                                     :class="sectionTheme(section.color).softBorder">
+                                     :class="[
+                                         sectionNotesOpen ? 'z-50' : 'z-0',
+                                         sectionTheme(section.color).softBorder
+                                     ]">
 
                                     <!-- هدر section -->
                                     <div class="px-5 py-4 flex items-center justify-between gap-3 text-white"
@@ -461,7 +465,7 @@ img, a, button {
                                                 <div x-show="sectionNotesOpen"
                                                      x-transition.duration.150ms
                                                      @click.outside="sectionNotesOpen = false"
-                                                     class="absolute left-0 top-full mt-2 w-80 max-w-[90vw] bg-white border border-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 z-30 overflow-hidden"
+                                                     class="absolute left-0 top-full mt-2 w-80 max-w-[90vw] bg-white border border-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 z-30  "
                                                      dir="rtl" style="display: none;">
                                                     <div class="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-gray-100"
                                                          :class="sectionTheme(section.color).softBg">
@@ -506,9 +510,12 @@ img, a, button {
                                                         <!-- آیتم‌های زیر شرط -->
                                                         <div :class="group.condition !== null ? 'mr-4 border-r-2 pr-3 ' + sectionTheme(section.color).conditionBorder : ''">
                                                             <template x-for="item in group.items" :key="item.id">
-                                                                <div class="flex items-start gap-3 bg-white rounded-xl px-4 py-3 shadow-sm border mb-2"
+                                                                <div class="flex items-start gap-3 bg-white rounded-xl px-4 py-3 shadow-sm border mb-2 relative"
                                                                      x-data="{ itemTipOpen: false }"
-                                                                     :class="sectionTheme(section.color).softBorder">
+                                                                     :class="[
+                                                                         itemTipOpen ? 'z-50' : 'z-0',
+                                                                         sectionTheme(section.color).softBorder
+                                                                     ]">
                                                                     <!-- چک‌مارک رنگی -->
                                                                     <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
                                                                          :class="sectionTheme(section.color).iconBg">
@@ -528,7 +535,7 @@ img, a, button {
                                                                             <div x-show="itemTipOpen"
                                                                                  x-transition.duration.150ms
                                                                                  @click.outside="itemTipOpen = false"
-                                                                                 class="absolute left-0 top-full mt-2 w-72 max-w-[88vw] bg-white border border-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 z-30 overflow-hidden"
+                                                                                 class="absolute left-0 top-full mt-2 w-72 max-w-[88vw] bg-white border border-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 z-30  "
                                                                                  dir="rtl" style="display: none;">
                                                                                 <div class="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-gray-100"
                                                                                      :class="sectionTheme(section.color).softBg">
@@ -573,9 +580,12 @@ img, a, button {
                                                         <!-- کارت‌های داروی زیر شرط -->
                                                         <div :class="group.condition !== null ? 'mr-4 border-r-2 pr-3 ' + sectionTheme(section.color).conditionBorder : ''">
                                                             <template x-for="drugItem in group.items" :key="drugItem.id">
-                                                                <div class="flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm border mb-2"
+                                                                <div class="flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm border mb-2 relative"
                                                                      x-data="{ drugTipOpen: false }"
-                                                                     :class="sectionTheme(section.color).softBorder">
+                                                                     :class="[
+                                                                         drugTipOpen ? 'z-50' : 'z-0',
+                                                                         sectionTheme(section.color).softBorder
+                                                                     ]">
                                                                     <!-- آیکون دارو -->
                                                                     <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                                                                          :class="sectionTheme(section.color).iconBg">
@@ -600,7 +610,7 @@ img, a, button {
                                                                             <div x-show="drugTipOpen"
                                                                                  x-transition.duration.150ms
                                                                                  @click.outside="drugTipOpen = false"
-                                                                                 class="absolute left-0 top-full mt-2 w-72 max-w-[88vw] bg-white border border-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 z-30 overflow-hidden"
+                                                                                 class="absolute left-0 top-full mt-2 w-72 max-w-[88vw] bg-white border border-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 z-30  "
                                                                                  dir="rtl" style="display: none;">
                                                                                 <div class="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-gray-100"
                                                                                      :class="sectionTheme(section.color).softBg">
@@ -770,7 +780,7 @@ img, a, button {
                 @click.self="closeFieldModal()"
                 x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
                 x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-                <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden" @click.stop
+                <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh]  " @click.stop
                     x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
                     x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
                     <div class="px-6 py-4 text-white flex items-center justify-between" :class="theme().gradient">
