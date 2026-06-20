@@ -9,7 +9,6 @@ document.addEventListener('alpine:init', () => {
         referralCode: '',
 
         async init() {
-            console.log('🛒 Checkout page initialized');
             
             // بررسی احراز هویت و لاگین
             if (!this.checkAuth()) {
@@ -52,8 +51,7 @@ document.addEventListener('alpine:init', () => {
 
             // بررسی احراز هویت
             const profile = JSON.parse(localStorage.getItem("drcode_user_profile")).data
-            console.log("AUTH_STATUS: ", profile.auth_status);
-            console.log("ROLE: ", profile.role); 
+
             
             if (!profile || profile.auth_status !== 'APPROVED') {
                 Swal.fire({
@@ -85,7 +83,6 @@ document.addEventListener('alpine:init', () => {
                 return false;
             }
 
-            console.log('✅ Auth check passed');
             return true;
         },
 
@@ -95,26 +92,22 @@ document.addEventListener('alpine:init', () => {
             const pathParts = window.location.pathname.split('/').filter(p => p);
             const planId = pathParts[pathParts.length - 1];
             
-            console.log('📍 Plan ID from URL:', planId);
             return planId;
         },
 
         async loadPlanDetails() {
             try {
                 this.loading = true;
-                console.log('📡 Loading plan details for ID:', this.planId);
 
                 const response = await API.orders.getPlanDetails(this.planId);
 
                 if (response.success) {
                     this.planData = response.data;
-                    console.log('✅ Plan details loaded:', this.planData);
                 } else {
                     throw new Error(response.message || 'خطا در دریافت اطلاعات پلن');
                 }
 
             } catch (error) {
-                console.error('❌ Error loading plan details:', error);
                 this.showError('خطا در بارگذاری اطلاعات پلن');
                 setTimeout(() => window.location.href = '/plan', 2000);
             } finally {
@@ -125,7 +118,6 @@ document.addEventListener('alpine:init', () => {
         async applyDiscountCode() {
             try {
                 this.submitting = true;
-                console.log('🎟️ Applying discount code...');
 
                 // اگر هیچ کدی وارد نشده
                 if (!this.discountCode && !this.referralCode) {
@@ -155,7 +147,6 @@ document.addEventListener('alpine:init', () => {
                         confirmButtonColor: '#0077b6'
                     });
 
-                    console.log('✅ Discount applied:', this.planData);
                 } else {
                     Swal.fire({
                         icon: 'error',
@@ -166,7 +157,6 @@ document.addEventListener('alpine:init', () => {
                 }
 
             } catch (error) {
-                console.error('❌ Error applying discount:', error);
                 Swal.fire({
                     icon: 'error',
                     title: 'خطا',
@@ -181,7 +171,6 @@ document.addEventListener('alpine:init', () => {
         async proceedToPayment() {
             try {
                 this.submitting = true;
-                console.log('🛒 Creating order...');
 
                 // آماده‌سازی داده‌های کد تخفیف و ارجاع
                 const codes = {
@@ -196,7 +185,6 @@ document.addEventListener('alpine:init', () => {
                     throw new Error(result.message || 'خطا در ثبت سفارش');
                 }
 
-                console.log('✅ Order created successfully:', result.data);
 
                 // ذخیره اطلاعات سفارش برای استفاده در صفحه پرداخت
                 const orderData = {
@@ -212,13 +200,11 @@ document.addEventListener('alpine:init', () => {
 
                 localStorage.setItem('drcode_pending_order', JSON.stringify(orderData));
 
-                console.log('✅ Order data saved to localStorage:', orderData);
 
                 // هدایت به صفحه پرداخت
                 window.location.href = '/payment/request/';
 
             } catch (error) {
-                console.error('❌ Error preparing order:', error);
                 Swal.fire({
                     icon: 'error',
                     title: 'خطا',

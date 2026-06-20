@@ -225,11 +225,11 @@ const orderingApp = (() => {
                             <span class="w-2 h-2 rounded-full ${catColor}"></span>
                             <span class="text-xs font-medium text-c1">${catTitle}</span>
                         </div>
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-white text-xs font-medium"
+                        <!-- <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-white text-xs font-medium"
                               style="background:${hex}">
                             <span class="w-1.5 h-1.5 rounded-full bg-white/60"></span>
                             ${order.color || "—"}
-                        </span>
+                        </span> -->
                     </div>
 
                     <!-- Title با هایلایت سرچ -->
@@ -239,10 +239,7 @@ const orderingApp = (() => {
 
                     <!-- Footer -->
                     <div class="flex items-center justify-between pt-3 border-t border-gray-100">
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-2.5 h-2.5 rounded-full" style="background:${hex}"></span>
-                            <span class="text-xs text-gray-400 truncate max-w-[120px]">${order.slug}</span>
-                        </div>
+
                         <button class="w-9 h-9 bg-gradient-to-r from-c1 to-c2 rounded-xl flex items-center justify-center shadow-md transform group-hover:scale-105 group-hover:shadow-lg transition-all duration-300">
                             <i class="fas fa-arrow-left text-white text-xs transform group-hover:-translate-x-0.5 transition-transform duration-300"></i>
                         </button>

@@ -10,7 +10,6 @@ document.addEventListener('alpine:init', () => {
         referralCode: '',
 
         async init() {
-            console.log('💳 Payment Gateway page initialized');
             
             // بررسی احراز هویت
             if (!this.checkAuth()) {
@@ -38,7 +37,6 @@ document.addEventListener('alpine:init', () => {
             }
 
             let profile = JSON.parse(localStorage.getItem('drcode_user_profile'));
-            console.log(profile);
             
             if (!profile || profile.data.auth_status !== 'APPROVED') {
                 Swal.fire({
@@ -67,7 +65,6 @@ document.addEventListener('alpine:init', () => {
                     this.discountCode = this.orderData.discount_code || '';
                     this.referralCode = this.orderData.referral_code || '';
                     
-                    console.log('✅ Order data loaded:', this.orderData);
                 } catch (error) {
                     console.error('❌ Error parsing order data:', error);
                     this.showError('خطا در بارگذاری اطلاعات سفارش');
@@ -88,7 +85,6 @@ document.addEventListener('alpine:init', () => {
 
         selectGateway(gateway) {
             this.selectedGateway = gateway;
-            console.log('🏦 Selected gateway:', gateway);
         },
 
         async proceedToPayment() {
@@ -105,7 +101,6 @@ document.addEventListener('alpine:init', () => {
 
             try {
                 this.submitting = true;
-                console.log('💳 Processing payment...');
 
                 let response;
                 
@@ -123,7 +118,6 @@ document.addEventListener('alpine:init', () => {
                 }
 
                 if (response.success) {
-                    console.log('✅ Payment created:', response);
                     
 
 

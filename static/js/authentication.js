@@ -55,7 +55,6 @@ function authenticationForm() {
                     window.location.href = '/';
                 }
             } catch (error) {
-                console.log('Could not check authentication status:', error);
             }
         },
         
@@ -211,7 +210,6 @@ function authenticationForm() {
                     errorMessage = 'پاسخی از سرور دریافت نشد. لطفاً اتصال اینترنت خود را بررسی کنید.';
                 } else {
 
-                    console.error('Error during request setup:', error.message);
                     errorMessage = error.response.data.message
                 }
 
@@ -231,5 +229,4 @@ function authenticationForm() {
 
 // Auto-check on page load
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Authentication page loaded');
 });

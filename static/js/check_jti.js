@@ -31,7 +31,6 @@
     }
 
   } catch (err) {
-    console.error('Immediate JTI check error:', err);
     clearLocalAuth();
   }
 })();

@@ -1,5 +1,4 @@
 // Interceptor for handling token refresh
-console.log('🔧 Interceptor.js loading...');
 
 (function() {
     const originalFetch = window.fetch;
@@ -41,7 +40,6 @@ console.log('🔧 Interceptor.js loading...');
                     StorageManager.isLoggedIn() &&
                     StorageManager.getRefreshToken()) {
                     
-                    console.log('⚠️ Got 401, will try to refresh token');
 
                     if (isRefreshing) {
                         return new Promise((resolve, reject) => {
@@ -58,7 +56,6 @@ console.log('🔧 Interceptor.js loading...');
                         const refreshResult = await API.refreshToken();
                         const newToken = refreshResult.access;
 
-                        console.log('✅ Token refreshed');
                         processQueue(null, newToken);
 
                         config.headers['Authorization'] = `Bearer ${newToken}`;
@@ -89,5 +86,4 @@ console.log('🔧 Interceptor.js loading...');
             });
     };
 
-    console.log('✅ Interceptor.js loaded');
 })();

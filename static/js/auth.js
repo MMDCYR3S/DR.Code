@@ -152,7 +152,6 @@ async logout() {
             }, 1000);
             
         } catch (error) {
-            console.error('Logout error:', error);
             // در صورت ارور هم خروج انجام بشه
             StorageManager.clearAll();
             this.updateUIForLoggedOutUser();

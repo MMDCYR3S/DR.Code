@@ -1020,3 +1020,118 @@ async function testUserQuestionsAPI() {
 
 // برای تست:
 // testUserQuestionsAPI();
+
+
+// ============================================================================
+// Ordering APIs — اوردرهای پزشکی (تشخیص/شرط/رژیم/اقدام/پوزیشن)
+// ⚠️ توجه: این namespace «ordering» هست، نه «orders» — چون API.orders از قبل
+// برای فلوی خرید/پرداخت پلن استفاده می‌شه (api/v1/order/purchase/...) و اسمش
+// رو عوض نکردم که با اون تداخل پیدا نکنه.
+// ============================================================================
+API.ordering = {
+    // اطلاعات پایه اوردر (نام، تشخیص، وضعیت، رژیم، اقدام، پوزیشن، دسته‌بندی، رنگ)
+    async getBase(slug) {
+        try {
+            const response = await axios.get(
+                `${API.BASE_URL}api/v1/ordering/${slug}/base/`,
+                { headers: API.getHeaders(true) }
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching order base:', error);
+            throw error;
+        }
+    },
+
+    // ساختار درختی تعیین تکلیف اورژانس (فاز بعد)
+    async getDisposition(slug) {
+        try {
+            const response = await axios.get(
+                `${API.BASE_URL}api/v1/ordering/${slug}/disposition/`,
+                { headers: API.getHeaders(true) }
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching order disposition:', error);
+            throw error;
+        }
+    },
+
+    // فیلدهای پویای سفارش (فاز بعد)
+    async getDynamicFields(slug) {
+        try {
+            const response = await axios.get(
+                `${API.BASE_URL}api/v1/ordering/${slug}/dynamic-fields/`,
+                { headers: API.getHeaders(true) }
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching order dynamic fields:', error);
+            throw error;
+        }
+    },
+
+    // تصاویر و ویدیوهای سفارش (فاز بعد)
+    async getMedia(slug) {
+        try {
+            const response = await axios.get(
+                `${API.BASE_URL}api/v1/ordering/${slug}/media/`,
+                { headers: API.getHeaders(true) }
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching order media:', error);
+            throw error;
+        }
+    },
+
+    // بخش‌ها و آیتم‌های سفارش (فاز بعد)
+    async getSections(slug) {
+        try {
+            const response = await axios.get(
+                `${API.BASE_URL}api/v1/ordering/${slug}/sections/`,
+                { headers: API.getHeaders(true) }
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching order sections:', error);
+            throw error;
+        }
+    },
+
+    // ⚠️ این دو متد رو خودت اسپک نداده بودی — مسیرشون رو با قیاس روی
+    // API.prescriptions.toggleSave / submitQuestion حدس زدم. اگه آدرس واقعی
+    // backend فرق داره، فقط همینجا اصلاحش کن (بقیه کد کار می‌کنه).
+    async toggleSave(slug) {
+        try {
+            const response = await axios.post(
+                `${API.BASE_URL}api/v1/accounts/profile/order/save/${slug}/`,
+                { slug: slug },
+                { headers: API.getHeaders(true) }
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Error toggling save order:', error);
+            throw error;
+        }
+    },
+
+    async submitQuestion(orderId, questionText) {
+        try {
+            const url = `${API.BASE_URL}api/v1/questions/create/`;
+            const payload = {
+                order: orderId,
+                question_text: questionText.trim()
+            };
+
+            const response = await axios.post(url, payload, {
+                headers: API.getHeaders(true)
+            });
+
+            return response.data;
+        } catch (error) {
+            console.error('Error submitting order question:', error);
+            throw error;
+        }
+    }
+};

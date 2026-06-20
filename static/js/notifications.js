@@ -1,5 +1,4 @@
 // مدیریت صفحه نوتیفیکیشن‌ها
-console.log('🔔 Notifications.js loading...');
 
 function notificationsApp() {
     return {
@@ -15,11 +14,9 @@ function notificationsApp() {
 
         // Initialize
         async init() {
-            console.log('🟢 Notifications app initializing...');
 
             // چک کردن لاگین
             if (!StorageManager.isLoggedIn()) {
-                console.log('❌ Not logged in, redirecting...');
                 window.location.href = '/';
                 return;
             }
@@ -32,10 +29,8 @@ function notificationsApp() {
                 this.loading = !url;
                 this.pageLoading = !!url;
 
-                console.log('📡 Fetching notifications...');
 
                 const response = await API.notifications.getNotifications(url);
-                console.log('📦 Response:', response);
 
                 if (response.success) {
                     // اصلاح مسیر دریافت داده‌ها بر اساس ساختار جدید API
@@ -62,7 +57,6 @@ function notificationsApp() {
                         this.currentPage = 1;
                     }
 
-                    console.log('✅ Notifications loaded');
                 } else {
                     throw new Error(response.message);
                 }
@@ -92,7 +86,6 @@ function notificationsApp() {
             }
 
             try {
-                console.log(`📝 Marking notification ${notification.id} as read...`);
 
                 const response = await API.notifications.markAsRead(notification.id);
 
@@ -101,7 +94,6 @@ function notificationsApp() {
                     notification.is_read = true;
                     this.unreadCount = Math.max(0, this.unreadCount - 1);
 
-                    console.log('✅ Notification marked as read');
 
                     // نمایش پیام موفقیت (اختیاری)
                     const Toast = Swal.mixin({
@@ -150,7 +142,6 @@ function notificationsApp() {
 
                 if (!result.isConfirmed) return;
 
-                console.log('📝 Marking all as read...');
 
                 // فیلتر نوتیف‌های خوانده نشده
                 const unreadNotifications = this.notifications.filter(n => !n.is_read);
@@ -166,7 +157,6 @@ function notificationsApp() {
                 this.notifications.forEach(n => n.is_read = true);
                 this.unreadCount = 0;
 
-                console.log('✅ All marked as read');
 
                 await Swal.fire({
                     icon: 'success',
@@ -194,11 +184,8 @@ function notificationsApp() {
 
 // اجرای app وقتی صفحه لود شد
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('📄 DOM loaded');
     
     if (window.location.pathname.includes('/notifications')) {
-        console.log('✅ This is notifications page');
     }
 });
 
-console.log('✅ Notifications.js loaded');
