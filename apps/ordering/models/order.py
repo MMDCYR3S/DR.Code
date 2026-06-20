@@ -7,6 +7,11 @@ from django.core.exceptions import ValidationError
 from apps.prescriptions.models.category import PrescriptionCategory
 from .colors import TailwindColor
 
+# ========= ACCESS CHOICES ========= #
+class AccessChoices(models.TextChoices):
+    """ انتخاب دسترسی نسخه """
+    free = "FREE", ("رایگان")
+    premium = "PREMIUM", ("ویژه")
 
 class Order(models.Model):
     """
@@ -110,6 +115,13 @@ class Order(models.Model):
         related_name="orders",
         verbose_name="دسته‌بندی",
         help_text="دسته‌بندی اجباری است — هر Order حتماً باید دسته داشته باشد",
+    )
+
+    access_level = models.CharField(
+        max_length=10,
+        choices=AccessChoices.choices,
+        default=AccessChoices.free.value,
+        verbose_name='سطح دسترسی'
     )
 
     # ─────────────────────────── رنگ‌بندی ────────────────────────────────

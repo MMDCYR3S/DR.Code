@@ -53,6 +53,8 @@ class AccessChoices(models.TextChoices):
     """ انتخاب دسترسی نسخه """
     free = "FREE", ("رایگان")
     premium = "PREMIUM", ("ویژه")
+
+    
 class Prescription(models.Model):
     """
     مدل اصلی برای هر نسخه پزشکی.

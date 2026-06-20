@@ -76,6 +76,7 @@ class OrderForm(forms.ModelForm):
             'position', 'position_notes',
             'notes',
             'category', 'color',
+            'access_level',
         ]
         widgets = {
             'name': forms.TextInput(attrs={'class': INPUT_CLASSES_RTL, 'placeholder': 'نام اوردر...'}),
@@ -92,6 +93,9 @@ class OrderForm(forms.ModelForm):
             'notes': forms.TextInput(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3, 'placeholder': 'توضیحات تکمیلی اوردر...'}),
             'category': forms.Select(attrs={'class': INPUT_CLASSES_RTL}),
             'color': forms.Select(attrs={'class': INPUT_CLASSES_LTR}),
+            'access_level': forms.RadioSelect(attrs={
+                'class': 'access-level-radio',
+            }),
         }
 
     def __init__(self, *args, **kwargs):

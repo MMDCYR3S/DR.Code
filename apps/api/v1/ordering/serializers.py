@@ -15,10 +15,8 @@ class OrderCategorySerializer(serializers.ModelSerializer):
 
 # ========== ORDER LIST SERIALIZER ========== #
 class OrderListSerializer(serializers.ModelSerializer):
-    """سریالایزر برای لیست Order‌ها - با لینک به 5 endpoint جزئیات"""
     category = OrderCategorySerializer(read_only=True)
-    
-    # hyperlinks به هر 5 endpoint
+
     url_base = serializers.SerializerMethodField()
     url_sections = serializers.SerializerMethodField()
     url_disposition = serializers.SerializerMethodField()
@@ -28,7 +26,9 @@ class OrderListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = [
-            'id', 'name', 'slug', 'color', 'category',
+            'id', 'name', 'slug', 'color',
+            'access_level',          # ← اضافه شد
+            'category',
             'url_base', 'url_sections', 'url_disposition',
             'url_dynamic_fields', 'url_media',
         ]

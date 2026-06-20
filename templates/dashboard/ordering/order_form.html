@@ -148,6 +148,42 @@
         </div>
 
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <!-- سطح دسترسی -->
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-l from-gray-50 to-amber-50 border-b border-gray-200">
+                <span class="w-2 h-2 rounded-full bg-amber-400 inline-block flex-shrink-0"></span>
+                <h3 class="text-sm font-semibold text-gray-700">سطح دسترسی</h3>
+            </div>
+            <div class="p-4">
+                <div class="flex flex-col gap-2">
+                {% for value, label in form.access_level.field.choices %}
+                <label class="flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition
+                                {% if form.access_level.value == value %}
+                                {% if value == 'FREE' %}border-green-400 bg-green-50{% else %}border-amber-400 bg-amber-50{% endif %}
+                                {% else %}border-gray-200 hover:bg-gray-50{% endif %}">
+                    <input type="radio"
+                        name="{{ form.access_level.html_name }}"
+                        value="{{ value }}"
+                        {% if form.access_level.value == value %}checked{% endif %}
+                        class="text-indigo-600">
+                    <div>
+                    <span class="text-sm font-medium text-gray-800">{{ label }}</span>
+                    {% if value == 'FREE' %}
+                        <p class="text-xs text-gray-400 mt-0.5">قابل مشاهده برای همه کاربران</p>
+                    {% else %}
+                        <p class="text-xs text-gray-400 mt-0.5">فقط برای دارندگان اشتراک ویژه</p>
+                    {% endif %}
+                    </div>
+                    {% if value == 'FREE' %}
+                    <span class="mr-auto text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">رایگان</span>
+                    {% else %}
+                    <span class="mr-auto text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">⭐ ویژه</span>
+                    {% endif %}
+                </label>
+                {% endfor %}
+                </div>
+            </div>
+            </div>
           <div class="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-l from-gray-50 to-indigo-50 border-b border-gray-200">
             <span class="w-2 h-2 rounded-full bg-indigo-400 inline-block flex-shrink-0"></span>
             <h3 class="text-sm font-semibold text-gray-700">دسته‌بندی و ظاهر</h3>
