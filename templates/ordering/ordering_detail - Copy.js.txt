@@ -1,15 +1,32 @@
 // =============================================================================
-// Order Detail Page — Alpine.js Controller (نسخه نهایی سیستم پزشکی اورژانسی)
+// Order Detail Page — Alpine.js Controller
 // =============================================================================
-// ویژگی‌ها:
-// ۱) پاپ‌آپ‌ها با الگوی teleport (position: fixed) — هرگز زیر سکشن هیدن نمی‌شوند
-// ۲) هدر child قابل کلیک برای باز/بسته کردن محتوا
-// ۳) auto-expand اولین node برای کاهش کلیک
-// ۴) دکمه برگشت به بالا
-// ۵) تمام قوانین حفاظت محتوا + واترمارک کل بخش اوردر
+// این فایل، نسخه اوردر از منطق صفحه prescription_detail.js است و همان قوانین
+// (حفاظت محتوا، تم رنگی داینامیک، گیت پریمیوم برای سوالات) را رعایت می‌کند.
+//
+// ⚠️ پیش‌نیاز Backend Client:
+// این فایل فرض می‌کند یک namespace به نام `API.ordering` در فایل مرکزی api.js
+// شما تعریف شده (دقیقا هم‌خانواده با API.prescriptions). اگر هنوز اضافه نشده،
+// این متدها را به api.js اضافه کنید:
+//
+//   API.ordering = {
+//     getBase:          (slug) => API.get(`/ordering/${slug}/base/`),
+//     getDisposition:   (slug) => API.get(`/ordering/${slug}/disposition/`),
+//     getDynamicFields: (slug) => API.get(`/ordering/${slug}/dynamic-fields/`),
+//     getMedia:         (slug) => API.get(`/ordering/${slug}/media/`),
+//     getSections:      (slug) => API.get(`/ordering/${slug}/sections/`),
+//     toggleSave:       (slug) => API.post(`/ordering/${slug}/toggle-save/`),
+//     submitQuestion:   (slug, data) => API.post(`/ordering/${slug}/question/`, data),
+//   };
+//
+// (دو متد آخر روی API های واقعی شما هنوز مشخص نشده — مسیر فرضی گذاشتم، اگر
+// فرق داره فقط همینجا اصلاحش کن.)
 // =============================================================================
 
-const ORDER_DEFAULT_COLOR = "#64748b";
+// رنگ‌ها از بک‌اند بصورت کد هگز می‌آیند (مثلاً "#ec4899")، نه دیگر اسم
+// تیلویندی. این تابع فقط معتبر بودن فرمت هگز را چک می‌کند؛ منطق روشن/تیره و
+// شفافیت‌سازی با color-mix() در CSS (کلاس‌های dyn-* / dsec-*) انجام می‌شود.
+const ORDER_DEFAULT_COLOR = "#64748b"; // slate-500 — فال‌بک وقتی رنگ نامعتبر/خالی باشد
 
 function isValidHexColor(value) {
   return typeof value === "string" && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value.trim());
@@ -31,19 +48,11 @@ function orderDetailApp() {
 
     watermarkText: "drcode-med.ir",
 
+    // فاز بعدی — فقط نگه‌دارنده state، هنوز fetch/render نمی‌شوند
     disposition: null,
     dynamicFields: null,
     media: null,
     sections: null,
-
-    // 🆕 پاپ‌آپ state
-    activePopover: null,        // ID پاپ‌آپ فعال
-    popoverData: { title: "", content: "" },
-    popoverStyle: "",           // CSS position styles
-    popoverTheme: { style: "", iconTextStyle: "" },
-
-    // 🆕 back-to-top
-    showBackToTop: false,
 
     // ----- Init -----
     async init() {
@@ -67,16 +76,19 @@ function orderDetailApp() {
 
       await this.loadOrderBase(slug);
       this.initSecurityMeasures();
-      this.initScrollListener();
 
+      // فاز بعدی (وقتی اسکیمای پاسخ این 3 تا رو دادی فعالشون می‌کنم):
       await this.loadDisposition(slug);
       await this.loadDynamicFields(slug);
       // await this.loadMedia(slug);
 
+      // ✅ فعال — sections API آماده است
       await this.loadSections(slug);
     },
 
     getSlugFromURL() {
+      // به جای فرض‌کردن پیشوند مسیر (/orders/ یا /ordering/)، آخرین تکه‌ی
+      // غیرخالی از مسیر رو به‌عنوان slug برمی‌داریم — مستقل از روتینگ شما.
       const path = window.location.pathname;
       const segments = path.split("/").filter(Boolean);
       return segments.length ? segments[segments.length - 1] : null;
@@ -111,10 +123,10 @@ function orderDetailApp() {
       }
     },
 
+    // فاز بعدی — استاب آماده، صرفا منتظر اسکیمای پاسخ
     async loadDisposition(slug) {
       try {
         this.disposition = await API.ordering.getDisposition(slug);
-        this.autoExpandDisposition();
       } catch (e) {
         console.error("Error loading disposition tree:", e);
       }
@@ -122,7 +134,6 @@ function orderDetailApp() {
     async loadDynamicFields(slug) {
       try {
         this.dynamicFields = await API.ordering.getDynamicFields(slug);
-        this.autoExpandDynamicFields();
       } catch (e) {
         console.error("Error loading dynamic fields:", e);
       }
@@ -140,198 +151,6 @@ function orderDetailApp() {
       } catch (e) {
         console.error("Error loading sections:", e);
       }
-    },
-
-    // 🆕 helper: auto-expand اولین node از disposition
-    autoExpandDisposition() {
-      try {
-        if (!this.disposition?.emergency_disposition?.nodes) return;
-        const nodes = this.disposition.emergency_disposition.nodes;
-        if (nodes.length > 0) {
-          const firstWithChildren = nodes.find(n => n.children && n.children.length > 0);
-          if (firstWithChildren) {
-            firstWithChildren._open = true;
-          } else {
-            nodes[0]._open = true;
-          }
-        }
-      } catch (e) {
-        console.warn("autoExpandDisposition failed:", e);
-      }
-    },
-
-    // 🆕 helper: auto-expand اولین node از هر group
-    autoExpandDynamicFields() {
-      try {
-        if (!this.dynamicFields?.dynamic_field_groups) return;
-        this.dynamicFields.dynamic_field_groups.forEach(group => {
-          if (!group.nodes || group.nodes.length === 0) return;
-          const firstMeaningful = group.nodes.find(n =>
-            (n.content && n.content.trim()) || (n.children && n.children.length > 0)
-          );
-          if (firstMeaningful) {
-            firstMeaningful._open = true;
-          } else {
-            group.nodes[0]._open = true;
-          }
-        });
-      } catch (e) {
-        console.warn("autoExpandDynamicFields failed:", e);
-      }
-    },
-
-    // 🆕 popover management — teleport به body با position: fixed
-    togglePopover(event, id) {
-      event.stopPropagation();
-      event.preventDefault();
-
-      // اگر همون پاپ‌آپ بازه، ببندش
-      if (this.activePopover === id) {
-        this.closePopover();
-        return;
-      }
-
-      // پیدا کردن محتوا و عنوان برای این id
-      const data = this.findPopoverContent(id);
-      if (!data) return;
-
-      // محاسبه موقعیت دکمه نسبت به viewport
-      const rect = event.currentTarget.getBoundingClientRect();
-      const popoverWidth = 360;
-      const popoverEstHeight = 200;
-      const margin = 8;
-
-      // موقعیت افقی: دکمه را به دکمه‌ی راست popover ترجیح بده
-      let left = rect.right - popoverWidth;
-      if (left < margin) left = margin;
-      if (left + popoverWidth > window.innerWidth - margin) {
-        left = window.innerWidth - popoverWidth - margin;
-      }
-
-      // موقعیت عمودی: زیر دکمه، اگر جا نیست بالای دکمه
-      let top = rect.bottom + margin;
-      if (top + popoverEstHeight > window.innerHeight - margin) {
-        top = rect.top - popoverEstHeight - margin;
-        if (top < margin) top = margin;
-      }
-
-      this.popoverStyle = `top: ${top}px; left: ${left}px;`;
-      this.popoverData = data;
-      this.popoverTheme = data.theme || { style: "", iconTextStyle: "" };
-      this.activePopover = id;
-    },
-
-    closePopover() {
-      this.activePopover = null;
-      this.popoverData = { title: "", content: "" };
-      this.popoverStyle = "";
-    },
-
-    // یافتن محتوای پاپ‌آپ بر اساس ID
-    findPopoverContent(id) {
-      // field-{key}
-      if (id.startsWith("field-")) {
-        const key = id.replace("field-", "");
-        const field = this.infoFields().find(f => f.key === key);
-        if (field) {
-          return {
-            title: "توضیحات: " + field.labelFa,
-            content: field.notes || "",
-            theme: {
-              style: `--theme-c: ${this.theme().color};`,
-              iconTextStyle: `color: ${this.theme().color};`,
-            },
-          };
-        }
-      }
-
-      // section-{id}
-      if (id.startsWith("section-") && this.sections?.sections) {
-        const secId = parseInt(id.replace("section-", ""));
-        const section = this.sections.sections.find(s => s.id === secId);
-        if (section) {
-          const color = isValidHexColor(section.color) ? section.color : ORDER_DEFAULT_COLOR;
-          return {
-            title: "توضیحات بخش: " + section.title,
-            content: section.notes || "",
-            theme: {
-              style: `--section-c: ${color}; background: color-mix(in srgb, ${color} 6%, white);`,
-              iconTextStyle: `color: color-mix(in srgb, ${color} 72%, black);`,
-            },
-          };
-        }
-      }
-
-      // item-{id}
-      if (id.startsWith("item-") && this.sections?.sections) {
-        const itemId = parseInt(id.replace("item-", ""));
-        for (const section of this.sections.sections) {
-          if (section.items) {
-            const item = section.items.find(i => i.id === itemId);
-            if (item) {
-              const color = isValidHexColor(section.color) ? section.color : ORDER_DEFAULT_COLOR;
-              return {
-                title: "توضیحات آیتم",
-                content: item.notes || "",
-                theme: {
-                  style: `--section-c: ${color}; background: color-mix(in srgb, ${color} 6%, white);`,
-                  iconTextStyle: `color: color-mix(in srgb, ${color} 72%, black);`,
-                },
-              };
-            }
-          }
-        }
-      }
-
-      // drug-{id}
-      if (id.startsWith("drug-") && this.sections?.sections) {
-        const drugId = parseInt(id.replace("drug-", ""));
-        for (const section of this.sections.sections) {
-          if (section.drug_items) {
-            const drug = section.drug_items.find(d => d.id === drugId);
-            if (drug) {
-              const color = isValidHexColor(section.color) ? section.color : ORDER_DEFAULT_COLOR;
-              return {
-                title: "توضیحات دارو: " + (drug.drug?.title || ""),
-                content: drug.notes || "",
-                theme: {
-                  style: `--section-c: ${color}; background: color-mix(in srgb, ${color} 6%, white);`,
-                  iconTextStyle: `color: color-mix(in srgb, ${color} 72%, black);`,
-                },
-              };
-            }
-          }
-        }
-      }
-
-      // disp-{id}
-      if (id.startsWith("disp-") && this.disposition?.emergency_disposition) {
-        const disp = this.disposition.emergency_disposition;
-        const color = isValidHexColor(disp.color) ? disp.color : ORDER_DEFAULT_COLOR;
-        return {
-          title: "توضیحات: " + (disp.title || ""),
-          content: disp.notes || "",
-          theme: {
-            style: `--df-c: ${color}; background: color-mix(in srgb, ${color} 6%, white);`,
-            iconTextStyle: `color: color-mix(in srgb, ${color} 72%, black);`,
-          },
-        };
-      }
-
-      return null;
-    },
-
-    // 🆕 back-to-top
-    initScrollListener() {
-      const handleScroll = () => {
-        this.showBackToTop = window.scrollY > 400;
-      };
-      window.addEventListener("scroll", handleScroll, { passive: true });
-      handleScroll();
-    },
-
-    scrollToTop() {
-      window.scrollTo({ top: 0, behavior: "smooth" });
     },
 
     // ----- Derived / Display Helpers -----
@@ -381,6 +200,9 @@ function orderDetailApp() {
       ];
     },
 
+    // تم رنگی داینامیک بر اساس order.color (کد هگز) — مجزا از رنگ دسته‌بندی (category.color_code)
+    // رنگ واقعی با :style روی --theme-c ست می‌شه و کلاس‌های dyn-* (تعریف‌شده در
+    // <style> صفحه) با color-mix() روشنی/شفافیت مناسب رو از همون رنگ می‌سازن.
     theme() {
       const c = isValidHexColor(this.order?.color) ? this.order.color.trim() : ORDER_DEFAULT_COLOR;
       return {
@@ -404,6 +226,11 @@ function orderDetailApp() {
       };
     },
 
+    // ----- Section / Item Helpers -----
+
+    // تم رنگی داینامیک بر اساس رنگ هر section (کد هگز، مستقل از تم کلی اوردر)
+    // رنگ واقعی با :style روی --section-c همون wrapper section ست می‌شه و
+    // کلاس‌های dsec-* با color-mix() نسخه‌های روشن/تیره/شفاف می‌سازن.
     sectionTheme(color) {
       const c = isValidHexColor(color) ? color.trim() : ORDER_DEFAULT_COLOR;
       return {
@@ -426,6 +253,8 @@ function orderDetailApp() {
       };
     },
 
+    // تم رنگی مستقل برای گره‌های dynamic fields (group یا node)
+    // از CSS variable روی --df-c استفاده می‌کند؛ کلاس‌های ddf-* در <style> تعریف شده‌اند.
     dfTheme(color) {
       const c = isValidHexColor(color) ? color.trim() : ORDER_DEFAULT_COLOR;
       return {
@@ -443,14 +272,17 @@ function orderDetailApp() {
       };
     },
 
+    // آیتم‌هایی که شرط دارند را گروه‌بندی می‌کند:
+    // خروجی: آرایه‌ای از { condition: obj|null, items: [...] }
     groupItemsByCondition(items) {
       if (!items || items.length === 0) return [];
 
       const groups = [];
-      const conditionMap = new Map();
+      const conditionMap = new Map(); // conditionId → group index
 
       items.forEach((item) => {
         if (!item.conditions || item.conditions.length === 0) {
+          // آیتم بدون شرط → گروه null
           let nullGroup = groups.find((g) => g.condition === null);
           if (!nullGroup) {
             nullGroup = { condition: null, items: [] };
@@ -458,6 +290,7 @@ function orderDetailApp() {
           }
           nullGroup.items.push(item);
         } else {
+          // هر شرط جداگانه نمایش داده می‌شود (یک آیتم می‌تواند زیر چند شرط باشد)
           item.conditions.forEach((cond) => {
             if (!conditionMap.has(cond.id)) {
               conditionMap.set(cond.id, groups.length);
@@ -720,20 +553,17 @@ function orderDetailApp() {
           });
           return false;
         }
-
-        // بستن پاپ‌آپ با Escape
-        if (e.key === "Escape" && this.activePopover) {
-          this.closePopover();
-        }
       });
     },
   };
 }
 
 // =============================================================================
-// Watermark Protection — کل بخش اوردر را می‌پوشاند
+// Watermark Protection — همان مکانیزم prescription_detail.js، روی #order__section
 // =============================================================================
 function createOrderProtectedWatermark() {
+  let watermarkAdded = false;
+
   function addWatermark() {
     const targetSection = document.getElementById("order__section");
     if (!targetSection) return;
@@ -747,7 +577,7 @@ function createOrderProtectedWatermark() {
     watermark.id = "order-protected-watermark";
     watermark.style.cssText = `
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      pointer-events: none; z-index: 1; overflow: hidden;
+      pointer-events: none; z-index: 10; overflow: hidden;
     `;
 
     const computedStyle = getComputedStyle(targetSection);
@@ -757,8 +587,8 @@ function createOrderProtectedWatermark() {
 
     const sectionRect = targetSection.getBoundingClientRect();
     const isMobile = window.innerWidth < 768;
-    const cols = 5;
-    const rows = 8;
+    const cols = 4;
+    const rows = 3;
     const colSpacing = sectionRect.width / (cols + 1);
     const rowSpacing = sectionRect.height / (rows + 1);
 
@@ -773,30 +603,29 @@ function createOrderProtectedWatermark() {
       medi = null;
     }
 
-    const text = (medi && mediObject?.medical_code) ? mediObject.medical_code : "drcode-med.ir";
-
     for (let row = 1; row <= rows; row++) {
       for (let col = 1; col <= cols; col++) {
-        const textEl = document.createElement("div");
-        textEl.textContent = text;
-        textEl.style.cssText = `
+        const text = document.createElement("div");
+        text.textContent = medi && mediObject?.medical_code ? mediObject.medical_code : "drcode-med.ir";
+        text.style.cssText = `
           position: absolute;
           top: ${row * rowSpacing}px;
           left: ${col * colSpacing}px;
           transform: translate(-50%, -50%) rotate(-45deg);
-          font-size: ${isMobile ? "22px" : "28px"};
-          font-weight: 700;
-          color: rgba(15, 23, 42, 0.06);
+          font-size: ${isMobile ? "34px" : "40px"};
+          font-weight: bold;
+          color: rgba(0, 0, 0, 0.1);
           white-space: nowrap;
           user-select: none;
           font-family: Arial, sans-serif;
         `;
-        container.appendChild(textEl);
+        container.appendChild(text);
       }
     }
 
     watermark.appendChild(container);
     targetSection.insertBefore(watermark, targetSection.firstChild);
+    watermarkAdded = true;
   }
 
   function keepTrying() {
