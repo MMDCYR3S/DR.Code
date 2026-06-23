@@ -4,7 +4,6 @@ import jdatetime
 from .order import Order
 from .colors import TailwindColor
 
-
 class OrderSection(models.Model):
     """
     زیرمجموعه‌های پویای هر Order.
@@ -107,6 +106,41 @@ class OrderSection(models.Model):
         return queryset
 
 
+class LogicalOperator(models.TextChoices):
+    """ Enum برای اپراتورهای منطقی بین آیتم‌ها """
+    OR = 'OR', 'یا (OR)'
+    AND = 'AND', 'و (AND)'
+
+class ItemRelationshipGroup(models.Model):
+    """
+    یک گروه برای مرتبط کردن چند آیتم در یک سکشن با یک اپراتور منطقی.
+    مثال: (آیتم ۱ OR آیتم ۲ OR آیتم ۳) در سکشن X.
+    """
+    section = models.ForeignKey(
+        OrderSection,
+        on_delete=models.CASCADE,
+        related_name="relationship_groups",
+        verbose_name="سکشن مرجع"
+    )
+    operator = models.CharField(
+        max_length=3,
+        choices=LogicalOperator.choices,
+        default=LogicalOperator.OR,
+        verbose_name="اپراتور منطقی"
+    )
+    order_index = models.PositiveIntegerField(
+        default=0,
+        verbose_name="ترتیب نمایش گروه"
+    )
+
+    class Meta:
+        verbose_name = "گروه ارتباطی آیتم‌ها"
+        verbose_name_plural = "گروه‌های ارتباطی آیتم‌ها"
+        ordering = ['order_index']
+
+    def __str__(self):
+        return f"گروه {self.get_operator_display()} در سکشن {self.section.title}"
+
 # ─────────────────────────────────────────────────────────────────────────────
 
 class Condition(models.Model):
@@ -142,13 +176,21 @@ class SectionItem(models.Model):
     text = models.TextField(verbose_name="متن آیتم")
     notes = models.TextField(blank=True, verbose_name="توضیحات اختصاصی آیتم")
     order_index = models.PositiveIntegerField(default=0, verbose_name="ترتیب نمایش")
-    
-    # ─── تغییر اصلی ───
+
     conditions = models.ManyToManyField(
         Condition,
         related_name="section_items",
         blank=True,
         verbose_name="شرط‌ها"
+    )
+
+    relationship_group = models.ForeignKey(
+        ItemRelationshipGroup,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="text_items",
+        verbose_name="گروه ارتباطی"
     )
     
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ساخت")
@@ -179,12 +221,20 @@ class DrugSectionItem(models.Model):
     notes = models.TextField(blank=True, verbose_name="توضیحات اضافی دارو در این Order")
     order_index = models.PositiveIntegerField(default=0, verbose_name="ترتیب نمایش")
     
-    # ─── تغییر اصلی ───
     conditions = models.ManyToManyField(
         Condition,
         related_name="drug_items",
         blank=True,
         verbose_name="شرط‌ها"
+    )
+
+    relationship_group = models.ForeignKey(
+        ItemRelationshipGroup,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="drug_items",
+        verbose_name="گروه ارتباطی"
     )
     
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ساخت")

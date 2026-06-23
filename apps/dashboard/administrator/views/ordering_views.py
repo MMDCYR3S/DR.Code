@@ -22,7 +22,7 @@ from apps.ordering.models import (
     DynamicFieldGroup, DynamicFieldNode,
     EmergencyDisposition, EmergencyNode,
     OrderImage, OrderVideo,
-    TailwindColor,
+    TailwindColor, ItemRelationshipGroup,
 )
 from ..forms import (
     # ===== Ordering ===== #
@@ -310,6 +310,7 @@ class OrderDeleteView(View):
 # ==================================================== #
 # ==================== Order View ==================== #
 # ==================================================== #
+
 class OrderManageView(View):
     template_name = 'dashboard/ordering/order_form.html'
     success_url = reverse_lazy('dashboard:ordering:order_create')
@@ -332,11 +333,9 @@ class OrderManageView(View):
             item_fs = SectionItemFormSet(instance=section_form.instance, prefix=f"{section_form.prefix}-items")
             drug_fs = DrugSectionItemFormSet(instance=section_form.instance, prefix=f"{section_form.prefix}-drugs")
 
-            # ===== مپ کردن Instance به Prefix جهت نمایش آیتم‌ها و داروها ===== #
             item_prefix_map = {f.instance.pk: f.prefix for f in item_fs if f.instance.pk}
             drug_prefix_map = {f.instance.pk: f.prefix for f in drug_fs if f.instance.pk}
 
-            # ===== جمع‌آوری شرط‌ها جهت نمایش در حین ویرایش ===== #
             seen_conditions = {}
             for item_form in item_fs:
                 if not item_form.instance.pk:
@@ -354,14 +353,31 @@ class OrderManageView(View):
                         seen_conditions[cond.pk] = {'text': cond.text, 'items': []}
                     seen_conditions[cond.pk]['items'].append(drug_prefix_map[drug_form.instance.pk])
 
+            # آماده‌سازی دیتای گروه‌های ارتباطی
+            relationship_groups_data = []
+            groups = section_form.instance.relationship_groups.all().prefetch_related('text_items', 'drug_items')
+            for group in groups:
+                linked_item_prefixes = []
+                for item in group.text_items.all():
+                    if item.pk in item_prefix_map:
+                        linked_item_prefixes.append(item_prefix_map[item.pk])
+                for drug_item in group.drug_items.all():
+                    if drug_item.pk in drug_prefix_map:
+                        linked_item_prefixes.append(drug_prefix_map[drug_item.pk])
+                
+                relationship_groups_data.append({
+                    'operator': group.operator,
+                    'items': linked_item_prefixes,
+                })
+
             nested_sections.append({
                 'section_form': section_form,
                 'item_fs': item_fs,
                 'drug_fs': drug_fs,
                 'index': i,
                 'conditions': list(seen_conditions.values()),
+                'relationship_groups': json.dumps(relationship_groups_data),
             })
-
 
         empty_item_fs = SectionItemFormSet(prefix='sections-__section_prefix__-items')
         empty_drug_fs = DrugSectionItemFormSet(prefix='sections-__section_prefix__-drugs')
@@ -389,13 +405,10 @@ class OrderManageView(View):
         nested_sections = []
         all_nested_valid = True
 
-        # === دیباگ: بررسی خطاهای فرم اصلی و فرم‌ست سکشن ===
         if not form.is_valid():
             logger.error(f"❌ Order Form Errors: {form.errors}")
-            
         if not section_formset.is_valid():
             logger.error(f"❌ Section Formset Errors: {section_formset.errors}")
-            logger.error(f"❌ Section Formset Non-Form Errors: {section_formset.non_form_errors()}")
 
         if form.is_valid() and section_formset.is_valid():
             saved_order = form.save(commit=False)
@@ -407,11 +420,9 @@ class OrderManageView(View):
                 item_fs = SectionItemFormSet(request.POST, instance=section_form.instance, prefix=f"{section_form.prefix}-items")
                 drug_fs = DrugSectionItemFormSet(request.POST, instance=section_form.instance, prefix=f"{section_form.prefix}-drugs")
 
-                # === دیباگ: بررسی خطاهای فرم‌ست‌های داخلی ===
                 if not item_fs.is_valid():
                     all_nested_valid = False
                     logger.error(f"❌ Item Formset Errors (Section {i}): {item_fs.errors}")
-                    
                 if not drug_fs.is_valid():
                     all_nested_valid = False
                     logger.error(f"❌ Drug Formset Errors (Section {i}): {drug_fs.errors}")
@@ -428,17 +439,33 @@ class OrderManageView(View):
                 form.save_m2m()
                 section_formset.save()
 
+                # پاک کردن گروه‌های ارتباطی قدیمی مربوط به این Order 
+                # (برای ثبت مجدد تمیز از روی دیتای جدید)
+                old_groups = ItemRelationshipGroup.objects.filter(section__order=saved_order)
+                for group in old_groups:
+                    group.text_items.clear()
+                    group.drug_items.clear()
+                old_groups.delete()
+
+                section_map = {form.prefix: form.instance for form in section_formset}
                 saved_items_map = {}
 
                 for data in nested_sections:
-                    if data['section_form'] in section_formset.deleted_forms:
+                    if data['section_form'].prefix not in section_map:
                         continue
 
-                    # ===== ذخیره آیتم‌ها ===== #
+                    section_instance = section_map.get(data['section_form'].prefix)
+                    if not section_instance or not section_instance.pk:
+                        continue
+                    
+                    data['item_fs'].instance = section_instance
+                    data['drug_fs'].instance = section_instance
+
+                    # ذخیره آیتم‌ها
                     data['item_fs'].save()
                     data['drug_fs'].save()
 
-                    # ===== ساخت مپ و پاک کردن شرط‌های قبلیِ آیتم‌های باقی‌مانده ===== #
+                    # پاک کردن شرط‌های قبلی و ساخت مپ از آیتم‌ها
                     for item_form in data['item_fs'].forms:
                         if item_form.instance.pk and item_form not in data['item_fs'].deleted_forms:
                             saved_items_map[item_form.prefix] = item_form.instance
@@ -449,10 +476,35 @@ class OrderManageView(View):
                             saved_items_map[drug_form.prefix] = drug_form.instance
                             drug_form.instance.conditions.clear()
 
-                    # ===== پردازش شرط‌های ارسالی فرانت‌اند ===== #
                     index = data['index']
+
+                    # ===== پردازش گروه‌های ارتباطی بین آیتم‌ها ===== #
+                    relationships_json = request.POST.get(f'section_relationships_{index}')
+                    if relationships_json:
+                        try:
+                            relationships_data = json.loads(relationships_json)
+                            for order_idx, rel_data in enumerate(relationships_data):
+                                operator = rel_data.get('operator')
+                                linked_prefixes = rel_data.get('items', [])
+                                
+                                if operator and linked_prefixes:
+                                    # ۱. ایجاد گروه
+                                    group = ItemRelationshipGroup.objects.create(
+                                        section=section_instance,
+                                        operator=operator,
+                                        order_index=order_idx
+                                    )
+                                    # ۲. اختصاص گروه به آیتم‌ها
+                                    for prefix in linked_prefixes:
+                                        if prefix in saved_items_map:
+                                            item_instance = saved_items_map[prefix]
+                                            item_instance.relationship_group = group
+                                            item_instance.save()
+                        except json.JSONDecodeError:
+                            logger.error(f"Error decoding relationships JSON for section {index}")
+
+                    # ===== پردازش شرط‌های ارسالی فرانت‌اند ===== #
                     conditions_json = request.POST.get(f'section_conditions_{index}')
-                    
                     if conditions_json:
                         try:
                             conditions_data = json.loads(conditions_json)
@@ -461,23 +513,18 @@ class OrderManageView(View):
                                 linked_prefixes = cond_data.get('items', [])
                                 
                                 if cond_text and linked_prefixes:
-                                    # ===== پیدا کردن یا ساخت شرط جدید ===== #
                                     condition_obj, _ = Condition.objects.get_or_create(text=cond_text)
-                                    
-                                    # ===== اتصال شرط به آیتم‌ها ===== #
                                     for prefix in linked_prefixes:
                                         if prefix in saved_items_map:
                                             saved_items_map[prefix].conditions.add(condition_obj)
                         except json.JSONDecodeError:
-                            pass
+                            logger.error(f"Error decoding conditions JSON for section {index}")
 
                 messages.success(request, 'اوردر با موفقیت ذخیره شد.')
                 return redirect(reverse('dashboard:ordering:order_edit', kwargs={'pk': saved_order.pk}))
             else:
-                logger.error("❌ all_nested_valid is FALSE!")
                 messages.error(request, 'خطا در ذخیره اوردر. لطفاً فیلدها را بررسی کنید.')
         else:
-            logger.error("❌ Main form or Section formset is invalid!")
             messages.error(request, 'خطا در ذخیره اوردر. لطفاً فیلدها را بررسی کنید.')
         
         context = {

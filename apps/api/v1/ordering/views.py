@@ -11,7 +11,7 @@ from drf_spectacular.types import OpenApiTypes
 from apps.accounts.permissions import IsTokenJtiActive
 from apps.ordering.models import (
     Order, OrderSection, SectionItem, DrugSectionItem,
-    EmergencyDisposition, EmergencyNode, DynamicFieldGroup, DynamicFieldNode
+    EmergencyDisposition, EmergencyNode, ItemRelationshipGroup, DynamicFieldNode
 )
 from .serializers import (
     OrderBaseSerializer, OrderSectionsSerializer,
@@ -128,6 +128,10 @@ class OrderSectionsView(generics.RetrieveAPIView):
     lookup_field = 'slug'
 
     def get_queryset(self):
+        """
+        کوئری بهینه شده با prefetch برای واکشی تمام داده‌های مورد نیاز
+        شامل گروه‌های ارتباطی و آیتم‌های داخل آن‌ها.
+        """
         return Order.objects.prefetch_related(
             Prefetch(
                 'sections',
@@ -139,10 +143,24 @@ class OrderSectionsView(generics.RetrieveAPIView):
                     Prefetch(
                         'drug_items',
                         queryset=DrugSectionItem.objects.select_related('drug').prefetch_related('conditions')
+                    ),
+                    Prefetch(
+                        'relationship_groups',
+                        queryset=ItemRelationshipGroup.objects.prefetch_related(
+                            Prefetch(
+                                'text_items',
+                                queryset=SectionItem.objects.prefetch_related('conditions')
+                            ),
+                            Prefetch(
+                                'drug_items',
+                                queryset=DrugSectionItem.objects.select_related('drug').prefetch_related('conditions')
+                            )
+                        )
                     )
                 )
             )
         )
+
 
 
 # ========== ORDER DISPOSITION VIEW ========== #

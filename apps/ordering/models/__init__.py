@@ -26,6 +26,8 @@ from .section import (
     SectionItem,
     DrugSectionItem,
     Condition,
+    LogicalOperator,
+    ItemRelationshipGroup,
 )
 
 from .emergency_disposition import EmergencyDisposition, EmergencyNode
@@ -48,6 +50,8 @@ __all__ = [
     "SectionItem",
     "DrugSectionItem",
     "Condition",
+    "LogicalOperator",
+    "ItemRelationshipGroup",
 
     # تعیین تکلیف اورژانس
     "EmergencyDisposition",

@@ -31,71 +31,47 @@ class CleanFileInput(forms.ClearableFileInput):
 # ====================================================== #
 class OrderFilterForm(forms.Form):
     search = forms.CharField(
-        required=False,
-        label="",
-        widget=forms.TextInput(attrs={
-            'class': INPUT_CLASSES_RTL,
-            'placeholder': 'جستجو در نام اوردر...'
-        })
+        required=False, label="",
+        widget=forms.TextInput(attrs={'class': INPUT_CLASSES_RTL, 'placeholder': 'جستجو در نام اوردر...'})
     )
     category = forms.ModelChoiceField(
         queryset=PrescriptionCategory.objects.all().order_by('title'),
-        required=False,
-        label="",
-        empty_label="همه دسته‌بندی‌ها",
-        widget=forms.Select(attrs={
-            'class': INPUT_CLASSES_RTL
-        })
+        required=False, label="", empty_label="همه دسته‌بندی‌ها",
+        widget=forms.Select(attrs={'class': INPUT_CLASSES_RTL})
     )
     sort_by = forms.ChoiceField(
-        choices=[
-            ('-created_at', 'جدیدترین'),
-            ('created_at', 'قدیمی‌ترین'),
-            ('name', 'نام (الفبایی)'),
-        ],
-        required=False,
-        label="",
-        widget=forms.Select(attrs={
-            'class': INPUT_CLASSES_RTL
-        })
+        choices=[('-created_at', 'جدیدترین'), ('created_at', 'قدیمی‌ترین'), ('name', 'نام (الفبایی)')],
+        required=False, label="",
+        widget=forms.Select(attrs={'class': INPUT_CLASSES_RTL})
     )
 
-
-# ==================================================== #
-# ==================== Order Form ==================== #
-# ==================================================== #
+# ====================================================== #
+# ==================== Forms =========================== #
+# ====================================================== #
 class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
         fields = [
-            'name',
-            'imp', 'imp_notes',
-            'condition', 'condition_notes',
-            'diet', 'diet_notes',
-            'action', 'action_notes',
-            'position', 'position_notes',
-            'notes',
-            'category', 'color',
-            'access_level',
+            'name', 'imp', 'imp_notes', 'condition', 'condition_notes',
+            'diet', 'diet_notes', 'action', 'action_notes',
+            'position', 'position_notes', 'notes', 'category', 'color', 'access_level',
         ]
         widgets = {
             'name': forms.TextInput(attrs={'class': INPUT_CLASSES_RTL, 'placeholder': 'نام اوردر...'}),
             'imp': forms.TextInput(attrs={'class': INPUT_CLASSES_LTR}),
-            'imp_notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3, 'placeholder': 'توضیحات تکمیلی Impression...'}),
+            'imp_notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3}),
             'condition': forms.TextInput(attrs={'class': INPUT_CLASSES_LTR}),
-            'condition_notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3, 'placeholder': 'توضیحات تکمیلی Condition...'}),
+            'condition_notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3}),
             'diet': forms.TextInput(attrs={'class': INPUT_CLASSES_LTR}),
-            'diet_notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3, 'placeholder': 'توضیحات تکمیلی Diet...'}),
-            'action': forms.TextInput(attrs={'class': INPUT_CLASSES_LTR,}),
-            'action_notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3, 'placeholder': 'توضیحات تکمیلی Action...'}),
+            'diet_notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3}),
+            'action': forms.TextInput(attrs={'class': INPUT_CLASSES_LTR}),
+            'action_notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3}),
             'position': forms.TextInput(attrs={'class': INPUT_CLASSES_LTR}),
-            'position_notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3, 'placeholder': 'توضیحات تکمیلی Position...'}),
-            'notes': forms.TextInput(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3, 'placeholder': 'توضیحات تکمیلی اوردر...'}),
+            'position_notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3}),
+            'notes': forms.TextInput(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3}),
             'category': forms.Select(attrs={'class': INPUT_CLASSES_RTL}),
             'color': forms.Select(attrs={'class': INPUT_CLASSES_LTR}),
-            'access_level': forms.RadioSelect(attrs={
-                'class': 'access-level-radio',
-            }),
+            'access_level': forms.RadioSelect(attrs={'class': 'access-level-radio'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -120,19 +96,15 @@ class OrderSectionForm(forms.ModelForm):
         self.fields['order_index'].initial = 0
 
     def clean_order_index(self):
-        value = self.cleaned_data.get('order_index')
-        if value is None:
-            return 0
-        return value
-
+        return self.cleaned_data.get('order_index') or 0
 
 class SectionItemForm(forms.ModelForm):
     class Meta:
         model = SectionItem
         fields = ['text', 'notes', 'order_index']
         widgets = {
-            'text': forms.Textarea(attrs={'class': INPUT_CLASSES_LTR + ' item-name-input', 'rows': 1, 'placeholder': 'متن آیتم...'}),
-            'notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 1, 'placeholder': 'توضیحات...'}),
+            'text': forms.Textarea(attrs={'class': INPUT_CLASSES_LTR + ' item-name-input', 'rows': 1}),
+            'notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 1}),
             'order_index': forms.NumberInput(attrs={'class': INPUT_CLASSES_LTR}),
         }
 
@@ -142,19 +114,15 @@ class SectionItemForm(forms.ModelForm):
         self.fields['order_index'].initial = 0
 
     def clean_order_index(self):
-        value = self.cleaned_data.get('order_index')
-        if value is None:
-            return 0
-        return value
-
+        return self.cleaned_data.get('order_index') or 0
 
 class DrugSectionItemForm(forms.ModelForm):
     class Meta:
         model = DrugSectionItem
         fields = ['drug', 'notes', 'order_index']
         widgets = {
-            'drug': forms.Select(attrs={'class': INPUT_CLASSES_LTR + ' select2-drug-search item-name-input', 'data-placeholder': 'جستجو...'}),
-            'notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 1, 'placeholder': 'توضیحات...'}),
+            'drug': forms.Select(attrs={'class': INPUT_CLASSES_LTR + ' select2-drug-search item-name-input'}),
+            'notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 1}),
             'order_index': forms.NumberInput(attrs={'class': INPUT_CLASSES_LTR}),
         }
 
@@ -165,55 +133,23 @@ class DrugSectionItemForm(forms.ModelForm):
         self.fields['drug'].queryset = Drug.objects.all()
 
     def clean_order_index(self):
-        value = self.cleaned_data.get('order_index')
-        if value is None:
-            return 0
-        return value
+        return self.cleaned_data.get('order_index') or 0
 
-
-# ── Custom BaseInlineFormSet که فرم‌های کاملاً خالی رو valid می‌کنه ──
 class BaseOrderSectionFormSet(BaseInlineFormSet):
-    """
-    فرم‌هایی که title ندارن و instance جدید هستن رو به عنوان empty در نظر می‌گیره
-    تا Django اونا رو skip کنه به جای اینکه error بده.
-    """
     def _construct_form(self, i, **kwargs):
-        form = super()._construct_form(i, **kwargs)
-        return form
+        return super()._construct_form(i, **kwargs)
 
     def full_clean(self):
         super().full_clean()
-        # فرم‌های extra که title ندارن رو از errors پاک کن
         for form in self.forms:
             if not form.instance.pk and not form.cleaned_data.get('title'):
                 form._errors = {}
                 form.cleaned_data = {}
 
+OrderSectionFormSet = inlineformset_factory(Order, OrderSection, form=OrderSectionForm, formset=BaseOrderSectionFormSet, extra=0, can_delete=True)
+SectionItemFormSet = inlineformset_factory(OrderSection, SectionItem, form=SectionItemForm, extra=0, can_delete=True)
+DrugSectionItemFormSet = inlineformset_factory(OrderSection, DrugSectionItem, form=DrugSectionItemForm, extra=0, can_delete=True)
 
-OrderSectionFormSet = inlineformset_factory(
-    Order,
-    OrderSection,
-    form=OrderSectionForm,
-    formset=BaseOrderSectionFormSet,
-    extra=0,
-    can_delete=True,
-)
-
-SectionItemFormSet = inlineformset_factory(
-    OrderSection,
-    SectionItem,
-    form=SectionItemForm,
-    extra=0,
-    can_delete=True,
-)
-
-DrugSectionItemFormSet = inlineformset_factory(
-    OrderSection,
-    DrugSectionItem,
-    form=DrugSectionItemForm,
-    extra=0,
-    can_delete=True,
-)
 
 # ======================================================= #
 # ==================== Dynamic Forms ==================== #

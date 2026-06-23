@@ -65,7 +65,7 @@
   {{ drug_fs.management_form }}
 
   <!-- آیتم‌های متنی -->
-  <div class="items-wrapper p-3 {% if section_form.is_drug_section.value %}hidden{% endif %}">
+  <div class="items-wrapper p-3">
     <div class="divide-y divide-gray-100 item-list" id="text-items-{{ section_index }}">
       {% for item_form in item_fs %}
         {% include 'dashboard/ordering/partials/_item_text.html' with item_form=item_form %}
@@ -93,6 +93,26 @@
       </button>
     </div>
   </div>
+
+  <!-- روابط منطقی (AND/OR) بین آیتم‌ها -->
+  <div class="relationships-wrapper mx-3 mb-3 p-3 bg-amber-50 border border-amber-100 rounded-lg">
+    <h6 class="text-xs font-semibold text-amber-800 mb-3 flex items-center gap-1">
+      <i class="fas fa-link"></i> گروه‌بندی و روابط منطقی بین آیتم‌ها (اختیاری)
+    </h6>
+    
+    <!-- اینجا روابط قبلی ذخیره‌شده از بک‌اند را با JS می‌خوانیم -->
+    <div id="relationships-list-{{ section_index }}" class="mb-3 space-y-2 relationship-list-container" 
+         data-initial="{{ relationship_groups|default:'[]' }}">
+    </div>
+    
+    <button type="button"
+      class="text-xs text-amber-600 hover:text-amber-800 flex items-center gap-1 px-1"
+      onclick="addRelationship('{{ section_index }}', this)">
+      <i class="fas fa-plus"></i> افزودن رابطه جدید
+    </button>
+    <input type="hidden" name="section_relationships_{{ section_index }}" id="hidden-relationships-{{ section_index }}">
+  </div>
+
 
   <!-- شرط‌ها -->
   <div class="conditions-wrapper mx-3 mb-3 p-3 bg-blue-50 border border-blue-100 rounded-lg">

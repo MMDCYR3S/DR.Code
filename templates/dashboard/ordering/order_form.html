@@ -123,17 +123,17 @@
           <div class="p-3">
             {{ section_formset.management_form }}
             <div id="sectionsContainer" class="space-y-2">
-              {% for data in nested_sections %}
-                {% include 'dashboard/ordering/partials/_section.html' with section_form=data.section_form item_fs=data.item_fs drug_fs=data.drug_fs section_index=data.index existing_conditions=data.conditions %}
-              {% endfor %}
+                {% for data in nested_sections %}
+                    {% include 'dashboard/ordering/partials/_section.html' with section_form=data.section_form item_fs=data.item_fs drug_fs=data.drug_fs section_index=data.index existing_conditions=data.conditions relationship_groups=data.relationship_groups %}
+                {% endfor %}
             </div>
           </div>
         </div>
 
       </div>
 
-      <!-- Sidebar -->
-      <div class="lg:col-span-1 space-y-4">
+    <!-- Sidebar -->
+    <div class="lg:col-span-1 space-y-4 sticky top-24">
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
             <div class="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-l from-gray-50 to-green-50 border-b border-gray-200">
                 <span class="w-2 h-2 rounded-full bg-green-400 inline-block flex-shrink-0"></span>
@@ -184,22 +184,23 @@
                 </div>
             </div>
             </div>
-          <div class="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-l from-gray-50 to-indigo-50 border-b border-gray-200">
+            <div class="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-l from-gray-50 to-indigo-50 border-b border-gray-200">
             <span class="w-2 h-2 rounded-full bg-indigo-400 inline-block flex-shrink-0"></span>
             <h3 class="text-sm font-semibold text-gray-700">دسته‌بندی و ظاهر</h3>
-          </div>
-          <div class="p-4 space-y-3">
+            </div>
+            <div class="p-4 space-y-3">
             <div>
-              <label class="block text-xs text-gray-500 mb-1">{{ form.category.label }}</label>
-              {{ form.category }}
+                <label class="block text-xs text-gray-500 mb-1">{{ form.category.label }}</label>
+                {{ form.category }}
             </div>
             <div>
-              <label class="block text-xs text-gray-500 mb-1">{{ form.color.label }}</label>
-              {{ form.color }}
+                <label class="block text-xs text-gray-500 mb-1">{{ form.color.label }}</label>
+                {{ form.color }}
             </div>
-          </div>
+            </div>
         </div>
-      </div>
+    </div>
+
 
     </div>
   </form>
@@ -394,13 +395,12 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('change', function(e) {
         if (e.target.matches('input[type="checkbox"][name$="-is_drug_section"]')) {
             const section = e.target.closest('.section-item');
-            const textContainer = section.querySelector('.items-wrapper');
             const drugContainer = section.querySelector('.drugs-wrapper');
+            
+            // بخش متنی همیشه هست، فقط بخش دارویی رو نشون بده/مخفی کن
             if (e.target.checked) {
-                textContainer.classList.add('hidden');
                 drugContainer.classList.remove('hidden');
             } else {
-                textContainer.classList.remove('hidden');
                 drugContainer.classList.add('hidden');
             }
         }
@@ -425,6 +425,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     initSortable();
+});
+
+// رندر کردن روابط منطقی از پیش ذخیره شده
+document.querySelectorAll('.relationship-list-container').forEach(function(container) {
+    const rawData = container.getAttribute('data-initial');
+    if (!rawData || rawData === '[]') return;
+    
+    try {
+        const relationshipsData = JSON.parse(rawData);
+        const sectionBlock = container.closest('.section-block');
+        const sectionIndex = sectionBlock.getAttribute('data-section-index');
+        
+        relationshipsData.forEach(rel => {
+            container.insertAdjacentHTML('beforeend', createRelationshipBlock(sectionIndex, sectionBlock, rel.operator, rel.items));
+        });
+    } catch (e) {
+        console.error("Error parsing initial relationships JSON", e);
+    }
 });
 
 function initSortable() {
@@ -504,6 +522,57 @@ function removeItem(btn) {
         itemRow.remove();
     }
 }
+
+// ایجاد بلاک رابطه (استفاده برای دکمه "افزودن" و لود دیتای اولیه)
+function createRelationshipBlock(sectionIndex, sectionBlock, operator = 'OR', linkedItems = []) {
+    const itemRows = sectionBlock.querySelectorAll('.item-row-helper');
+    let checkboxesHtml = '';
+
+    itemRows.forEach(row => {
+        const deleteCheckbox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+        if ((deleteCheckbox && deleteCheckbox.checked) || row.style.display === 'none') return;
+
+        const prefix = row.getAttribute('data-prefix');
+        const nameInput = row.querySelector('.item-name-input');
+        let itemName = nameInput ? (nameInput.value || 'آیتم جدید') : 'آیتم نامشخص';
+        const isChecked = linkedItems.includes(prefix);
+
+        checkboxesHtml += `
+            <label class="inline-flex items-center ml-4 mt-2 bg-white px-2 py-1 border rounded text-xs cursor-pointer hover:bg-amber-50">
+                <input type="checkbox" class="form-checkbox h-3 w-3 text-amber-600 relationship-item-checkbox" value="${prefix}" ${isChecked ? 'checked' : ''}>
+                <span class="mr-2 text-gray-700 truncate max-w-[150px]">${itemName}</span>
+            </label>
+        `;
+    });
+
+    return `
+        <div class="relationship-item-block border border-gray-200 p-3 bg-white rounded-lg shadow-sm relative">
+            <button type="button" onclick="this.closest('.relationship-item-block').remove()"
+              class="absolute top-2 left-2 flex items-center justify-center w-6 h-6 rounded border border-red-200 bg-red-50 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 text-xs transition-all">
+              <i class="fas fa-times"></i>
+            </button>
+            <div class="mb-2 flex items-center gap-2">
+                <label class="text-xs font-semibold text-gray-600">نوع رابطه:</label>
+                <select class="px-2 py-1 text-sm border border-gray-200 rounded bg-gray-50 relationship-operator-select">
+                    <option value="OR" ${operator === 'OR' ? 'selected' : ''}>یا (OR)</option>
+                    <option value="AND" ${operator === 'AND' ? 'selected' : ''}>و (AND)</option>
+                </select>
+            </div>
+            <div class="text-xs text-gray-500 mb-1">کدام آیتم‌ها با هم در این رابطه قرار دارند؟ تیک بزنید:</div>
+            <div class="flex flex-wrap">
+                ${checkboxesHtml || '<span class="text-red-500 text-xs mt-1">هیچ آیتمی وجود ندارد!</span>'}
+            </div>
+        </div>
+    `;
+}
+
+// تابع متصل به دکمه "افزودن رابطه جدید"
+function addRelationship(sectionIndex, btnElement) {
+    const sectionBlock = btnElement.closest('.section-block');
+    const relList = document.getElementById(`relationships-list-${sectionIndex}`);
+    relList.insertAdjacentHTML('beforeend', createRelationshipBlock(sectionIndex, sectionBlock));
+}
+
 
 // مدیریت شرط‌ها
 function addCondition(sectionIndex, btnElement) {
@@ -593,6 +662,30 @@ document.getElementById('orderForm').addEventListener('submit', function(e) {
 
         if(hiddenInput) {
             hiddenInput.value = JSON.stringify(conditionsData);
+        }
+    });
+
+    // منطق جدید برای مدیریت روابط منطقی (AND/OR) قبل از ارسال
+    const relationshipsSections = document.querySelectorAll('.relationships-wrapper');
+    relationshipsSections.forEach(wrapper => {
+        const hiddenInput = wrapper.querySelector('input[type="hidden"]');
+        const relBlocks = wrapper.querySelectorAll('.relationship-item-block');
+        let relData = [];
+
+        relBlocks.forEach(block => {
+            const operator = block.querySelector('.relationship-operator-select').value;
+            const checkedBoxes = block.querySelectorAll('.relationship-item-checkbox:checked');
+            let items = [];
+            checkedBoxes.forEach(cb => items.push(cb.value));
+            
+            // رابطه فقط در صورتی ذخیره می‌شود که حداقل دو آیتم به هم مرتبط شده باشند
+            if (items.length > 1) {
+                relData.push({ operator: operator, items: items });
+            }
+        });
+
+        if(hiddenInput) {
+            hiddenInput.value = JSON.stringify(relData);
         }
     });
 });

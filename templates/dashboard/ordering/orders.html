@@ -1,5 +1,6 @@
 {% extends 'dashboard/base.html' %}
-{% load static dashboard_tags %}
+{% load static %}
+{% load dashboard_tags %}
 
 {% block title %}مدیریت اوردرها{% endblock %}
 
@@ -176,17 +177,11 @@
         {% endfor %}
       </div>
 
-      {# ── Pagination ── #}
       {% include "dashboard/partials/_pagination.html" %}
 
     {% else %}
-      {# ── Empty State ── #}
-      {% empty_state
-         icon="fa-file-medical"
-         title="هیچ اوردری یافت نشد"
-         description="به نظر می‌رسد هنوز هیچ اوردری ایجاد نشده یا نتیجه‌ای برای جستجوی شما وجود ندارد."
-         action_url="/dashboard/ordering/orders/create/"
-         action_label="ایجاد اولین اوردر" %}
+      {% empty_state icon="fa-file-medical" title="هیچ اوردری یافت نشد" description="به نظر می‌رسد هنوز هیچ اوردری ایجاد نشده یا نتیجه‌ای برای جستجوی شما وجود ندارد." action_url="/dashboard/admin/orders/create/" action_label="ایجاد اولین اوردر" %}
+
     {% endif %}
 
   </div>{# /.container #}

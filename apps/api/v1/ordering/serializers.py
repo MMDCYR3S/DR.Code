@@ -3,7 +3,7 @@ from rest_framework import serializers
 from apps.ordering.models import (
     Order, OrderSection, Condition, SectionItem, DrugSectionItem,
     EmergencyDisposition, EmergencyNode, DynamicFieldGroup, DynamicFieldNode,
-    OrderImage, OrderVideo
+    OrderImage, OrderVideo, ItemRelationshipGroup,
 )
 from apps.prescriptions.models import Drug, PrescriptionCategory
 
@@ -84,18 +84,50 @@ class DrugSectionItemSerializer(serializers.ModelSerializer):
         model = DrugSectionItem
         fields = ['id', 'drug', 'notes', 'order_index', 'conditions']
 
+# ========== ITEM RELATIONSHIP GROUP SERIALIZER ========== #
+class ItemRelationshipGroupSerializer(serializers.ModelSerializer):
+    """
+    سریالایزر برای نمایش گروه‌های ارتباطی آیتم‌ها با اپراتور منطقی.
+    """
+    text_items = SectionItemSerializer(many=True, read_only=True)
+    drug_items = DrugSectionItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ItemRelationshipGroup
+        fields = ['id', 'operator', 'order_index', 'text_items', 'drug_items']
+
 # ========== ORDER SECTION SERIALIZER ========== #
 class OrderSectionSerializer(serializers.ModelSerializer):
-    items = SectionItemSerializer(many=True, read_only=True)
-    drug_items = DrugSectionItemSerializer(many=True, read_only=True)
+    relationship_groups = ItemRelationshipGroupSerializer(many=True, read_only=True)
+    ungrouped_items = serializers.SerializerMethodField()
+    ungrouped_drug_items = serializers.SerializerMethodField()
+    
     all_conditions = ConditionSerializer(many=True, read_only=True)
     
     class Meta:
         model = OrderSection
         fields = [
-            'id', 'title', 'notes', 'is_drug_section',
-            'order_index', 'color', 'items', 'drug_items', 'all_conditions'
+            'id', 'title', 'notes', 'is_drug_section', 'order_index', 'color',
+            'relationship_groups',
+            'ungrouped_items',
+            'ungrouped_drug_items',
+            'all_conditions'
         ]
+
+    def get_ungrouped_items(self, obj):
+        """
+        فقط آیتم‌های متنی را برمی‌گرداند که به هیچ گروهی متصل نیستند.
+        """
+        ungrouped = [item for item in obj.items.all() if item.relationship_group_id is None]
+        return SectionItemSerializer(ungrouped, many=True, context=self.context).data
+
+    def get_ungrouped_drug_items(self, obj):
+        """
+        فقط آیتم‌های دارویی را برمی‌گرداند که به هیچ گروهی متصل نیستند.
+        """
+        ungrouped = [item for item in obj.drug_items.all() if item.relationship_group_id is None]
+        return DrugSectionItemSerializer(ungrouped, many=True, context=self.context).data
+
 
 # ========== EMERGENCY NODE SERIALIZER ========== #
 class EmergencyNodeSerializer(serializers.ModelSerializer):
