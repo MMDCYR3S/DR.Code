@@ -524,9 +524,13 @@ function removeItem(btn) {
 }
 
 // ایجاد بلاک رابطه (استفاده برای دکمه "افزودن" و لود دیتای اولیه)
+// ایجاد بلاک رابطه (استفاده برای دکمه "افزودن" و لود دیتای اولیه)
 function createRelationshipBlock(sectionIndex, sectionBlock, operator = 'OR', linkedItems = []) {
     const itemRows = sectionBlock.querySelectorAll('.item-row-helper');
     let checkboxesHtml = '';
+    
+    // استانداردسازی مقدار اپراتور برای جلوگیری از مشکلات فاصله یا حروف کوچک/بزرگ
+    const safeOperator = String(operator).trim().toUpperCase();
 
     itemRows.forEach(row => {
         const deleteCheckbox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
@@ -554,8 +558,9 @@ function createRelationshipBlock(sectionIndex, sectionBlock, operator = 'OR', li
             <div class="mb-2 flex items-center gap-2">
                 <label class="text-xs font-semibold text-gray-600">نوع رابطه:</label>
                 <select class="px-2 py-1 text-sm border border-gray-200 rounded bg-gray-50 relationship-operator-select">
-                    <option value="OR" ${operator === 'OR' ? 'selected' : ''}>یا (OR)</option>
-                    <option value="AND" ${operator === 'AND' ? 'selected' : ''}>و (AND)</option>
+                    <option value="OR" ${safeOperator === 'OR' ? 'selected' : ''}>یا (OR)</option>
+                    <option value="AND" ${safeOperator === 'AND' ? 'selected' : ''}>و (AND)</option>
+                    <option value="THEN" ${safeOperator === 'THEN' ? 'selected' : ''}>سپس (THEN)</option>
                 </select>
             </div>
             <div class="text-xs text-gray-500 mb-1">کدام آیتم‌ها با هم در این رابطه قرار دارند؟ تیک بزنید:</div>
@@ -565,6 +570,7 @@ function createRelationshipBlock(sectionIndex, sectionBlock, operator = 'OR', li
         </div>
     `;
 }
+
 
 // تابع متصل به دکمه "افزودن رابطه جدید"
 function addRelationship(sectionIndex, btnElement) {

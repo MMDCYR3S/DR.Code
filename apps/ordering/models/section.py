@@ -110,6 +110,7 @@ class LogicalOperator(models.TextChoices):
     """ Enum برای اپراتورهای منطقی بین آیتم‌ها """
     OR = 'OR', 'یا (OR)'
     AND = 'AND', 'و (AND)'
+    THEN = 'THEN', 'و (THEN)'
 
 class ItemRelationshipGroup(models.Model):
     """
@@ -123,7 +124,7 @@ class ItemRelationshipGroup(models.Model):
         verbose_name="سکشن مرجع"
     )
     operator = models.CharField(
-        max_length=3,
+        max_length=10,
         choices=LogicalOperator.choices,
         default=LogicalOperator.OR,
         verbose_name="اپراتور منطقی"
