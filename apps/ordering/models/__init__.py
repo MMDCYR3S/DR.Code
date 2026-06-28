@@ -21,6 +21,8 @@ from .colors import TailwindColor
 
 from .order import Order, AccessChoices
 
+from .order_alias import OrderAlias
+
 from .section import (
     OrderSection,
     SectionItem,
@@ -44,6 +46,7 @@ __all__ = [
     # Order اصلی
     "Order",
     "AccessChoices",
+    "OrderAlias",
 
     # Section‌ها و آیتم‌ها
     "OrderSection",

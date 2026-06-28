@@ -8,6 +8,7 @@ from apps.ordering.models import (
     EmergencyDisposition, EmergencyNode,
     OrderImage, OrderVideo
 )
+from apps.ordering.models.order_alias import OrderAlias
 from apps.prescriptions.models.category import PrescriptionCategory
 from apps.prescriptions.models.drug import Drug
 
@@ -45,6 +46,31 @@ class OrderFilterForm(forms.Form):
         widget=forms.Select(attrs={'class': INPUT_CLASSES_RTL})
     )
 
+# ======================================================= #
+# ==================== Alias Forms ====================== #
+# ======================================================= #
+class OrderAliasForm(forms.ModelForm):
+    class Meta:
+        model = OrderAlias
+        fields = ['name', 'is_primary']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': INPUT_CLASSES_RTL,
+                'placeholder': 'نام جایگزین...'
+            }),
+            'is_primary': forms.CheckboxInput(attrs={
+                'class': CHECKBOX_CLASSES
+            }),
+        }
+
+OrderAliasFormSet = inlineformset_factory(
+    Order,
+    OrderAlias,
+    form=OrderAliasForm,
+    extra=0,
+    can_delete=True
+)
+
 # ====================================================== #
 # ==================== Forms =========================== #
 # ====================================================== #
@@ -77,6 +103,7 @@ class OrderForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['category'].queryset = PrescriptionCategory.objects.all().order_by('title')
+
 
 class OrderSectionForm(forms.ModelForm):
     class Meta:

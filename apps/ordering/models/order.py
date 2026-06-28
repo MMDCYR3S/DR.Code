@@ -1,11 +1,13 @@
+from django.urls import reverse
 import jdatetime
 from slugify import slugify
 
 from django.db import models
 from django.core.exceptions import ValidationError
 
-from apps.prescriptions.models.category import PrescriptionCategory
+from apps.prescriptions.models import PrescriptionCategory
 from .colors import TailwindColor
+from .order_alias import OrderAlias
 
 # ========= ACCESS CHOICES ========= #
 class AccessChoices(models.TextChoices):
@@ -80,7 +82,7 @@ class Order(models.Model):
     )
 
     action = models.TextField(
-        verbose_name="Action / اقدام",
+        verbose_name="Activity / فعالیت",
         help_text="اقدامات درمانی لازم",
     )
     action_notes = models.TextField(
@@ -171,3 +173,29 @@ class Order(models.Model):
             return "—"
         jdate = jdatetime.datetime.fromgregorian(datetime=self.updated_at)
         return jdate.strftime("%Y/%m/%d - %H:%M")
+
+    def get_absolute_url(self):
+        return reverse("orders:order_detail", kwargs={"slug": self.slug})
+
+    def get_primary_name(self):
+        primary_alias = self.aliases.filter(is_primary=True).first()
+        return primary_alias.name if primary_alias else self.name
+
+    def get_all_names(self):
+        alias_names = list(self.aliases.values_list("name", flat=True))
+        all_names = [self.name] + alias_names
+        return list(set(all_names))
+
+    def get_all_names_string(self):
+        return ", ".join(self.get_all_names())
+
+    def add_alias(self, name, is_primary=False):
+        alias, created = OrderAlias.objects.get_or_create(
+            order=self,
+            name=name,
+            defaults={"is_primary": is_primary},
+        )
+        return alias, created
+
+    def has_alias(self, name):
+        return self.aliases.filter(name__iexact=name).exists() or self.name.lower() == name.lower()

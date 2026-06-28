@@ -106,6 +106,55 @@
         </div>
         </div>
 
+        <!-- نام‌های جایگزین -->
+        {% if alias_formset %}
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">
+                    <i class="fas fa-tags ml-2"></i>نام‌های جایگزین
+                </h3>
+                <button type="button" id="addAlias" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm">
+                    <i class="fas fa-plus ml-1"></i>افزودن نام
+                </button>
+            </div>
+
+            {{ alias_formset.management_form }}
+            
+            <div id="aliasesContainer" class="space-y-3">
+                {% for form in alias_formset %}
+                <div class="formset-item alias-form border border-gray-200 rounded-lg p-3 bg-gray-50" data-form-index="{{ forloop.counter0 }}">
+                    {{ form.id }}
+                    {{ form.order }}
+                    
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-xs font-medium text-gray-700">نام #{{ forloop.counter }}</h4>
+                        <button type="button" onclick="removeFormsetItem(this, 'alias')" class="text-red-600 hover:text-red-800 text-xs">
+                            <i class="fas fa-trash ml-1"></i>حذف
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">نام جایگزین</label>
+                            {{ form.name }}
+                        </div>
+                        <div class="flex items-center gap-2">
+                            {{ form.is_primary }}
+                            <label class="text-xs text-gray-700">نام اصلی</label>
+                        </div>
+                    </div>
+                    
+                    <div class="hidden">
+                        {{ form.DELETE }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+
+
 
         <!-- بخش‌ها -->
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
@@ -150,53 +199,54 @@
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
             <!-- سطح دسترسی -->
             <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            <div class="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-l from-gray-50 to-amber-50 border-b border-gray-200">
-                <span class="w-2 h-2 rounded-full bg-amber-400 inline-block flex-shrink-0"></span>
-                <h3 class="text-sm font-semibold text-gray-700">سطح دسترسی</h3>
-            </div>
-            <div class="p-4">
-                <div class="flex flex-col gap-2">
-                {% for value, label in form.access_level.field.choices %}
-                <label class="flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition
-                                {% if form.access_level.value == value %}
-                                {% if value == 'FREE' %}border-green-400 bg-green-50{% else %}border-amber-400 bg-amber-50{% endif %}
-                                {% else %}border-gray-200 hover:bg-gray-50{% endif %}">
-                    <input type="radio"
-                        name="{{ form.access_level.html_name }}"
-                        value="{{ value }}"
-                        {% if form.access_level.value == value %}checked{% endif %}
-                        class="text-indigo-600">
-                    <div>
-                    <span class="text-sm font-medium text-gray-800">{{ label }}</span>
-                    {% if value == 'FREE' %}
-                        <p class="text-xs text-gray-400 mt-0.5">قابل مشاهده برای همه کاربران</p>
-                    {% else %}
-                        <p class="text-xs text-gray-400 mt-0.5">فقط برای دارندگان اشتراک ویژه</p>
-                    {% endif %}
+                <div class="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-l from-gray-50 to-amber-50 border-b border-gray-200">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 inline-block flex-shrink-0"></span>
+                    <h3 class="text-sm font-semibold text-gray-700">سطح دسترسی</h3>
+                </div>
+                <div class="p-4">
+                    <div class="flex flex-col gap-2">
+                    {% for value, label in form.access_level.field.choices %}
+                    <label class="flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition
+                                    {% if form.access_level.value == value %}
+                                    {% if value == 'FREE' %}border-green-400 bg-green-50{% else %}border-amber-400 bg-amber-50{% endif %}
+                                    {% else %}border-gray-200 hover:bg-gray-50{% endif %}">
+                        <input type="radio"
+                            name="{{ form.access_level.html_name }}"
+                            value="{{ value }}"
+                            {% if form.access_level.value == value %}checked{% endif %}
+                            class="text-indigo-600">
+                        <div>
+                        <span class="text-sm font-medium text-gray-800">{{ label }}</span>
+                        {% if value == 'FREE' %}
+                            <p class="text-xs text-gray-400 mt-0.5">قابل مشاهده برای همه کاربران</p>
+                        {% else %}
+                            <p class="text-xs text-gray-400 mt-0.5">فقط برای دارندگان اشتراک ویژه</p>
+                        {% endif %}
+                        </div>
+                        {% if value == 'FREE' %}
+                        <span class="mr-auto text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">رایگان</span>
+                        {% else %}
+                        <span class="mr-auto text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">⭐ ویژه</span>
+                        {% endif %}
+                    </label>
+                    {% endfor %}
                     </div>
-                    {% if value == 'FREE' %}
-                    <span class="mr-auto text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">رایگان</span>
-                    {% else %}
-                    <span class="mr-auto text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">⭐ ویژه</span>
-                    {% endif %}
-                </label>
-                {% endfor %}
                 </div>
             </div>
-            </div>
+
             <div class="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-l from-gray-50 to-indigo-50 border-b border-gray-200">
-            <span class="w-2 h-2 rounded-full bg-indigo-400 inline-block flex-shrink-0"></span>
-            <h3 class="text-sm font-semibold text-gray-700">دسته‌بندی و ظاهر</h3>
+                <span class="w-2 h-2 rounded-full bg-indigo-400 inline-block flex-shrink-0"></span>
+                <h3 class="text-sm font-semibold text-gray-700">دسته‌بندی و ظاهر</h3>
             </div>
             <div class="p-4 space-y-3">
-            <div>
-                <label class="block text-xs text-gray-500 mb-1">{{ form.category.label }}</label>
-                {{ form.category }}
-            </div>
-            <div>
-                <label class="block text-xs text-gray-500 mb-1">{{ form.color.label }}</label>
-                {{ form.color }}
-            </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">{{ form.category.label }}</label>
+                    {{ form.category }}
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">{{ form.color.label }}</label>
+                    {{ form.color }}
+                </div>
             </div>
         </div>
     </div>
@@ -253,6 +303,13 @@
 {% endblock %}
 {% block extra_js %}
 <script>
+    
+// ==================== تعریف کلاس‌های استایل ====================
+const INPUT_CLASSES_RTL = 'w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition text-right';
+const INPUT_CLASSES_LTR = 'w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition text-left';
+const CHECKBOX_CLASSES = 'form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500';
+
+
 // ==================== تنظیمات Alpine.js ====================
 document.addEventListener('alpine:init', () => {
     // کامپوننت جستجوی دارو برای هر ردیف
@@ -695,6 +752,57 @@ document.getElementById('orderForm').addEventListener('submit', function(e) {
         }
     });
 });
+
+document.getElementById('addAlias')?.addEventListener('click', function() {
+    const container = document.getElementById('aliasesContainer');
+    const totalFormsInput = document.querySelector('input[name="aliases-TOTAL_FORMS"]');
+    const aliasCount = parseInt(totalFormsInput.value);
+
+    const newFormHtml = `
+        <div class="formset-item alias-form border border-gray-200 rounded-lg p-3 bg-gray-50" data-form-index="${aliasCount}">
+            <input type="hidden" name="aliases-${aliasCount}-id" id="id_aliases-${aliasCount}-id">
+                        
+            <div class="flex items-center justify-between mb-2">
+                <h4 class="text-xs font-medium text-gray-700">نام #${aliasCount + 1}</h4>
+                <button type="button" onclick="removeFormsetItem(this, 'alias')" class="text-red-600 hover:text-red-800 text-xs">
+                    <i class="fas fa-trash ml-1"></i>حذف
+                </button>
+            </div>
+            
+            <div class="space-y-2">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">نام جایگزین</label>
+                    <input type="text" name="aliases-${aliasCount}-name" id="id_aliases-${aliasCount}-name" 
+                           class="${INPUT_CLASSES_RTL}" placeholder="نام جایگزین...">
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" name="aliases-${aliasCount}-is_primary" id="id_aliases-${aliasCount}-is_primary" class="${CHECKBOX_CLASSES}">
+                    <label class="text-xs text-gray-700">نام اصلی</label>
+                </div>
+            </div>
+            
+            <div class="hidden">
+                <input type="checkbox" name="aliases-${aliasCount}-DELETE" id="id_aliases-${aliasCount}-DELETE">
+            </div>
+        </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', newFormHtml);
+    totalFormsInput.value = aliasCount + 1;
+});
+
+// حذف alias (با toggle مثل item/section)
+function removeFormsetItem(btn, type) {
+    const item = btn.closest('.formset-item');
+    const deleteInput = item.querySelector('input[name$="-DELETE"]');
+    if (deleteInput) {
+        deleteInput.checked = !deleteInput.checked;
+        btn.classList.toggle('active', deleteInput.checked);
+        item.style.opacity = deleteInput.checked ? '0.4' : '1';
+    } else {
+        item.remove();
+    }
+}
 
 </script>
 {% endblock %}

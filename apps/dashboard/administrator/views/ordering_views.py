@@ -31,6 +31,7 @@ from ..forms import (
     OrderSectionFormSet, 
     SectionItemFormSet, 
     DrugSectionItemFormSet,
+    OrderAliasFormSet,
 
     # ===== Dynamic ===== #
     DynamicFieldGroupForm,
@@ -181,14 +182,14 @@ class OrderListView(View):
         return render(request, self.template_name, context)
 
 # =========================================================== #
-# ==================== Order Detail List ==================== #
+# ==================== Order Detail View ==================== #
 # =========================================================== #
 class OrderDetailView(LoginRequiredMixin, DetailView):
     """
     نمایش جزئیات کامل یک اوردر شامل:
       - اطلاعات پایه (imp, condition, diet, action, position, notes)
-      - بخش‌ها (Sections) با آیتم‌های متنی، داروها و شرط‌ها
-      - اطلاعات پیش‌بالینی (DynamicFieldGroups)
+      - بخش‌ها (Sections) با آیتم‌های متنی، داروها، شرط‌ها و روابط منطقی
+      - اطلاعات پیش‌بالینی (DynamicFieldGroups → DynamicFieldNodes درختی)
       - تعیین تکلیف اورژانس (EmergencyDisposition + درخت گره‌ها)
       - تصاویر (OrderImage)
       - ویدیوها (OrderVideo)
@@ -200,47 +201,62 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
  
     def get_queryset(self):
         """
-        یک queryset بهینه با prefetch_related برای تمام روابط مورد نیاز.
+        queryset بهینه با prefetch_related برای تمام روابط مورد نیاز.
         از N+1 query جلوگیری می‌کند.
         """
  
         # ── Prefetch شرط‌های آیتم‌های متنی ──────────────────────────────
+        item_conditions_prefetch = Prefetch(
+            "conditions",
+            queryset=Condition.objects.order_by("order_index"),
+        )
+ 
+        # ── Prefetch آیتم‌های متنی با شرط‌هایشان ──────────────────────
         items_prefetch = Prefetch(
             "items",
             queryset=SectionItem.objects.prefetch_related(
-                Prefetch(
-                    "conditions",
-                    queryset=Condition.objects.order_by("order_index"),
-                )
-            ).order_by("order_index"),
+                item_conditions_prefetch,
+            ).select_related("relationship_group").order_by("order_index"),
         )
  
         # ── Prefetch شرط‌های آیتم‌های دارویی ────────────────────────────
+        drug_item_conditions_prefetch = Prefetch(
+            "conditions",
+            queryset=Condition.objects.order_by("order_index"),
+        )
+ 
+        # ── Prefetch آیتم‌های دارویی با شرط‌ها ──────────────────────────
         drug_items_prefetch = Prefetch(
             "drug_items",
-            queryset=DrugSectionItem.objects.select_related("drug").prefetch_related(
-                Prefetch(
-                    "conditions",
-                    queryset=Condition.objects.order_by("order_index"),
-                )
+            queryset=DrugSectionItem.objects.select_related(
+                "drug", "relationship_group"
+            ).prefetch_related(
+                drug_item_conditions_prefetch,
             ).order_by("order_index"),
         )
  
-        # ── Prefetch بخش‌ها ──────────────────────────────────────────────
+        # ── Prefetch گروه‌های ارتباطی (OR/AND/THEN) ─────────────────────
+        relationship_groups_prefetch = Prefetch(
+            "relationship_groups",
+            queryset=ItemRelationshipGroup.objects.order_by("order_index"),
+        )
+ 
+        # ── Prefetch بخش‌ها با همه زیرمجموعه‌ها ────────────────────────
         sections_prefetch = Prefetch(
             "sections",
             queryset=OrderSection.objects.prefetch_related(
                 items_prefetch,
                 drug_items_prefetch,
+                relationship_groups_prefetch,
             ).order_by("order_index"),
         )
  
-        # ── Prefetch آیتم‌های KEY-VALUE پیش‌بالینی ──────────────────────
+        # ── Prefetch گره‌های پیش‌بالینی (درختی، یک سطح فرزند) ──────────
         preclinical_children_prefetch = Prefetch(
             "children",
             queryset=DynamicFieldNode.objects.order_by("order_index"),
         )
-        preclinical_nodes_prefetch = Prefetch(
+        preclinical_root_nodes_prefetch = Prefetch(
             "nodes",
             queryset=DynamicFieldNode.objects.filter(parent=None).prefetch_related(
                 preclinical_children_prefetch
@@ -249,25 +265,26 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         dynamic_groups_prefetch = Prefetch(
             "dynamic_field_groups",
             queryset=DynamicFieldGroup.objects.prefetch_related(
-                preclinical_nodes_prefetch
+                preclinical_root_nodes_prefetch
             ).order_by("order_index"),
         )
  
         # ── Prefetch گره‌های تعیین تکلیف (یک سطح فرزند) ────────────────
-        # برای درخت چندسطحی، Template با include بازگشتی رندر می‌شود.
-        children_prefetch = Prefetch(
+        emergency_children_prefetch = Prefetch(
             "children",
             queryset=EmergencyNode.objects.order_by("order_index"),
         )
-        nodes_prefetch = Prefetch(
+        emergency_nodes_prefetch = Prefetch(
             "nodes",
-            queryset=EmergencyNode.objects.prefetch_related(
-                children_prefetch
+            queryset=EmergencyNode.objects.filter(parent=None).prefetch_related(
+                emergency_children_prefetch
             ).order_by("order_index"),
         )
         disposition_prefetch = Prefetch(
             "emergency_disposition",
-            queryset=EmergencyDisposition.objects.prefetch_related(nodes_prefetch),
+            queryset=EmergencyDisposition.objects.prefetch_related(
+                emergency_nodes_prefetch
+            ),
         )
  
         return (
@@ -291,7 +308,7 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         context["is_detail"] = True
         return context
-
+ 
 # ====================================================== #
 # ==================== Order Delete ==================== #
 # ====================================================== #
@@ -325,6 +342,7 @@ class OrderManageView(View):
         
         form = OrderForm(instance=order)
         section_formset = OrderSectionFormSet(instance=order)
+        alias_formset = OrderAliasFormSet(instance=order) if order else None
 
         nested_sections = []
         for i, section_form in enumerate(section_formset):
@@ -392,6 +410,7 @@ class OrderManageView(View):
             'empty_item_fs': empty_item_fs,
             'empty_drug_fs': empty_drug_fs,
             'active_tab': 'order',
+            'alias_formset': alias_formset,
         }
         return render(request, self.template_name, context)
     
@@ -401,18 +420,37 @@ class OrderManageView(View):
         
         form = OrderForm(request.POST, instance=order)
         section_formset = OrderSectionFormSet(request.POST, instance=order)
+        alias_formset = OrderAliasFormSet(request.POST, instance=order) if order else None
 
         nested_sections = []
         all_nested_valid = True
+        
+        # ===== جمع‌آوری ارورهای ساختاریافته ===== #
+        errors_detail = {
+            'base': {},       # ارورهای فرم اصلی
+            'aliases': {},    # ارورهای alias
+            'sections': {}    # ارورهای سکشن‌ها و آیتم‌ها
+        }
 
         if not form.is_valid():
+            errors_detail['base'] = form.errors
             logger.error(f"❌ Order Form Errors: {form.errors}")
+
         if not section_formset.is_valid():
             logger.error(f"❌ Section Formset Errors: {section_formset.errors}")
 
-        if form.is_valid() and section_formset.is_valid():
+        alias_valid = True
+        if alias_formset:
+            alias_valid = alias_formset.is_valid()
+            if not alias_valid:
+                errors_detail['aliases'] = alias_formset.errors
+                logger.error(f"❌ Alias Formset Errors: {alias_formset.errors}")
+
+        if form.is_valid() and section_formset.is_valid() and alias_valid:
             saved_order = form.save(commit=False)
             section_formset.instance = saved_order
+            if alias_formset:
+                alias_formset.instance = saved_order
 
             for i, section_form in enumerate(section_formset):
                 if not section_form.cleaned_data and not section_form.instance.pk:
@@ -422,25 +460,35 @@ class OrderManageView(View):
 
                 if not item_fs.is_valid():
                     all_nested_valid = False
+                    errors_detail['sections'][i] = {
+                        'section_errors': section_form.errors,
+                        'item_errors': item_fs.errors,
+                        'drug_errors': drug_fs.errors
+                    }
                     logger.error(f"❌ Item Formset Errors (Section {i}): {item_fs.errors}")
                 if not drug_fs.is_valid():
                     all_nested_valid = False
+                    if i not in errors_detail['sections']:
+                        errors_detail['sections'][i] = {}
+                    errors_detail['sections'][i]['drug_errors'] = drug_fs.errors
                     logger.error(f"❌ Drug Formset Errors (Section {i}): {drug_fs.errors}")
 
                 nested_sections.append({
                     'section_form': section_form,
                     'item_fs': item_fs,
                     'drug_fs': drug_fs,
-                    'index': i
+                    'index': i,
+                    '_has_error': i in errors_detail.get('sections', {})
                 })
 
             if all_nested_valid:
                 saved_order.save()
                 form.save_m2m()
                 section_formset.save()
+                if alias_formset:
+                    alias_formset.save()
 
-                # پاک کردن گروه‌های ارتباطی قدیمی مربوط به این Order 
-                # (برای ثبت مجدد تمیز از روی دیتای جدید)
+                # پاک کردن گروه‌های ارتباطی قدیمی
                 old_groups = ItemRelationshipGroup.objects.filter(section__order=saved_order)
                 for group in old_groups:
                     group.text_items.clear()
@@ -461,11 +509,9 @@ class OrderManageView(View):
                     data['item_fs'].instance = section_instance
                     data['drug_fs'].instance = section_instance
 
-                    # ذخیره آیتم‌ها
                     data['item_fs'].save()
                     data['drug_fs'].save()
 
-                    # پاک کردن شرط‌های قبلی و ساخت مپ از آیتم‌ها
                     for item_form in data['item_fs'].forms:
                         if item_form.instance.pk and item_form not in data['item_fs'].deleted_forms:
                             saved_items_map[item_form.prefix] = item_form.instance
@@ -478,7 +524,7 @@ class OrderManageView(View):
 
                     index = data['index']
 
-                    # ===== پردازش گروه‌های ارتباطی بین آیتم‌ها ===== #
+                    # پردازش روابط
                     relationships_json = request.POST.get(f'section_relationships_{index}')
                     if relationships_json:
                         try:
@@ -488,22 +534,19 @@ class OrderManageView(View):
                                 linked_prefixes = rel_data.get('items', [])
                                 
                                 if operator and linked_prefixes:
-                                    # ۱. ایجاد گروه
                                     group = ItemRelationshipGroup.objects.create(
                                         section=section_instance,
                                         operator=operator,
                                         order_index=order_idx
                                     )
-                                    # ۲. اختصاص گروه به آیتم‌ها
                                     for prefix in linked_prefixes:
                                         if prefix in saved_items_map:
-                                            item_instance = saved_items_map[prefix]
-                                            item_instance.relationship_group = group
-                                            item_instance.save()
+                                            saved_items_map[prefix].relationship_group = group
+                                            saved_items_map[prefix].save()
                         except json.JSONDecodeError:
                             logger.error(f"Error decoding relationships JSON for section {index}")
 
-                    # ===== پردازش شرط‌های ارسالی فرانت‌اند ===== #
+                    # پردازش شرط‌ها
                     conditions_json = request.POST.get(f'section_conditions_{index}')
                     if conditions_json:
                         try:
@@ -522,10 +565,37 @@ class OrderManageView(View):
 
                 messages.success(request, 'اوردر با موفقیت ذخیره شد.')
                 return redirect(reverse('dashboard:ordering:order_edit', kwargs={'pk': saved_order.pk}))
+            
             else:
-                messages.error(request, 'خطا در ذخیره اوردر. لطفاً فیلدها را بررسی کنید.')
+                # ساخت پیام خطا جزئی‌تر
+                section_names = []
+                for idx, errs in errors_detail['sections'].items():
+                    sec_form = nested_sections[idx]['section_form']
+                    sec_name = sec_form.instance.title or f"بخش {idx + 1}"
+                    section_names.append(sec_name)
+                
+                error_parts = []
+                if errors_detail['base']:
+                    error_parts.append('اطلاعات پایه اوردر')
+                if errors_detail['aliases']:
+                    error_parts.append('نام‌های جایگزین')
+                if section_names:
+                    error_parts.append('بخش‌ها: ' + '، '.join(section_names))
+                
+                error_msg = 'خطا در ' + ('، '.join(error_parts) if error_parts else 'فرم') + '. لطفاً بخش‌های مشخص‌شده را بررسی کنید.'
+                messages.error(request, error_msg)
+        
         else:
-            messages.error(request, 'خطا در ذخیره اوردر. لطفاً فیلدها را بررسی کنید.')
+            error_parts = []
+            if not form.is_valid():
+                error_parts.append('اطلاعات پایه اوردر')
+            if not section_formset.is_valid():
+                error_parts.append('بخش‌ها')
+            if alias_formset and not alias_valid:
+                error_parts.append('نام‌های جایگزین')
+            
+            error_msg = 'خطا در ' + ('، '.join(error_parts) if error_parts else 'فرم') + '. لطفاً فیلدها را بررسی کنید.'
+            messages.error(request, error_msg)
         
         context = {
             'form': form,
@@ -537,6 +607,8 @@ class OrderManageView(View):
             'empty_item_fs': SectionItemFormSet(prefix='sections-__section_prefix__-items'),
             'empty_drug_fs': DrugSectionItemFormSet(prefix='sections-__section_prefix__-drugs'),
             'active_tab': 'order',
+            'alias_formset': alias_formset,
+            'errors_detail': errors_detail  # ← برای استفاده در template
         }
         return render(request, self.template_name, context)
 

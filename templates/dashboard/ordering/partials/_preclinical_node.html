@@ -1,8 +1,7 @@
-{# dashboard/ordering/partials/_emergency_node.html #}
-{# فراخوانی بازگشتی برای رندر درخت گره‌های تعیین تکلیف #}
-{# محتوا (content) — RTL چون توضیحات پزشکی فارسی است #}
+{# dashboard/ordering/partials/_preclinical_node.html #}
+{# فراخوانی بازگشتی برای رندر درخت گره‌های پیش‌بالینی #}
+{# محتوا (content) — RTL چون توضیحات بالینی فارسی است #}
 {# عنوان (title) — LTR #}
-{% load dashboard_tags %}
 
 <div class="rounded-xl overflow-hidden border
             {% if depth > 0 %}mr-4 mt-2{% endif %}"
@@ -12,17 +11,16 @@
   <div class="flex items-center gap-2 px-4 py-2.5"
        style="background-color: {% if node.color %}{{ node.color }}15{% else %}#f8fafc{% endif %}">
     {% if depth == 0 %}
-      <i class="fas fa-sitemap text-xs" style="color: {% if node.color %}{{ node.color }}{% else %}#94a3b8{% endif %}"></i>
+      <i class="fas fa-microscope text-xs" style="color: {% if node.color %}{{ node.color }}{% else %}#94a3b8{% endif %}"></i>
     {% else %}
       <i class="fas fa-chevron-left text-[10px] text-gray-300"></i>
     {% endif %}
-    <h4 class="text-sm font-bold ltr"
-        style="color: {% if node.color %}{{ node.color }}{% else %}#374151{% endif %}">
+    <h4 class="text-sm font-bold text-gray-700 ltr">
       {{ node.title }}
     </h4>
   </div>
 
-  {# محتوا (CKEditor) — RTL #}
+  {# محتوا (CKEditor) — RTL چون محتوای بالینی فارسی است #}
   {% if node.content %}
   <div class="px-4 py-3 bg-white text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none rtl">
     {{ node.content|safe }}
@@ -33,7 +31,7 @@
   {% if node.children.exists %}
   <div class="px-3 pb-3 bg-white space-y-2 border-t border-gray-100">
     {% for child in node.children.all %}
-      {% include "dashboard/ordering/partials/_emergency_node.html" with node=child depth=depth|add:1 %}
+      {% include "dashboard/ordering/partials/_preclinical_node.html" with node=child depth=depth|add:1 %}
     {% endfor %}
   </div>
   {% endif %}

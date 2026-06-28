@@ -10,13 +10,11 @@
   <div class="flex flex-wrap justify-between items-center gap-3 mb-5">
     <div class="flex items-center gap-3">
       {% if order.color %}
-        <span class="w-3 h-3 rounded-full inline-block flex-shrink-0 bg-{{ order.color }}-400"></span>
+        <span class="w-3 h-3 rounded-full inline-block flex-shrink-0" style="background-color: {{ order.color }}"></span>
       {% endif %}
-      <h1 class="text-xl font-bold text-gray-800">{{ order.name }}</h1>
+      <h1 class="text-xl font-bold text-gray-800 ltr">{{ order.name }}</h1>
       <span class="text-xs px-2 py-0.5 rounded-full font-medium
-                   bg-{{ order.category.color_code|default:'indigo' }}-50
-                   text-{{ order.category.color_code|default:'indigo' }}-700
-                   border border-{{ order.category.color_code|default:'indigo' }}-200">
+                   bg-indigo-50 text-indigo-700 border border-indigo-200">
         {{ order.category.title }}
       </span>
     </div>
@@ -59,53 +57,81 @@
 
           {% if order.imp %}
           <div class="md:col-span-2">
-            <p class="text-xs text-gray-400 mb-1">Impression / تشخیص اصلی</p>
-            <div class="bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2 text-sm text-gray-800 leading-relaxed">
+            <p class="text-xs text-gray-400 mb-1 rtl">Impression / تشخیص اصلی</p>
+            {# LTR — محتوای پزشکی #}
+            <div class="bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2 text-sm text-gray-800 leading-relaxed ltr text-left">
               {{ order.imp }}
             </div>
+            {% if order.imp_notes %}
+            {# RTL — توضیحات #}
+            <div class="mt-1.5 bg-indigo-50/40 border border-dashed border-indigo-100 rounded-lg px-3 py-1.5 text-xs text-indigo-600 leading-relaxed rtl">
+              {{ order.imp_notes }}
+            </div>
+            {% endif %}
           </div>
           {% endif %}
 
           {% if order.condition %}
           <div>
-            <p class="text-xs text-gray-400 mb-1">Condition / وضعیت بیمار</p>
-            <div class="bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 text-sm text-gray-700 leading-relaxed">
+            <p class="text-xs text-gray-400 mb-1 rtl">Condition / وضعیت بیمار</p>
+            <div class="bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 text-sm text-gray-700 leading-relaxed ltr text-left">
               {{ order.condition }}
             </div>
+            {% if order.condition_notes %}
+            <div class="mt-1.5 bg-gray-50/60 border border-dashed border-gray-200 rounded-lg px-3 py-1.5 text-xs text-gray-500 leading-relaxed rtl">
+              {{ order.condition_notes }}
+            </div>
+            {% endif %}
           </div>
           {% endif %}
 
           {% if order.diet %}
           <div>
-            <p class="text-xs text-gray-400 mb-1">Diet / رژیم غذایی</p>
-            <div class="bg-green-50 border border-green-100 rounded-lg px-3 py-2 text-sm text-gray-700 leading-relaxed">
+            <p class="text-xs text-gray-400 mb-1 rtl">Diet / رژیم غذایی</p>
+            <div class="bg-green-50 border border-green-100 rounded-lg px-3 py-2 text-sm text-gray-700 leading-relaxed ltr text-left">
               {{ order.diet }}
             </div>
+            {% if order.diet_notes %}
+            <div class="mt-1.5 bg-green-50/60 border border-dashed border-green-100 rounded-lg px-3 py-1.5 text-xs text-green-700 leading-relaxed rtl">
+              {{ order.diet_notes }}
+            </div>
+            {% endif %}
           </div>
           {% endif %}
 
           {% if order.action %}
           <div>
-            <p class="text-xs text-gray-400 mb-1">Action / اقدام</p>
-            <div class="bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 text-sm text-gray-700 leading-relaxed">
+            <p class="text-xs text-gray-400 mb-1 rtl">Activity / اقدام</p>
+            <div class="bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 text-sm text-gray-700 leading-relaxed ltr text-left">
               {{ order.action }}
             </div>
+            {% if order.action_notes %}
+            <div class="mt-1.5 bg-amber-50/60 border border-dashed border-amber-100 rounded-lg px-3 py-1.5 text-xs text-amber-700 leading-relaxed rtl">
+              {{ order.action_notes }}
+            </div>
+            {% endif %}
           </div>
           {% endif %}
 
           {% if order.position %}
           <div>
-            <p class="text-xs text-gray-400 mb-1">Position / وضعیت قرارگیری</p>
-            <div class="bg-sky-50 border border-sky-100 rounded-lg px-3 py-2 text-sm text-gray-700 leading-relaxed">
+            <p class="text-xs text-gray-400 mb-1 rtl">Position / وضعیت قرارگیری</p>
+            <div class="bg-sky-50 border border-sky-100 rounded-lg px-3 py-2 text-sm text-gray-700 leading-relaxed ltr text-left">
               {{ order.position }}
             </div>
+            {% if order.position_notes %}
+            <div class="mt-1.5 bg-sky-50/60 border border-dashed border-sky-100 rounded-lg px-3 py-1.5 text-xs text-sky-700 leading-relaxed rtl">
+              {{ order.position_notes }}
+            </div>
+            {% endif %}
           </div>
           {% endif %}
 
           {% if order.notes %}
+          {# توضیحات کلی — RTL #}
           <div class="md:col-span-2">
-            <p class="text-xs text-gray-400 mb-1">توضیحات کلی</p>
-            <div class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 leading-relaxed italic">
+            <p class="text-xs text-gray-400 mb-1 rtl">توضیحات کلی</p>
+            <div class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 leading-relaxed italic rtl">
               {{ order.notes }}
             </div>
           </div>
@@ -127,14 +153,11 @@
           <div class="border border-gray-200 rounded-xl overflow-hidden">
 
             {# عنوان Section #}
-            <div class="flex items-center gap-2 px-4 py-2.5
-                        {% if section.color %}bg-{{ section.color }}-50 border-b border-{{ section.color }}-100{% else %}bg-slate-50 border-b border-slate-100{% endif %}">
-              {% if section.color %}
-                <span class="w-2 h-2 rounded-full bg-{{ section.color }}-400 flex-shrink-0"></span>
-              {% else %}
-                <span class="w-2 h-2 rounded-full bg-slate-300 flex-shrink-0"></span>
-              {% endif %}
-              <h3 class="text-sm font-bold text-gray-700">{{ section.title }}</h3>
+            <div class="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-100">
+              <span class="w-2 h-2 rounded-full flex-shrink-0"
+                    style="{% if section.color %}background-color: {{ section.color }}{% else %}background-color: #cbd5e1{% endif %}">
+              </span>
+              <h3 class="text-sm font-bold text-gray-700 ltr">{{ section.title }}</h3>
               {% if section.is_drug_section %}
                 <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 font-medium">
                   <i class="fas fa-pills text-xs ml-1"></i>دارو
@@ -142,24 +165,24 @@
               {% endif %}
             </div>
 
-            {# توضیحات Section #}
+            {# توضیحات Section — RTL #}
             {% if section.notes %}
             <div class="px-4 py-2 bg-white border-b border-dashed border-gray-100">
-              <p class="text-xs text-gray-500 italic">{{ section.notes }}</p>
+              <p class="text-xs text-gray-500 italic rtl">{{ section.notes }}</p>
             </div>
             {% endif %}
 
-            {# شرط‌های این Section #}
+            {# شرط‌های کل این Section (جمع‌آوری از آیتم‌ها) #}
             {% with conditions=section.all_conditions %}
             {% if conditions %}
             <div class="px-4 py-2.5 bg-amber-50 border-b border-amber-100">
-              <p class="text-xs text-amber-600 font-semibold mb-1.5">
+              <p class="text-xs text-amber-600 font-semibold mb-1.5 rtl">
                 <i class="fas fa-code-branch ml-1"></i>شرط‌های این بخش:
               </p>
               <div class="flex flex-wrap gap-2">
                 {% for condition in conditions %}
                 <span class="inline-flex items-center gap-1 text-xs px-2.5 py-1
-                             bg-white border border-amber-200 text-amber-700 rounded-full">
+                             bg-white border border-amber-200 text-amber-700 rounded-full ltr">
                   <i class="fas fa-circle-dot text-amber-400 text-[10px]"></i>
                   {{ condition.text }}
                 </span>
@@ -169,72 +192,289 @@
             {% endif %}
             {% endwith %}
 
-            {# آیتم‌های متنی #}
-            {% if not section.is_drug_section %}
-            <ul class="divide-y divide-gray-50">
-              {% for item in section.items.all %}
-              <li class="flex gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors group">
-                <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-300 flex-shrink-0"></span>
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm text-gray-800 leading-relaxed">{{ item.text }}</p>
-                  {% if item.notes %}
-                  <p class="text-xs text-gray-400 mt-0.5 italic">{{ item.notes }}</p>
-                  {% endif %}
-                  {# شرط‌های این آیتم #}
-                  {% if item.conditions.exists %}
-                  <div class="flex flex-wrap gap-1.5 mt-1.5">
-                    {% for cond in item.conditions.all %}
-                    <span class="text-[11px] px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-600 rounded-full">
-                      {{ cond.text }}
-                    </span>
-                    {% endfor %}
-                  </div>
-                  {% endif %}
-                </div>
-              </li>
-              {% empty %}
-              <li class="px-4 py-3 text-xs text-gray-400 text-center italic">آیتمی ثبت نشده است</li>
-              {% endfor %}
-            </ul>
+            {# ════ آیتم‌های متنی با منطق OR/AND/THEN ════ #}
 
-            {# آیتم‌های دارویی #}
-            {% else %}
-            <ul class="divide-y divide-gray-50">
-              {% for drug_item in section.drug_items.all %}
-              <li class="flex gap-3 px-4 py-2.5 hover:bg-emerald-50 transition-colors">
-                <div class="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center">
-                  <i class="fas fa-capsules text-emerald-600 text-xs"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm font-semibold text-gray-800">{{ drug_item.drug.title }}</p>
-                  {% if drug_item.notes %}
-                  <p class="text-xs text-gray-500 mt-0.5 leading-relaxed">{{ drug_item.notes }}</p>
-                  {% endif %}
-                  {# شرط‌های این دارو #}
-                  {% if drug_item.conditions.exists %}
-                  <div class="flex flex-wrap gap-1.5 mt-1.5">
-                    {% for cond in drug_item.conditions.all %}
-                    <span class="text-[11px] px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-600 rounded-full">
+            {# گروه‌های ارتباطی این Section #}
+            {% with rel_groups=section.relationship_groups.all %}
+            {% if rel_groups %}
+              {# ابتدا آیتم‌های بدون گروه #}
+              {% with ungrouped_items=section.items.all %}
+              <ul class="divide-y divide-gray-50">
+                {% for item in ungrouped_items %}
+                {% if not item.relationship_group %}
+                <li class="px-4 py-2.5 hover:bg-gray-50 transition-colors">
+                  {# شرط‌های IF — بالای آیتم — LTR #}
+                  {% if item.conditions.exists %}
+                  <div class="flex flex-wrap gap-1.5 mb-2">
+                    {% for cond in item.conditions.all %}
+                    <span class="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1
+                                 bg-amber-50 border border-amber-200 text-amber-700 rounded-full ltr">
+                      <span class="font-bold text-amber-800">IF</span>
                       {{ cond.text }}
                     </span>
                     {% endfor %}
                   </div>
                   {% endif %}
+                  <div class="flex gap-3">
+                    <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-300 flex-shrink-0"></span>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm text-gray-800 leading-relaxed ltr text-left">{{ item.text }}</p>
+                      {% if item.notes %}
+                      {# توضیحات — RTL #}
+                      <p class="text-xs text-gray-400 mt-0.5 italic rtl">{{ item.notes }}</p>
+                      {% endif %}
+                    </div>
+                  </div>
+                </li>
+                {% endif %}
+                {% endfor %}
+              </ul>
+              {% endwith %}
+
+              {# گروه‌های ارتباطی — با badge اپراتور بین آیتم‌ها #}
+              {% for rel_group in rel_groups %}
+              <div class="border-t border-gray-100">
+                {# نشانگر اپراتور گروه #}
+                <div class="flex items-center gap-2 px-4 py-2 bg-gray-50 border-b border-gray-100">
+                  <i class="fas fa-code-branch text-gray-400 text-xs"></i>
+                  <span class="text-xs text-gray-500 rtl">گروه منطقی:</span>
+                  {% if rel_group.operator == 'OR' %}
+                  <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-200">OR</span>
+                  {% elif rel_group.operator == 'AND' %}
+                  <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">AND</span>
+                  {% elif rel_group.operator == 'THEN' %}
+                  <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200">THEN</span>
+                  {% endif %}
                 </div>
-              </li>
-              {% empty %}
-              <li class="px-4 py-3 text-xs text-gray-400 text-center italic">داروی ثبت‌شده‌ای وجود ندارد</li>
+
+                {# آیتم‌های این گروه با جداکننده اپراتور #}
+                <div class="divide-y divide-gray-50">
+                  {% for item in section.items.all %}
+                  {% if item.relationship_group_id == rel_group.id %}
+
+                  {# جداکننده اپراتور بین آیتم‌ها (نه قبل از اولی) #}
+                  {% if not forloop.first %}
+                  <div class="flex items-center justify-center py-1.5 bg-gray-50/50">
+                    {% if rel_group.operator == 'OR' %}
+                    <span class="text-[11px] font-bold px-3 py-0.5 rounded-full
+                                 bg-blue-50 text-blue-600 border border-blue-200 tracking-widest">— OR —</span>
+                    {% elif rel_group.operator == 'AND' %}
+                    <span class="text-[11px] font-bold px-3 py-0.5 rounded-full
+                                 bg-green-50 text-green-600 border border-green-200 tracking-widest">— AND —</span>
+                    {% elif rel_group.operator == 'THEN' %}
+                    <span class="text-[11px] font-bold px-3 py-0.5 rounded-full
+                                 bg-purple-50 text-purple-600 border border-purple-200 tracking-widest">— THEN →</span>
+                    {% endif %}
+                  </div>
+                  {% endif %}
+
+                  <div class="px-4 py-2.5 hover:bg-gray-50 transition-colors">
+                    {# شرط‌های IF — بالای آیتم #}
+                    {% if item.conditions.exists %}
+                    <div class="flex flex-wrap gap-1.5 mb-2">
+                      {% for cond in item.conditions.all %}
+                      <span class="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1
+                                   bg-amber-50 border border-amber-200 text-amber-700 rounded-full ltr">
+                        <span class="font-bold text-amber-800">IF</span>
+                        {{ cond.text }}
+                      </span>
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                    <div class="flex gap-3">
+                      <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-300 flex-shrink-0"></span>
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm text-gray-800 leading-relaxed ltr text-left">{{ item.text }}</p>
+                        {% if item.notes %}
+                        <p class="text-xs text-gray-400 mt-0.5 italic rtl">{{ item.notes }}</p>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+
+                  {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
               {% endfor %}
-            </ul>
+
+            {% else %}
+              {# بدون گروه ارتباطی — نمایش ساده #}
+              <ul class="divide-y divide-gray-50">
+                {% for item in section.items.all %}
+                <li class="px-4 py-2.5 hover:bg-gray-50 transition-colors">
+                  {# شرط‌های IF — LTR #}
+                  {% if item.conditions.exists %}
+                  <div class="flex flex-wrap gap-1.5 mb-2">
+                    {% for cond in item.conditions.all %}
+                    <span class="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1
+                                 bg-amber-50 border border-amber-200 text-amber-700 rounded-full ltr">
+                      <span class="font-bold text-amber-800">IF</span>
+                      {{ cond.text }}
+                    </span>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                  <div class="flex gap-3">
+                    <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-300 flex-shrink-0"></span>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm text-gray-800 leading-relaxed ltr text-left">{{ item.text }}</p>
+                      {% if item.notes %}
+                      <p class="text-xs text-gray-400 mt-0.5 italic rtl">{{ item.notes }}</p>
+                      {% endif %}
+                    </div>
+                  </div>
+                </li>
+                {% empty %}
+                <li class="px-4 py-3 text-xs text-gray-400 text-center italic">آیتمی ثبت نشده است</li>
+                {% endfor %}
+              </ul>
             {% endif %}
+            {% endwith %}
+
+            {# ════ آیتم‌های دارویی با منطق OR/AND/THEN ════ #}
+
+            {% with drug_rel_groups=section.relationship_groups.all %}
+            {% if drug_rel_groups %}
+
+              {# ابتدا داروهای بدون گروه #}
+              <ul class="divide-y divide-gray-50">
+                {% for drug_item in section.drug_items.all %}
+                {% if not drug_item.relationship_group %}
+                <li class="flex gap-3 px-4 py-2.5 hover:bg-emerald-50 transition-colors">
+                  {# شرط‌های IF — LTR #}
+                  {% if drug_item.conditions.exists %}
+                  <div class="w-full mb-2 flex flex-wrap gap-1.5">
+                    {% for cond in drug_item.conditions.all %}
+                    <span class="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1
+                                 bg-amber-50 border border-amber-200 text-amber-700 rounded-full ltr">
+                      <span class="font-bold text-amber-800">IF</span>
+                      {{ cond.text }}
+                    </span>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                  <div class="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <i class="fas fa-capsules text-emerald-600 text-xs"></i>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-gray-800 ltr text-left">{{ drug_item.drug.title }}</p>
+                    {% if drug_item.notes %}
+                    <p class="text-xs text-gray-500 mt-0.5 leading-relaxed rtl">{{ drug_item.notes }}</p>
+                    {% endif %}
+                  </div>
+                </li>
+                {% endif %}
+                {% endfor %}
+              </ul>
+
+              {# گروه‌های ارتباطی داروها #}
+              {% for rel_group in drug_rel_groups %}
+              <div class="border-t border-gray-100">
+                <div class="flex items-center gap-2 px-4 py-2 bg-gray-50 border-b border-gray-100">
+                  <i class="fas fa-code-branch text-gray-400 text-xs"></i>
+                  <span class="text-xs text-gray-500 rtl">گروه منطقی:</span>
+                  {% if rel_group.operator == 'OR' %}
+                  <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-200">OR</span>
+                  {% elif rel_group.operator == 'AND' %}
+                  <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">AND</span>
+                  {% elif rel_group.operator == 'THEN' %}
+                  <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200">THEN</span>
+                  {% endif %}
+                </div>
+
+                <div class="divide-y divide-gray-50">
+                  {% for drug_item in section.drug_items.all %}
+                  {% if drug_item.relationship_group_id == rel_group.id %}
+
+                  {% if not forloop.first %}
+                  <div class="flex items-center justify-center py-1.5 bg-emerald-50/40">
+                    {% if rel_group.operator == 'OR' %}
+                    <span class="text-[11px] font-bold px-3 py-0.5 rounded-full
+                                 bg-blue-50 text-blue-600 border border-blue-200 tracking-widest">— OR —</span>
+                    {% elif rel_group.operator == 'AND' %}
+                    <span class="text-[11px] font-bold px-3 py-0.5 rounded-full
+                                 bg-green-50 text-green-600 border border-green-200 tracking-widest">— AND —</span>
+                    {% elif rel_group.operator == 'THEN' %}
+                    <span class="text-[11px] font-bold px-3 py-0.5 rounded-full
+                                 bg-purple-50 text-purple-600 border border-purple-200 tracking-widest">— THEN →</span>
+                    {% endif %}
+                  </div>
+                  {% endif %}
+
+                  <div class="px-4 py-2.5 hover:bg-emerald-50 transition-colors">
+                    {% if drug_item.conditions.exists %}
+                    <div class="flex flex-wrap gap-1.5 mb-2">
+                      {% for cond in drug_item.conditions.all %}
+                      <span class="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1
+                                   bg-amber-50 border border-amber-200 text-amber-700 rounded-full ltr">
+                        <span class="font-bold text-amber-800">IF</span>
+                        {{ cond.text }}
+                      </span>
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                    <div class="flex gap-3">
+                      <div class="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center">
+                        <i class="fas fa-capsules text-emerald-600 text-xs"></i>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-gray-800 ltr text-left">{{ drug_item.drug.title }}</p>
+                        {% if drug_item.notes %}
+                        <p class="text-xs text-gray-500 mt-0.5 leading-relaxed rtl">{{ drug_item.notes }}</p>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+
+                  {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+              {% endfor %}
+
+            {% else %}
+              {# بدون گروه ارتباطی — نمایش ساده داروها #}
+              <ul class="divide-y divide-gray-50">
+                {% for drug_item in section.drug_items.all %}
+                <li class="px-4 py-2.5 hover:bg-emerald-50 transition-colors">
+                  {% if drug_item.conditions.exists %}
+                  <div class="flex flex-wrap gap-1.5 mb-2">
+                    {% for cond in drug_item.conditions.all %}
+                    <span class="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1
+                                 bg-amber-50 border border-amber-200 text-amber-700 rounded-full ltr">
+                      <span class="font-bold text-amber-800">IF</span>
+                      {{ cond.text }}
+                    </span>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                  <div class="flex gap-3">
+                    <div class="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center">
+                      <i class="fas fa-capsules text-emerald-600 text-xs"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-semibold text-gray-800 ltr text-left">{{ drug_item.drug.title }}</p>
+                      {% if drug_item.notes %}
+                      <p class="text-xs text-gray-500 mt-0.5 leading-relaxed rtl">{{ drug_item.notes }}</p>
+                      {% endif %}
+                    </div>
+                  </div>
+                </li>
+                {% empty %}
+                <li class="px-4 py-3 text-xs text-gray-400 text-center italic">داروی ثبت‌شده‌ای وجود ندارد</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+            {% endwith %}
 
           </div>
-          {% endfor %}
+          {% endfor %}{# /sections #}
         </div>
       </div>
-      {% endif %}
+      {% endif %}{# /sections.exists #}
 
-      {# ── پیش‌بالینی (Dynamic Field Groups) ── #}
+      {# ── پیش‌بالینی (DynamicFieldGroups → DynamicFieldNodes درختی) ── #}
       {% if order.dynamic_field_groups.exists %}
       <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
         <div class="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-l from-gray-50 to-sky-50 border-b border-gray-200">
@@ -244,44 +484,34 @@
         </div>
         <div class="p-3 space-y-3">
           {% for group in order.dynamic_field_groups.all %}
-          <div class="border rounded-xl overflow-hidden
-                      {% if group.color %}border-{{ group.color }}-200{% else %}border-gray-200{% endif %}">
+          <div class="border border-gray-200 rounded-xl overflow-hidden">
 
             {# عنوان گروه #}
-            <div class="flex items-center gap-2 px-4 py-2.5
-                        {% if group.color %}bg-{{ group.color }}-50{% else %}bg-gray-50{% endif %}">
-              {% if group.color %}
-                <span class="w-2 h-2 rounded-full bg-{{ group.color }}-400 flex-shrink-0"></span>
-              {% endif %}
-              <h3 class="text-sm font-bold text-gray-700">{{ group.title }}</h3>
+            <div class="flex items-center gap-2 px-4 py-2.5 bg-sky-50 border-b border-sky-100">
+              <span class="w-2 h-2 rounded-full flex-shrink-0"
+                    style="{% if group.color %}background-color: {{ group.color }}{% else %}background-color: #38bdf8{% endif %}">
+              </span>
+              <h3 class="text-sm font-bold text-sky-800 ltr">{{ group.title }}</h3>
             </div>
 
-            {# زیرگروه‌ها #}
-            {% for subgroup in group.subgroups.all %}
-            <div class="border-t border-gray-100">
-              <div class="px-4 py-2 bg-white border-b border-dashed border-gray-100">
-                <p class="text-xs font-semibold text-gray-600 flex items-center gap-1.5">
-                  <i class="fas fa-chevron-left text-gray-300 text-[10px]"></i>
-                  {{ subgroup.title }}
-                </p>
-              </div>
-              {# آیتم‌های KEY-VALUE #}
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 rtl:sm:divide-x-reverse">
-                {% for item in subgroup.items.all %}
-                <div class="flex items-start gap-3 px-4 py-2.5 hover:bg-gray-50">
-                  <span class="text-xs font-semibold text-sky-700 min-w-[80px] flex-shrink-0 mt-0.5">
-                    {{ item.key }}
-                  </span>
-                  <span class="text-xs text-gray-700 leading-relaxed">{{ item.value }}</span>
-                </div>
-                {% empty %}
-                <div class="px-4 py-2 text-xs text-gray-400 italic col-span-2">آیتمی تعریف نشده</div>
-                {% endfor %}
-              </div>
+            {# توضیحات گروه — RTL #}
+            {% if group.notes %}
+            <div class="px-4 py-2 bg-sky-50/30 border-b border-dashed border-sky-100">
+              <p class="text-xs text-sky-700 italic leading-relaxed rtl">{{ group.notes }}</p>
             </div>
-            {% empty %}
-            <div class="px-4 py-3 text-xs text-gray-400 text-center italic">زیرگروهی تعریف نشده است</div>
-            {% endfor %}
+            {% endif %}
+
+            {# درخت گره‌ها — مشابه EmergencyNode #}
+            <div class="p-3 space-y-2">
+              {% for node in group.nodes.all %}
+                {% if node.is_root %}
+                  {% include "dashboard/ordering/partials/_preclinical_node.html" with node=node depth=0 %}
+                {% endif %}
+              {% endfor %}
+              {% if not group.nodes.exists %}
+              <p class="text-xs text-gray-400 text-center italic py-3">گره‌ای تعریف نشده است</p>
+              {% endif %}
+            </div>
 
           </div>
           {% endfor %}
@@ -297,18 +527,22 @@
           <span class="w-2 h-2 rounded-full bg-rose-400 inline-block flex-shrink-0"></span>
           <h2 class="text-sm font-semibold text-gray-700">
             تعیین تکلیف اورژانس
-            {% if disp.title %}&nbsp;—&nbsp;<span class="font-normal text-gray-500">{{ disp.title }}</span>{% endif %}
+            {% if disp.title %}
+              &nbsp;—&nbsp;
+              {# عنوان — LTR #}
+              <span class="font-normal text-gray-500 ltr">{{ disp.title }}</span>
+            {% endif %}
           </h2>
         </div>
 
+        {# توضیحات تعیین تکلیف — RTL #}
         {% if disp.notes %}
         <div class="px-4 py-2.5 bg-rose-50 border-b border-rose-100">
-          <p class="text-xs text-rose-700 italic leading-relaxed">{{ disp.notes }}</p>
+          <p class="text-xs text-rose-700 italic leading-relaxed rtl">{{ disp.notes }}</p>
         </div>
         {% endif %}
 
         <div class="p-3 space-y-2">
-          {# رندر درختی گره‌های ریشه #}
           {% for node in disp.nodes.all %}
             {% if node.is_root %}
               {% include "dashboard/ordering/partials/_emergency_node.html" with node=node depth=0 %}
@@ -333,12 +567,15 @@
         <div class="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {% for img in order.images.all %}
           <a href="{{ img.image.url }}" target="_blank"
-             class="group relative block rounded-xl overflow-hidden border border-gray-200 hover:border-amber-300 shadow-sm hover:shadow-md transition-all duration-200 aspect-square">
+             class="group relative block rounded-xl overflow-hidden border border-gray-200
+                    hover:border-amber-300 shadow-sm hover:shadow-md transition-all duration-200 aspect-square">
             <img src="{{ img.image.url }}" alt="{{ img.caption|default:'تصویر اوردر' }}"
                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
             {% if img.caption %}
-            <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-2 py-1.5 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
-              <p class="text-white text-[11px] truncate">{{ img.caption }}</p>
+            <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent
+                        px-2 py-1.5 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
+              {# کپشن — LTR #}
+              <p class="text-white text-[11px] truncate ltr">{{ img.caption }}</p>
             </div>
             {% endif %}
           </a>
@@ -360,7 +597,8 @@
           <div class="rounded-xl overflow-hidden border border-gray-200 shadow-sm">
             {% if video.title %}
             <div class="px-4 py-2 bg-gray-50 border-b border-gray-200">
-              <p class="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+              {# عنوان ویدیو — LTR #}
+              <p class="text-xs font-semibold text-gray-700 flex items-center gap-1.5 ltr">
                 <i class="fas fa-play-circle text-purple-400"></i>{{ video.title }}
               </p>
             </div>
@@ -370,8 +608,9 @@
                       allowfullscreen loading="lazy"></iframe>
             </div>
             {% if video.description %}
+            {# توضیحات ویدیو — RTL #}
             <div class="px-4 py-2 bg-gray-50 border-t border-gray-100">
-              <p class="text-xs text-gray-500 italic">{{ video.description }}</p>
+              <p class="text-xs text-gray-500 italic rtl">{{ video.description }}</p>
             </div>
             {% endif %}
           </div>
@@ -393,18 +632,21 @@
         </div>
         <div class="p-4 space-y-3">
           <div>
-            <p class="text-xs text-gray-400 mb-1">دسته‌بندی</p>
+            <p class="text-xs text-gray-400 mb-1 rtl">دسته‌بندی</p>
             <span class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-700
-                         px-3 py-1.5 rounded-full bg-gray-100 border border-gray-200">
+                         px-3 py-1.5 rounded-full bg-gray-100 border border-gray-200 ltr">
+              {% if order.category.color_code %}
               <span class="w-2 h-2 rounded-full" style="background-color: {{ order.category.color_code }}"></span>
+              {% endif %}
               {{ order.category.title }}
             </span>
           </div>
           {% if order.color %}
           <div>
-            <p class="text-xs text-gray-400 mb-1">رنگ اوردر</p>
-            <span class="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600">
-              <span class="w-4 h-4 rounded-md bg-{{ order.color }}-400 border border-{{ order.color }}-200"></span>
+            <p class="text-xs text-gray-400 mb-1 rtl">رنگ اوردر</p>
+            <span class="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 ltr">
+              <span class="w-4 h-4 rounded-md border border-gray-200"
+                    style="background-color: {{ order.color }}"></span>
               {{ order.get_color_display }}
             </span>
           </div>
@@ -419,27 +661,22 @@
           <h3 class="text-sm font-semibold text-gray-700">آمار اوردر</h3>
         </div>
         <div class="p-3 grid grid-cols-2 gap-2">
-          {# بخش‌ها #}
           <div class="rounded-lg bg-indigo-50 border border-indigo-100 px-3 py-2.5 text-center">
             <p class="text-xl font-black text-indigo-700">{{ order.sections.count }}</p>
             <p class="text-[11px] text-indigo-500 mt-0.5">بخش</p>
           </div>
-          {# تصاویر #}
           <div class="rounded-lg bg-amber-50 border border-amber-100 px-3 py-2.5 text-center">
             <p class="text-xl font-black text-amber-700">{{ order.images.count }}</p>
             <p class="text-[11px] text-amber-500 mt-0.5">تصویر</p>
           </div>
-          {# ویدیو #}
           <div class="rounded-lg bg-purple-50 border border-purple-100 px-3 py-2.5 text-center">
             <p class="text-xl font-black text-purple-700">{{ order.videos.count }}</p>
             <p class="text-[11px] text-purple-500 mt-0.5">ویدیو</p>
           </div>
-          {# پیش‌بالینی #}
           <div class="rounded-lg bg-sky-50 border border-sky-100 px-3 py-2.5 text-center">
             <p class="text-xl font-black text-sky-700">{{ order.dynamic_field_groups.count }}</p>
             <p class="text-[11px] text-sky-500 mt-0.5">گروه پیش‌بالینی</p>
           </div>
-          {# تعیین تکلیف #}
           <div class="rounded-lg bg-rose-50 border border-rose-100 px-3 py-2.5 text-center col-span-2">
             <p class="text-xl font-black text-rose-700">
               {% if order.emergency_disposition %}
@@ -459,13 +696,13 @@
         </div>
         <div class="p-4 space-y-2.5">
           <div class="flex justify-between items-center text-xs">
-            <span class="text-gray-400 flex items-center gap-1">
+            <span class="text-gray-400 flex items-center gap-1 rtl">
               <i class="fas fa-calendar-plus text-gray-300"></i>ساخت
             </span>
             <span class="font-medium text-gray-600 ltr text-left">{{ order.shamsi_created_at }}</span>
           </div>
           <div class="flex justify-between items-center text-xs">
-            <span class="text-gray-400 flex items-center gap-1">
+            <span class="text-gray-400 flex items-center gap-1 rtl">
               <i class="fas fa-calendar-pen text-gray-300"></i>آخرین ویرایش
             </span>
             <span class="font-medium text-gray-600 ltr text-left">{{ order.shamsi_updated_at }}</span>
