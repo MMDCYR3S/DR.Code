@@ -41,8 +41,7 @@ img, a, button {
 ::-moz-selection { background: transparent !important; color: inherit !important; }
 
 /* ============================================================
-   🎨 سیستم پزشکی اورژانسی — جدی، تمیز، حرفه‌ای
-   بدون افکت‌های فانتزی و بدون hover transform
+   🎨 سیستم پزشکی اورژانسی
    ============================================================ */
 
 .order-page-bg {
@@ -93,7 +92,6 @@ img, a, button {
 }
 .slug-chip:hover { background: #e2e8f0; }
 
-/* دکمه‌های اکشن — بدون hover transform */
 .btn-action {
     display: inline-flex;
     align-items: center;
@@ -212,13 +210,13 @@ img, a, button {
 }
 
 /* ============================================================
-   ۴) فیلدهای داخل سکشن — با پدینگ مناسب
+   ۴) فیلدهای داخل سکشن
    ============================================================ */
 .fields-group {
     background: white;
     border-radius: 14px;
     border: 1px solid rgba(15, 23, 42, 0.07);
-    overflow: visible; /* مهم: popover بتواند بیرون برود */
+    overflow: visible;
 }
 .field-row {
     padding: 1rem 1.25rem;
@@ -265,9 +263,8 @@ img, a, button {
 }
 
 /* ============================================================
-   ۵) 🆕 پاپ‌آپ‌ها — با portal به body و z-index بالا
+   ۵) پاپ‌آپ‌ها
    ============================================================ */
-/* دکمه info (i) — کوچک و معنادار */
 .info-trigger {
     width: 28px;
     height: 28px;
@@ -291,7 +288,6 @@ img, a, button {
     color: color-mix(in srgb, var(--theme-c, #64748b) 78%, black);
 }
 
-/* پوشش روی popover برای بستن با کلیک بیرون */
 .popover-overlay {
     position: fixed;
     inset: 0;
@@ -299,7 +295,6 @@ img, a, button {
     background: transparent;
 }
 
-/* خود پاپ‌آپ — fixed با teleport به body */
 .popover {
     position: fixed;
     z-index: 9995;
@@ -349,7 +344,7 @@ img, a, button {
 }
 
 /* ============================================================
-   ۶) سکشن‌های داخلی (sections)
+   ۶) سکشن‌های داخلی (sections) — با شماره‌گذاری آیتم
    ============================================================ */
 .section-block {
     background: white;
@@ -381,7 +376,42 @@ img, a, button {
     background: color-mix(in srgb, var(--section-c) 2%, white);
 }
 
-/* آیتم‌ها — با پدینگ مناسب */
+/* operator badge — OR / THEN */
+.operator-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.625rem;
+    font-weight: 800;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+}
+.operator-badge.op-or {
+    background: color-mix(in srgb, #f59e0b 18%, white);
+    color: color-mix(in srgb, #f59e0b 85%, black);
+}
+.operator-badge.op-then {
+    background: color-mix(in srgb, #3b82f6 14%, white);
+    color: color-mix(in srgb, #3b82f6 80%, black);
+}
+
+/* divider بین relationship groups */
+.group-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+}
+.group-divider-line {
+    flex: 1;
+    height: 1px;
+    background: color-mix(in srgb, var(--section-c) 16%, white);
+}
+
+/* آیتم‌ها */
 .items-list {
     background: white;
     border-radius: 12px;
@@ -396,18 +426,23 @@ img, a, button {
     gap: 0.75rem;
 }
 .item-row:last-child { border-bottom: none; }
-.item-check {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
+
+/* شماره آیتم */
+.item-number-badge {
+    min-width: 26px;
+    height: 26px;
+    border-radius: 7px;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    font-family: 'Courier New', monospace;
     flex-shrink: 0;
-    margin-top: 0.125rem;
+    margin-top: 0.0625rem;
 }
 
-/* بلوک شرط — IF */
+/* بلوک شرط */
 .condition-box {
     display: flex;
     align-items: flex-start;
@@ -450,7 +485,7 @@ img, a, button {
 }
 
 /* ============================================================
-   ۷) Disposition Tree و Dynamic Fields — هدر قابل کلیک کامل
+   ۷) Disposition Tree و Dynamic Fields (پیش‌بالینی)
    ============================================================ */
 .tree-card {
     background: white;
@@ -480,8 +515,6 @@ img, a, button {
     border: 1px solid color-mix(in srgb, var(--df-c) 22%, white);
     overflow: hidden;
 }
-
-/* کل ردیف child قابل کلیک است (به‌جز دکمه info) */
 .tree-child-row {
     display: flex;
     align-items: center;
@@ -494,7 +527,6 @@ img, a, button {
     background: color-mix(in srgb, var(--df-c) 3%, white);
 }
 
-/* دکمه محتوا — کوچک و در کنار دکمه info */
 .content-toggle {
     display: inline-flex;
     align-items: center;
@@ -515,7 +547,6 @@ img, a, button {
     background: color-mix(in srgb, var(--df-c) 22%, white);
 }
 
-/* محتوای child — با پدینگ مناسب */
 .child-content {
     padding: 0.875rem 1rem;
     border-top: 1px solid color-mix(in srgb, var(--df-c) 14%, white);
@@ -537,7 +568,7 @@ img, a, button {
 }
 
 /* ============================================================
-   ۹) مدال فول‌اسکرین
+   ۹) مدال
    ============================================================ */
 .modal-backdrop {
     background: rgba(15, 23, 42, 0.55);
@@ -551,7 +582,7 @@ img, a, button {
 }
 
 /* ============================================================
-   ۱۰) Floating Question Button + Back-to-Top
+   ۱۰) Floating Buttons
    ============================================================ */
 .floating-q-btn {
     box-shadow: 0 8px 24px color-mix(in srgb, var(--theme-c) 35%, transparent);
@@ -572,7 +603,7 @@ img, a, button {
 }
 
 /* ============================================================
-   ۱۱) Watermark — کل بخش اوردر را می‌پوشاند
+   ۱۱) Watermark
    ============================================================ */
 #order-protected-watermark { pointer-events: none !important; }
 
@@ -590,7 +621,7 @@ img, a, button {
 }
 
 /* ============================================================
-   ۱۳) تم رنگی داینامیک — حفظ‌شده
+   ۱۳) تم رنگی داینامیک
    ============================================================ */
 .dyn-dot { background-color: var(--theme-c); }
 .dyn-gradient {
@@ -733,11 +764,6 @@ img, a, button {
                 </div>
 
                 <div class="flex flex-wrap gap-2.5">
-                    <!-- <button @click="toggleSave()" class="btn-action btn-save" :class="{ 'saved': isSaved }">
-                        <i :class="isSaved ? 'fas fa-bookmark' : 'far fa-bookmark'"></i>
-                        <span x-text="isSaved ? 'ذخیره شده' : 'ذخیره'"></span>
-                    </button> -->
-
                     <button @click="shareLink()" class="btn-action btn-outline">
                         <i class="fas fa-share-alt text-xs"></i>
                         <span>اشتراک‌گذاری</span>
@@ -762,7 +788,7 @@ img, a, button {
             </button>
         </div>
 
-        <!-- 🆕 Back-to-Top Button -->
+        <!-- Back-to-Top Button -->
         <div class="fixed bottom-6 right-6 z-40" x-show="!loading"
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0 translate-y-2"
@@ -771,13 +797,13 @@ img, a, button {
              x-transition:leave-start="opacity-100 translate-y-0"
              x-transition:leave-end="opacity-0 translate-y-2">
             <button x-show="showBackToTop" @click="scrollToTop()"
-                class="back-to-top-btn w-11 h-11 right-8  rounded-full flex items-center justify-center p-2"
+                class="back-to-top-btn w-11 h-11 rounded-full flex items-center justify-center p-2"
                 title="بازگشت به بالا">
                 <i class="fas fa-arrow-up text-sm"></i>
             </button>
         </div>
 
-        <!-- ===== تمام محتوای اوردر داخل این wrapper — واترمارک آن را می‌پوشاند ===== -->
+        <!-- ===== محتوای اوردر — واترمارک ===== -->
         <main id="order__section" class="relative max-w-7xl mx-auto px-4 sm:px-5 lg:px-6 py-5 space-y-5">
 
             <!-- ===== WARNING BOX ===== -->
@@ -805,337 +831,18 @@ img, a, button {
                 </div>
             </section>
 
-            <!-- ===== INFO CARDS ===== -->
-            <section class="main-section p-4 sm:p-5">
-                <div class="mb-4">
-                    <div class="section-title">
-                        <div class="section-title-icon" :class="theme().iconBg">
-                            <i class="fas fa-clipboard-list" :class="theme().iconText"></i>
-                        </div>
-                        <div>
-                            <h2 class="section-title-text">اطلاعات پایه اوردر</h2>
-                            <p class="section-subtitle">پیش از اجرای اوردر از انطباق تشخیص و اقدامات با شرایط بالینی بیمار اطمینان حاصل کنید.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="fields-group" :class="theme().softBorder" dir="ltr">
-                    <template x-for="field in infoFields()" :key="field.key">
-                        <div class="field-row"
-                            :class="(field.key === 'imp' || field.key === 'condition') ? 'is-wide' : ''"
-                            :style="theme().style">
-                            <div class="flex items-start justify-between gap-3">
-                                <div class="flex items-start gap-3 min-w-0 flex-1">
-                                    <div class="field-icon-box" :class="theme().iconBg">
-                                        <i class="fas text-sm" :class="[field.icon, theme().iconText]"></i>
-                                    </div>
-                                    <div class="min-w-0 flex-1">
-                                        <div class="flex items-center gap-2 flex-wrap">
-                                            <h3 dir="ltr" class="field-row-label-en" x-text="field.labelEn"></h3>
-                                            <template x-if="field.key === 'condition'">
-                                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded" :class="theme().chip">IF</span>
-                                            </template>
-                                            <template x-if="field.key === 'imp'">
-                                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded" :class="theme().chip">اصلی</span>
-                                            </template>
-                                            <span class="field-row-label-fa" x-text="'— ' + field.labelFa"></span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- 🆕 دکمه پاپ‌آپ — popover بیرون از سکشن -->
-                                <template x-if="field.notes && field.notes.trim() !== ''">
-                                    <button type="button"
-                                            @click="togglePopover($event, 'field-' + field.key)"
-                                            class="info-trigger"
-                                            :class="activePopover === 'field-' + field.key ? 'is-open' : ''"
-                                            title="توضیحات تکمیلی">
-                                        <i class="fas fa-circle-info text-xs"></i>
-                                    </button>
-                                </template>
-                            </div>
-
-                            <div dir="ltr" class="field-row-value pl-12"
-                                 :class="[field.key === 'imp' ? 'is-primary' : '', isLong(field.value) ? 'line-clamp-3' : '']"
-                                 x-text="field.value || '—'"></div>
-
-                            <template x-if="isLong(field.value)">
-                                <button @click="showFieldModal(field)"
-                                        class="mt-2 text-xs font-semibold inline-flex items-center gap-1"
-                                        :class="theme().iconText">
-                                    <span>نمایش کامل</span>
-                                    <i class="fas fa-chevron-left text-[10px]"></i>
-                                </button>
-                            </template>
-                        </div>
-                    </template>
-                </div>
-            </section>
-
-            <!-- ===== SECTIONS & ITEMS ===== -->
-            <template x-if="sections && sections.sections && sections.sections.length > 0" >
-                <section class="main-section p-4 sm:p-5">
-                    <div class="mb-4">
-                        <div class="section-title">
-                            <div class="section-title-icon" :class="theme().iconBg">
-                                <i class="fas fa-list-check" :class="theme().iconText"></i>
-                            </div>
-                            <div >
-                                <h2 class="section-title-text">بخش‌ها و دستورات</h2>
-                                <p class="section-subtitle">آیتم‌های هر بخش را مرور و مطابق شرایط بیمار اعمال کنید.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-3" dir="ltr">
-                        <template x-for="section in sections.sections" :key="section.id">
-                            <div class="section-block"
-                                 :style="sectionTheme(section.color).style"
-                                 :class="sectionTheme(section.color).softBorder">
-
-                                <div class="section-block-header" :class="sectionTheme(section.color).gradient">
-                                    <div class="flex items-center gap-3 min-w-0 flex-1">
-                                        <div class="section-block-icon">
-                                            <i :class="section.is_drug_section ? 'fas fa-capsules' : 'fas fa-file-medical-alt'" class="text-sm"></i>
-                                        </div>
-                                        <div class="min-w-0">
-                                            <h3 class="font-bold text-base leading-tight" x-text="section.title" dir="rtl"></h3>
-                                            <span x-show="section.is_drug_section"
-                                                  class="text-[11px] bg-white/25 rounded-full px-2 py-0.5 font-semibold mt-1 inline-block">
-                                                دارویی
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <template x-if="section.notes && section.notes.trim() !== ''">
-                                        <button type="button"
-                                                @click="togglePopover($event, 'section-' + section.id)"
-                                                class="info-trigger"
-                                                style="background: rgba(255,255,255,0.2); color: white;"
-                                                :class="activePopover === 'section-' + section.id ? 'is-open' : ''"
-                                                title="توضیحات بخش">
-                                            <i class="fas fa-circle-info text-xs"></i>
-                                        </button>
-                                    </template>
-                                </div>
-
-                                <div class="section-block-body" dir="ltr">
-                                    <!-- آیتم‌های متنی -->
-                                    <template x-if="!section.is_drug_section && section.items && section.items.length > 0">
-                                        <div class="space-y-3">
-                                            <template x-for="group in groupItemsByCondition(section.items)" :key="group.condition ? group.condition.id : 'no-cond'">
-                                                <div>
-                                                    <template x-if="group.condition !== null">
-                                                        <div class="condition-box">
-                                                            <span class="if-chip">IF</span>
-                                                            <p class="text-sm font-semibold leading-snug flex-1"
-                                                               :class="sectionTheme(section.color).conditionText"
-                                                               dir="auto"
-                                                               x-text="group.condition.text"></p>
-                                                        </div>
-                                                    </template>
-
-                                                    <div :class="group.condition !== null ? 'ml-3 border-l-2 pl-3 ' + sectionTheme(section.color).conditionBorder : ''">
-                                                        <div class="items-list">
-                                                            <template x-for="item in group.items" :key="item.id">
-                                                                <div class="item-row"
-                                                                     :style="sectionTheme(section.color).style">
-                                                                    <div class="item-check" :class="sectionTheme(section.color).iconBg">
-                                                                        <i class="fas fa-check text-[10px]" :class="sectionTheme(section.color).iconText"></i>
-                                                                    </div>
-                                                                    <p class="flex-1 text-sm text-gray-800 leading-relaxed font-medium min-w-0" dir="ltr" x-text="item.text"></p>
-                                                                    <template x-if="item.notes && item.notes.trim() !== ''">
-                                                                        <button type="button"
-                                                                                @click="togglePopover($event, 'item-' + item.id)"
-                                                                                class="info-trigger flex-shrink-0"
-                                                                                :class="activePopover === 'item-' + item.id ? 'is-open' : ''"
-                                                                                title="توضیحات آیتم">
-                                                                            <i class="fas fa-circle-info text-xs"></i>
-                                                                        </button>
-                                                                    </template>
-                                                                </div>
-                                                            </template>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </template>
-
-                                    <!-- آیتم‌های دارویی -->
-                                    <template x-if="section.is_drug_section && section.drug_items && section.drug_items.length > 0">
-                                        <div class="space-y-3">
-                                            <template x-for="group in groupItemsByCondition(section.drug_items)" :key="group.condition ? group.condition.id : 'no-cond'">
-                                                <div>
-                                                    <template x-if="group.condition !== null">
-                                                        <div class="condition-box">
-                                                            <span class="if-chip">IF</span>
-                                                            <p class="text-sm font-semibold leading-snug flex-1"
-                                                               :class="sectionTheme(section.color).conditionText"
-                                                               dir="auto"
-                                                               x-text="group.condition.text"></p>
-                                                        </div>
-                                                    </template>
-
-                                                    <div :class="group.condition !== null ? 'ml-3 border-l-2 pl-3 ' + sectionTheme(section.color).conditionBorder : ''">
-                                                        <div class="items-list">
-                                                            <template x-for="drugItem in group.items" :key="drugItem.id">
-                                                                <div class="drug-row"
-                                                                     :style="sectionTheme(section.color).style">
-                                                                    <div class="drug-icon" :class="sectionTheme(section.color).iconBg">
-                                                                        <i class="fas fa-pills text-sm" :class="sectionTheme(section.color).iconText"></i>
-                                                                    </div>
-                                                                    <div class="flex-1 min-w-0">
-                                                                        <p class="text-sm font-bold text-gray-800 leading-tight" dir="ltr" x-text="drugItem.drug.title"></p>
-                                                                        <p class="text-xs font-mono mt-0.5" dir="ltr"
-                                                                           :class="sectionTheme(section.color).drugCodeText"
-                                                                           x-text="drugItem.drug.code"></p>
-                                                                    </div>
-                                                                    <template x-if="drugItem.notes && drugItem.notes.trim() !== ''">
-                                                                        <button type="button"
-                                                                                @click="togglePopover($event, 'drug-' + drugItem.id)"
-                                                                                class="info-trigger flex-shrink-0"
-                                                                                :class="activePopover === 'drug-' + drugItem.id ? 'is-open' : ''"
-                                                                                title="توضیحات دارو">
-                                                                            <i class="fas fa-circle-info text-xs"></i>
-                                                                        </button>
-                                                                    </template>
-                                                                </div>
-                                                            </template>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </template>
-
-                                    <template x-if="(section.is_drug_section && (!section.drug_items || section.drug_items.length === 0)) || (!section.is_drug_section && (!section.items || section.items.length === 0))">
-                                        <p class="text-sm text-gray-400 text-center py-4 italic">آیتمی در این بخش تعریف نشده است.</p>
-                                    </template>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </section>
-            </template>
-
-            <!-- ===== DISPOSITION ===== -->
-            <template x-if="disposition && disposition.emergency_disposition">
-                <section class="main-section p-4 sm:p-5"
-                         :style="dfTheme(disposition.emergency_disposition.color).style">
-
-                    <div class="mb-4">
-                        <div class="section-title">
-                            <div class="section-title-icon" :class="dfTheme(disposition.emergency_disposition.color).iconBg">
-                                <i class="fas fa-sitemap" :class="dfTheme(disposition.emergency_disposition.color).iconText"></i>
-                            </div>
-                            <div class="flex-1 min-w-0 flex items-center gap-3">
-                                <h2 class="section-title-text" x-text="disposition.emergency_disposition.title" dir="rtl"></h2>
-                                <span class="section-subtitle">تعیین تکلیف اورژانس</span>
-                                <template x-if="disposition.emergency_disposition.notes && disposition.emergency_disposition.notes.trim() !== ''">
-                                    <button type="button"
-                                            @click="togglePopover($event, 'disp-' + disposition.emergency_disposition.id)"
-                                            class="info-trigger"
-                                            :class="activePopover === 'disp-' + disposition.emergency_disposition.id ? 'is-open' : ''"
-                                            title="توضیحات disposition">
-                                        <i class="fas fa-circle-info text-xs"></i>
-                                    </button>
-                                </template>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-2.5">
-                        <template x-for="node in disposition.emergency_disposition.nodes" :key="node.id">
-                            <div class="tree-card"
-                                 :style="dfTheme(node.color).style"
-                                 :class="dfTheme(node.color).nodeBorder">
-
-                                <button type="button"
-                                        @click="node._open = !node._open"
-                                        class="tree-node-btn">
-                                    <div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                                         :class="dfTheme(node.color).iconBg">
-                                        <i class="fas fa-circle-nodes text-xs" :class="dfTheme(node.color).iconText"></i>
-                                    </div>
-                                    <p class="flex-1 font-bold text-gray-800 text-sm text-right" x-text="node.title" dir="rtl"></p>
-                                    <span x-show="node.children && node.children.length > 0"
-                                          class="text-[11px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0"
-                                          :class="dfTheme(node.color).chip"
-                                          x-text="node.children.length + ' مورد'"></span>
-                                    <i class="fas flex-shrink-0 transition-transform duration-200 text-gray-400 text-xs"
-                                       :class="node._open ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                                </button>
-
-                                <div x-show="node._open"
-                                     x-transition:enter="transition ease-out duration-200"
-                                     x-transition:enter-start="opacity-0 -translate-y-1"
-                                     x-transition:enter-end="opacity-100 translate-y-0"
-                                     x-transition:leave="transition ease-in duration-150"
-                                     x-transition:leave-start="opacity-100 translate-y-0"
-                                     x-transition:leave-end="opacity-0 -translate-y-1"
-                                     style="display: none;">
-                                    <div class="border-t p-3 space-y-2.5"
-                                         :class="dfTheme(node.color).softBg + ' ' + dfTheme(node.color).nodeBorder">
-                                        <template x-for="child in node.children" :key="child.id">
-                                            <div class="tree-child-card"
-                                                 :style="dfTheme(child.color).style"
-                                                 :class="dfTheme(child.color).childBorder">
-
-                                                <!-- 🆕 کل ردیف هدر child قابل کلیک است (به‌جز دکمه info) -->
-                                                <div class="tree-child-row"
-                                                     @click="child._open = !child._open">
-                                                    <div class="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
-                                                         :class="dfTheme(child.color).iconBg">
-                                                        <i class="fas fa-circle-dot text-[9px]" :class="dfTheme(child.color).iconText"></i>
-                                                    </div>
-                                                    <p class="flex-1 text-sm font-semibold text-gray-800 leading-snug min-w-0" x-text="child.title" dir="rtl"></p>
-                                                    <template x-if="child.content && child.content.trim() !== ''">
-                                                        <button @click.stop="child._open = !child._open" type="button"
-                                                                class="content-toggle">
-                                                            <i class="fas text-[9px] transition-transform duration-200"
-                                                               :class="child._open ? 'fa-chevron-up' : 'fa-align-right'"></i>
-                                                            <span x-text="child._open ? 'بستن' : 'محتوا'"></span>
-                                                        </button>
-                                                    </template>
-                                                </div>
-
-                                                <!-- محتوای child با پدینگ مناسب -->
-                                                <div x-show="child._open && child.content && child.content.trim() !== ''"
-                                                     x-transition:enter="transition ease-out duration-200"
-                                                     x-transition:enter-start="opacity-0"
-                                                     x-transition:enter-end="opacity-100"
-                                                     x-transition:leave="transition ease-in duration-150"
-                                                     x-transition:leave-start="opacity-100"
-                                                     x-transition:leave-end="opacity-0"
-                                                     style="display: none;">
-                                                    <div class="child-content" :class="dfTheme(child.color).childBorder">
-                                                        <div class="ck-content text-gray-700 leading-relaxed text-sm" dir="rtl"
-                                                             x-html="child.content"></div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </section>
-            </template>
-
-            <!-- ===== DYNAMIC FIELD GROUPS ===== -->
+            <!-- ===== ① پیش‌بالینی (Dynamic Field Groups) — قبل از همه چیز ===== -->
             <template x-if="dynamicFields && dynamicFields.dynamic_field_groups && dynamicFields.dynamic_field_groups.length > 0">
                 <section class="main-section p-4 sm:p-5">
 
                     <div class="mb-4">
                         <div class="section-title">
                             <div class="section-title-icon" :class="theme().iconBg">
-                                <i class="fas fa-layer-group" :class="theme().iconText"></i>
+                                <i class="fas fa-stethoscope" :class="theme().iconText"></i>
                             </div>
                             <div>
-                                <h2 class="section-title-text">فیلدهای پویا</h2>
-                                <p class="section-subtitle">اطلاعات تخصصی مرتبط با این اوردر</p>
+                                <h2 class="section-title-text">پیش‌بالینی</h2>
+                                <p class="section-subtitle">اطلاعات و ارزیابی‌های پیش از شروع اوردر</p>
                             </div>
                         </div>
                     </div>
@@ -1209,7 +916,6 @@ img, a, button {
                                                                      :style="dfTheme(child.color).style"
                                                                      :class="dfTheme(child.color).childBorder">
 
-                                                                    <!-- 🆕 هدر child قابل کلیک -->
                                                                     <div class="tree-child-row"
                                                                          @click="child._open = !child._open">
                                                                         <div class="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
@@ -1262,7 +968,372 @@ img, a, button {
                 </section>
             </template>
 
-            <!-- ===== QUESTION SECTION (Premium) ===== -->
+            <!-- ===== ② INFO CARDS (اطلاعات پایه) ===== -->
+            <section class="main-section p-4 sm:p-5">
+                <div class="mb-4">
+                    <div class="section-title">
+                        <div class="section-title-icon" :class="theme().iconBg">
+                            <i class="fas fa-clipboard-list" :class="theme().iconText"></i>
+                        </div>
+                        <div>
+                            <h2 class="section-title-text">اطلاعات پایه اوردر</h2>
+                            <p class="section-subtitle">پیش از اجرای اوردر از انطباق تشخیص و اقدامات با شرایط بالینی بیمار اطمینان حاصل کنید.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fields-group" :class="theme().softBorder" dir="ltr">
+                    <template x-for="field in infoFields()" :key="field.key">
+                        <div class="field-row"
+                            :class="(field.key === 'imp' || field.key === 'condition') ? 'is-wide' : ''"
+                            :style="theme().style">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex items-start gap-3 min-w-0 flex-1">
+                                    <div class="field-icon-box" :class="theme().iconBg">
+                                        <i class="fas text-sm" :class="[field.icon, theme().iconText]"></i>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <h3 dir="ltr" class="field-row-label-en" x-text="field.labelEn"></h3>
+                                            <template x-if="field.key === 'condition'">
+                                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded" :class="theme().chip">IF</span>
+                                            </template>
+                                            <template x-if="field.key === 'imp'">
+                                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded" :class="theme().chip">اصلی</span>
+                                            </template>
+                                            <span class="field-row-label-fa" x-text="'— ' + field.labelFa"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <template x-if="field.notes && field.notes.trim() !== ''">
+                                    <button type="button"
+                                            @click="togglePopover($event, 'field-' + field.key)"
+                                            class="info-trigger"
+                                            :class="activePopover === 'field-' + field.key ? 'is-open' : ''"
+                                            title="توضیحات تکمیلی">
+                                        <i class="fas fa-circle-info text-xs"></i>
+                                    </button>
+                                </template>
+                            </div>
+
+                            <div dir="ltr" class="field-row-value pl-12"
+                                 :class="[field.key === 'imp' ? 'is-primary' : '', isLong(field.value) ? 'line-clamp-3' : '']"
+                                 x-text="field.value || '—'"></div>
+
+                            <template x-if="isLong(field.value)">
+                                <button @click="showFieldModal(field)"
+                                        class="mt-2 text-xs font-semibold inline-flex items-center gap-1"
+                                        :class="theme().iconText">
+                                    <span>نمایش کامل</span>
+                                    <i class="fas fa-chevron-left text-[10px]"></i>
+                                </button>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </section>
+
+            <!-- ===== ③ SECTIONS & ITEMS (بخش‌ها و دستورات) — با شماره‌گذاری ===== -->
+            <template x-if="sections && sections.sections && sections.sections.length > 0">
+                <section class="main-section p-4 sm:p-5">
+                    <div class="mb-4">
+                        <div class="section-title">
+                            <div class="section-title-icon" :class="theme().iconBg">
+                                <i class="fas fa-list-check" :class="theme().iconText"></i>
+                            </div>
+                            <div>
+                                <h2 class="section-title-text">بخش‌ها و دستورات</h2>
+                                <p class="section-subtitle">آیتم‌های هر بخش را مرور و مطابق شرایط بیمار اعمال کنید.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3" dir="ltr">
+                        <template x-for="section in sections.sections" :key="section.id">
+                            <div class="section-block"
+                                 :style="sectionTheme(section.color).style"
+                                 :class="sectionTheme(section.color).softBorder">
+
+                                <!-- هدر سکشن -->
+                                <div class="section-block-header" :class="sectionTheme(section.color).gradient">
+                                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                                        <div class="section-block-icon">
+                                            <i :class="section.is_drug_section ? 'fas fa-capsules' : 'fas fa-file-medical-alt'" class="text-sm"></i>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <h3 class="font-bold text-base leading-tight" x-text="section.title" dir="rtl"></h3>
+                                            <span x-show="section.is_drug_section"
+                                                  class="text-[11px] bg-white/25 rounded-full px-2 py-0.5 font-semibold mt-1 inline-block">
+                                                دارویی
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <template x-if="section.notes && section.notes.trim() !== ''">
+                                        <button type="button"
+                                                @click="togglePopover($event, 'section-' + section.id)"
+                                                class="info-trigger"
+                                                style="background: rgba(255,255,255,0.2); color: white;"
+                                                :class="activePopover === 'section-' + section.id ? 'is-open' : ''"
+                                                title="توضیحات بخش">
+                                            <i class="fas fa-circle-info text-xs"></i>
+                                        </button>
+                                    </template>
+                                </div>
+
+                                <!-- بدنه سکشن: رندر relationship_groups -->
+                                <div class="section-block-body" dir="ltr">
+
+                                    <template x-if="section.relationship_groups && section.relationship_groups.length > 0">
+                                        <div class="space-y-2">
+                                            <template x-for="(rg, rgIndex) in section.relationship_groups" :key="rg.id">
+                                                <div>
+                                                    <!--
+                                                        divider بین گروه‌ها با operator label
+                                                        اولین گروه divider ندارد
+                                                    -->
+                                                    <template x-if="rgIndex > 0">
+                                                        <div class="group-divider my-2" :style="sectionTheme(section.color).style">
+                                                            <div class="group-divider-line"></div>
+                                                            <span class="operator-badge"
+                                                                  :class="rg.operator === 'OR' ? 'op-or' : 'op-then'"
+                                                                  x-text="rg.operator"></span>
+                                                            <div class="group-divider-line"></div>
+                                                        </div>
+                                                    </template>
+
+                                                    <!-- آیتم‌های متنی (text_items) -->
+                                                    <template x-if="!section.is_drug_section && rg.text_items && rg.text_items.length > 0">
+                                                        <div x-data="{ groups: groupItemsByCondition(rg.text_items) }">
+                                                            <div class="space-y-2">
+                                                                <template x-for="group in groups" :key="group.condition ? group.condition.id : 'nc-' + rg.id">
+                                                                    <div>
+                                                                        <template x-if="group.condition !== null">
+                                                                            <div class="condition-box">
+                                                                                <span class="if-chip">IF</span>
+                                                                                <p class="text-sm font-semibold leading-snug flex-1"
+                                                                                   :class="sectionTheme(section.color).conditionText"
+                                                                                   dir="auto"
+                                                                                   x-text="group.condition.text"></p>
+                                                                            </div>
+                                                                        </template>
+
+                                                                        <div :class="group.condition !== null
+                                                                            ? 'ml-3 border-l-2 pl-3 ' + sectionTheme(section.color).conditionBorder
+                                                                            : ''">
+                                                                            <div class="items-list">
+                                                                                <template x-for="item in group.items" :key="item.id">
+                                                                                    <div class="item-row"
+                                                                                         :style="sectionTheme(section.color).style">
+                                                                                        <!-- شماره آیتم -->
+                                                                                        <div class="item-number-badge"
+                                                                                             :class="sectionTheme(section.color).iconBg">
+                                                                                            <span class="text-[11px] font-black"
+                                                                                                  :class="sectionTheme(section.color).iconText"
+                                                                                                  x-text="item.item_number"></span>
+                                                                                        </div>
+                                                                                        <p class="flex-1 text-sm text-gray-800 leading-relaxed font-medium min-w-0"
+                                                                                           dir="ltr"
+                                                                                           x-text="item.text"></p>
+                                                                                        <template x-if="item.notes && item.notes.trim() !== ''">
+                                                                                            <button type="button"
+                                                                                                    @click="togglePopover($event, 'item-' + item.id)"
+                                                                                                    class="info-trigger flex-shrink-0"
+                                                                                                    :class="activePopover === 'item-' + item.id ? 'is-open' : ''"
+                                                                                                    title="توضیحات آیتم">
+                                                                                                <i class="fas fa-circle-info text-xs"></i>
+                                                                                            </button>
+                                                                                        </template>
+                                                                                    </div>
+                                                                                </template>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </template>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+
+                                                    <!-- آیتم‌های دارویی (drug_items) -->
+                                                    <template x-if="section.is_drug_section && rg.drug_items && rg.drug_items.length > 0">
+                                                        <div x-data="{ groups: groupItemsByCondition(rg.drug_items) }">
+                                                            <div class="space-y-2">
+                                                                <template x-for="group in groups" :key="group.condition ? group.condition.id : 'nc-drug-' + rg.id">
+                                                                    <div>
+                                                                        <template x-if="group.condition !== null">
+                                                                            <div class="condition-box">
+                                                                                <span class="if-chip">IF</span>
+                                                                                <p class="text-sm font-semibold leading-snug flex-1"
+                                                                                   :class="sectionTheme(section.color).conditionText"
+                                                                                   dir="auto"
+                                                                                   x-text="group.condition.text"></p>
+                                                                            </div>
+                                                                        </template>
+
+                                                                        <div :class="group.condition !== null
+                                                                            ? 'ml-3 border-l-2 pl-3 ' + sectionTheme(section.color).conditionBorder
+                                                                            : ''">
+                                                                            <div class="items-list">
+                                                                                <template x-for="drugItem in group.items" :key="drugItem.id">
+                                                                                    <div class="drug-row"
+                                                                                         :style="sectionTheme(section.color).style">
+                                                                                        <!-- شماره آیتم دارو -->
+                                                                                        <div class="item-number-badge"
+                                                                                             :class="sectionTheme(section.color).iconBg">
+                                                                                            <span class="text-[11px] font-black"
+                                                                                                  :class="sectionTheme(section.color).iconText"
+                                                                                                  x-text="drugItem.item_number"></span>
+                                                                                        </div>
+                                                                                        <div class="drug-icon" :class="sectionTheme(section.color).iconBg">
+                                                                                            <i class="fas fa-pills text-sm" :class="sectionTheme(section.color).iconText"></i>
+                                                                                        </div>
+                                                                                        <div class="flex-1 min-w-0">
+                                                                                            <p class="text-sm font-bold text-gray-800 leading-tight" dir="ltr" x-text="drugItem.drug.title"></p>
+                                                                                            <p class="text-xs font-mono mt-0.5" dir="ltr"
+                                                                                               :class="sectionTheme(section.color).drugCodeText"
+                                                                                               x-text="drugItem.drug.code"></p>
+                                                                                        </div>
+                                                                                        <template x-if="drugItem.notes && drugItem.notes.trim() !== ''">
+                                                                                            <button type="button"
+                                                                                                    @click="togglePopover($event, 'drug-' + drugItem.id)"
+                                                                                                    class="info-trigger flex-shrink-0"
+                                                                                                    :class="activePopover === 'drug-' + drugItem.id ? 'is-open' : ''"
+                                                                                                    title="توضیحات دارو">
+                                                                                                <i class="fas fa-circle-info text-xs"></i>
+                                                                                            </button>
+                                                                                        </template>
+                                                                                    </div>
+                                                                                </template>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </template>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+
+                                    <!-- اگر هیچ relationship_group نداشت -->
+                                    <template x-if="!section.relationship_groups || section.relationship_groups.length === 0">
+                                        <p class="text-sm text-gray-400 text-center py-4 italic">آیتمی در این بخش تعریف نشده است.</p>
+                                    </template>
+
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </section>
+            </template>
+
+            <!-- ===== ④ DISPOSITION ===== -->
+            <template x-if="disposition && disposition.emergency_disposition">
+                <section class="main-section p-4 sm:p-5"
+                         :style="dfTheme(disposition.emergency_disposition.color).style">
+
+                    <div class="mb-4">
+                        <div class="section-title">
+                            <div class="section-title-icon" :class="dfTheme(disposition.emergency_disposition.color).iconBg">
+                                <i class="fas fa-sitemap" :class="dfTheme(disposition.emergency_disposition.color).iconText"></i>
+                            </div>
+                            <div class="flex-1 min-w-0 flex items-center gap-3">
+                                <h2 class="section-title-text" x-text="disposition.emergency_disposition.title" dir="rtl"></h2>
+                                <span class="section-subtitle">تعیین تکلیف اورژانس</span>
+                                <template x-if="disposition.emergency_disposition.notes && disposition.emergency_disposition.notes.trim() !== ''">
+                                    <button type="button"
+                                            @click="togglePopover($event, 'disp-' + disposition.emergency_disposition.id)"
+                                            class="info-trigger"
+                                            :class="activePopover === 'disp-' + disposition.emergency_disposition.id ? 'is-open' : ''"
+                                            title="توضیحات disposition">
+                                        <i class="fas fa-circle-info text-xs"></i>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2.5">
+                        <template x-for="node in disposition.emergency_disposition.nodes" :key="node.id">
+                            <div class="tree-card"
+                                 :style="dfTheme(node.color).style"
+                                 :class="dfTheme(node.color).nodeBorder">
+
+                                <button type="button"
+                                        @click="node._open = !node._open"
+                                        class="tree-node-btn">
+                                    <div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                                         :class="dfTheme(node.color).iconBg">
+                                        <i class="fas fa-circle-nodes text-xs" :class="dfTheme(node.color).iconText"></i>
+                                    </div>
+                                    <p class="flex-1 font-bold text-gray-800 text-sm text-right" x-text="node.title" dir="rtl"></p>
+                                    <span x-show="node.children && node.children.length > 0"
+                                          class="text-[11px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0"
+                                          :class="dfTheme(node.color).chip"
+                                          x-text="node.children.length + ' مورد'"></span>
+                                    <i class="fas flex-shrink-0 transition-transform duration-200 text-gray-400 text-xs"
+                                       :class="node._open ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                </button>
+
+                                <div x-show="node._open"
+                                     x-transition:enter="transition ease-out duration-200"
+                                     x-transition:enter-start="opacity-0 -translate-y-1"
+                                     x-transition:enter-end="opacity-100 translate-y-0"
+                                     x-transition:leave="transition ease-in duration-150"
+                                     x-transition:leave-start="opacity-100 translate-y-0"
+                                     x-transition:leave-end="opacity-0 -translate-y-1"
+                                     style="display: none;">
+                                    <div class="border-t p-3 space-y-2.5"
+                                         :class="dfTheme(node.color).softBg + ' ' + dfTheme(node.color).nodeBorder">
+                                        <template x-for="child in node.children" :key="child.id">
+                                            <div class="tree-child-card"
+                                                 :style="dfTheme(child.color).style"
+                                                 :class="dfTheme(child.color).childBorder">
+
+                                                <div class="tree-child-row"
+                                                     @click="child._open = !child._open">
+                                                    <div class="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
+                                                         :class="dfTheme(child.color).iconBg">
+                                                        <i class="fas fa-circle-dot text-[9px]" :class="dfTheme(child.color).iconText"></i>
+                                                    </div>
+                                                    <p class="flex-1 text-sm font-semibold text-gray-800 leading-snug min-w-0" x-text="child.title" dir="rtl"></p>
+                                                    <template x-if="child.content && child.content.trim() !== ''">
+                                                        <button @click.stop="child._open = !child._open" type="button"
+                                                                class="content-toggle">
+                                                            <i class="fas text-[9px] transition-transform duration-200"
+                                                               :class="child._open ? 'fa-chevron-up' : 'fa-align-right'"></i>
+                                                            <span x-text="child._open ? 'بستن' : 'محتوا'"></span>
+                                                        </button>
+                                                    </template>
+                                                </div>
+
+                                                <div x-show="child._open && child.content && child.content.trim() !== ''"
+                                                     x-transition:enter="transition ease-out duration-200"
+                                                     x-transition:enter-start="opacity-0"
+                                                     x-transition:enter-end="opacity-100"
+                                                     x-transition:leave="transition ease-in duration-150"
+                                                     x-transition:leave-start="opacity-100"
+                                                     x-transition:leave-end="opacity-0"
+                                                     style="display: none;">
+                                                    <div class="child-content" :class="dfTheme(child.color).childBorder">
+                                                        <div class="ck-content text-gray-700 leading-relaxed text-sm" dir="rtl"
+                                                             x-html="child.content"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </section>
+            </template>
+
+            <!-- ===== ⑤ QUESTION SECTION (Premium) ===== -->
             <section id="order-question-section" class="main-section p-4 sm:p-5">
 
                 <div class="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
@@ -1358,14 +1429,10 @@ img, a, button {
 
         </main>
 
-        <!-- ===== 🆕 POPOVER PORTAL — teleport به body ===== -->
-        <!-- این پاپ‌آپ‌ها کاملاً بیرون از هر سکشنی نمایش داده می‌شوند و هیچ‌گاه هیدن نمی‌شوند -->
+        <!-- ===== POPOVER PORTAL — teleport به body ===== -->
         <template x-if="activePopover">
             <div>
-                <!-- پوشش شفاف برای بستن با کلیک بیرون -->
                 <div class="popover-overlay" @click="closePopover()"></div>
-
-                <!-- خود پاپ‌آپ -->
                 <div class="popover"
                      :style="popoverStyle"
                      x-transition:enter="transition ease-out duration-150"
@@ -1375,8 +1442,7 @@ img, a, button {
                      x-transition:leave-start="opacity-100 scale-100"
                      x-transition:leave-end="opacity-0 scale-95"
                      dir="rtl">
-                    <div class="popover-header"
-                         :style="popoverTheme.style">
+                    <div class="popover-header" :style="popoverTheme.style">
                         <span class="popover-header-title"
                               :style="popoverTheme.iconTextStyle"
                               style="background: transparent;">

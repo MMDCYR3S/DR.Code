@@ -1,12 +1,11 @@
 // =============================================================================
-// Order Detail Page — Alpine.js Controller (نسخه نهایی سیستم پزشکی اورژانسی)
+// Order Detail Page — Alpine.js Controller
 // =============================================================================
-// ویژگی‌ها:
-// ۱) پاپ‌آپ‌ها با الگوی teleport (position: fixed) — هرگز زیر سکشن هیدن نمی‌شوند
-// ۲) هدر child قابل کلیک برای باز/بسته کردن محتوا
-// ۳) auto-expand اولین node برای کاهش کلیک
-// ۴) دکمه برگشت به بالا
-// ۵) تمام قوانین حفاظت محتوا + واترمارک کل بخش اوردر
+// تغییرات:
+// ① Dynamic Fields → نام «پیش‌بالینی» و جابجایی قبل از اوردر (در HTML)
+// ② Item numbering → item_number روی هر آیتم نمایش داده می‌شود
+// ③ ساختار API: sections[].relationship_groups[].text_items / drug_items
+// ④ groupItemsByCondition روی text_items و drug_items داخل هر relationship_group
 // =============================================================================
 
 const ORDER_DEFAULT_COLOR = "#64748b";
@@ -36,13 +35,11 @@ function orderDetailApp() {
     media: null,
     sections: null,
 
-    // 🆕 پاپ‌آپ state
-    activePopover: null,        // ID پاپ‌آپ فعال
+    activePopover: null,
     popoverData: { title: "", content: "" },
-    popoverStyle: "",           // CSS position styles
+    popoverStyle: "",
     popoverTheme: { style: "", iconTextStyle: "" },
 
-    // 🆕 back-to-top
     showBackToTop: false,
 
     // ----- Init -----
@@ -71,8 +68,6 @@ function orderDetailApp() {
 
       await this.loadDisposition(slug);
       await this.loadDynamicFields(slug);
-      // await this.loadMedia(slug);
-
       await this.loadSections(slug);
     },
 
@@ -119,6 +114,7 @@ function orderDetailApp() {
         console.error("Error loading disposition tree:", e);
       }
     },
+
     async loadDynamicFields(slug) {
       try {
         this.dynamicFields = await API.ordering.getDynamicFields(slug);
@@ -127,6 +123,7 @@ function orderDetailApp() {
         console.error("Error loading dynamic fields:", e);
       }
     },
+
     async loadMedia(slug) {
       try {
         this.media = await API.ordering.getMedia(slug);
@@ -134,6 +131,7 @@ function orderDetailApp() {
         console.error("Error loading media:", e);
       }
     },
+
     async loadSections(slug) {
       try {
         this.sections = await API.ordering.getSections(slug);
@@ -142,7 +140,7 @@ function orderDetailApp() {
       }
     },
 
-    // 🆕 helper: auto-expand اولین node از disposition
+    // auto-expand اولین node از disposition
     autoExpandDisposition() {
       try {
         if (!this.disposition?.emergency_disposition?.nodes) return;
@@ -160,7 +158,7 @@ function orderDetailApp() {
       }
     },
 
-    // 🆕 helper: auto-expand اولین node از هر group
+    // auto-expand اولین node از هر group در dynamic fields
     autoExpandDynamicFields() {
       try {
         if (!this.dynamicFields?.dynamic_field_groups) return;
@@ -180,35 +178,30 @@ function orderDetailApp() {
       }
     },
 
-    // 🆕 popover management — teleport به body با position: fixed
+    // ----- Popover Management -----
     togglePopover(event, id) {
       event.stopPropagation();
       event.preventDefault();
 
-      // اگر همون پاپ‌آپ بازه، ببندش
       if (this.activePopover === id) {
         this.closePopover();
         return;
       }
 
-      // پیدا کردن محتوا و عنوان برای این id
       const data = this.findPopoverContent(id);
       if (!data) return;
 
-      // محاسبه موقعیت دکمه نسبت به viewport
       const rect = event.currentTarget.getBoundingClientRect();
       const popoverWidth = 360;
       const popoverEstHeight = 200;
       const margin = 8;
 
-      // موقعیت افقی: دکمه را به دکمه‌ی راست popover ترجیح بده
       let left = rect.right - popoverWidth;
       if (left < margin) left = margin;
       if (left + popoverWidth > window.innerWidth - margin) {
         left = window.innerWidth - popoverWidth - margin;
       }
 
-      // موقعیت عمودی: زیر دکمه، اگر جا نیست بالای دکمه
       let top = rect.bottom + margin;
       if (top + popoverEstHeight > window.innerHeight - margin) {
         top = rect.top - popoverEstHeight - margin;
@@ -227,7 +220,8 @@ function orderDetailApp() {
       this.popoverStyle = "";
     },
 
-    // یافتن محتوای پاپ‌آپ بر اساس ID
+    // یافتن محتوای popover بر اساس ID
+    // ساختار جدید: sections[].relationship_groups[].text_items / drug_items
     findPopoverContent(id) {
       // field-{key}
       if (id.startsWith("field-")) {
@@ -262,16 +256,18 @@ function orderDetailApp() {
         }
       }
 
-      // item-{id}
+      // item-{id} — جستجو در relationship_groups[].text_items
       if (id.startsWith("item-") && this.sections?.sections) {
         const itemId = parseInt(id.replace("item-", ""));
         for (const section of this.sections.sections) {
-          if (section.items) {
-            const item = section.items.find(i => i.id === itemId);
+          if (!section.relationship_groups) continue;
+          for (const rg of section.relationship_groups) {
+            if (!rg.text_items) continue;
+            const item = rg.text_items.find(i => i.id === itemId);
             if (item) {
               const color = isValidHexColor(section.color) ? section.color : ORDER_DEFAULT_COLOR;
               return {
-                title: "توضیحات آیتم",
+                title: "توضیحات آیتم" + (item.item_number ? " #" + item.item_number : ""),
                 content: item.notes || "",
                 theme: {
                   style: `--section-c: ${color}; background: color-mix(in srgb, ${color} 6%, white);`,
@@ -283,12 +279,14 @@ function orderDetailApp() {
         }
       }
 
-      // drug-{id}
+      // drug-{id} — جستجو در relationship_groups[].drug_items
       if (id.startsWith("drug-") && this.sections?.sections) {
         const drugId = parseInt(id.replace("drug-", ""));
         for (const section of this.sections.sections) {
-          if (section.drug_items) {
-            const drug = section.drug_items.find(d => d.id === drugId);
+          if (!section.relationship_groups) continue;
+          for (const rg of section.relationship_groups) {
+            if (!rg.drug_items) continue;
+            const drug = rg.drug_items.find(d => d.id === drugId);
             if (drug) {
               const color = isValidHexColor(section.color) ? section.color : ORDER_DEFAULT_COLOR;
               return {
@@ -321,7 +319,7 @@ function orderDetailApp() {
       return null;
     },
 
-    // 🆕 back-to-top
+    // back-to-top
     initScrollListener() {
       const handleScroll = () => {
         this.showBackToTop = window.scrollY > 400;
@@ -443,6 +441,11 @@ function orderDetailApp() {
       };
     },
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // groupItemsByCondition
+    // ورودی: آرایه‌ای از text_items یا drug_items (داخل یک relationship_group)
+    // خروجی: گروه‌بندی براساس condition
+    // ─────────────────────────────────────────────────────────────────────────
     groupItemsByCondition(items) {
       if (!items || items.length === 0) return [];
 
@@ -610,21 +613,11 @@ function orderDetailApp() {
         return;
       }
       if (trimmed.length < 10) {
-        Swal.fire({
-          icon: "warning",
-          title: "هشدار",
-          text: "سوال شما باید حداقل ۱۰ کاراکتر باشد.",
-          confirmButtonText: "باشه",
-        });
+        Swal.fire({ icon: "warning", title: "هشدار", text: "سوال شما باید حداقل ۱۰ کاراکتر باشد.", confirmButtonText: "باشه" });
         return;
       }
       if (trimmed.length > 1000) {
-        Swal.fire({
-          icon: "warning",
-          title: "هشدار",
-          text: "حداکثر طول سوال ۱۰۰۰ کاراکتر است.",
-          confirmButtonText: "باشه",
-        });
+        Swal.fire({ icon: "warning", title: "هشدار", text: "حداکثر طول سوال ۱۰۰۰ کاراکتر است.", confirmButtonText: "باشه" });
         return;
       }
 
@@ -721,7 +714,6 @@ function orderDetailApp() {
           return false;
         }
 
-        // بستن پاپ‌آپ با Escape
         if (e.key === "Escape" && this.activePopover) {
           this.closePopover();
         }
@@ -731,7 +723,7 @@ function orderDetailApp() {
 }
 
 // =============================================================================
-// Watermark Protection — کل بخش اوردر را می‌پوشاند
+// Watermark Protection
 // =============================================================================
 function createOrderProtectedWatermark() {
   function addWatermark() {

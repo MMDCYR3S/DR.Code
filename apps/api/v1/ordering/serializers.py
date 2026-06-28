@@ -7,6 +7,42 @@ from apps.ordering.models import (
 )
 from apps.prescriptions.models import Drug, PrescriptionCategory
 
+def build_item_numbering(order_instance):
+    """
+    شماره‌گذاری global و پیوسته برای تمام آیتم‌های یک Order.
+    کلید: (item_type, item_id) — مقدار: عدد ترتیبی از 1
+    item_type: 'text' یا 'drug'
+    """
+    numbering = {}
+    counter = 1
+
+    sections = sorted(order_instance.sections.all(), key=lambda s: s.order_index)
+
+    for section in sections:
+        all_items = []
+
+        for item in section.items.all():
+            if item.relationship_group_id is None:
+                all_items.append(('text', item.order_index, item.id))
+
+        for item in section.drug_items.all():
+            if item.relationship_group_id is None:
+                all_items.append(('drug', item.order_index, item.id))
+
+        for group in sorted(section.relationship_groups.all(), key=lambda g: g.order_index):
+            for item in group.text_items.all():
+                all_items.append(('text', item.order_index, item.id))
+            for item in group.drug_items.all():
+                all_items.append(('drug', item.order_index, item.id))
+
+        all_items.sort(key=lambda x: x[1])
+
+        for item_type, _, item_id in all_items:
+            numbering[(item_type, item_id)] = counter
+            counter += 1
+
+    return numbering
+
 # ========== CATEGORY SERIALIZER ========== #
 class OrderCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -71,63 +107,71 @@ class DrugSerializer(serializers.ModelSerializer):
 # ========== SECTION ITEM SERIALIZERS ========== #
 class SectionItemSerializer(serializers.ModelSerializer):
     conditions = ConditionSerializer(many=True, read_only=True)
-    
+    item_number = serializers.SerializerMethodField()
+
     class Meta:
         model = SectionItem
-        fields = ['id', 'text', 'notes', 'order_index', 'conditions']
+        fields = ['id', 'item_number', 'text', 'notes', 'order_index', 'conditions']
+
+    def get_item_number(self, obj):
+        numbering = self.context.get('item_numbering', {})
+        return numbering.get(('text', obj.id))
+
 
 class DrugSectionItemSerializer(serializers.ModelSerializer):
     drug = DrugSerializer(read_only=True)
     conditions = ConditionSerializer(many=True, read_only=True)
-    
+    item_number = serializers.SerializerMethodField()
+
     class Meta:
         model = DrugSectionItem
-        fields = ['id', 'drug', 'notes', 'order_index', 'conditions']
+        fields = ['id', 'item_number', 'drug', 'notes', 'order_index', 'conditions']
+
+    def get_item_number(self, obj):
+        numbering = self.context.get('item_numbering', {})
+        return numbering.get(('drug', obj.id))
+
 
 # ========== ITEM RELATIONSHIP GROUP SERIALIZER ========== #
 class ItemRelationshipGroupSerializer(serializers.ModelSerializer):
-    """
-    سریالایزر برای نمایش گروه‌های ارتباطی آیتم‌ها با اپراتور منطقی.
-    """
-    text_items = SectionItemSerializer(many=True, read_only=True)
-    drug_items = DrugSectionItemSerializer(many=True, read_only=True)
+    text_items = serializers.SerializerMethodField()
+    drug_items = serializers.SerializerMethodField()
 
     class Meta:
         model = ItemRelationshipGroup
         fields = ['id', 'operator', 'order_index', 'text_items', 'drug_items']
 
+    def get_text_items(self, obj):
+        return SectionItemSerializer(obj.text_items.all(), many=True, context=self.context).data
+
+    def get_drug_items(self, obj):
+        return DrugSectionItemSerializer(obj.drug_items.all(), many=True, context=self.context).data
+
 # ========== ORDER SECTION SERIALIZER ========== #
 class OrderSectionSerializer(serializers.ModelSerializer):
-    relationship_groups = ItemRelationshipGroupSerializer(many=True, read_only=True)
+    relationship_groups = serializers.SerializerMethodField()
     ungrouped_items = serializers.SerializerMethodField()
     ungrouped_drug_items = serializers.SerializerMethodField()
-    
     all_conditions = ConditionSerializer(many=True, read_only=True)
-    
+
     class Meta:
         model = OrderSection
         fields = [
             'id', 'title', 'notes', 'is_drug_section', 'order_index', 'color',
-            'relationship_groups',
-            'ungrouped_items',
-            'ungrouped_drug_items',
-            'all_conditions'
+            'relationship_groups', 'ungrouped_items', 'ungrouped_drug_items', 'all_conditions'
         ]
 
+    def get_relationship_groups(self, obj):
+        groups = sorted(obj.relationship_groups.all(), key=lambda g: g.order_index)
+        return ItemRelationshipGroupSerializer(groups, many=True, context=self.context).data
+
     def get_ungrouped_items(self, obj):
-        """
-        فقط آیتم‌های متنی را برمی‌گرداند که به هیچ گروهی متصل نیستند.
-        """
-        ungrouped = [item for item in obj.items.all() if item.relationship_group_id is None]
+        ungrouped = [i for i in obj.items.all() if i.relationship_group_id is None]
         return SectionItemSerializer(ungrouped, many=True, context=self.context).data
 
     def get_ungrouped_drug_items(self, obj):
-        """
-        فقط آیتم‌های دارویی را برمی‌گرداند که به هیچ گروهی متصل نیستند.
-        """
-        ungrouped = [item for item in obj.drug_items.all() if item.relationship_group_id is None]
+        ungrouped = [i for i in obj.drug_items.all() if i.relationship_group_id is None]
         return DrugSectionItemSerializer(ungrouped, many=True, context=self.context).data
-
 
 # ========== EMERGENCY NODE SERIALIZER ========== #
 class EmergencyNodeSerializer(serializers.ModelSerializer):
@@ -215,12 +259,18 @@ class OrderBaseSerializer(serializers.ModelSerializer):
 
 # ========== ORDER SECTIONS SERIALIZER ========== #
 class OrderSectionsSerializer(serializers.ModelSerializer):
-    """سریالایزر برای Sections"""
-    sections = OrderSectionSerializer(many=True, read_only=True)
-    
+    sections = serializers.SerializerMethodField()
+
     class Meta:
         model = Order
         fields = ['id', 'slug', 'sections']
+
+    def get_sections(self, obj):
+        numbering = build_item_numbering(obj)
+        child_context = {**self.context, 'item_numbering': numbering}
+        sections = sorted(obj.sections.all(), key=lambda s: s.order_index)
+        return OrderSectionSerializer(sections, many=True, context=child_context).data
+
 
 # ========== ORDER DISPOSITION SERIALIZER ========== #
 class OrderDispositionSerializer(serializers.ModelSerializer):
