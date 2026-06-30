@@ -93,7 +93,7 @@ class OrderBaseView(generics.RetrieveAPIView):
     lookup_field = 'slug'
 
     def get_queryset(self):
-        return Order.objects.select_related('category')
+        return Order.objects.select_related('category').prefetch_related('aliases')
 
 
 # ========== ORDER SECTIONS VIEW ========== #

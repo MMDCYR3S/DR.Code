@@ -52,6 +52,56 @@ from ..forms import (
 
 logger = logging.getLogger(__name__)
 
+
+# ============================================================ #
+# ==================== Error Helper ========================== #
+# ============================================================ #
+
+def _collect_form_errors(form, label: str) -> list[str]:
+    """
+    ارورهای یک فرم را با ذکر دقیق نام فیلد و پیام خطا برمی‌گرداند.
+    مثال خروجی: ["اطلاعات پایه → نام: این فیلد الزامی است."]
+    """
+    msgs = []
+    for field_name, error_list in form.errors.items():
+        if field_name == '__all__':
+            human_field = 'عمومی'
+        else:
+            human_field = form.fields[field_name].label or field_name if field_name in form.fields else field_name
+        for err in error_list:
+            msgs.append(f"{label} ← {human_field}: {err}")
+    return msgs
+
+
+def _collect_formset_errors(formset, formset_label: str, form_label_fn=None) -> list[str]:
+    """
+    ارورهای یک فرم‌ست را با شماره فرم و نام فیلد برمی‌گرداند.
+    form_label_fn: تابعی که یک فرم می‌گیرد و یک label رشته‌ای برمی‌گرداند (اختیاری).
+    """
+    msgs = []
+    for i, form in enumerate(formset.forms):
+        if not form.errors:
+            continue
+        if form_label_fn:
+            row_label = form_label_fn(form, i)
+        else:
+            row_label = f"ردیف {i + 1}"
+        msgs.extend(_collect_form_errors(form, f"{formset_label} / {row_label}"))
+    if formset.non_form_errors():
+        for err in formset.non_form_errors():
+            msgs.append(f"{formset_label}: {err}")
+    return msgs
+
+
+def _emit_error_messages(request, all_error_lines: list[str], summary: str = 'لطفاً خطاهای زیر را برطرف کنید:') -> None:
+    """
+    هر خط خطا را به‌صورت یک messages.error جداگانه ثبت می‌کند
+    تا در قالب با ریزترین جزئیات نمایش داده شود.
+    """
+    messages.error(request, summary)
+    for line in all_error_lines:
+        messages.error(request, line)
+
 # ===================================================== #
 # ==================== Order List ===================== #
 # ===================================================== #
@@ -458,6 +508,8 @@ class OrderManageView(View):
                 item_fs = SectionItemFormSet(request.POST, instance=section_form.instance, prefix=f"{section_form.prefix}-items")
                 drug_fs = DrugSectionItemFormSet(request.POST, instance=section_form.instance, prefix=f"{section_form.prefix}-drugs")
 
+                sec_name = section_form.instance.title or f"بخش {i + 1}"
+
                 if not item_fs.is_valid():
                     all_nested_valid = False
                     errors_detail['sections'][i] = {
@@ -565,37 +617,84 @@ class OrderManageView(View):
 
                 messages.success(request, 'اوردر با موفقیت ذخیره شد.')
                 return redirect(reverse('dashboard:ordering:order_edit', kwargs={'pk': saved_order.pk}))
-            
+
             else:
-                # ساخت پیام خطا جزئی‌تر
-                section_names = []
+                # ─── جمع‌آوری تمام خطاها با جزئیات کامل ───────────────────
+                all_error_lines = []
+
+                # ارورهای فرم اصلی
+                if errors_detail['base']:
+                    all_error_lines.extend(_collect_form_errors(form, 'اطلاعات پایه اوردر'))
+
+                # ارورهای alias
+                if alias_formset and errors_detail['aliases']:
+                    all_error_lines.extend(
+                        _collect_formset_errors(
+                            alias_formset,
+                            'نام‌های جایگزین',
+                            form_label_fn=lambda f, i: f.instance.alias or f"ردیف {i + 1}",
+                        )
+                    )
+
+                # ارورهای سکشن‌ها و آیتم‌هایشان
                 for idx, errs in errors_detail['sections'].items():
                     sec_form = nested_sections[idx]['section_form']
                     sec_name = sec_form.instance.title or f"بخش {idx + 1}"
-                    section_names.append(sec_name)
-                
-                error_parts = []
-                if errors_detail['base']:
-                    error_parts.append('اطلاعات پایه اوردر')
-                if errors_detail['aliases']:
-                    error_parts.append('نام‌های جایگزین')
-                if section_names:
-                    error_parts.append('بخش‌ها: ' + '، '.join(section_names))
-                
-                error_msg = 'خطا در ' + ('، '.join(error_parts) if error_parts else 'فرم') + '. لطفاً بخش‌های مشخص‌شده را بررسی کنید.'
-                messages.error(request, error_msg)
-        
+
+                    # ارورهای خود سکشن
+                    if errs.get('section_errors'):
+                        all_error_lines.extend(_collect_form_errors(sec_form, f"سکشن «{sec_name}»"))
+
+                    # ارورهای آیتم‌های متنی
+                    item_fs = nested_sections[idx]['item_fs']
+                    if errs.get('item_errors'):
+                        all_error_lines.extend(
+                            _collect_formset_errors(
+                                item_fs,
+                                f"سکشن «{sec_name}» / آیتم‌های متنی",
+                                form_label_fn=lambda f, i: f.instance.text[:20] if f.instance.text else f"آیتم {i + 1}",
+                            )
+                        )
+
+                    # ارورهای آیتم‌های دارویی
+                    drug_fs = nested_sections[idx]['drug_fs']
+                    if errs.get('drug_errors'):
+                        all_error_lines.extend(
+                            _collect_formset_errors(
+                                drug_fs,
+                                f"سکشن «{sec_name}» / داروها",
+                                form_label_fn=lambda f, i: str(f.instance.drug) if f.instance.drug_id else f"دارو {i + 1}",
+                            )
+                        )
+
+                _emit_error_messages(request, all_error_lines, 'ذخیره اوردر ناموفق بود — خطاهای زیر را برطرف کنید:')
+
         else:
-            error_parts = []
+            # ─── ارورهای مرحله اول (قبل از nested) ────────────────────────
+            all_error_lines = []
+
             if not form.is_valid():
-                error_parts.append('اطلاعات پایه اوردر')
+                all_error_lines.extend(_collect_form_errors(form, 'اطلاعات پایه اوردر'))
+
             if not section_formset.is_valid():
-                error_parts.append('بخش‌ها')
+                all_error_lines.extend(
+                    _collect_formset_errors(
+                        section_formset,
+                        'بخش‌ها',
+                        form_label_fn=lambda f, i: f.instance.title or f"بخش {i + 1}",
+                    )
+                )
+
             if alias_formset and not alias_valid:
-                error_parts.append('نام‌های جایگزین')
-            
-            error_msg = 'خطا در ' + ('، '.join(error_parts) if error_parts else 'فرم') + '. لطفاً فیلدها را بررسی کنید.'
-            messages.error(request, error_msg)
+                all_error_lines.extend(
+                    _collect_formset_errors(
+                        alias_formset,
+                        'نام‌های جایگزین',
+                        form_label_fn=lambda f, i: f.instance.alias or f"ردیف {i + 1}",
+                    )
+                )
+
+            _emit_error_messages(request, all_error_lines, 'ذخیره اوردر ناموفق بود — خطاهای زیر را برطرف کنید:')
         
         context = {
             'form': form,
@@ -812,7 +911,32 @@ class PreClinicalManageView(View):
                     nested.append({'group': group, 'group_form': gf, 'node_entries': node_entries})
                 ctx = self._base_context(order)
                 ctx['nested'] = nested
-                messages.error(request, 'لطفاً خطاها را برطرف کنید.')
+
+                # ─── جمع‌آوری خطاها با جزئیات ────────────────────────────
+                all_error_lines = []
+                for group, gf in all_group_forms:
+                    if gf.errors:
+                        group_label = group.title or f"گروه {group.pk}"
+                        all_error_lines.extend(_collect_form_errors(gf, f"گروه «{group_label}»"))
+
+                for g, node, nf, cf in all_node_data:
+                    group_label = g.title or f"گروه {g.pk}"
+                    node_label = node.title or f"گره {node.pk}"
+
+                    if nf.errors:
+                        all_error_lines.extend(
+                            _collect_form_errors(nf, f"گروه «{group_label}» / گره «{node_label}»")
+                        )
+                    if cf.errors:
+                        all_error_lines.extend(
+                            _collect_formset_errors(
+                                cf,
+                                f"گروه «{group_label}» / گره «{node_label}» / فرزندان",
+                                form_label_fn=lambda f, i: f.instance.title or f"فرزند {i + 1}",
+                            )
+                        )
+
+                _emit_error_messages(request, all_error_lines, 'ذخیره پیش‌بالینی ناموفق بود — خطاهای زیر را برطرف کنید:')
                 return render(request, self.template_name, ctx)
 
             for group, gf in all_group_forms:
@@ -949,6 +1073,9 @@ class EmergencyDispositionManageView(View):
                 disp_form.save()
                 messages.success(request, 'اطلاعات کلی ذخیره شد.')
                 return redirect(redirect_url)
+
+            all_error_lines = _collect_form_errors(disp_form, 'اطلاعات کلی تعیین تکلیف')
+            _emit_error_messages(request, all_error_lines, 'ذخیره اطلاعات کلی ناموفق بود:')
             ctx = self._base_context(order, disposition)
             ctx['disp_form'] = disp_form
             return render(request, self.template_name, ctx)
@@ -991,7 +1118,26 @@ class EmergencyDispositionManageView(View):
                     })
                 ctx = self._base_context(order, disposition)
                 ctx['nested'] = nested
-                messages.error(request, 'لطفاً خطاها را برطرف کنید.')
+
+                # ─── جمع‌آوری خطاها با جزئیات ────────────────────────────
+                all_error_lines = []
+                for node, nf in all_node_forms:
+                    node_label = node.title or f"گره {node.pk}"
+                    if nf.errors:
+                        all_error_lines.extend(_collect_form_errors(nf, f"گره «{node_label}»"))
+
+                for node, cf in all_child_formsets:
+                    node_label = node.title or f"گره {node.pk}"
+                    if cf.errors:
+                        all_error_lines.extend(
+                            _collect_formset_errors(
+                                cf,
+                                f"گره «{node_label}» / فرزندان",
+                                form_label_fn=lambda f, i: f.instance.title or f"فرزند {i + 1}",
+                            )
+                        )
+
+                _emit_error_messages(request, all_error_lines, 'ذخیره تعیین تکلیف ناموفق بود — خطاهای زیر را برطرف کنید:')
                 return render(request, self.template_name, ctx)
 
             # ذخیره
@@ -1044,6 +1190,12 @@ class OrderMediaManageView(View):
                 fs.save()
                 messages.success(request, 'تصاویر با موفقیت ذخیره شدند.')
                 return redirect(redirect_url)
+            all_error_lines = _collect_formset_errors(
+                fs,
+                'تصاویر',
+                form_label_fn=lambda f, i: str(f.instance.image.name) if f.instance.image else f"تصویر {i + 1}",
+            )
+            _emit_error_messages(request, all_error_lines, 'ذخیره تصاویر ناموفق بود:')
             return render(request, self.template_name, self._context(order, image_fs=fs))
 
         if action == 'save_videos':
@@ -1052,6 +1204,12 @@ class OrderMediaManageView(View):
                 fs.save()
                 messages.success(request, 'ویدیوها با موفقیت ذخیره شدند.')
                 return redirect(redirect_url)
+            all_error_lines = _collect_formset_errors(
+                fs,
+                'ویدیوها',
+                form_label_fn=lambda f, i: str(f.instance.video.name) if f.instance.video else f"ویدیو {i + 1}",
+            )
+            _emit_error_messages(request, all_error_lines, 'ذخیره ویدیوها ناموفق بود:')
             return render(request, self.template_name, self._context(order, video_fs=fs))
 
         return redirect(redirect_url)
