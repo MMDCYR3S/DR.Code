@@ -45,7 +45,7 @@
             </div>
 
             <!-- Impression -->
-            <div x-data="{ showNotes: {% if form.imp_notes.value %}true{% else %}false{% endif %} }" class="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-3">
+            <div x-data="{ showNotes: false }" class="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-3">
                 <div class="flex items-start gap-3">
                     <div class="flex-1">
                         <label class="block text-xs font-medium text-gray-600 mb-1">{{ form.imp.label }}</label>
@@ -67,7 +67,7 @@
             </div>
 
             <!-- Condition -->
-            <div x-data="{ showNotes: {% if form.condition_notes.value %}true{% else %}false{% endif %} }" class="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-3">
+            <div x-data="{ showNotes: false }" class="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-3">
                 <div class="flex items-start gap-3">
                     <div class="flex-1">
                         <label class="block text-xs font-medium text-gray-600 mb-1">{{ form.condition.label }}</label>
@@ -89,7 +89,7 @@
             </div>
 
             <!-- Diet -->
-            <div x-data="{ showNotes: {% if form.diet_notes.value %}true{% else %}false{% endif %} }" class="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-3">
+            <div x-data="{ showNotes: false }" class="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-3">
                 <div class="flex items-start gap-3">
                     <div class="flex-1">
                         <label class="block text-xs font-medium text-gray-600 mb-1">{{ form.diet.label }}</label>
@@ -111,7 +111,7 @@
             </div>
 
             <!-- Action -->
-            <div x-data="{ showNotes: {% if form.action_notes.value %}true{% else %}false{% endif %} }" class="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-3">
+            <div x-data="{ showNotes: false }" class="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-3">
                 <div class="flex items-start gap-3">
                     <div class="flex-1">
                         <label class="block text-xs font-medium text-gray-600 mb-1">{{ form.action.label }}</label>
@@ -133,7 +133,7 @@
             </div>
 
             <!-- Position -->
-            <div x-data="{ showNotes: {% if form.position_notes.value %}true{% else %}false{% endif %} }" class="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-3">
+            <div x-data="{ showNotes: false }" class="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-3">
                 <div class="flex items-start gap-3">
                     <div class="flex-1">
                         <label class="block text-xs font-medium text-gray-600 mb-1">{{ form.position.label }}</label>
@@ -155,7 +155,7 @@
             </div>
 
             <!-- Notes کلی -->
-            <div x-data="{ showNotes: {% if form.notes.value %}true{% else %}false{% endif %} }" class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+            <div x-data="{ showNotes: false }" class="p-3 bg-slate-50 rounded-lg border border-slate-100">
                 <button type="button" @click="showNotes = !showNotes" 
                         class="w-full flex items-center justify-between px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         :class="showNotes ? 'border-indigo-200 bg-indigo-50' : ''">

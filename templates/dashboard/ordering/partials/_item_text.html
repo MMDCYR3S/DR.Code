@@ -30,7 +30,7 @@
 
 <div class="item-row item-row-helper !items-start p-3" 
      data-prefix="{{ item_form.prefix }}" 
-     x-data="{ showNotes: {% if item_form.notes.value %}true{% else %}false{% endif %} }">
+     x-data="{ showNotes: false }">
   {% for hidden in item_form.hidden_fields %}{{ hidden }}{% endfor %}
   
   <!-- آیکون جابجایی -->

@@ -1,6 +1,6 @@
 <div class="item-row item-row-helper !items-start p-3" 
      data-prefix="{{ drug_form.prefix }}" 
-     x-data="{ showNotes: {% if drug_form.notes.value %}true{% else %}false{% endif %} }">
+     x-data="{ showNotes: false }">
   {% for hidden in drug_form.hidden_fields %}{{ hidden }}{% endfor %}
   
   <!-- آیکون جابجایی -->
