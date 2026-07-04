@@ -28,21 +28,42 @@
   .item-braille-handle:active { cursor: grabbing; }
 </style>
 
-<div class="item-row item-row-helper" data-prefix="{{ item_form.prefix }}">
+<div class="item-row item-row-helper !items-start p-3" 
+     data-prefix="{{ item_form.prefix }}" 
+     x-data="{ showNotes: {% if item_form.notes.value %}true{% else %}false{% endif %} }">
   {% for hidden in item_form.hidden_fields %}{{ hidden }}{% endfor %}
-  <span class="item-braille-handle" title="برای جابجایی بکشید">⠿</span>
-  <div style="flex:1">
-    <label class="text-xs text-gray-500 mb-1 block">متن آیتم</label>
-    {{ item_form.text }}
+  
+  <!-- آیکون جابجایی -->
+  <span class="item-braille-handle mt-6" title="برای جابجایی بکشید">⠿</span>
+  
+  <!-- بخش میانی: متن اصلی و توضیحات زیر آن -->
+  <div class="flex-1 flex flex-col gap-3">
+    
+    <div class="w-full">
+        <label class="text-xs text-gray-500 mb-1 block">متن آیتم</label>
+        {{ item_form.text }}
+    </div>
+
+    <!-- بخش توضیحات -->
+    <div x-show="showNotes" x-transition style="display:none;" class="w-full">
+        <label class="text-xs text-indigo-500 font-semibold mb-1.5 block">توضیحات تکمیلی</label>
+        {{ item_form.notes }}
+    </div>
+
   </div>
-  <div style="flex:1.5">
-    <label class="text-xs text-gray-500 mb-1 block">توضیحات</label>
-    {{ item_form.notes }}
+
+  <!-- ستون دکمه‌ها -->
+  <div class="flex items-center gap-2 mt-5">
+      <button type="button" @click="showNotes = !showNotes" class="flex items-center justify-center gap-1.5 px-3 py-1.5 border border-indigo-200 bg-indigo-50 text-indigo-600 rounded-lg text-xs hover:bg-indigo-100 transition-colors">
+          <i class="fas fa-align-left"></i>
+          <span x-text="showNotes ? 'بستن' : 'توضیحات'"></span>
+      </button>
+
+      <button type="button" class="btn-delete-item" title="حذف" onclick="removeItem(this)">
+        <i class="fas fa-times"></i>
+      </button>
   </div>
-  <button type="button" class="btn-delete-item mt-4" title="حذف"
-    onclick="removeItem(this)">
-    <i class="fas fa-times"></i>
-  </button>
+
   <div style="display:none">
     {{ item_form.DELETE }}
     {{ item_form.order_index }}

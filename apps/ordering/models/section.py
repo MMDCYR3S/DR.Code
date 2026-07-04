@@ -1,5 +1,7 @@
-from django.db import models
 import jdatetime
+from django_ckeditor_5.fields import CKEditor5Field
+
+from django.db import models
 
 from .order import Order
 from .colors import TailwindColor
@@ -175,7 +177,7 @@ class SectionItem(models.Model):
         verbose_name="Section مرجع"
     )
     text = models.TextField(verbose_name="متن آیتم")
-    notes = models.TextField(blank=True, verbose_name="توضیحات اختصاصی آیتم")
+    notes = CKEditor5Field(blank=True, verbose_name="توضیحات اختصاصی آیتم", config_name='default')
     order_index = models.PositiveIntegerField(default=0, verbose_name="ترتیب نمایش")
 
     conditions = models.ManyToManyField(
@@ -219,7 +221,7 @@ class DrugSectionItem(models.Model):
         related_name="order_drug_items",
         verbose_name="داروی انتخابی"
     )
-    notes = models.TextField(blank=True, verbose_name="توضیحات اضافی دارو در این Order")
+    notes = CKEditor5Field(blank=True, verbose_name="توضیحات اضافی دارو در این Order", config_name='default')
     order_index = models.PositiveIntegerField(default=0, verbose_name="ترتیب نمایش")
     
     conditions = models.ManyToManyField(

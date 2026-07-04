@@ -85,16 +85,16 @@ class OrderForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={'class': INPUT_CLASSES_RTL, 'placeholder': 'نام اوردر...'}),
             'imp': forms.TextInput(attrs={'class': INPUT_CLASSES_LTR}),
-            'imp_notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3}),
+            'imp_notes': CKEditor5Widget(attrs={'class': 'django_ckeditor_5'}, config_name='default'),
             'condition': forms.TextInput(attrs={'class': INPUT_CLASSES_LTR}),
-            'condition_notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3}),
+            'condition_notes': CKEditor5Widget(attrs={'class': 'django_ckeditor_5'}, config_name='default'),
             'diet': forms.TextInput(attrs={'class': INPUT_CLASSES_LTR}),
-            'diet_notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3}),
+            'diet_notes': CKEditor5Widget(attrs={'class': 'django_ckeditor_5'}, config_name='default'),
             'action': forms.TextInput(attrs={'class': INPUT_CLASSES_LTR}),
-            'action_notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3}),
+            'action_notes': CKEditor5Widget(attrs={'class': 'django_ckeditor_5'}, config_name='default'),
             'position': forms.TextInput(attrs={'class': INPUT_CLASSES_LTR}),
-            'position_notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3}),
-            'notes': forms.TextInput(attrs={'class': INPUT_CLASSES_RTL, 'rows': 3}),
+            'position_notes': CKEditor5Widget(attrs={'class': 'django_ckeditor_5'}, config_name='default'),
+            'notes': CKEditor5Widget(attrs={'class': 'django_ckeditor_5'}, config_name='default'),
             'category': forms.Select(attrs={'class': INPUT_CLASSES_RTL}),
             'color': forms.Select(attrs={'class': INPUT_CLASSES_LTR}),
             'access_level': forms.RadioSelect(attrs={'class': 'access-level-radio'}),
@@ -131,7 +131,7 @@ class SectionItemForm(forms.ModelForm):
         fields = ['text', 'notes', 'order_index']
         widgets = {
             'text': forms.Textarea(attrs={'class': INPUT_CLASSES_LTR + ' item-name-input', 'rows': 1}),
-            'notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 1}),
+            'notes': CKEditor5Widget(attrs={'class': 'django_ckeditor_5'}, config_name='default'),
             'order_index': forms.NumberInput(attrs={'class': INPUT_CLASSES_LTR}),
         }
 
@@ -149,7 +149,7 @@ class DrugSectionItemForm(forms.ModelForm):
         fields = ['drug', 'notes', 'order_index']
         widgets = {
             'drug': forms.Select(attrs={'class': INPUT_CLASSES_LTR + ' select2-drug-search item-name-input'}),
-            'notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 1}),
+            'notes': CKEditor5Widget(attrs={'class': 'django_ckeditor_5'}, config_name='default'),
             'order_index': forms.NumberInput(attrs={'class': INPUT_CLASSES_LTR}),
         }
 

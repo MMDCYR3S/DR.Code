@@ -5,6 +5,13 @@
     {% if is_update %}ویرایش اوردر{% else %}افزودن اوردر جدید{% endif %}
 {% endblock %}
 
+
+{% block extra_css %}
+  {{ empty_item_fs.media.css }}
+  {{ empty_drug_fs.media.css }}
+{% endblock extra_css %}
+  
+
 {% block content %}
 <div class="container mx-auto px-4 py-6 max-w-8xl">
 
@@ -23,7 +30,7 @@
       <!-- Main Content -->
       <div class="lg:col-span-3 space-y-5">
 
-        <!-- اطلاعات پایه -->
+                <!-- اطلاعات پایه -->
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
         <div class="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-l from-gray-50 to-indigo-50 border-b border-gray-200">
             <span class="w-2 h-2 rounded-full bg-indigo-400 inline-block flex-shrink-0"></span>
@@ -33,78 +40,140 @@
 
             <!-- نام -->
             <div>
-            <label class="block text-xs text-gray-500 mb-1">{{ form.name.label }}</label>
-            {{ form.name }}
+                <label class="block text-xs text-gray-500 mb-1">{{ form.name.label }}</label>
+                {{ form.name }}
             </div>
 
             <!-- Impression -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">{{ form.imp.label }}</label>
-                {{ form.imp }}
-            </div>
-            <div>
-                <label class="block text-xs text-gray-400 mb-1">{{ form.imp_notes.label }}</label>
-                {{ form.imp_notes }}
-            </div>
+            <div x-data="{ showNotes: {% if form.imp_notes.value %}true{% else %}false{% endif %} }" class="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-3">
+                <div class="flex items-start gap-3">
+                    <div class="flex-1">
+                        <label class="block text-xs font-medium text-gray-600 mb-1">{{ form.imp.label }}</label>
+                        {{ form.imp }}
+                    </div>
+                    <div class="mt-5">
+                        <button type="button" @click="showNotes = !showNotes" 
+                                class="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-600 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                                :class="showNotes ? 'text-indigo-600 border-indigo-200 bg-indigo-50' : ''">
+                            <span x-text="showNotes ? 'بستن توضیحات' : 'توضیحات'"></span>
+                            <i class="fas" :class="showNotes ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                        </button>
+                    </div>
+                </div>
+                <div x-show="showNotes" x-transition class="pt-2 border-t border-gray-200" style="display: none;">
+                    <label class="block text-xs text-gray-400 mb-1">{{ form.imp_notes.label }}</label>
+                    {{ form.imp_notes }}
+                </div>
             </div>
 
             <!-- Condition -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">{{ form.condition.label }}</label>
-                {{ form.condition }}
-            </div>
-            <div>
-                <label class="block text-xs text-gray-400 mb-1">{{ form.condition_notes.label }}</label>
-                {{ form.condition_notes }}
-            </div>
+            <div x-data="{ showNotes: {% if form.condition_notes.value %}true{% else %}false{% endif %} }" class="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-3">
+                <div class="flex items-start gap-3">
+                    <div class="flex-1">
+                        <label class="block text-xs font-medium text-gray-600 mb-1">{{ form.condition.label }}</label>
+                        {{ form.condition }}
+                    </div>
+                    <div class="mt-5">
+                        <button type="button" @click="showNotes = !showNotes" 
+                                class="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-600 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                                :class="showNotes ? 'text-indigo-600 border-indigo-200 bg-indigo-50' : ''">
+                            <span x-text="showNotes ? 'بستن توضیحات' : 'توضیحات'"></span>
+                            <i class="fas" :class="showNotes ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                        </button>
+                    </div>
+                </div>
+                <div x-show="showNotes" x-transition class="pt-2 border-t border-gray-200" style="display: none;">
+                    <label class="block text-xs text-gray-400 mb-1">{{ form.condition_notes.label }}</label>
+                    {{ form.condition_notes }}
+                </div>
             </div>
 
             <!-- Diet -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">{{ form.diet.label }}</label>
-                {{ form.diet }}
-            </div>
-            <div>
-                <label class="block text-xs text-gray-400 mb-1">{{ form.diet_notes.label }}</label>
-                {{ form.diet_notes }}
-            </div>
+            <div x-data="{ showNotes: {% if form.diet_notes.value %}true{% else %}false{% endif %} }" class="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-3">
+                <div class="flex items-start gap-3">
+                    <div class="flex-1">
+                        <label class="block text-xs font-medium text-gray-600 mb-1">{{ form.diet.label }}</label>
+                        {{ form.diet }}
+                    </div>
+                    <div class="mt-5">
+                        <button type="button" @click="showNotes = !showNotes" 
+                                class="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-600 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                                :class="showNotes ? 'text-indigo-600 border-indigo-200 bg-indigo-50' : ''">
+                            <span x-text="showNotes ? 'بستن توضیحات' : 'توضیحات'"></span>
+                            <i class="fas" :class="showNotes ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                        </button>
+                    </div>
+                </div>
+                <div x-show="showNotes" x-transition class="pt-2 border-t border-gray-200" style="display: none;">
+                    <label class="block text-xs text-gray-400 mb-1">{{ form.diet_notes.label }}</label>
+                    {{ form.diet_notes }}
+                </div>
             </div>
 
             <!-- Action -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">{{ form.action.label }}</label>
-                {{ form.action }}
-            </div>
-            <div>
-                <label class="block text-xs text-gray-400 mb-1">{{ form.action_notes.label }}</label>
-                {{ form.action_notes }}
-            </div>
+            <div x-data="{ showNotes: {% if form.action_notes.value %}true{% else %}false{% endif %} }" class="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-3">
+                <div class="flex items-start gap-3">
+                    <div class="flex-1">
+                        <label class="block text-xs font-medium text-gray-600 mb-1">{{ form.action.label }}</label>
+                        {{ form.action }}
+                    </div>
+                    <div class="mt-5">
+                        <button type="button" @click="showNotes = !showNotes" 
+                                class="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-600 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                                :class="showNotes ? 'text-indigo-600 border-indigo-200 bg-indigo-50' : ''">
+                            <span x-text="showNotes ? 'بستن توضیحات' : 'توضیحات'"></span>
+                            <i class="fas" :class="showNotes ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                        </button>
+                    </div>
+                </div>
+                <div x-show="showNotes" x-transition class="pt-2 border-t border-gray-200" style="display: none;">
+                    <label class="block text-xs text-gray-400 mb-1">{{ form.action_notes.label }}</label>
+                    {{ form.action_notes }}
+                </div>
             </div>
 
             <!-- Position -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">{{ form.position.label }}</label>
-                {{ form.position }}
-            </div>
-            <div>
-                <label class="block text-xs text-gray-400 mb-1">{{ form.position_notes.label }}</label>
-                {{ form.position_notes }}
-            </div>
+            <div x-data="{ showNotes: {% if form.position_notes.value %}true{% else %}false{% endif %} }" class="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-3">
+                <div class="flex items-start gap-3">
+                    <div class="flex-1">
+                        <label class="block text-xs font-medium text-gray-600 mb-1">{{ form.position.label }}</label>
+                        {{ form.position }}
+                    </div>
+                    <div class="mt-5">
+                        <button type="button" @click="showNotes = !showNotes" 
+                                class="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-600 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                                :class="showNotes ? 'text-indigo-600 border-indigo-200 bg-indigo-50' : ''">
+                            <span x-text="showNotes ? 'بستن توضیحات' : 'توضیحات'"></span>
+                            <i class="fas" :class="showNotes ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                        </button>
+                    </div>
+                </div>
+                <div x-show="showNotes" x-transition class="pt-2 border-t border-gray-200" style="display: none;">
+                    <label class="block text-xs text-gray-400 mb-1">{{ form.position_notes.label }}</label>
+                    {{ form.position_notes }}
+                </div>
             </div>
 
             <!-- Notes کلی -->
-            <div>
-            <label class="block text-xs text-gray-500 mb-1">{{ form.notes.label }}</label>
-            {{ form.notes }}
+            <div x-data="{ showNotes: {% if form.notes.value %}true{% else %}false{% endif %} }" class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <button type="button" @click="showNotes = !showNotes" 
+                        class="w-full flex items-center justify-between px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        :class="showNotes ? 'border-indigo-200 bg-indigo-50' : ''">
+                    <span class="font-medium flex items-center gap-2">
+                        <i class="fas fa-file-alt text-gray-400" :class="showNotes ? 'text-indigo-500' : ''"></i>
+                        {{ form.notes.label }} (توضیحات کلی)
+                    </span>
+                    <i class="fas text-gray-400" :class="showNotes ? 'fa-chevron-up text-indigo-500' : 'fa-chevron-down'"></i>
+                </button>
+                
+                <div x-show="showNotes" x-transition class="mt-3" style="display: none;">
+                    {{ form.notes }}
+                </div>
             </div>
 
         </div>
         </div>
+
 
         <!-- نام‌های جایگزین -->
         {% if alias_formset %}
@@ -302,31 +371,395 @@
 
 {% endblock %}
 {% block extra_js %}
+  {{ empty_item_fs.media.js }}
+  {{ empty_drug_fs.media.js }}
 <script>
+'use strict';
+
+// ==================== Constants ====================
+const CSS = {
+    inputRTL: 'w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition text-right',
+    inputLTR: 'w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition text-left',
+    checkbox: 'form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500',
+};
+
+const SELECTORS = {
+    sectionsContainer: '#sectionsContainer',
+    itemLists: '.items-wrapper .item-list, .drugs-wrapper .item-list',
+};
+
+// ==================== Helpers ====================
+const $ = (sel, ctx = document) => ctx.querySelector(sel);
+const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
+
+function getTotalFormsInput(prefix, ctx = document) {
+    return $(`input[name="${prefix}-TOTAL_FORMS"]`, ctx);
+}
+
+function bumpTotalForms(input) {
+    const count = parseInt(input.value, 10);
+    input.value = count + 1;
+    return count;
+}
+
+function renderTemplate(templateId, sectionIndex, itemIndex) {
+    let html = $(`#${templateId}`).innerHTML;
+    html = html.replaceAll('__section_prefix__', sectionIndex).replaceAll('__prefix__', itemIndex);
+    return html;
+}
+
+// حذف/بازگردانی نرم یک آیتم فرم‌ست (سکشن، آیتم، دارو، alias)
+function toggleFormsetDelete(btn, rowSelector) {
+    const row = btn.closest(rowSelector);
+    const deleteInput = $('input[name$="-DELETE"]', row);
+    if (!deleteInput) {
+        row.remove();
+        return;
+    }
+    deleteInput.checked = !deleteInput.checked;
+    btn.classList.toggle('active', deleteInput.checked);
+    row.style.opacity = deleteInput.checked ? '0.4' : '1';
+}
+
+function getActiveItemRows(sectionBlock) {
+    return $$('.item-row-helper', sectionBlock).filter(row => {
+        const del = $('input[type="checkbox"][name$="-DELETE"]', row);
+        return !(del?.checked) && row.style.display !== 'none';
+    });
+}
+
+function itemCheckboxesHtml(rows, checkboxClass, linkedItems = []) {
+    return rows.map(row => {
+        const prefix = row.getAttribute('data-prefix');
+        const name = $('.item-name-input', row)?.value || 'آیتم';
+        const checked = linkedItems.includes(prefix) ? 'checked' : '';
+        return `
+            <label class="inline-flex items-center ml-4 mt-2 bg-white px-2 py-1 border rounded text-xs cursor-pointer hover:bg-indigo-50">
+                <input type="checkbox" class="form-checkbox h-3 w-3 text-indigo-600 ${checkboxClass}" value="${prefix}" ${checked}>
+                <span class="mr-2 text-gray-700 truncate max-w-[150px]">${name}</span>
+            </label>`;
+    }).join('') || '<span class="text-red-500 text-xs mt-1">هیچ آیتمی وجود ندارد!</span>';
+}
+
+// ==================== Sortable ====================
+function initSortable() {
+    if (typeof Sortable === 'undefined') {
+        console.warn('Sortable.js is not loaded!');
+        return;
+    }
+
+    const sectionsContainer = $(SELECTORS.sectionsContainer);
+    if (sectionsContainer && !sectionsContainer.dataset.sortableInit) {
+        new Sortable(sectionsContainer, {
+            animation: 150,
+            handle: '.section-drag-handle',
+            ghostClass: 'opacity-50',
+            // هندل کردن سورت برای section ها (اگر داخلشان ckeditor دارند)
+            onStart: function (evt) { destroyEditorsInContainer(evt.item); },
+            onEnd: function (evt) { initCKEditorForElement(evt.item); }
+        });
+        sectionsContainer.dataset.sortableInit = 'true';
+    }
+
+    $$(SELECTORS.itemLists).forEach(list => {
+        if (list.dataset.sortableInit) return;
+        new Sortable(list, {
+            animation: 150,
+            handle: '.item-braille-handle',
+            ghostClass: 'bg-indigo-50',
+            // نابود کردن و ساخت مجدد CKEditor در آیتم جابجا شده
+            onStart: function (evt) {
+                destroyEditorsInContainer(evt.item);
+            },
+            onEnd: function (evt) {
+                initCKEditorForElement(evt.item);
+            }
+        });
+        list.dataset.sortableInit = 'true';
+    });
+}
+function destroyEditorsInContainer(container) {
+    const textareas = container.querySelectorAll('textarea.django_ckeditor_5');
+    textareas.forEach(textarea => {
+        if (textarea.ckeditorInstance) {
+            textarea.ckeditorInstance.destroy()
+                .then(() => {
+                    textarea.ckeditorInstance = null;
+                })
+                .catch(err => console.error(err));
+        }
+    });
+}
+// ==================== Sections / Items ====================
+function addSection() {
+    const container = $(SELECTORS.sectionsContainer);
+    const totalForms = $('#id_sections-TOTAL_FORMS');
+    const index = bumpTotalForms(totalForms);
+    container.insertAdjacentHTML('beforeend', renderTemplate('empty-section-template', index, index));
+    initSortable();
+}
+
+function addItem(btn, type) {
+    const section = btn.closest('.section-item');
+    const sectionIndex = section.getAttribute('data-section-index');
+    const isDrug = type === 'drug';
+
+    const wrapperSelector = isDrug ? '.drugs-wrapper .item-list' : '.items-wrapper .item-list';
+    const formsetPrefix = isDrug ? 'drugs' : 'items';
+    const templateId = isDrug ? 'empty-drug-item-template' : 'empty-text-item-template';
+
+    const container = $(wrapperSelector, section);
+    const totalForms = $(`input[name="sections-${sectionIndex}-${formsetPrefix}-TOTAL_FORMS"]`, section);
+    const itemIndex = bumpTotalForms(totalForms);
+
+    // افزودن المنت به DOM
+    const rawHtml = renderTemplate(templateId, sectionIndex, itemIndex);
+    container.insertAdjacentHTML('beforeend', rawHtml);
     
-// ==================== تعریف کلاس‌های استایل ====================
-const INPUT_CLASSES_RTL = 'w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition text-right';
-const INPUT_CLASSES_LTR = 'w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition text-left';
-const CHECKBOX_CLASSES = 'form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500';
+    // گرفتن آخرین المنتی که اضافه شده است
+    const newRow = container.lastElementChild;
 
+    // اجرای CKEditor روی textarea های المنت جدید
+    initCKEditorForElement(newRow);
 
-// ==================== تنظیمات Alpine.js ====================
+    initSortable();
+}
+function removeSection(btn) {
+    toggleFormsetDelete(btn, '.section-item');
+}
+
+function removeItem(btn) {
+    toggleFormsetDelete(btn, '.item-row');
+}
+
+function initCKEditorForElement(container) {
+    // کلاس django_ckeditor_5 روی ویجت‌های شما در forms.py تنظیم شده بود
+    const textareas = container.querySelectorAll('textarea.django_ckeditor_5');
+    
+    textareas.forEach(textarea => {
+        // مطمئن می‌شویم از قبل اینیشیالایز نشده باشد (معمولاً ckeditor کلاس ck-hidden به المان اصلی می‌دهد)
+        if (!textarea.classList.contains('ck-hidden') && window.ClassicEditor) {
+            
+            // گرفتن کانفیگ احتمالی از اتریبیوت data یا تنظیمات پیش‌فرض
+            const configElement = document.querySelector('#ckeditor-5-config') 
+                                  || document.querySelector(`[data-id="${textarea.id}"]`);
+            
+            let config = {};
+            if (configElement && configElement.type === 'application/json') {
+                try { config = JSON.parse(configElement.textContent); } catch(e){}
+            }
+
+            ClassicEditor.create(textarea, config)
+                .then(editor => {
+                    // ذخیره رفرنس ادیتور برای دسترسی‌های بعدی در صورت نیاز
+                    textarea.ckeditorInstance = editor;
+                })
+                .catch(error => {
+                    console.error('Error initializing CKEditor 5:', error);
+                });
+        }
+    });
+}
+
+// ==================== Conditions ====================
+function addCondition(sectionIndex, btnElement) {
+    const sectionBlock = btnElement.closest('.section-block');
+    const list = $(`#conditions-list-${sectionIndex}`);
+    const rows = getActiveItemRows(sectionBlock);
+    const checkboxes = itemCheckboxesHtml(rows, 'condition-item-checkbox');
+
+    list.insertAdjacentHTML('beforeend', `
+        <div class="condition-item-block border border-gray-200 p-3 bg-white rounded-lg shadow-sm relative">
+            <button type="button" onclick="this.closest('.condition-item-block').remove()"
+              class="absolute top-2 left-2 flex items-center justify-center w-6 h-6 rounded border border-red-200 bg-red-50 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 text-xs transition-all">
+              <i class="fas fa-times"></i>
+            </button>
+            <input type="text" class="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white condition-text-input mb-2"
+                   placeholder="متن شرط (مثال: در صورت تب بالای 38)">
+            <div class="text-xs text-gray-500 mb-1">کدام آیتم‌ها به این شرط مربوط هستند؟ تیک بزنید:</div>
+            <div class="flex flex-wrap">${checkboxes}</div>
+        </div>`);
+}
+
+function renderExistingConditionCheckboxes() {
+    $$('.existing-condition-items').forEach(container => {
+        const linkedItems = container.getAttribute('data-linked-items').split(',').filter(Boolean);
+        const sectionBlock = container.closest('.section-block');
+        const rows = $$('.item-row-helper', sectionBlock);
+        const html = rows.map(row => {
+            const prefix = row.getAttribute('data-prefix');
+            const name = $('.item-name-input', row)?.value || 'آیتم';
+            const checked = linkedItems.includes(prefix) ? 'checked' : '';
+            return `
+                <label class="inline-flex items-center ml-4 mt-2 bg-white px-2 py-1 border rounded text-xs cursor-pointer hover:bg-indigo-50">
+                    <input type="checkbox" class="form-checkbox h-3 w-3 text-indigo-600 condition-item-checkbox" value="${prefix}" ${checked}>
+                    <span class="mr-2 text-gray-700 truncate max-w-[150px]">${name}</span>
+                </label>`;
+        }).join('');
+        container.insertAdjacentHTML('beforeend', html);
+    });
+}
+
+// ==================== Relationships ====================
+function createRelationshipBlock(sectionIndex, sectionBlock, operator = 'OR', linkedItems = []) {
+    const rows = getActiveItemRows(sectionBlock);
+    const checkboxes = itemCheckboxesHtml(rows, 'relationship-item-checkbox', linkedItems)
+        .replaceAll('text-indigo-600', 'text-amber-600')
+        .replaceAll('hover:bg-indigo-50', 'hover:bg-amber-50');
+    const op = String(operator).trim().toUpperCase();
+
+    const options = ['OR', 'AND', 'THEN'].map(v => {
+        const label = { OR: 'یا (OR)', AND: 'و (AND)', THEN: 'سپس (THEN)' }[v];
+        return `<option value="${v}" ${op === v ? 'selected' : ''}>${label}</option>`;
+    }).join('');
+
+    return `
+        <div class="relationship-item-block border border-gray-200 p-3 bg-white rounded-lg shadow-sm relative">
+            <button type="button" onclick="this.closest('.relationship-item-block').remove()"
+              class="absolute top-2 left-2 flex items-center justify-center w-6 h-6 rounded border border-red-200 bg-red-50 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 text-xs transition-all">
+              <i class="fas fa-times"></i>
+            </button>
+            <div class="mb-2 flex items-center gap-2">
+                <label class="text-xs font-semibold text-gray-600">نوع رابطه:</label>
+                <select class="px-2 py-1 text-sm border border-gray-200 rounded bg-gray-50 relationship-operator-select">
+                    ${options}
+                </select>
+            </div>
+            <div class="text-xs text-gray-500 mb-1">کدام آیتم‌ها با هم در این رابطه قرار دارند؟ تیک بزنید:</div>
+            <div class="flex flex-wrap">${checkboxes}</div>
+        </div>`;
+}
+
+function addRelationship(sectionIndex, btnElement) {
+    const sectionBlock = btnElement.closest('.section-block');
+    const list = $(`#relationships-list-${sectionIndex}`);
+    list.insertAdjacentHTML('beforeend', createRelationshipBlock(sectionIndex, sectionBlock));
+}
+
+function renderExistingRelationships() {
+    $$('.relationship-list-container').forEach(container => {
+        const raw = container.getAttribute('data-initial');
+        if (!raw || raw === '[]') return;
+
+        try {
+            const relationships = JSON.parse(raw);
+            const sectionBlock = container.closest('.section-block');
+            const sectionIndex = sectionBlock.getAttribute('data-section-index');
+            relationships.forEach(rel => {
+                container.insertAdjacentHTML('beforeend',
+                    createRelationshipBlock(sectionIndex, sectionBlock, rel.operator, rel.items));
+            });
+        } catch (e) {
+            console.error('Error parsing initial relationships JSON', e);
+        }
+    });
+}
+
+// ==================== Aliases ====================
+function addAlias() {
+    const container = $('#aliasesContainer');
+    const totalForms = $('input[name="aliases-TOTAL_FORMS"]');
+    const index = bumpTotalForms(totalForms);
+
+    container.insertAdjacentHTML('beforeend', `
+        <div class="formset-item alias-form border border-gray-200 rounded-lg p-3 bg-gray-50" data-form-index="${index}">
+            <input type="hidden" name="aliases-${index}-id" id="id_aliases-${index}-id">
+            <div class="flex items-center justify-between mb-2">
+                <h4 class="text-xs font-medium text-gray-700">نام #${index + 1}</h4>
+                <button type="button" onclick="removeFormsetItem(this)" class="text-red-600 hover:text-red-800 text-xs">
+                    <i class="fas fa-trash ml-1"></i>حذف
+                </button>
+            </div>
+            <div class="space-y-2">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">نام جایگزین</label>
+                    <input type="text" name="aliases-${index}-name" id="id_aliases-${index}-name"
+                           class="${CSS.inputRTL}" placeholder="نام جایگزین...">
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" name="aliases-${index}-is_primary" id="id_aliases-${index}-is_primary" class="${CSS.checkbox}">
+                    <label class="text-xs text-gray-700">نام اصلی</label>
+                </div>
+            </div>
+            <div class="hidden">
+                <input type="checkbox" name="aliases-${index}-DELETE" id="id_aliases-${index}-DELETE">
+            </div>
+        </div>`);
+}
+
+function removeFormsetItem(btn) {
+    toggleFormsetDelete(btn, '.formset-item');
+}
+
+// ==================== Section type toggle (drug/text) ====================
+function handleSectionTypeToggle(e) {
+    if (!e.target.matches('input[type="checkbox"][name$="-is_drug_section"]')) return;
+    const drugContainer = e.target.closest('.section-item').querySelector('.drugs-wrapper');
+    drugContainer.classList.toggle('hidden', !e.target.checked);
+}
+
+// ==================== Form Submit: sync order_index + JSON payloads ====================
+function syncOrderIndexes() {
+    $$('#sectionsContainer > .section-item').forEach((section, sIndex) => {
+        const sectionOrder = $('input[name$="-order_index"]', section);
+        if (sectionOrder && !sectionOrder.closest('.item-row')) sectionOrder.value = sIndex;
+
+        $$('.items-wrapper .item-row', section).forEach((item, i) => {
+            const input = $('input[name$="-order_index"]', item);
+            if (input) input.value = i;
+        });
+
+        $$('.drugs-wrapper .item-row', section).forEach((drug, i) => {
+            const input = $('input[name$="-order_index"]', drug);
+            if (input) input.value = i;
+        });
+    });
+}
+
+function syncConditionsPayload() {
+    $$('.conditions-wrapper').forEach(wrapper => {
+        const hiddenInput = $('input[type="hidden"]', wrapper);
+        const data = $$('.condition-item-block', wrapper).map(block => {
+            const text = $('.condition-text-input', block).value.trim();
+            const items = $$('.condition-item-checkbox:checked', block).map(cb => cb.value);
+            return { text, items };
+        }).filter(c => c.text && c.items.length > 0);
+
+        if (hiddenInput) hiddenInput.value = JSON.stringify(data);
+    });
+}
+
+function syncRelationshipsPayload() {
+    $$('.relationships-wrapper').forEach(wrapper => {
+        const hiddenInput = $('input[type="hidden"]', wrapper);
+        const data = $$('.relationship-item-block', wrapper).map(block => {
+            const operator = $('.relationship-operator-select', block).value;
+            const items = $$('.relationship-item-checkbox:checked', block).map(cb => cb.value);
+            return { operator, items };
+        }).filter(r => r.items.length > 1);
+
+        if (hiddenInput) hiddenInput.value = JSON.stringify(data);
+    });
+}
+
+function handleFormSubmit() {
+    syncOrderIndexes();
+    syncConditionsPayload();
+    syncRelationshipsPayload();
+}
+
+// ==================== Alpine.js Components ====================
 document.addEventListener('alpine:init', () => {
-    // کامپوننت جستجوی دارو برای هر ردیف
     Alpine.data('drugSearch', (initialId = '', initialName = '') => ({
         searchQuery: initialName || '',
         selectedId: initialId || '',
         results: [],
         isOpen: false,
         isLoading: false,
-        // یک آیدی یکتا برای دریافت رویداد پس از ساخت دارو
         instanceId: 'drug-cb-' + Math.random().toString(36).substr(2, 9),
 
         init() {
-            // گوش دادن به پیامی که از مودال برمی‌گردد
-            window.addEventListener(this.instanceId, (e) => {
-                this.selectDrug(e.detail);
-            });
+            window.addEventListener(this.instanceId, e => this.selectDrug(e.detail));
         },
 
         fetchDrugs() {
@@ -338,14 +771,9 @@ document.addEventListener('alpine:init', () => {
             this.isOpen = true;
             fetch(`/dashboard/admin/orders/drugs/search/?q=${this.searchQuery}`)
                 .then(res => res.json())
-                .then(data => {
-                    this.results = data.results || [];
-                    this.isLoading = false;
-                })
-                .catch(() => {
-                    this.results = [];
-                    this.isLoading = false;
-                });
+                .then(data => { this.results = data.results || []; })
+                .catch(() => { this.results = []; })
+                .finally(() => { this.isLoading = false; });
         },
 
         selectDrug(item) {
@@ -356,17 +784,12 @@ document.addEventListener('alpine:init', () => {
 
         openCreateModal() {
             this.isOpen = false;
-            // ارسال پیام به مودال اصلی برای باز شدن
             window.dispatchEvent(new CustomEvent('open-drug-modal', {
-                detail: {
-                    title: this.searchQuery,
-                    callbackId: this.instanceId
-                }
+                detail: { title: this.searchQuery, callbackId: this.instanceId }
             }));
         }
     }));
 
-    // کامپوننت کنترل مودال ساخت دارو (سراسری)
     Alpine.data('drugModal', () => ({
         isOpen: false,
         title: '',
@@ -393,21 +816,16 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
             this.isLoading = true;
-            
             try {
-                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const csrfToken = $('[name=csrfmiddlewaretoken]').value;
                 const response = await fetch('/dashboard/admin/orders/drugs/quick-create/', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken
-                    },
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
                     body: JSON.stringify({ title: this.title, code: this.code })
                 });
-                
                 const data = await response.json();
+
                 if (data.success) {
-                    // ارسال اطلاعات داروی جدید به همان فیلدی که دکمه را زده است
                     window.dispatchEvent(new CustomEvent(this.callbackEventName, {
                         detail: { id: data.id, text: data.text }
                     }));
@@ -415,7 +833,7 @@ document.addEventListener('alpine:init', () => {
                 } else {
                     alert('خطا در ایجاد داروی جدید: ' + (data.error || ''));
                 }
-            } catch(e) {
+            } catch (e) {
                 console.error(e);
                 alert('خطا در برقراری ارتباط!');
             }
@@ -424,385 +842,17 @@ document.addEventListener('alpine:init', () => {
     }));
 });
 
-
-// ==================== لاجیک فرم ====================
-document.addEventListener('DOMContentLoaded', function() {
-
-    document.querySelectorAll('.existing-condition-items').forEach(function(container) {
-        const linkedItems = container.getAttribute('data-linked-items').split(',').filter(Boolean);
-        const sectionBlock = container.closest('.section-block');
-        const itemRows = sectionBlock.querySelectorAll('.item-row-helper');
-
-        itemRows.forEach(function(row) {
-            const prefix = row.getAttribute('data-prefix');
-            const nameInput = row.querySelector('.item-name-input');
-            const itemName = nameInput ? (nameInput.value || 'آیتم') : 'آیتم';
-            const isChecked = linkedItems.includes(prefix);
-
-            container.insertAdjacentHTML('beforeend', `
-                <label class="inline-flex items-center ml-4 mt-2 bg-white px-2 py-1 border rounded text-xs cursor-pointer hover:bg-indigo-50">
-                    <input type="checkbox" class="form-checkbox h-3 w-3 text-indigo-600 condition-item-checkbox" value="${prefix}" ${isChecked ? 'checked' : ''}>
-                    <span class="mr-2 text-gray-700 truncate max-w-[150px]">${itemName}</span>
-                </label>
-            `);
-        });
-    });
-
-    // تغییر نوع سکشن
-    document.addEventListener('change', function(e) {
-        if (e.target.matches('input[type="checkbox"][name$="-is_drug_section"]')) {
-            const section = e.target.closest('.section-item');
-            const drugContainer = section.querySelector('.drugs-wrapper');
-            
-            // بخش متنی همیشه هست، فقط بخش دارویی رو نشون بده/مخفی کن
-            if (e.target.checked) {
-                drugContainer.classList.remove('hidden');
-            } else {
-                drugContainer.classList.add('hidden');
-            }
-        }
-    });
-
-    // افزودن سکشن
-    const addSectionBtn = document.getElementById('addSectionBtn');
-    if(addSectionBtn) {
-        addSectionBtn.addEventListener('click', function() {
-            const container = document.getElementById('sectionsContainer');
-            const totalFormsInput = document.getElementById('id_sections-TOTAL_FORMS');
-            const sectionCount = parseInt(totalFormsInput.value);
-
-            let template = document.getElementById('empty-section-template').innerHTML;
-            template = template.replace(/__section_prefix__/g, sectionCount);
-            template = template.replace(/__prefix__/g, sectionCount);
-
-            container.insertAdjacentHTML('beforeend', template);
-            totalFormsInput.value = sectionCount + 1;
-            initSortable();
-        });
-    }
-
+// ==================== Init ====================
+document.addEventListener('DOMContentLoaded', () => {
+    renderExistingConditionCheckboxes();
+    renderExistingRelationships();
     initSortable();
+
+    document.addEventListener('change', handleSectionTypeToggle);
+    $('#addSectionBtn')?.addEventListener('click', addSection);
+    $('#addAlias')?.addEventListener('click', addAlias);
+    $('#orderForm')?.addEventListener('submit', handleFormSubmit);
 });
-
-// رندر کردن روابط منطقی از پیش ذخیره شده
-document.querySelectorAll('.relationship-list-container').forEach(function(container) {
-    const rawData = container.getAttribute('data-initial');
-    if (!rawData || rawData === '[]') return;
-    
-    try {
-        const relationshipsData = JSON.parse(rawData);
-        const sectionBlock = container.closest('.section-block');
-        const sectionIndex = sectionBlock.getAttribute('data-section-index');
-        
-        relationshipsData.forEach(rel => {
-            container.insertAdjacentHTML('beforeend', createRelationshipBlock(sectionIndex, sectionBlock, rel.operator, rel.items));
-        });
-    } catch (e) {
-        console.error("Error parsing initial relationships JSON", e);
-    }
-});
-
-function initSortable() {
-    if (typeof Sortable === 'undefined') {
-        console.warn('Sortable.js is not loaded!');
-        return;
-    }
-
-    // 1. Sortable برای کل سکشن‌ها
-    const sectionsContainer = document.getElementById('sectionsContainer');
-    if (sectionsContainer && !sectionsContainer.dataset.sortableInit) {
-        new Sortable(sectionsContainer, {
-            animation: 150,
-            handle: '.section-drag-handle', // کلاس هندل برای کشیدن سکشن (باید در هدر سکشن اضافه کنید)
-            ghostClass: 'opacity-50',
-        });
-        sectionsContainer.dataset.sortableInit = 'true';
-    }
-
-    // 2. Sortable برای لیست آیتم‌ها و داروها
-    document.querySelectorAll('.items-wrapper .item-list, .drugs-wrapper .item-list').forEach(list => {
-        if (!list.dataset.sortableInit) {
-            new Sortable(list, {
-                animation: 150,
-                handle: '.item-braille-handle', // دستگیره‌ای که گذاشته بودید: ⠿
-                ghostClass: 'bg-indigo-50',
-            });
-            list.dataset.sortableInit = 'true';
-        }
-    });
-}
-
-// افزودن آیتم
-function addItem(btn, type) {
-    const section = btn.closest('.section-item');
-    const sectionIndex = section.getAttribute('data-section-index');
-
-    const isDrug = type === 'drug';
-    const wrapperClass = isDrug ? '.drugs-wrapper .item-list' : '.items-wrapper .item-list';
-    const formsetPrefix = isDrug ? 'drugs' : 'items';
-    const templateId = isDrug ? 'empty-drug-item-template' : 'empty-text-item-template';
-
-    const container = section.querySelector(wrapperClass);
-    const totalFormsInput = section.querySelector(`input[name="sections-${sectionIndex}-${formsetPrefix}-TOTAL_FORMS"]`);
-    const itemCount = parseInt(totalFormsInput.value);
-
-    let templateHtml = document.getElementById(templateId).innerHTML;
-    templateHtml = templateHtml.replace(/__section_prefix__/g, sectionIndex).replace(/__prefix__/g, itemCount);
-
-    container.insertAdjacentHTML('beforeend', templateHtml);
-    totalFormsInput.value = itemCount + 1;
-    initSortable();
-}
-
-// حذف سکشن — toggle با opacity
-function removeSection(btn) {
-    const section = btn.closest('.section-item');
-    const deleteInput = section.querySelector('input[name$="-DELETE"]');
-    if (deleteInput) {
-        deleteInput.checked = !deleteInput.checked;
-        btn.classList.toggle('active', deleteInput.checked);
-        section.style.opacity = deleteInput.checked ? '0.4' : '1';
-    } else {
-        section.remove();
-    }
-}
-
-// حذف آیتم — toggle با opacity
-function removeItem(btn) {
-    const itemRow = btn.closest('.item-row');
-    const deleteInput = itemRow.querySelector('input[name$="-DELETE"]');
-    if (deleteInput) {
-        deleteInput.checked = !deleteInput.checked;
-        btn.classList.toggle('active', deleteInput.checked);
-        itemRow.style.opacity = deleteInput.checked ? '0.4' : '1';
-    } else {
-        itemRow.remove();
-    }
-}
-
-// ایجاد بلاک رابطه (استفاده برای دکمه "افزودن" و لود دیتای اولیه)
-// ایجاد بلاک رابطه (استفاده برای دکمه "افزودن" و لود دیتای اولیه)
-function createRelationshipBlock(sectionIndex, sectionBlock, operator = 'OR', linkedItems = []) {
-    const itemRows = sectionBlock.querySelectorAll('.item-row-helper');
-    let checkboxesHtml = '';
-    
-    // استانداردسازی مقدار اپراتور برای جلوگیری از مشکلات فاصله یا حروف کوچک/بزرگ
-    const safeOperator = String(operator).trim().toUpperCase();
-
-    itemRows.forEach(row => {
-        const deleteCheckbox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
-        if ((deleteCheckbox && deleteCheckbox.checked) || row.style.display === 'none') return;
-
-        const prefix = row.getAttribute('data-prefix');
-        const nameInput = row.querySelector('.item-name-input');
-        let itemName = nameInput ? (nameInput.value || 'آیتم جدید') : 'آیتم نامشخص';
-        const isChecked = linkedItems.includes(prefix);
-
-        checkboxesHtml += `
-            <label class="inline-flex items-center ml-4 mt-2 bg-white px-2 py-1 border rounded text-xs cursor-pointer hover:bg-amber-50">
-                <input type="checkbox" class="form-checkbox h-3 w-3 text-amber-600 relationship-item-checkbox" value="${prefix}" ${isChecked ? 'checked' : ''}>
-                <span class="mr-2 text-gray-700 truncate max-w-[150px]">${itemName}</span>
-            </label>
-        `;
-    });
-
-    return `
-        <div class="relationship-item-block border border-gray-200 p-3 bg-white rounded-lg shadow-sm relative">
-            <button type="button" onclick="this.closest('.relationship-item-block').remove()"
-              class="absolute top-2 left-2 flex items-center justify-center w-6 h-6 rounded border border-red-200 bg-red-50 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 text-xs transition-all">
-              <i class="fas fa-times"></i>
-            </button>
-            <div class="mb-2 flex items-center gap-2">
-                <label class="text-xs font-semibold text-gray-600">نوع رابطه:</label>
-                <select class="px-2 py-1 text-sm border border-gray-200 rounded bg-gray-50 relationship-operator-select">
-                    <option value="OR" ${safeOperator === 'OR' ? 'selected' : ''}>یا (OR)</option>
-                    <option value="AND" ${safeOperator === 'AND' ? 'selected' : ''}>و (AND)</option>
-                    <option value="THEN" ${safeOperator === 'THEN' ? 'selected' : ''}>سپس (THEN)</option>
-                </select>
-            </div>
-            <div class="text-xs text-gray-500 mb-1">کدام آیتم‌ها با هم در این رابطه قرار دارند؟ تیک بزنید:</div>
-            <div class="flex flex-wrap">
-                ${checkboxesHtml || '<span class="text-red-500 text-xs mt-1">هیچ آیتمی وجود ندارد!</span>'}
-            </div>
-        </div>
-    `;
-}
-
-
-// تابع متصل به دکمه "افزودن رابطه جدید"
-function addRelationship(sectionIndex, btnElement) {
-    const sectionBlock = btnElement.closest('.section-block');
-    const relList = document.getElementById(`relationships-list-${sectionIndex}`);
-    relList.insertAdjacentHTML('beforeend', createRelationshipBlock(sectionIndex, sectionBlock));
-}
-
-
-// مدیریت شرط‌ها
-function addCondition(sectionIndex, btnElement) {
-    const sectionBlock = btnElement.closest('.section-block');
-    const conditionsList = document.getElementById(`conditions-list-${sectionIndex}`);
-    const itemRows = sectionBlock.querySelectorAll('.item-row-helper');
-
-    let checkboxesHtml = '';
-
-    itemRows.forEach(row => {
-        const deleteCheckbox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
-        if ((deleteCheckbox && deleteCheckbox.checked) || row.style.display === 'none') return;
-
-        const prefix = row.getAttribute('data-prefix');
-        const nameInput = row.querySelector('.item-name-input');
-        let itemName = nameInput ? (nameInput.value || 'آیتم جدید') : 'آیتم نامشخص';
-
-        checkboxesHtml += `
-            <label class="inline-flex items-center ml-4 mt-2 bg-white px-2 py-1 border rounded text-xs cursor-pointer hover:bg-indigo-50">
-                <input type="checkbox" class="form-checkbox h-3 w-3 text-indigo-600 condition-item-checkbox" value="${prefix}">
-                <span class="mr-2 text-gray-700 truncate max-w-[150px]">${itemName}</span>
-            </label>
-        `;
-    });
-
-    const conditionHtml = `
-        <div class="condition-item-block border border-gray-200 p-3 bg-white rounded-lg shadow-sm relative">
-            <button type="button" onclick="this.closest('.condition-item-block').remove()"
-              class="absolute top-2 left-2 flex items-center justify-center w-6 h-6 rounded border border-red-200 bg-red-50 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 text-xs transition-all">
-              <i class="fas fa-times"></i>
-            </button>
-            <input type="text" class="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white condition-text-input mb-2" placeholder="متن شرط (مثال: در صورت تب بالای 38)">
-            <div class="text-xs text-gray-500 mb-1">کدام آیتم‌ها به این شرط مربوط هستند؟ تیک بزنید:</div>
-            <div class="flex flex-wrap">
-                ${checkboxesHtml || '<span class="text-red-500 text-xs mt-1">هیچ آیتمی در این بخش وجود ندارد! ابتدا آیتم اضافه کنید.</span>'}
-            </div>
-        </div>
-    `;
-
-    conditionsList.insertAdjacentHTML('beforeend', conditionHtml);
-}
-
-// رهگیری Submit
-document.getElementById('orderForm').addEventListener('submit', function(e) {
-    
-    // --- بخش جدید: بروزرسانی order_index ها قبل از ارسال فرم ---
-    const sectionItems = document.querySelectorAll('#sectionsContainer > .section-item');
-    sectionItems.forEach((section, sIndex) => {
-        // آپدیت ایندکس خود سکشن
-        const sectionOrderInput = section.querySelector('input[name$="-order_index"]');
-        if (sectionOrderInput) {
-            sectionOrderInput.value = sIndex;
-        }
-
-        // آپدیت ایندکس آیتم‌های متنی این سکشن
-        const textItems = section.querySelectorAll('.items-wrapper .item-row');
-        textItems.forEach((item, iIndex) => {
-            const itemOrderInput = item.querySelector('input[name$="-order_index"]');
-            if (itemOrderInput) itemOrderInput.value = iIndex;
-        });
-
-        // آپدیت ایندکس آیتم‌های دارویی این سکشن
-        const drugItems = section.querySelectorAll('.drugs-wrapper .item-row');
-        drugItems.forEach((drug, dIndex) => {
-            const drugOrderInput = drug.querySelector('input[name$="-order_index"]');
-            if (drugOrderInput) drugOrderInput.value = dIndex;
-        });
-    });
-    // -----------------------------------------------------------
-
-    // منطق قبلی شما برای مدیریت شرط‌ها
-    const conditionsSections = document.querySelectorAll('.conditions-wrapper');
-    conditionsSections.forEach(wrapper => {
-        const hiddenInput = wrapper.querySelector('input[type="hidden"]');
-        const conditionBlocks = wrapper.querySelectorAll('.condition-item-block');
-        let conditionsData = [];
-
-        conditionBlocks.forEach(block => {
-            const text = block.querySelector('.condition-text-input').value;
-            const checkedBoxes = block.querySelectorAll('.condition-item-checkbox:checked');
-            let items = [];
-            checkedBoxes.forEach(cb => items.push(cb.value));
-            if (text.trim() !== '' && items.length > 0) {
-                conditionsData.push({ text: text.trim(), items: items });
-            }
-        });
-
-        if(hiddenInput) {
-            hiddenInput.value = JSON.stringify(conditionsData);
-        }
-    });
-
-    // منطق جدید برای مدیریت روابط منطقی (AND/OR) قبل از ارسال
-    const relationshipsSections = document.querySelectorAll('.relationships-wrapper');
-    relationshipsSections.forEach(wrapper => {
-        const hiddenInput = wrapper.querySelector('input[type="hidden"]');
-        const relBlocks = wrapper.querySelectorAll('.relationship-item-block');
-        let relData = [];
-
-        relBlocks.forEach(block => {
-            const operator = block.querySelector('.relationship-operator-select').value;
-            const checkedBoxes = block.querySelectorAll('.relationship-item-checkbox:checked');
-            let items = [];
-            checkedBoxes.forEach(cb => items.push(cb.value));
-            
-            // رابطه فقط در صورتی ذخیره می‌شود که حداقل دو آیتم به هم مرتبط شده باشند
-            if (items.length > 1) {
-                relData.push({ operator: operator, items: items });
-            }
-        });
-
-        if(hiddenInput) {
-            hiddenInput.value = JSON.stringify(relData);
-        }
-    });
-});
-
-document.getElementById('addAlias')?.addEventListener('click', function() {
-    const container = document.getElementById('aliasesContainer');
-    const totalFormsInput = document.querySelector('input[name="aliases-TOTAL_FORMS"]');
-    const aliasCount = parseInt(totalFormsInput.value);
-
-    const newFormHtml = `
-        <div class="formset-item alias-form border border-gray-200 rounded-lg p-3 bg-gray-50" data-form-index="${aliasCount}">
-            <input type="hidden" name="aliases-${aliasCount}-id" id="id_aliases-${aliasCount}-id">
-                        
-            <div class="flex items-center justify-between mb-2">
-                <h4 class="text-xs font-medium text-gray-700">نام #${aliasCount + 1}</h4>
-                <button type="button" onclick="removeFormsetItem(this, 'alias')" class="text-red-600 hover:text-red-800 text-xs">
-                    <i class="fas fa-trash ml-1"></i>حذف
-                </button>
-            </div>
-            
-            <div class="space-y-2">
-                <div>
-                    <label class="block text-xs text-gray-500 mb-1">نام جایگزین</label>
-                    <input type="text" name="aliases-${aliasCount}-name" id="id_aliases-${aliasCount}-name" 
-                           class="${INPUT_CLASSES_RTL}" placeholder="نام جایگزین...">
-                </div>
-                <div class="flex items-center gap-2">
-                    <input type="checkbox" name="aliases-${aliasCount}-is_primary" id="id_aliases-${aliasCount}-is_primary" class="${CHECKBOX_CLASSES}">
-                    <label class="text-xs text-gray-700">نام اصلی</label>
-                </div>
-            </div>
-            
-            <div class="hidden">
-                <input type="checkbox" name="aliases-${aliasCount}-DELETE" id="id_aliases-${aliasCount}-DELETE">
-            </div>
-        </div>
-    `;
-
-    container.insertAdjacentHTML('beforeend', newFormHtml);
-    totalFormsInput.value = aliasCount + 1;
-});
-
-// حذف alias (با toggle مثل item/section)
-function removeFormsetItem(btn, type) {
-    const item = btn.closest('.formset-item');
-    const deleteInput = item.querySelector('input[name$="-DELETE"]');
-    if (deleteInput) {
-        deleteInput.checked = !deleteInput.checked;
-        btn.classList.toggle('active', deleteInput.checked);
-        item.style.opacity = deleteInput.checked ? '0.4' : '1';
-    } else {
-        item.remove();
-    }
-}
-
 </script>
+
 {% endblock %}
