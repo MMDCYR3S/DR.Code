@@ -24,10 +24,11 @@ class OrderSection(models.Model):
         verbose_name="عنوان Section",
         help_text='مثال: "Monitoring & nursing"، "Drugs"، "Imaging"'
     )
-    notes = models.TextField(
-        blank=True,
-        verbose_name="توضیحات کلی Section",
-        help_text="توضیحاتی که به کل Section مربوط است، نه به یک آیتم خاص"
+    notes = CKEditor5Field(
+        blank=True, 
+        verbose_name="توضیحات کلی Section", 
+        help_text="توضیحاتی که به کل Section مربوط است، نه به یک آیتم خاص",
+        config_name='default'
     )
     is_drug_section = models.BooleanField(
         default=False,

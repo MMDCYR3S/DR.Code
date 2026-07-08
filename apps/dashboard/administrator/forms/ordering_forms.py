@@ -111,7 +111,7 @@ class OrderSectionForm(forms.ModelForm):
         fields = ['title', 'notes', 'is_drug_section', 'order_index', 'color']
         widgets = {
             'title': forms.TextInput(attrs={'class': INPUT_CLASSES_LTR, 'placeholder': 'عنوان بخش...'}),
-            'notes': forms.Textarea(attrs={'class': INPUT_CLASSES_RTL, 'rows': 1}),
+            'notes': CKEditor5Widget(attrs={'class': 'django_ckeditor_5'}, config_name='default'),
             'is_drug_section': forms.CheckboxInput(attrs={'class': CHECKBOX_CLASSES}),
             'order_index': forms.NumberInput(attrs={'class': INPUT_CLASSES_LTR}),
             'color': forms.Select(attrs={'class': INPUT_CLASSES_LTR}),

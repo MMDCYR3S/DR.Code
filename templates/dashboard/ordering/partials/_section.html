@@ -1,29 +1,30 @@
 <style>
-  .section-drag-handle {
-    cursor: grab; color: #cbd5e1; font-size: 1rem;
-    padding: 0 4px; user-select: none; line-height: 1;
-  }
+  /* استایل‌های قبلی را اینجا نگه دارید */
+  .section-drag-handle { cursor: grab; color: #cbd5e1; font-size: 1rem; padding: 0 4px; user-select: none; line-height: 1; }
   .section-drag-handle:hover { color: #94a3b8; }
   .section-drag-handle:active { cursor: grabbing; }
 
-  .btn-delete-section {
-    display: flex; align-items: center; gap: 4px;
-    padding: 3px 8px; border-radius: 6px;
-    border: 1px solid #fecaca; background: #fff5f5;
-    color: #ef4444; font-size: 0.72rem; cursor: pointer;
-    transition: all .15s; white-space: nowrap;
-  }
-  .btn-delete-section:hover,
-  .btn-delete-section.active { background: #ef4444; color: #fff; border-color: #ef4444; }
+  .btn-delete-section { display: flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; border: 1px solid #fecaca; background: #fff5f5; color: #ef4444; font-size: 0.72rem; cursor: pointer; transition: all .15s; white-space: nowrap; }
+  .btn-delete-section:hover, .btn-delete-section.active { background: #ef4444; color: #fff; border-color: #ef4444; }
 
-  .item-drag-handle-braille {
-    cursor: grab; color: #cbd5e1; font-size: 1rem;
-    padding: 0 4px; user-select: none; line-height: 1;
-  }
-  .item-drag-handle-braille:hover { color: #94a3b8; }
+  /* استایل‌های آیتم‌ها */
+  .item-row { display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-bottom: 1px solid #f1f5f9; background: #fff; }
+  .item-row:nth-child(even) { background: #f8fafc; }
+  .item-row:hover { background: #f0f4ff; }
+  .item-row input[type="text"], .item-row textarea { font-size: 0.8rem; padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 6px; width: 100%; }
+  .item-braille-handle { cursor: grab; color: #cbd5e1; font-size: 1rem; padding: 0 4px; user-select: none; line-height: 1; }
+  .item-braille-handle:hover { color: #94a3b8; }
+  .item-braille-handle:active { cursor: grabbing; }
+  
+  .btn-delete-item { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; border: 1px solid #fecaca; background: #fff5f5; color: #ef4444; cursor: pointer; font-size: 0.75rem; flex-shrink: 0; transition: all .15s; }
+  .btn-delete-item:hover, .btn-delete-item.active { background: #ef4444; color: #fff; border-color: #ef4444; }
 </style>
 
-<div class="section-item section-block mb-5 rounded-xl border border-gray-200 shadow-sm overflow-hidden bg-white" data-section-index="{{ section_index }}">
+<!-- [تغییر] x-data برای کنترل پنل کشویی توضیحات -->
+<div class="section-item section-block mb-5 rounded-xl border border-gray-200 shadow-sm overflow-hidden bg-white" 
+     data-section-index="{{ section_index }}" 
+     x-data="{ showSectionNotes: false }">
+     
   {% for hidden in section_form.hidden_fields %}{{ hidden }}{% endfor %}
 
   <!-- Section Header -->
@@ -39,10 +40,15 @@
           <label class="text-xs text-gray-500 mb-1 block">رنگ</label>
           {{ section_form.color }}
         </div>
-        <div class="flex-1">
-          <label class="text-xs text-gray-500 mb-1 block">توضیحات</label>
-          {{ section_form.notes }}
+        
+        <!-- [تغییر] دکمه باز/بسته کردن پنل توضیحات -->
+        <div class="flex items-center gap-2 mt-4">
+          <button type="button" @click="showSectionNotes = !showSectionNotes" class="px-3 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-lg hover:bg-indigo-100 flex items-center gap-1.5 text-xs transition-colors">
+            <i class="fas fa-edit"></i>
+            <span x-text="showSectionNotes ? 'بستن توضیحات' : 'توضیحات بخش'"></span>
+          </button>
         </div>
+
         <div class="flex items-center gap-2 mt-4">
           <label class="flex items-center gap-1 text-xs text-gray-600">
             {{ section_form.is_drug_section }}<span class="mr-1">بخش دارویی؟</span>
@@ -50,11 +56,25 @@
         </div>
       </div>
     </div>
-    <button type="button" onclick="removeSection(this)"
-      class="btn-delete-section mr-3">
+    <button type="button" onclick="removeSection(this)" class="btn-delete-section mr-3">
       <i class="fas fa-trash-alt"></i><span>حذف بخش</span>
     </button>
   </div>
+
+  <!-- [جدید] پنل کشویی توضیحات سکشن (CKEditor) -->
+  <div x-show="showSectionNotes" x-transition style="display: none;">
+    <div class="p-4 border-b border-gray-200 bg-gray-50">
+        <label class="text-xs text-indigo-700 font-semibold mb-2 block">
+            <i class="fas fa-file-signature"></i> توضیحات کلی بخش
+        </label>
+        <div class="ckeditor-container w-full bg-white rounded-md">
+            {{ section_form.notes }}
+        </div>
+    </div>
+  </div>
+  <!-- پایان پنل کشویی -->
+
+  <!-- [حذف] بلاک مودال به طور کامل حذف شد -->
 
   <div style="display:none">
     {{ section_form.DELETE }}
@@ -64,7 +84,7 @@
   {{ item_fs.management_form }}
   {{ drug_fs.management_form }}
 
-  <!-- آیتم‌های متنی -->
+  <!-- آیتم‌های متنی (بدون تغییر) -->
   <div class="items-wrapper p-3">
     <div class="divide-y divide-gray-100 item-list" id="text-items-{{ section_index }}">
       {% for item_form in item_fs %}
@@ -79,7 +99,7 @@
     </div>
   </div>
 
-  <!-- آیتم‌های دارویی -->
+  <!-- آیتم‌های دارویی (بدون تغییر) -->
   <div class="drugs-wrapper p-3 {% if not section_form.is_drug_section.value %}hidden{% endif %}">
     <div class="divide-y divide-gray-100 item-list" id="drug-items-{{ section_index }}">
       {% for drug_form in drug_fs %}
@@ -94,27 +114,22 @@
     </div>
   </div>
 
-  <!-- روابط منطقی (AND/OR) بین آیتم‌ها -->
+  <!-- روابط منطقی (بدون تغییر) -->
   <div class="relationships-wrapper mx-3 mb-3 p-3 bg-amber-50 border border-amber-100 rounded-lg">
     <h6 class="text-xs font-semibold text-amber-800 mb-3 flex items-center gap-1">
       <i class="fas fa-link"></i> گروه‌بندی و روابط منطقی بین آیتم‌ها (اختیاری)
     </h6>
-    
-    <!-- اینجا روابط قبلی ذخیره‌شده از بک‌اند را با JS می‌خوانیم -->
     <div id="relationships-list-{{ section_index }}" class="mb-3 space-y-2 relationship-list-container" 
          data-initial="{{ relationship_groups|default:'[]' }}">
     </div>
-    
-    <button type="button"
-      class="text-xs text-amber-600 hover:text-amber-800 flex items-center gap-1 px-1"
+    <button type="button" class="text-xs text-amber-600 hover:text-amber-800 flex items-center gap-1 px-1"
       onclick="addRelationship('{{ section_index }}', this)">
       <i class="fas fa-plus"></i> افزودن رابطه جدید
     </button>
     <input type="hidden" name="section_relationships_{{ section_index }}" id="hidden-relationships-{{ section_index }}">
   </div>
 
-
-  <!-- شرط‌ها -->
+  <!-- شرط‌ها (بدون تغییر) -->
   <div class="conditions-wrapper mx-3 mb-3 p-3 bg-blue-50 border border-blue-100 rounded-lg">
     <h6 class="text-xs font-semibold text-blue-800 mb-3 flex items-center gap-1">
       <i class="fas fa-project-diagram"></i> شرط‌های گروهی این بخش
@@ -123,7 +138,7 @@
       {% for cond in existing_conditions %}
       <div class="condition-item-block border border-gray-200 p-3 bg-white rounded-lg shadow-sm relative">
         <button type="button" onclick="this.closest('.condition-item-block').remove()"
-          class="absolute top-2 left-2 flex items-center justify-content-center w-6 h-6 rounded border border-red-200 bg-red-50 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 text-xs transition-all">
+          class="absolute top-2 left-2 flex items-center justify-center w-6 h-6 rounded border border-red-200 bg-red-50 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 text-xs transition-all">
           <i class="fas fa-times"></i>
         </button>
         <input type="text"
@@ -134,8 +149,7 @@
       </div>
       {% endfor %}
     </div>
-    <button type="button"
-      class="text-xs text-green-600 hover:text-green-800 flex items-center gap-1 px-1"
+    <button type="button" class="text-xs text-green-600 hover:text-green-800 flex items-center gap-1 px-1"
       onclick="addCondition('{{ section_index }}', this)">
       <i class="fas fa-plus"></i>افزودن شرط جدید
     </button>
