@@ -185,3 +185,4 @@ cython_debug/
 venv
 
 
+db.sqlite3

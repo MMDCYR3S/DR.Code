@@ -1,11 +1,16 @@
 // =============================================================================
 // Order Detail Page — Alpine.js Controller
 // =============================================================================
-// تغییرات:
-// ① Dynamic Fields → نام «پیش‌بالینی» و جابجایی قبل از اوردر (در HTML)
-// ② Item numbering → item_number روی هر آیتم نمایش داده می‌شود
-// ③ ساختار API: sections[].relationship_groups[].text_items / drug_items
-// ④ groupItemsByCondition روی text_items و drug_items داخل هر relationship_group
+// نسخه: ۲.۰ — بازنویسی کامل فرانت
+//
+// تغییرات کلیدی:
+// ① تمامی API ها: base / disposition / dynamic-fields / sections
+// ② فیکس باگ رندر ungrouped_items و ungrouped_drug_items در sections
+// ③ نمایش aliases و primary_name
+// ④ سایدبار شناور قرص‌شکل با درخت قابل کلیک (scroll-to-section)
+// ⑤ پاپ‌آپ مرکزی بزرگ با blur به جای popover کوچک
+// ⑥ اگر فرزند محتوا نداشت → فلش و دراپ‌داون نیاد
+// ⑦ حفظ تمام امکانات: watermark, security, premium, save, share, copy slug, question
 // =============================================================================
 
 const ORDER_DEFAULT_COLOR = "#64748b";
@@ -26,19 +31,40 @@ function orderDetailApp() {
     questionText: "",
     questionSubmitting: false,
 
+    // مدال نمایش فیلد (متن بلند)
     fieldModal: { open: false, title: "", subtitle: "", content: "", isHtml: false },
 
     watermarkText: "drcode-med.ir",
 
+    // داده‌های API
     disposition: null,
     dynamicFields: null,
     media: null,
     sections: null,
 
-    activePopover: null,
-    popoverData: { title: "", content: "" },
-    popoverStyle: "",
-    popoverTheme: { style: "", iconTextStyle: "" },
+    // پاپ‌آپ مرکزی (جایگزین popover)
+    activePopup: null,
+    popupData: { title: "", content: "" },
+    popupTheme: { style: "", iconTextStyle: "" },
+
+    // سایدبار شناور
+    sidebarOpen: false,
+    activeSidebarSection: null,
+    activeAnchor: null,
+    sidebarTree: {
+      preclinical: [],
+      orderFields: [],
+      orderSections: [],
+      disposition: null,
+    },
+    expandedSidebarSections: {
+      preclinical: true,
+      order: true,
+      disposition: true,
+    },
+    _sidebarHoverTimer: null,
+    _sidebarLeaveTimer: null,
+    _scrollSpyHandler: null,
 
     showBackToTop: false,
 
@@ -65,16 +91,42 @@ function orderDetailApp() {
       await this.loadOrderBase(slug);
       this.initSecurityMeasures();
       this.initScrollListener();
+      this._setupScrollbarVar();
 
-      await this.loadDisposition(slug);
-      await this.loadDynamicFields(slug);
-      await this.loadSections(slug);
+      // بارگذاری موازی برای پرفورمنس بهتر
+      await Promise.all([
+        this.loadDisposition(slug),
+        this.loadDynamicFields(slug),
+        this.loadSections(slug),
+      ]);
+
+      // ساخت درخت سایدبار بعد از لود داده‌ها
+      this.$nextTick(() => {
+        this.buildSidebarTree();
+        this.autoExpandDisposition();
+        this.autoExpandDynamicFields();
+        this.initScrollSpy();
+      });
     },
 
     getSlugFromURL() {
       const path = window.location.pathname;
       const segments = path.split("/").filter(Boolean);
       return segments.length ? segments[segments.length - 1] : null;
+    },
+
+    // محاسبه عرض اسکرول‌بار برای جلوگیری از jump وقتی modal باز می‌شه
+    _setupScrollbarVar() {
+      const setVar = () => {
+        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+        document.documentElement.style.setProperty("--sbw", Math.max(0, scrollbarWidth) + "px");
+      };
+      setVar();
+      let resizeTimer;
+      window.addEventListener("resize", () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(setVar, 200);
+      }, { passive: true });
     },
 
     // ----- Data Loading -----
@@ -109,7 +161,6 @@ function orderDetailApp() {
     async loadDisposition(slug) {
       try {
         this.disposition = await API.ordering.getDisposition(slug);
-        this.autoExpandDisposition();
       } catch (e) {
         console.error("Error loading disposition tree:", e);
       }
@@ -118,7 +169,6 @@ function orderDetailApp() {
     async loadDynamicFields(slug) {
       try {
         this.dynamicFields = await API.ordering.getDynamicFields(slug);
-        this.autoExpandDynamicFields();
       } catch (e) {
         console.error("Error loading dynamic fields:", e);
       }
@@ -178,51 +228,220 @@ function orderDetailApp() {
       }
     },
 
-    // ----- Popover Management -----
-    togglePopover(event, id) {
-      event.stopPropagation();
-      event.preventDefault();
+    // ─────────────────────────────────────────────────────────────────────────
+    // سایدبار شناور — مدیریت باز/بسته شدن
+    // ─────────────────────────────────────────────────────────────────────────
 
-      if (this.activePopover === id) {
-        this.closePopover();
+    onSidebarEnter() {
+      // وقتی موس میره روی سایدبار
+      clearTimeout(this._sidebarLeaveTimer);
+      if (!this.sidebarOpen) {
+        // باز کردن با تاخیر کوتاه برای جلوگیری از باز شدن ناخواسته
+        this._sidebarHoverTimer = setTimeout(() => {
+          this.sidebarOpen = true;
+        }, 200);
+      }
+    },
+
+    onSidebarLeave() {
+      // وقتی موس از سایدبار خارج میشه
+      clearTimeout(this._sidebarHoverTimer);
+      this._sidebarLeaveTimer = setTimeout(() => {
+        this.sidebarOpen = false;
+      }, 300);
+    },
+
+    closeSidebar() {
+      this.sidebarOpen = false;
+    },
+
+    // باز/بسته کردن یک سکشن در سایدبار
+    toggleSidebarSection(section, forceOpen = false) {
+      if (forceOpen) this.sidebarOpen = true;
+      this.activeSidebarSection = this.activeSidebarSection === section && !forceOpen ? null : section;
+      this.expandedSidebarSections[section] = true;
+    },
+
+    // ساخت درخت سایدبار از روی داده‌های لود شده
+    buildSidebarTree() {
+      // پیش‌بالینی
+      this.sidebarTree.preclinical = (this.dynamicFields?.dynamic_field_groups || []).map(g => ({
+        id: g.id,
+        title: g.title,
+        nodes: (g.nodes || []).map(n => ({
+          id: n.id,
+          title: n.title,
+          children: (n.children || []).map(c => ({ id: c.id, title: c.title })),
+        })),
+      }));
+
+      // فیلدهای پایه اوردر
+      this.sidebarTree.orderFields = this.infoFields();
+
+      // بخش‌های اوردر
+      this.sidebarTree.orderSections = (this.sections?.sections || []).map(s => ({
+        id: s.id,
+        title: s.title,
+        color: isValidHexColor(s.color) ? s.color : ORDER_DEFAULT_COLOR,
+      }));
+
+      // تعیین تکلیف
+      if (this.disposition?.emergency_disposition) {
+        const disp = this.disposition.emergency_disposition;
+        this.sidebarTree.disposition = {
+          id: disp.id,
+          title: disp.title,
+          color: isValidHexColor(disp.color) ? disp.color : ORDER_DEFAULT_COLOR,
+          nodes: (disp.nodes || []).map(n => ({
+            id: n.id,
+            title: n.title,
+            children: (n.children || []).map(c => ({ id: c.id, title: c.title })),
+          })),
+        };
+      }
+
+      // انتخاب سکشن اول به‌صورت پیش‌فرض
+      if (this.sidebarTree.preclinical.length > 0) {
+        this.activeSidebarSection = "preclinical";
+      } else if (this.sidebarTree.orderFields.length > 0 || this.sidebarTree.orderSections.length > 0) {
+        this.activeSidebarSection = "order";
+      } else if (this.sidebarTree.disposition) {
+        this.activeSidebarSection = "disposition";
+      }
+    },
+
+    // اسکرول به یک anchor خاص
+    scrollToAnchor(anchorId) {
+      const el = document.getElementById(anchorId);
+      if (!el) {
+        // fallback: anchor های section-level
+        const map = {
+          "order-info": "anchor-order-info",
+          "order-sections": "anchor-order-sections",
+        };
+        if (map[anchorId]) {
+          const fallback = document.getElementById(map[anchorId]);
+          if (fallback) {
+            fallback.scrollIntoView({ behavior: "smooth", block: "start" });
+            this.activeAnchor = anchorId;
+          }
+        }
+        return;
+      }
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      this.activeAnchor = anchorId;
+    },
+
+    // scroll spy — تشخیص سکشن فعال بر اساس اسکرول
+    initScrollSpy() {
+      if (this._scrollSpyHandler) {
+        window.removeEventListener("scroll", this._scrollSpyHandler);
+      }
+
+      let ticking = false;
+      this._scrollSpyHandler = () => {
+        if (!ticking) {
+          requestAnimationFrame(() => {
+            this._updateActiveAnchor();
+            ticking = false;
+          });
+          ticking = true;
+        }
+      };
+      window.addEventListener("scroll", this._scrollSpyHandler, { passive: true });
+      this._scrollSpyHandler();
+    },
+
+    _updateActiveAnchor() {
+      const allAnchors = this._collectAllAnchors();
+      if (allAnchors.length === 0) return;
+
+      const scrollPos = window.scrollY + 150;
+      let current = allAnchors[0];
+      for (const a of allAnchors) {
+        if (a.top <= scrollPos) {
+          current = a;
+        } else {
+          break;
+        }
+      }
+      if (current) {
+        this.activeAnchor = current.id;
+      }
+    },
+
+    _collectAllAnchors() {
+      const ids = [];
+      // preclinical
+      (this.sidebarTree.preclinical || []).forEach(g => {
+        ids.push("df-group-" + g.id);
+        (g.nodes || []).forEach(n => {
+          ids.push("df-node-" + n.id);
+          (n.children || []).forEach(c => ids.push("df-child-" + c.id));
+        });
+      });
+      // order fields
+      (this.sidebarTree.orderFields || []).forEach(f => ids.push("field-" + f.key));
+      ids.push("order-info");
+      ids.push("order-sections");
+      // sections
+      (this.sidebarTree.orderSections || []).forEach(s => ids.push("section-" + s.id));
+      // disposition
+      if (this.sidebarTree.disposition) {
+        (this.sidebarTree.disposition.nodes || []).forEach(n => {
+          ids.push("disp-node-" + n.id);
+          (n.children || []).forEach(c => ids.push("disp-child-" + c.id));
+        });
+      }
+
+      const result = [];
+      for (const id of ids) {
+        const el = document.getElementById(id);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          const top = rect.top + window.scrollY;
+          result.push({ id, top });
+        }
+      }
+      result.sort((a, b) => a.top - b.top);
+      return result;
+    },
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // مدیریت پاپ‌آپ مرکزی (جایگزین popover)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    openPopup(event, id) {
+      if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+      }
+
+      // اگر روی همان آیتم کلیک شد، بسته شود
+      if (this.activePopup === id) {
+        this.closePopup();
         return;
       }
 
-      const data = this.findPopoverContent(id);
+      const data = this.findPopupContent(id);
       if (!data) return;
 
-      const rect = event.currentTarget.getBoundingClientRect();
-      const popoverWidth = 360;
-      const popoverEstHeight = 200;
-      const margin = 8;
-
-      let left = rect.right - popoverWidth;
-      if (left < margin) left = margin;
-      if (left + popoverWidth > window.innerWidth - margin) {
-        left = window.innerWidth - popoverWidth - margin;
-      }
-
-      let top = rect.bottom + margin;
-      if (top + popoverEstHeight > window.innerHeight - margin) {
-        top = rect.top - popoverEstHeight - margin;
-        if (top < margin) top = margin;
-      }
-
-      this.popoverStyle = `top: ${top}px; left: ${left}px;`;
-      this.popoverData = data;
-      this.popoverTheme = data.theme || { style: "", iconTextStyle: "" };
-      this.activePopover = id;
+      this.popupData = data;
+      this.popupTheme = data.theme || { style: "", iconTextStyle: "" };
+      this.activePopup = id;
+      document.body.classList.add("modal-open");
     },
 
-    closePopover() {
-      this.activePopover = null;
-      this.popoverData = { title: "", content: "" };
-      this.popoverStyle = "";
+    closePopup() {
+      this.activePopup = null;
+      this.popupData = { title: "", content: "" };
+      document.body.classList.remove("modal-open");
     },
 
-    // یافتن محتوای popover بر اساس ID
-    // ساختار جدید: sections[].relationship_groups[].text_items / drug_items
-    findPopoverContent(id) {
+    // یافتن محتوای پاپ‌آپ بر اساس ID
+    // ساختار API: sections[].relationship_groups[].text_items / drug_items
+    // + sections[].ungrouped_items / ungrouped_drug_items
+    findPopupContent(id) {
       // field-{key}
       if (id.startsWith("field-")) {
         const key = id.replace("field-", "");
@@ -232,7 +451,7 @@ function orderDetailApp() {
             title: "توضیحات: " + field.labelFa,
             content: field.notes || "",
             theme: {
-              style: `--theme-c: ${this.theme().color};`,
+              style: `--popup-c: ${this.theme().color};`,
               iconTextStyle: `color: ${this.theme().color};`,
             },
           };
@@ -249,29 +468,46 @@ function orderDetailApp() {
             title: "توضیحات بخش: " + section.title,
             content: section.notes || "",
             theme: {
-              style: `--section-c: ${color}; background: color-mix(in srgb, ${color} 6%, white);`,
-              iconTextStyle: `color: color-mix(in srgb, ${color} 72%, black);`,
+              style: `--popup-c: ${color};`,
+              iconTextStyle: `color: ${color};`,
             },
           };
         }
       }
 
-      // item-{id} — جستجو در relationship_groups[].text_items
+      // item-{id} — جستجو در relationship_groups[].text_items و ungrouped_items
       if (id.startsWith("item-") && this.sections?.sections) {
         const itemId = parseInt(id.replace("item-", ""));
         for (const section of this.sections.sections) {
-          if (!section.relationship_groups) continue;
-          for (const rg of section.relationship_groups) {
-            if (!rg.text_items) continue;
-            const item = rg.text_items.find(i => i.id === itemId);
+          // ۱. جستجو در relationship_groups[].text_items
+          if (section.relationship_groups) {
+            for (const rg of section.relationship_groups) {
+              if (!rg.text_items) continue;
+              const item = rg.text_items.find(i => i.id === itemId);
+              if (item) {
+                const color = isValidHexColor(section.color) ? section.color : ORDER_DEFAULT_COLOR;
+                return {
+                  title: "توضیحات آیتم" + (item.item_number ? " #" + item.item_number : ""),
+                  content: item.notes || "",
+                  theme: {
+                    style: `--popup-c: ${color};`,
+                    iconTextStyle: `color: ${color};`,
+                  },
+                };
+              }
+            }
+          }
+          // ۲. جستجو در ungrouped_items
+          if (section.ungrouped_items) {
+            const item = section.ungrouped_items.find(i => i.id === itemId);
             if (item) {
               const color = isValidHexColor(section.color) ? section.color : ORDER_DEFAULT_COLOR;
               return {
                 title: "توضیحات آیتم" + (item.item_number ? " #" + item.item_number : ""),
                 content: item.notes || "",
                 theme: {
-                  style: `--section-c: ${color}; background: color-mix(in srgb, ${color} 6%, white);`,
-                  iconTextStyle: `color: color-mix(in srgb, ${color} 72%, black);`,
+                  style: `--popup-c: ${color};`,
+                  iconTextStyle: `color: ${color};`,
                 },
               };
             }
@@ -279,22 +515,39 @@ function orderDetailApp() {
         }
       }
 
-      // drug-{id} — جستجو در relationship_groups[].drug_items
+      // drug-{id} — جستجو در relationship_groups[].drug_items و ungrouped_drug_items
       if (id.startsWith("drug-") && this.sections?.sections) {
         const drugId = parseInt(id.replace("drug-", ""));
         for (const section of this.sections.sections) {
-          if (!section.relationship_groups) continue;
-          for (const rg of section.relationship_groups) {
-            if (!rg.drug_items) continue;
-            const drug = rg.drug_items.find(d => d.id === drugId);
+          // ۱. جستجو در relationship_groups[].drug_items
+          if (section.relationship_groups) {
+            for (const rg of section.relationship_groups) {
+              if (!rg.drug_items) continue;
+              const drug = rg.drug_items.find(d => d.id === drugId);
+              if (drug) {
+                const color = isValidHexColor(section.color) ? section.color : ORDER_DEFAULT_COLOR;
+                return {
+                  title: "توضیحات دارو: " + (drug.drug?.title || ""),
+                  content: drug.notes || "",
+                  theme: {
+                    style: `--popup-c: ${color};`,
+                    iconTextStyle: `color: ${color};`,
+                  },
+                };
+              }
+            }
+          }
+          // ۲. جستجو در ungrouped_drug_items
+          if (section.ungrouped_drug_items) {
+            const drug = section.ungrouped_drug_items.find(d => d.id === drugId);
             if (drug) {
               const color = isValidHexColor(section.color) ? section.color : ORDER_DEFAULT_COLOR;
               return {
                 title: "توضیحات دارو: " + (drug.drug?.title || ""),
                 content: drug.notes || "",
                 theme: {
-                  style: `--section-c: ${color}; background: color-mix(in srgb, ${color} 6%, white);`,
-                  iconTextStyle: `color: color-mix(in srgb, ${color} 72%, black);`,
+                  style: `--popup-c: ${color};`,
+                  iconTextStyle: `color: ${color};`,
                 },
               };
             }
@@ -310,13 +563,60 @@ function orderDetailApp() {
           title: "توضیحات: " + (disp.title || ""),
           content: disp.notes || "",
           theme: {
-            style: `--df-c: ${color}; background: color-mix(in srgb, ${color} 6%, white);`,
-            iconTextStyle: `color: color-mix(in srgb, ${color} 72%, black);`,
+            style: `--popup-c: ${color};`,
+            iconTextStyle: `color: ${color};`,
           },
         };
       }
 
+      // dfgroup-{id} — توضیحات گروه در dynamic fields
+      if (id.startsWith("dfgroup-") && this.dynamicFields?.dynamic_field_groups) {
+        const groupId = parseInt(id.replace("dfgroup-", ""));
+        const group = this.dynamicFields.dynamic_field_groups.find(g => g.id === groupId);
+        if (group) {
+          const color = isValidHexColor(group.color) ? group.color : ORDER_DEFAULT_COLOR;
+          return {
+            title: "توضیحات گروه: " + (group.title || ""),
+            content: group.notes || "",
+            theme: {
+              style: `--popup-c: ${color};`,
+              iconTextStyle: `color: ${color};`,
+            },
+          };
+        }
+      }
+
       return null;
+    },
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // قانون: اگر فرزند محتوا نداشت → فلش و دراپ‌داون نیاد
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // برای nodes در dynamic-fields: محتوا دارد اگر content یا children داشته باشد
+    hasNodeContent(node) {
+      if (!node) return false;
+      const hasContent = node.content && String(node.content).trim() !== "";
+      const hasChildren = node.children && node.children.length > 0;
+      return hasContent || hasChildren;
+    },
+
+    // برای children در dynamic-fields: محتوا دارد اگر content داشته باشد
+    hasChildContent(child) {
+      if (!child) return false;
+      return child.content && String(child.content).trim() !== "";
+    },
+
+    // برای nodes در disposition: محتوا دارد اگر children داشته باشد
+    hasDispositionContent(node) {
+      if (!node) return false;
+      return node.children && node.children.length > 0;
+    },
+
+    // برای children در disposition: محتوا دارد اگر content داشته باشد
+    hasDispositionChildContent(child) {
+      if (!child) return false;
+      return child.content && String(child.content).trim() !== "";
     },
 
     // back-to-top
@@ -443,7 +743,7 @@ function orderDetailApp() {
 
     // ─────────────────────────────────────────────────────────────────────────
     // groupItemsByCondition
-    // ورودی: آرایه‌ای از text_items یا drug_items (داخل یک relationship_group)
+    // ورودی: آرایه‌ای از text_items یا drug_items
     // خروجی: گروه‌بندی براساس condition
     // ─────────────────────────────────────────────────────────────────────────
     groupItemsByCondition(items) {
@@ -485,6 +785,7 @@ function orderDetailApp() {
         subtitle: field.labelEn,
         content: field.value || "",
       };
+      document.body.classList.add("modal-open");
     },
 
     showNotesModal() {
@@ -494,11 +795,13 @@ function orderDetailApp() {
         subtitle: "",
         content: this.order?.notes || "",
       };
+      document.body.classList.add("modal-open");
     },
 
     closeFieldModal() {
       this.fieldModal.open = false;
       this.fieldModal.isHtml = false;
+      document.body.classList.remove("modal-open");
     },
 
     // ----- Actions -----
@@ -714,8 +1017,14 @@ function orderDetailApp() {
           return false;
         }
 
-        if (e.key === "Escape" && this.activePopover) {
-          this.closePopover();
+        if (e.key === "Escape") {
+          if (this.activePopup) {
+            this.closePopup();
+          } else if (this.fieldModal.open) {
+            this.closeFieldModal();
+          } else if (this.sidebarOpen) {
+            this.closeSidebar();
+          }
         }
       });
     },

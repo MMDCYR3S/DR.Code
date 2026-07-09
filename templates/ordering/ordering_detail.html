@@ -8,22 +8,15 @@
 [x-cloak] { display: none !important; }
 
 /* ============================================================
-   🛡️ قوانین حفاظت محتوا
+   🛡️ Content Protection (preserved)
    ============================================================ */
 @media print {
-    body {
-        display: none !important;
-        visibility: hidden !important;
-    }
+    body { display: none !important; visibility: hidden !important; }
     body::before {
         content: "چاپ این محتوا مجاز نیست";
-        display: block;
-        text-align: center;
-        font-size: 24px;
-        padding: 50px;
+        display: block; text-align: center; font-size: 24px; padding: 50px;
     }
 }
-
 * {
     user-select: none !important;
     -webkit-user-select: none !important;
@@ -31,86 +24,262 @@
     -ms-user-select: none !important;
     -webkit-touch-callout: none !important;
 }
-
 img, a, button {
     -webkit-user-drag: none !important;
     user-drag: none !important;
 }
-
 ::selection { background: transparent !important; color: inherit !important; }
 ::-moz-selection { background: transparent !important; color: inherit !important; }
 
 /* ============================================================
-   🎨 سیستم پزشکی اورژانسی
+   🎨 MEDICAL PRO — Refined Design System
+   Inspired by best Figma medical dashboards (MedMe, Doctus, Pillcast)
+   Soft, premium, native-app feel. Desktop-first, mobile-friendly.
    ============================================================ */
 
+/* ---- Foundation tokens ---- */
+:root {
+    --mp-font: "Vazirmatn", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --mp-mono: "JetBrains Mono", "SF Mono", "Courier New", monospace;
+
+    --mp-bg: #f6f8fb;
+    --mp-surface: #ffffff;
+    --mp-surface-2: #fafbfd;
+    --mp-border: rgba(15, 23, 42, 0.06);
+    --mp-border-strong: rgba(15, 23, 42, 0.10);
+    --mp-ink-900: #0b1220;
+    --mp-ink-700: #1e293b;
+    --mp-ink-500: #475569;
+    --mp-ink-400: #64748b;
+    --mp-ink-300: #94a3b8;
+    --mp-ink-200: #cbd5e1;
+
+    --mp-radius-xs: 8px;
+    --mp-radius-sm: 10px;
+    --mp-radius-md: 14px;
+    --mp-radius-lg: 18px;
+    --mp-radius-xl: 22px;
+    --mp-radius-2xl: 28px;
+
+    --mp-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --mp-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 2px 8px rgba(15, 23, 42, 0.04);
+    --mp-shadow-md: 0 2px 4px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
+    --mp-shadow-lg: 0 4px 8px rgba(15, 23, 42, 0.05), 0 16px 48px rgba(15, 23, 42, 0.10);
+    --mp-shadow-glow: 0 8px 32px color-mix(in srgb, var(--theme-c, #0ea5e9) 28%, transparent);
+
+    --mp-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --mp-ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+
+    --mp-rail-w: 76px;
+}
+
+/* ---- Page background — subtle ambient gradients (native app feel) ---- */
 .order-page-bg {
     background:
-        radial-gradient(1400px 700px at 100% -10%, color-mix(in srgb, var(--theme-c, #64748b) 5%, transparent), transparent 60%),
-        radial-gradient(1100px 600px at -10% 110%, color-mix(in srgb, var(--theme-c, #64748b) 4%, transparent), transparent 60%),
-        #f8fafc;
+        radial-gradient(900px 480px at 100% -5%, color-mix(in srgb, var(--theme-c, #0ea5e9) 7%, transparent), transparent 60%),
+        radial-gradient(900px 480px at -5% 105%, color-mix(in srgb, var(--theme-c, #0ea5e9) 5%, transparent), transparent 60%),
+        linear-gradient(180deg, #f6f8fb 0%, #eef2f7 100%);
     min-height: 100vh;
+    background-attachment: fixed;
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+body.modal-open {
+    overflow: hidden !important;
+    padding-right: var(--sbw, 0px);
+}
+
+/* Reading progress bar (top, native-app feel) */
+.mp-progress-rail {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    z-index: 60;
+    background: transparent;
+    pointer-events: none;
+}
+.mp-progress-rail::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: scaleX(var(--mp-progress, 0));
+    transform-origin: right center;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--theme-c, #0ea5e9) 80%, black), var(--theme-c, #0ea5e9));
+    transition: transform 0.15s linear;
+    box-shadow: 0 0 12px color-mix(in srgb, var(--theme-c, #0ea5e9) 60%, transparent);
 }
 
 /* ============================================================
-   ۱) هدر اوردر
+   1) HEADER — Glass, sticky, hierarchical
    ============================================================ */
 .order-header {
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04), 0 6px 20px rgba(15, 23, 42, 0.04);
+    top: 0;
+    z-index: 40;
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02), 0 8px 28px rgba(15, 23, 42, 0.04);
 }
+.order-header::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        color-mix(in srgb, var(--theme-c, #0ea5e9) 80%, black) 30%,
+        var(--theme-c, #0ea5e9) 50%,
+        color-mix(in srgb, var(--theme-c, #0ea5e9) 80%, black) 70%,
+        transparent 100%);
+    opacity: 0.85;
+}
+
+.mp-header-row1 {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.875rem;
+    margin-bottom: 1.25rem;
+}
+
+.mp-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.95rem 0.5rem 0.75rem;
+    background: white;
+    border: 1px solid var(--mp-border);
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    color: var(--mp-ink-700);
+    text-decoration: none;
+    transition: all 0.2s var(--mp-ease);
+    box-shadow: var(--mp-shadow-xs);
+}
+.mp-back-btn:hover {
+    background: var(--mp-surface-2);
+    color: var(--mp-ink-900);
+    transform: translateX(-2px);
+    box-shadow: var(--mp-shadow-sm);
+}
+.mp-back-btn .mp-back-icon {
+    width: 22px; height: 22px;
+    border-radius: 999px;
+    display: flex; align-items: center; justify-content: center;
+    background: color-mix(in srgb, var(--theme-c, #0ea5e9) 12%, white);
+    color: color-mix(in srgb, var(--theme-c, #0ea5e9) 75%, black);
+    font-size: 0.65rem;
+}
+
+.mp-meta-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
 
 .category-badge {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
     padding: 0.4rem 0.875rem;
-    border-radius: 9999px;
-    font-weight: 600;
+    border-radius: 999px;
+    font-weight: 700;
     font-size: 0.75rem;
     color: white !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.10);
+    letter-spacing: 0;
 }
 
 .slug-chip {
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
-    padding: 0.375rem 0.75rem;
-    background: #f1f5f9;
-    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    background: var(--mp-surface);
+    border: 1px solid var(--mp-border);
+    border-radius: 999px;
     font-size: 0.7rem;
-    font-weight: 600;
-    color: #475569;
-    font-family: 'Courier New', monospace;
-    transition: background 0.15s ease;
+    font-weight: 700;
+    color: var(--mp-ink-700);
+    font-family: var(--mp-mono);
+    transition: all 0.18s var(--mp-ease);
     cursor: pointer;
-    border: 1px solid transparent;
+    box-shadow: var(--mp-shadow-xs);
 }
-.slug-chip:hover { background: #e2e8f0; }
+.slug-chip:hover {
+    background: var(--mp-surface-2);
+    border-color: color-mix(in srgb, var(--theme-c, #0ea5e9) 30%, white);
+    color: color-mix(in srgb, var(--theme-c, #0ea5e9) 75%, black);
+}
 
+.alias-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    background: color-mix(in srgb, var(--theme-c, #0ea5e9) 8%, white);
+    color: color-mix(in srgb, var(--theme-c, #0ea5e9) 78%, black);
+    border: 1px solid color-mix(in srgb, var(--theme-c, #0ea5e9) 22%, white);
+    transition: all 0.18s var(--mp-ease);
+}
+.alias-chip.is-primary {
+    background: color-mix(in srgb, var(--theme-c, #0ea5e9) 16%, white);
+    color: color-mix(in srgb, var(--theme-c, #0ea5e9) 90%, black);
+    border-color: color-mix(in srgb, var(--theme-c, #0ea5e9) 42%, white);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-c, #0ea5e9) 20%, transparent);
+}
+.alias-chip:hover { transform: translateY(-1px); }
+
+/* ---- Header title block ---- */
+.mp-title-block { display: flex; align-items: flex-start; gap: 0.875rem; margin-bottom: 1rem; }
+.mp-title-dot {
+    width: 14px; height: 14px;
+    border-radius: 999px;
+    margin-top: 0.7rem;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--theme-c, #0ea5e9) 14%, transparent),
+                0 4px 10px color-mix(in srgb, var(--theme-c, #0ea5e9) 35%, transparent);
+}
+.mp-title-text { flex: 1; min-width: 0; }
+.mp-title-text h1 {
+    font-size: clamp(1.6rem, 3.5vw, 2.25rem);
+    font-weight: 900;
+    color: var(--mp-ink-900);
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+    margin: 0;
+}
+.mp-aliases-row {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+/* ---- Header action buttons ---- */
 .btn-action {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.55rem 1.125rem;
-    border-radius: 10px;
-    font-weight: 600;
+    gap: 0.45rem;
+    padding: 0.6rem 1.1rem;
+    border-radius: 12px;
+    font-weight: 700;
     font-size: 0.8125rem;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    transition: all 0.2s var(--mp-ease);
     cursor: pointer;
     border: 1px solid transparent;
     white-space: nowrap;
+    box-shadow: var(--mp-shadow-xs);
 }
+.btn-action:active { transform: scale(0.97); }
 .btn-save {
     background: white;
-    color: #334155;
-    border: 1px solid #e2e8f0;
+    color: var(--mp-ink-700);
+    border: 1px solid var(--mp-border);
 }
-.btn-save:hover { background: #f8fafc; }
+.btn-save:hover { background: var(--mp-surface-2); transform: translateY(-1px); box-shadow: var(--mp-shadow-sm); }
 .btn-save.saved {
     background: color-mix(in srgb, var(--theme-c) 12%, white);
     color: color-mix(in srgb, var(--theme-c) 80%, black);
@@ -118,261 +287,298 @@ img, a, button {
 }
 .btn-outline {
     background: white;
-    color: #475569;
-    border: 1px solid #e2e8f0;
+    color: var(--mp-ink-500);
+    border: 1px solid var(--mp-border);
 }
-.btn-outline:hover { background: #f8fafc; }
-.btn-primary-cta { color: white; }
-.btn-primary-cta:hover { opacity: 0.92; }
+.btn-outline:hover { background: var(--mp-surface-2); color: var(--mp-ink-900); transform: translateY(-1px); }
+.btn-primary-cta {
+    color: white;
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--theme-c) 32%, transparent);
+}
+.btn-primary-cta:hover { transform: translateY(-1px); box-shadow: 0 12px 28px color-mix(in srgb, var(--theme-c) 40%, transparent); }
 
-.btn-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.9rem;
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 0.8125rem;
-    color: #334155;
-    text-decoration: none;
-    transition: background 0.15s ease;
-}
-.btn-back:hover { background: #f8fafc; color: #0f172a; }
+.btn-back { display: none; } /* legacy — replaced by .mp-back-btn */
 
 /* ============================================================
-   ۲) سکشن‌های اصلی
+   2) MAIN SECTIONS
    ============================================================ */
 .main-section {
     background: white;
-    border-radius: 18px;
-    border: 1px solid rgba(15, 23, 42, 0.06);
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 4px 16px rgba(15, 23, 42, 0.04);
+    border-radius: var(--mp-radius-xl);
+    border: 1px solid var(--mp-border);
+    box-shadow: var(--mp-shadow-sm);
+    scroll-margin-top: 100px;
+    position: relative;
+    overflow: hidden;
+}
+.main-section::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--theme-c, #0ea5e9) 50%, transparent), transparent);
+    opacity: 0.6;
 }
 
 .section-title {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 0.25rem;
+    gap: 0.875rem;
+    margin-bottom: 0.5rem;
 }
 .section-title-icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 11px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-c, #0ea5e9) 16%, transparent);
+    position: relative;
+}
+.section-title-icon::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255,255,255,0.35), transparent);
+    pointer-events: none;
 }
 .section-title-text {
-    font-size: 1.125rem;
-    font-weight: 700;
-    color: #0f172a;
-    letter-spacing: -0.01em;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--mp-ink-900);
+    letter-spacing: -0.018em;
+    line-height: 1.2;
 }
 .section-subtitle {
-    font-size: 0.8125rem;
-    color: #64748b;
-    margin-top: 0.125rem;
+    font-size: 0.825rem;
+    color: var(--mp-ink-400);
+    margin-top: 0.2rem;
+    font-weight: 500;
 }
 
 /* ============================================================
-   ۳) Description زیر اسم اوردر
+   3) Description card
    ============================================================ */
 .order-description-card {
     background:
         linear-gradient(135deg,
-            color-mix(in srgb, var(--theme-c) 6%, white) 0%,
+            color-mix(in srgb, var(--theme-c) 7%, white) 0%,
             color-mix(in srgb, var(--theme-c) 2%, white) 100%);
-    border: 1px solid color-mix(in srgb, var(--theme-c) 18%, white);
-    border-radius: 14px;
+    border: 1px solid color-mix(in srgb, var(--theme-c) 20%, white);
+    border-radius: var(--mp-radius-md);
     overflow: hidden;
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--theme-c) 8%, transparent);
 }
 .order-description-header {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.625rem 1rem;
-    border-bottom: 1px solid color-mix(in srgb, var(--theme-c) 12%, white);
+    padding: 0.7rem 1.125rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--theme-c) 14%, white);
     font-size: 0.7rem;
-    font-weight: 700;
+    font-weight: 800;
     color: color-mix(in srgb, var(--theme-c) 78%, black);
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
 }
 .order-description-body {
-    padding: 0.875rem 1.125rem;
-    color: #1e293b;
-    line-height: 1.85;
+    padding: 1rem 1.25rem;
+    color: var(--mp-ink-700);
+    line-height: 1.9;
     font-size: 0.9375rem;
 }
 
 /* ============================================================
-   ۴) فیلدهای داخل سکشن
+   4) Field rows
    ============================================================ */
 .fields-group {
     background: white;
-    border-radius: 14px;
-    border: 1px solid rgba(15, 23, 42, 0.07);
+    border-radius: var(--mp-radius-md);
+    border: 1px solid var(--mp-border);
     overflow: visible;
 }
 .field-row {
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid rgba(15, 23, 42, 0.05);
+    padding: 1.05rem 1.35rem;
+    border-bottom: 1px solid var(--mp-border);
     position: relative;
+    scroll-margin-top: 100px;
+    transition: background 0.18s var(--mp-ease);
 }
+.field-row:hover { background: color-mix(in srgb, var(--theme-c, #0ea5e9) 1.5%, white); }
 .field-row:last-child { border-bottom: none; }
 .field-row.is-wide {
-    background: color-mix(in srgb, var(--theme-c) 1.5%, white);
+    background: color-mix(in srgb, var(--theme-c) 2.5%, white);
+}
+.field-row.is-wide:hover {
+    background: color-mix(in srgb, var(--theme-c) 4%, white);
 }
 
 .field-row-label-en {
-    font-size: 0.8125rem;
-    font-weight: 700;
-    color: #0f172a;
-    letter-spacing: 0.01em;
+    font-size: 0.825rem;
+    font-weight: 800;
+    color: var(--mp-ink-900);
+    letter-spacing: 0.005em;
 }
 .field-row-label-fa {
-    font-size: 0.6875rem;
-    color: #94a3b8;
-    font-weight: 500;
-    margin-top: 0.0625rem;
+    font-size: 0.7rem;
+    color: var(--mp-ink-300);
+    font-weight: 600;
+    margin-top: 0.1rem;
 }
 .field-row-value {
-    color: #1e293b;
-    line-height: 1.85;
-    font-size: 0.9375rem;
-    margin-top: 0.625rem;
+    color: var(--mp-ink-700);
+    line-height: 1.9;
+    font-size: 0.95rem;
+    margin-top: 0.7rem;
 }
 .field-row-value.is-primary {
-    font-size: 1rem;
-    font-weight: 700;
+    font-size: 1.05rem;
+    font-weight: 800;
     color: color-mix(in srgb, var(--theme-c) 80%, black);
+    line-height: 1.7;
 }
 
 .field-icon-box {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 40px; height: 40px;
+    border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-c, #0ea5e9) 14%, transparent);
 }
 
 /* ============================================================
-   ۵) پاپ‌آپ‌ها
+   5) Info trigger (popup opener)
    ============================================================ */
 .info-trigger {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 30px; height: 30px;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
-    color: #94a3b8;
+    color: var(--mp-ink-300);
     background: transparent;
     border: 1px solid transparent;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition: all 0.18s var(--mp-ease);
     cursor: pointer;
 }
 .info-trigger:hover {
-    background: #f1f5f9;
-    color: #475569;
+    background: color-mix(in srgb, var(--theme-c, #0ea5e9) 10%, white);
+    color: color-mix(in srgb, var(--theme-c, #0ea5e9) 75%, black);
+    transform: scale(1.08);
 }
 .info-trigger.is-open {
-    background: color-mix(in srgb, var(--theme-c, #64748b) 12%, white);
-    color: color-mix(in srgb, var(--theme-c, #64748b) 78%, black);
-}
-
-.popover-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 9990;
-    background: transparent;
-}
-
-.popover {
-    position: fixed;
-    z-index: 9995;
-    background: white;
-    border-radius: 14px;
-    border: 1px solid rgba(15, 23, 42, 0.1);
-    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
-    overflow: hidden;
-    width: 360px;
-    max-width: calc(100vw - 32px);
-}
-.popover-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    padding: 0.625rem 0.875rem;
-    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-}
-.popover-header-title {
-    font-size: 0.75rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-}
-.popover-close {
-    width: 22px;
-    height: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    color: #94a3b8;
-    cursor: pointer;
-    background: transparent;
-    border: none;
-}
-.popover-close:hover { background: #f1f5f9; color: #475569; }
-.popover-body {
-    padding: 0.875rem 1rem;
-    font-size: 0.8125rem;
-    color: #334155;
-    line-height: 1.85;
-    max-height: 320px;
-    overflow-y: auto;
+    background: color-mix(in srgb, var(--theme-c, #0ea5e9) 14%, white);
+    color: color-mix(in srgb, var(--theme-c, #0ea5e9) 78%, black);
 }
 
 /* ============================================================
-   ۶) سکشن‌های داخلی (sections) — با شماره‌گذاری آیتم
+   6) Center Modal (Blur)
+   ============================================================ */
+.popup-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9990;
+    background: rgba(15, 23, 42, 0.42);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+.popup-center {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9995;
+    background: white;
+    border-radius: var(--mp-radius-2xl);
+    border: 1px solid var(--mp-border);
+    box-shadow: 0 40px 100px rgba(15, 23, 42, 0.30),
+                0 0 0 1px rgba(255,255,255,0.6) inset;
+    overflow: hidden;
+    width: min(640px, calc(100vw - 32px));
+    max-height: min(82vh, 760px);
+    display: flex;
+    flex-direction: column;
+}
+.popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--mp-border);
+    background: color-mix(in srgb, var(--popup-c, var(--theme-c, #0ea5e9)) 5%, white);
+}
+.popup-header-title {
+    font-size: 1rem;
+    font-weight: 800;
+    display: flex; align-items: center; gap: 0.7rem;
+    color: color-mix(in srgb, var(--popup-c, var(--theme-c, #0ea5e9)) 82%, black);
+    letter-spacing: -0.012em;
+}
+.popup-header-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    background: color-mix(in srgb, var(--popup-c, var(--theme-c, #0ea5e9)) 14%, white);
+    color: color-mix(in srgb, var(--popup-c, var(--theme-c, #0ea5e9)) 75%, black);
+    flex-shrink: 0;
+}
+.popup-close {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 10px;
+    color: var(--mp-ink-300);
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    transition: all 0.18s var(--mp-ease);
+}
+.popup-close:hover { background: var(--mp-bg); color: var(--mp-ink-700); }
+.popup-body {
+    padding: 1.3rem 1.6rem;
+    font-size: 0.9375rem;
+    color: var(--mp-ink-700);
+    line-height: 2;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* ============================================================
+   7) Section blocks (groups inside main sections)
    ============================================================ */
 .section-block {
     background: white;
-    border-radius: 16px;
-    border: 1px solid rgba(15, 23, 42, 0.07);
+    border-radius: var(--mp-radius-lg);
+    border: 1px solid var(--mp-border);
     overflow: hidden;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    box-shadow: var(--mp-shadow-sm);
+    scroll-margin-top: 100px;
 }
 .section-block-header {
-    padding: 0.875rem 1.125rem;
+    padding: 1rem 1.25rem;
     color: white;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
+    position: relative;
+}
+.section-block-header::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.18), transparent);
+    pointer-events: none;
 }
 .section-block-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 9px;
-    background: rgba(255, 255, 255, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.22);
+    backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.10), inset 0 0 0 1px rgba(255,255,255,0.18);
 }
 .section-block-body {
-    padding: 1rem;
+    padding: 1.05rem;
     background: color-mix(in srgb, var(--section-c) 2%, white);
 }
 
@@ -381,13 +587,14 @@ img, a, button {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    padding: 0.2rem 0.6rem;
-    border-radius: 6px;
+    padding: 0.25rem 0.65rem;
+    border-radius: 7px;
     font-size: 0.625rem;
     font-weight: 800;
-    font-family: 'Courier New', monospace;
-    letter-spacing: 0.04em;
+    font-family: var(--mp-mono);
+    letter-spacing: 0.06em;
     flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
 }
 .operator-badge.op-or {
     background: color-mix(in srgb, #f59e0b 18%, white);
@@ -398,7 +605,7 @@ img, a, button {
     color: color-mix(in srgb, #3b82f6 80%, black);
 }
 
-/* divider بین relationship groups */
+/* divider between relationship groups */
 .group-divider {
     display: flex;
     align-items: center;
@@ -411,7 +618,7 @@ img, a, button {
     background: color-mix(in srgb, var(--section-c) 16%, white);
 }
 
-/* آیتم‌ها */
+/* Items list */
 .items-list {
     background: white;
     border-radius: 12px;
@@ -419,125 +626,129 @@ img, a, button {
     overflow: hidden;
 }
 .item-row {
-    padding: 0.75rem 1rem;
+    padding: 0.8rem 1.05rem;
     border-bottom: 1px solid color-mix(in srgb, var(--section-c) 7%, white);
     display: flex;
     align-items: flex-start;
-    gap: 0.75rem;
+    gap: 0.8rem;
+    transition: background 0.15s var(--mp-ease);
 }
+.item-row:hover { background: color-mix(in srgb, var(--section-c) 3%, white); }
 .item-row:last-child { border-bottom: none; }
 
-/* شماره آیتم */
 .item-number-badge {
-    min-width: 26px;
-    height: 26px;
-    border-radius: 7px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.6875rem;
+    min-width: 28px; height: 28px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem;
     font-weight: 800;
-    font-family: 'Courier New', monospace;
+    font-family: var(--mp-mono);
     flex-shrink: 0;
-    margin-top: 0.0625rem;
+    margin-top: 0.05rem;
+    box-shadow: 0 2px 4px color-mix(in srgb, var(--section-c) 14%, transparent);
 }
 
-/* بلوک شرط */
+/* Condition box */
 .condition-box {
     display: flex;
     align-items: flex-start;
-    gap: 0.5rem;
-    padding: 0.625rem 0.875rem;
-    border-radius: 10px;
+    gap: 0.55rem;
+    padding: 0.7rem 0.95rem;
+    border-radius: 11px;
     background: color-mix(in srgb, var(--section-c) 8%, white);
     border: 1px solid color-mix(in srgb, var(--section-c) 22%, white);
-    margin-bottom: 0.625rem;
+    margin-bottom: 0.65rem;
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--section-c) 8%, transparent);
 }
 .if-chip {
     font-size: 0.625rem;
     font-weight: 800;
-    padding: 0.125rem 0.4rem;
-    border-radius: 4px;
+    padding: 0.15rem 0.45rem;
+    border-radius: 5px;
     background: color-mix(in srgb, var(--section-c) 22%, white);
     color: color-mix(in srgb, var(--section-c) 85%, black);
-    font-family: 'Courier New', monospace;
+    font-family: var(--mp-mono);
     flex-shrink: 0;
-    margin-top: 0.125rem;
+    margin-top: 0.15rem;
+    letter-spacing: 0.05em;
 }
 
-/* کارت دارو */
+/* Drug row */
 .drug-row {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
+    gap: 0.8rem;
+    padding: 0.8rem 1.05rem;
     border-bottom: 1px solid color-mix(in srgb, var(--section-c) 7%, white);
+    transition: background 0.15s var(--mp-ease);
 }
+.drug-row:hover { background: color-mix(in srgb, var(--section-c) 3%, white); }
 .drug-row:last-child { border-bottom: none; }
 .drug-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 9px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
+    box-shadow: 0 2px 6px color-mix(in srgb, var(--section-c) 14%, transparent);
 }
 
 /* ============================================================
-   ۷) Disposition Tree و Dynamic Fields (پیش‌بالینی)
+   8) Disposition tree & Dynamic Fields
    ============================================================ */
 .tree-card {
     background: white;
-    border-radius: 12px;
+    border-radius: 14px;
     border: 1px solid color-mix(in srgb, var(--df-c) 22%, white);
     overflow: hidden;
+    scroll-margin-top: 100px;
+    box-shadow: var(--mp-shadow-xs);
+    transition: box-shadow 0.2s var(--mp-ease);
 }
+.tree-card:hover { box-shadow: var(--mp-shadow-sm); }
 .tree-node-btn {
     width: 100%;
-    padding: 0.875rem 1rem;
+    padding: 0.95rem 1.05rem;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.8rem;
     text-align: right;
     background: color-mix(in srgb, var(--df-c) 3%, white);
-    transition: background 0.15s ease;
+    transition: background 0.18s var(--mp-ease);
     cursor: pointer;
     border: none;
     font-family: inherit;
 }
-.tree-node-btn:hover {
-    background: color-mix(in srgb, var(--df-c) 6%, white);
-}
+.tree-node-btn:hover { background: color-mix(in srgb, var(--df-c) 6%, white); }
 .tree-child-card {
     background: white;
-    border-radius: 10px;
+    border-radius: 11px;
     border: 1px solid color-mix(in srgb, var(--df-c) 22%, white);
     overflow: hidden;
+    scroll-margin-top: 100px;
+    transition: box-shadow 0.18s var(--mp-ease);
 }
+.tree-child-card:hover { box-shadow: var(--mp-shadow-xs); }
 .tree-child-row {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
+    gap: 0.8rem;
+    padding: 0.8rem 1rem;
     cursor: pointer;
-    transition: background 0.15s ease;
+    transition: background 0.18s var(--mp-ease);
 }
-.tree-child-row:hover {
-    background: color-mix(in srgb, var(--df-c) 3%, white);
-}
+.tree-child-row:hover { background: color-mix(in srgb, var(--df-c) 3%, white); }
 
 .content-toggle {
     display: inline-flex;
     align-items: center;
-    gap: 0.375rem;
-    padding: 0.3rem 0.625rem;
-    border-radius: 7px;
+    gap: 0.4rem;
+    padding: 0.32rem 0.7rem;
+    border-radius: 8px;
     font-size: 0.7rem;
-    font-weight: 600;
+    font-weight: 700;
     background: color-mix(in srgb, var(--df-c) 14%, white);
     color: color-mix(in srgb, var(--df-c) 78%, black);
-    transition: background 0.15s ease;
+    transition: all 0.18s var(--mp-ease);
     border: none;
     cursor: pointer;
     flex-shrink: 0;
@@ -545,90 +756,471 @@ img, a, button {
 }
 .content-toggle:hover {
     background: color-mix(in srgb, var(--df-c) 22%, white);
+    transform: translateY(-1px);
 }
 
 .child-content {
-    padding: 0.875rem 1rem;
+    padding: 0.95rem 1.05rem;
     border-top: 1px solid color-mix(in srgb, var(--df-c) 14%, white);
     background: color-mix(in srgb, var(--df-c) 2%, white);
 }
 
 /* ============================================================
-   ۸) هشدار قانونی
+   9) Legal warning
    ============================================================ */
 .warning-box {
-    background: linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%);
+    background:
+        linear-gradient(135deg, #fff5f5 0%, #fff8f8 60%, #fffdf5 100%);
     border: 1px solid #fecaca;
     border-right: 4px solid #dc2626;
-    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.06);
+    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.08);
+    position: relative;
+    overflow: hidden;
+}
+.warning-box::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(400px 200px at 0% 0%, rgba(220, 38, 38, 0.06), transparent 70%);
+    pointer-events: none;
 }
 .warning-icon {
     background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+    box-shadow: 0 6px 16px rgba(220, 38, 38, 0.28);
 }
 
 /* ============================================================
-   ۹) مدال
-   ============================================================ */
-.modal-backdrop {
-    background: rgba(15, 23, 42, 0.55);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-}
-.modal-card {
-    background: white;
-    border-radius: 18px;
-    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
-}
-
-/* ============================================================
-   ۱۰) Floating Buttons
+   10) Floating buttons
    ============================================================ */
 .floating-q-btn {
-    box-shadow: 0 8px 24px color-mix(in srgb, var(--theme-c) 35%, transparent);
-    transition: opacity 0.2s ease;
+    box-shadow: 0 12px 32px color-mix(in srgb, var(--theme-c) 38%, transparent);
+    transition: all 0.25s var(--mp-ease);
 }
-.floating-q-btn:hover { opacity: 0.92; }
+.floating-q-btn:hover { transform: translateY(-3px); box-shadow: 0 16px 40px color-mix(in srgb, var(--theme-c) 45%, transparent); }
 
 .back-to-top-btn {
     background: white;
-    border: 1px solid rgba(15, 23, 42, 0.1);
-    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
-    transition: background 0.15s ease, opacity 0.2s ease;
-    color: #475569;
+    border: 1px solid var(--mp-border);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    transition: all 0.2s var(--mp-ease);
+    color: var(--mp-ink-500);
 }
 .back-to-top-btn:hover {
-    background: #f8fafc;
-    color: #0f172a;
+    background: var(--mp-surface-2);
+    color: var(--mp-ink-900);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
 }
 
 /* ============================================================
-   ۱۱) Watermark
+   11) Watermark
    ============================================================ */
 #order-protected-watermark { pointer-events: none !important; }
 
 /* ============================================================
-   ۱۲) Responsive
+   🎯 12) THE NEW SIDEBAR — Premium icon rail + drawer
+   (Desktop: vertical rail, expands on hover; Mobile: FAB → bottom sheet)
    ============================================================ */
+.mp-rail {
+    position: fixed;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    z-index: 45;
+    display: flex;
+    align-items: stretch;
+    pointer-events: none;
+    height: min(560px, 78vh);
+}
+
+/* ---- Rail (always-visible icon column) ---- */
+.mp-rail-pill {
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 0.45rem;
+    margin-right: 0.5rem;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    border: 1px solid rgba(15, 23, 42, 0.07);
+    border-radius: 2rem;
+    box-shadow: 0 12px 36px rgba(15, 23, 42, 0.14),
+                0 0 0 1px rgba(255,255,255,0.6) inset;
+    transition: all 0.35s var(--mp-ease);
+    max-height: 15rem;
+    
+}
+
+
+.mp-rail-btn {
+    width: 46px; height: 46px;
+    border-radius: 999px;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--mp-ink-400);
+    cursor: pointer;
+    transition: all 0.25s var(--mp-ease);
+    position: relative;
+    flex-shrink: 0;
+}
+.mp-rail-btn:hover {
+    background: color-mix(in srgb, var(--btn-c, #0ea5e9) 12%, white);
+    color: color-mix(in srgb, var(--btn-c, #0ea5e9) 78%, black);
+    transform: scale(1.08);
+}
+.mp-rail-btn.is-active {
+    background: var(--btn-c, #0ea5e9);
+    color: white;
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--btn-c, #0ea5e9) 40%, transparent),
+                0 0 0 4px color-mix(in srgb, var(--btn-c, #0ea5e9) 14%, transparent);
+}
+.mp-rail-btn.is-disabled { opacity: 0.35; cursor: not-allowed; }
+.mp-rail-btn.is-disabled:hover { background: transparent; color: var(--mp-ink-400); transform: none; }
+
+/* Active pulse dot under button */
+.mp-rail-btn.is-active::before {
+    content: "";
+    position: absolute;
+    bottom: -3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 5px; height: 5px;
+    border-radius: 999px;
+    background: var(--btn-c, #0ea5e9);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--btn-c, #0ea5e9) 25%, transparent);
+    animation: mpPulse 1.6s ease-in-out infinite;
+}
+@keyframes mpPulse {
+    0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(1); }
+    50% { opacity: 1; transform: translateX(-50%) scale(1.2); }
+}
+
+/* Tooltip */
+.mp-rail-btn::after {
+    content: attr(data-tip);
+    position: absolute;
+    right: calc(100% + 12px);
+    top: 50%;
+    transform: translateY(-50%) translateX(8px);
+    background: rgba(11, 18, 32, 0.96);
+    color: white;
+    padding: 0.3rem 0.7rem;
+    border-radius: 7px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+}
+.mp-rail-btn:hover::after {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+}
+
+/* ---- Drawer panel (slides out from rail) ---- */
+.mp-rail-drawer {
+    pointer-events: auto;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(22px) saturate(180%);
+    -webkit-backdrop-filter: blur(22px) saturate(180%);
+    border: 1px solid rgba(15, 23, 42, 0.07);
+    border-radius: 1.5rem;
+    box-shadow: -16px 12px 48px rgba(15, 23, 42, 0.16),
+                0 0 0 1px rgba(255,255,255,0.55) inset;
+    width: 340px;
+    max-width: 82vw;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    margin-right: 1.2rem;
+    transform: translateX(110%);
+    opacity: 0;
+    transition: transform 0.4s var(--mp-ease), opacity 0.3s ease;
+}
+.mp-rail.is-open .mp-rail-drawer {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.mp-rail-drawer-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--mp-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    background: color-mix(in srgb, var(--theme-c, #0ea5e9) 4%, white);
+    position: relative;
+    direction: rtl !important;
+}
+.mp-rail-drawer-header::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--theme-c, #0ea5e9) 60%, transparent), transparent);
+}
+.mp-rail-drawer-title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: color-mix(in srgb, var(--theme-c, #0ea5e9) 85%, black);
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    letter-spacing: -0.012em;
+}
+.mp-rail-drawer-close {
+    width: 30px; height: 30px;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--mp-ink-300);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.18s var(--mp-ease);
+}
+.mp-rail-drawer-close:hover { background: var(--mp-bg); color: var(--mp-ink-700); }
+
+.mp-rail-drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.625rem 0.625rem 0.875rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(15, 23, 42, 0.18) transparent;
+}
+.mp-rail-drawer-body::-webkit-scrollbar { width: 6px; }
+.mp-rail-drawer-body::-webkit-scrollbar-track { background: transparent; }
+.mp-rail-drawer-body::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.16);
+    border-radius: 3px;
+}
+.mp-rail-drawer-body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); }
+
+/* Section group inside drawer */
+.fp-tree-section {
+    margin-bottom: 0.25rem;
+    border-radius: 14px;
+    overflow: hidden;
+}
+.fp-tree-section-head {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.7rem 0.85rem;
+    cursor: pointer;
+    transition: background 0.18s var(--mp-ease);
+    border-radius: 11px;
+    user-select: none;
+}
+.fp-tree-section-head:hover { background: color-mix(in srgb, var(--sec-c, #0ea5e9) 8%, white); }
+.fp-tree-section-head.is-active { background: color-mix(in srgb, var(--sec-c, #0ea5e9) 14%, white); }
+.fp-tree-section-icon {
+    width: 30px; height: 30px;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--sec-c, #0ea5e9);
+    color: white;
+    flex-shrink: 0;
+    font-size: 0.78rem;
+    box-shadow: 0 4px 10px color-mix(in srgb, var(--sec-c, #0ea5e9) 30%, transparent);
+}
+.fp-tree-section-title {
+    flex: 1;
+    font-size: 0.825rem;
+    font-weight: 700;
+    color: var(--mp-ink-900);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    letter-spacing: -0.008em;
+}
+.fp-tree-section-count {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--mp-ink-400);
+    background: var(--mp-bg);
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    flex-shrink: 0;
+}
+.fp-tree-section-chevron {
+    color: var(--mp-ink-300);
+    font-size: 0.65rem;
+    transition: transform 0.25s var(--mp-ease);
+    flex-shrink: 0;
+}
+.fp-tree-section-head.is-expanded .fp-tree-section-chevron { transform: rotate(180deg); }
+
+.fp-tree-children {
+    padding: 0.3rem 0 0.45rem 0;
+    margin-right: 1.05rem;
+    border-right: 2px solid color-mix(in srgb, var(--sec-c, #0ea5e9) 18%, white);
+}
+
+.fp-tree-node {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.45rem 0.7rem;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: background 0.18s var(--mp-ease);
+    user-select: none;
+    margin-top: 0.15rem;
+}
+.fp-tree-node:hover { background: color-mix(in srgb, var(--sec-c, #0ea5e9) 7%, white); }
+.fp-tree-node.is-active {
+    background: color-mix(in srgb, var(--sec-c, #0ea5e9) 16%, white);
+    box-shadow: inset 3px 0 0 var(--sec-c, #0ea5e9);
+}
+.fp-tree-node-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--sec-c, #0ea5e9) 70%, white);
+    flex-shrink: 0;
+}
+.fp-tree-node-text {
+    flex: 1;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--mp-ink-500);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.4;
+}
+.fp-tree-node.is-active .fp-tree-node-text {
+    color: color-mix(in srgb, var(--sec-c, #0ea5e9) 85%, black);
+    font-weight: 700;
+}
+
+.fp-tree-sub {
+    margin-right: 1rem;
+    border-right: 1.5px dashed color-mix(in srgb, var(--sec-c, #0ea5e9) 18%, white);
+    padding-right: 0.3rem;
+}
+.fp-tree-sub .fp-tree-node { padding-right: 0.55rem; }
+.fp-tree-sub .fp-tree-node-dot {
+    width: 5px; height: 5px;
+    background: transparent;
+    border: 1.5px solid color-mix(in srgb, var(--sec-c, #0ea5e9) 60%, white);
+}
+
+/* ---- Mobile FAB for sidebar ---- */
+.mp-rail-mobile-fab {
+    display: none;
+    position: fixed;
+    bottom: 1.25rem;
+    left: 1.25rem;
+    z-index: 45;
+    width: 54px; height: 54px;
+    border-radius: 999px;
+    background: var(--theme-c, #0ea5e9);
+    color: white;
+    border: none;
+    box-shadow: 0 12px 28px color-mix(in srgb, var(--theme-c, #0ea5e9) 42%, transparent);
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    cursor: pointer;
+    transition: all 0.25s var(--mp-ease);
+}
+.mp-rail-mobile-fab:active { transform: scale(0.92); }
+.mp-rail-mobile-fab.is-open { transform: rotate(90deg); }
+
+/* Mobile bottom sheet backdrop */
+.mp-mobile-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 44;
+    background: rgba(11, 18, 32, 0.42);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+.mp-mobile-backdrop.is-open { display: block; }
+
+/* ============================================================
+   13) Responsive
+   ============================================================ */
+@media (max-width: 1024px) {
+    .mp-rail { display: none; }
+    .mp-rail-mobile-fab { display: flex; }
+    .mp-rail.is-open { display: flex; }
+}
+
 @media (max-width: 768px) {
-    .btn-action {
-        width: 100%;
-        justify-content: center;
+    .btn-action { width: 100%; justify-content: center; }
+    .section-block-body { padding: 0.85rem; }
+    .field-row { padding: 0.95rem 1.05rem; }
+    .item-row { padding: 0.7rem 0.9rem; }
+    .mp-header-row1 { flex-direction: column; align-items: stretch; }
+    .mp-meta-chips { justify-content: flex-start; }
+    .mp-title-text h1 { font-size: 1.5rem; }
+
+    /* Mobile bottom sheet */
+    .mp-rail {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        right: 0;
+        left: 0;
+        transform: none;
+        height: auto;
+        max-height: 78vh;
+        flex-direction: column;
     }
-    .section-block-body { padding: 0.75rem; }
-    .field-row { padding: 0.875rem 1rem; }
-    .item-row { padding: 0.625rem 0.875rem; }
+    .mp-rail-pill {
+        display: none;
+    }
+    .mp-rail.is-open .mp-rail-drawer {
+        display: flex;
+    }
+    .mp-rail-drawer {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 22px 22px 0 0;
+        margin-right: 0;
+        max-height: 78vh;
+        transform: translateY(110%);
+        transition: transform 0.4s var(--mp-ease);
+    }
+    .mp-rail.is-open .mp-rail-drawer {
+        transform: translateY(0);
+    }
+    .mp-rail-drawer::before {
+        content: "";
+        display: block;
+        width: 44px; height: 4px;
+        background: var(--mp-ink-200);
+        border-radius: 999px;
+        margin: 0.55rem auto 0;
+        flex-shrink: 0;
+    }
+    .mp-rail-drawer-header { padding-top: 0.75rem; }
 }
 
 /* ============================================================
-   ۱۳) تم رنگی داینامیک
+   14) Theme color system (preserved & enhanced)
    ============================================================ */
-.dyn-dot { background-color: var(--theme-c); }
+.dyn-dot {
+    background-color: var(--theme-c);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-c) 18%, transparent);
+}
 .dyn-gradient {
     background: linear-gradient(135deg,
         color-mix(in srgb, var(--theme-c) 92%, black) 0%,
-        color-mix(in srgb, var(--theme-c) 64%, black) 100%);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+        color-mix(in srgb, var(--theme-c) 62%, black) 100%);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.20);
 }
 .dyn-gradient-text {
     background: linear-gradient(90deg, var(--theme-c) 0%, color-mix(in srgb, var(--theme-c) 60%, black) 100%);
@@ -647,13 +1239,13 @@ img, a, button {
 .dyn-header-accent { border-color: var(--theme-c); }
 .dyn-primary-btn   { background-color: var(--theme-c); }
 .dyn-primary-btn:hover { background-color: color-mix(in srgb, var(--theme-c) 85%, black); }
-.dyn-glow { box-shadow: 0 8px 28px color-mix(in srgb, var(--theme-c) 30%, transparent); }
+.dyn-glow { box-shadow: 0 12px 32px color-mix(in srgb, var(--theme-c) 30%, transparent); }
 
 .dsec-gradient {
     background: linear-gradient(135deg,
         color-mix(in srgb, var(--section-c) 92%, black) 0%,
-        color-mix(in srgb, var(--section-c) 64%, black) 100%);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+        color-mix(in srgb, var(--section-c) 62%, black) 100%);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.20);
 }
 .dsec-soft-bg       { background-color: color-mix(in srgb, var(--section-c) 4%, white); }
 .dsec-soft-border   { border-color: color-mix(in srgb, var(--section-c) 22%, white); }
@@ -671,8 +1263,8 @@ img, a, button {
 .ddf-gradient {
     background: linear-gradient(135deg,
         color-mix(in srgb, var(--df-c) 92%, black) 0%,
-        color-mix(in srgb, var(--df-c) 64%, black) 100%);
-    text-shadow: 0 1px 2px rgba(0,0,0,0.18);
+        color-mix(in srgb, var(--df-c) 62%, black) 100%);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.20);
 }
 .ddf-soft-bg      { background-color: color-mix(in srgb, var(--df-c) 5%, white); }
 .ddf-soft-border  { border-color:     color-mix(in srgb, var(--df-c) 22%, white); }
@@ -691,11 +1283,44 @@ img, a, button {
 .ck-content h2 { font-size: 1.25rem; font-weight: 700; margin: 0.75rem 0 0.25rem; }
 .ck-content ol, .ck-content ul { padding-right: 1.25rem; margin: 0.5rem 0; }
 .ck-content li { margin-bottom: 0.25rem; font-size: 0.9rem; }
+
+/* Smooth native-app scroll */
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* Hide native scrollbar but keep functionality on body */
+body::-webkit-scrollbar { width: 10px; }
+body::-webkit-scrollbar-track { background: transparent; }
+body::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.18);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); background-clip: padding-box; }
+
+/* Safe area for notched phones */
+@supports (padding: max(0px)) {
+    .mp-rail-mobile-fab {
+        bottom: max(5rem, env(safe-area-inset-bottom));
+        right: max(1.5rem, env(safe-area-inset-left));
+    }
+    .floating-q-btn, .back-to-top-btn {
+        bottom: max(1.5rem, env(safe-area-inset-bottom)) !important;
+    }
+}
 </style>
 
 <div x-data="orderDetailApp()" x-init="init()"
      class="order-page-bg min-h-screen"
-     :style="theme().style">
+     :style="theme().style"
+     @scroll.window.throttle.150ms="mpProgress = Math.min(1, $event.target.scrollingElement.scrollTop / ($event.target.scrollingElement.scrollHeight - window.innerHeight))">
+
+    <!-- Reading progress (top) -->
+    <div class="mp-progress-rail" :style="`--mp-progress: ${mpProgress || 0}`"></div>
 
     <!-- ⏳ Loading State -->
     <div x-show="loading" class="max-w-7xl mx-auto px-4 py-12">
@@ -712,13 +1337,13 @@ img, a, button {
         <header class="order-header">
             <div class="max-w-7xl mx-auto px-4 sm:px-5 lg:px-6 py-5">
 
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
-                    <a href="/orders" class="btn-back">
-                        <i class="fas fa-arrow-right text-xs"></i>
+                <div class="mp-header-row1">
+                    <a href="/ordering" class="mp-back-btn">
+                        <span class="mp-back-icon"><i class="fas fa-arrow-right"></i></span>
                         <span>همه اوردرها</span>
                     </a>
 
-                    <div class="flex flex-wrap items-center gap-2">
+                    <div class="mp-meta-chips">
                         <span class="category-badge" :class="order?.category?.color_code">
                             <i class="fas fa-folder text-[10px]"></i>
                             <span x-text="order?.category?.title"></span>
@@ -733,10 +1358,28 @@ img, a, button {
                 </div>
 
                 <div class="mb-5">
-                    <div class="flex items-start gap-3">
-                        <span class="w-3 h-3 rounded-full flex-shrink-0 mt-3" :class="theme().dot" :title="'تم رنگی: ' + theme().name"></span>
-                        <div class="flex-1 min-w-0">
-                            <h1 class="text-3xl sm:text-4xl font-black text-gray-900 leading-tight" x-text="order?.name"></h1>
+                    <div class="mp-title-block">
+                        <span class="mp-title-dot dyn-dot" :title="'تم رنگی: ' + theme().name"></span>
+                        <div class="mp-title-text">
+                            <h1 x-text="order?.name"></h1>
+
+                            <template x-if="order?.aliases && order.aliases.length > 0">
+                                <div class="mp-aliases-row">
+                                    <span class="text-[11px] font-bold text-gray-500 ml-1 inline-flex items-center gap-1">
+                                        <i class="fas fa-tags text-[9px]"></i>نام‌های مستعار:
+                                    </span>
+                                    <template x-for="alias in order.aliases" :key="alias.id">
+                                        <span class="alias-chip"
+                                              :class="alias.is_primary ? 'is-primary' : ''"
+                                              :title="alias.is_primary ? 'نام اصلی' : ''">
+                                            <template x-if="alias.is_primary">
+                                                <i class="fas fa-star text-[8px]"></i>
+                                            </template>
+                                            <span x-text="alias.name"></span>
+                                        </span>
+                                    </template>
+                                </div>
+                            </template>
 
                             <template x-if="order?.notes && order.notes.trim() !== ''">
                                 <div class="order-description-card mt-4">
@@ -769,6 +1412,12 @@ img, a, button {
                         <span>اشتراک‌گذاری</span>
                     </button>
 
+                    <!-- <button @click="toggleSave()" class="btn-action btn-save"
+                            :class="isSaved ? 'saved' : ''">
+                        <i class="fas text-xs" :class="isSaved ? 'fa-bookmark' : 'fa-bookmark'"></i>
+                        <span x-text="isSaved ? 'ذخیره شده' : 'ذخیره اوردر'"></span>
+                    </button> -->
+
                     <button @click="scrollToQuestion()" class="btn-action btn-primary-cta" :class="theme().gradient">
                         <i class="fas fa-question-circle text-xs"></i>
                         <span>پرسش سوال</span>
@@ -797,10 +1446,248 @@ img, a, button {
              x-transition:leave-start="opacity-100 translate-y-0"
              x-transition:leave-end="opacity-0 translate-y-2">
             <button x-show="showBackToTop" @click="scrollToTop()"
-                class="back-to-top-btn w-11 h-11 rounded-full flex items-center justify-center p-2"
+                class="back-to-top-btn w-12 h-12 rounded-full flex items-center justify-center p-2"
                 title="بازگشت به بالا">
                 <i class="fas fa-arrow-up text-sm"></i>
             </button>
+        </div>
+
+        <!-- ===== NEW SIDEBAR (Desktop rail + Mobile bottom sheet) ===== -->
+        <!-- Mobile FAB -->
+        <button class="mp-rail-mobile-fab"
+                x-show="!loading"
+                :class="sidebarOpen ? 'is-open' : ''"
+                :style="`background: ${theme().color};`"
+                @click="sidebarOpen ? closeSidebar() : toggleSidebarSection('order', true)"
+                title="فهرست اوردر">
+            <i class="fas" :class="sidebarOpen ? 'fa-times' : 'fa-list-ul'"></i>
+        </button>
+        <div class="mp-mobile-backdrop" :class="sidebarOpen ? 'is-open' : ''" @click="closeSidebar()"></div>
+
+        <div class="mp-rail"
+             :class="sidebarOpen ? 'is-open' : ''"
+             x-show="!loading"
+             dir="ltr"
+             x-cloak
+             @mouseenter="onSidebarEnter()"
+             @mouseleave="onSidebarLeave()">
+
+            <!-- Drawer -->
+            <div class="mp-rail-drawer">
+                <div class="mp-rail-drawer-header">
+                    <span class="mp-rail-drawer-title">
+                        <i class="fas fa-list-tree text-xs"></i>
+                        <span>فهرست اوردر</span>
+                    </span>
+                    <button @click="closeSidebar()" class="mp-rail-drawer-close" title="بستن">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                </div>
+                <div class="mp-rail-drawer-body" dir="rtl">
+                    <!-- ۱. پیش‌بالینی -->
+                    <template x-if="sidebarTree.preclinical && sidebarTree.preclinical.length > 0">
+                        <div class="fp-tree-section" :style="`--sec-c: ${theme().color};`">
+                            <div class="fp-tree-section-head"
+                                 :class="(expandedSidebarSections.preclinical && activeSidebarSection === 'preclinical') ? 'is-expanded' : ''"
+                                 @click="toggleSidebarSection('preclinical')">
+                                <div class="fp-tree-section-icon" :style="`background: ${theme().color};`">
+                                    <i class="fas fa-stethoscope"></i>
+                                </div>
+                                <span class="fp-tree-section-title">پیش‌بالینی</span>
+                                <span class="fp-tree-section-count" x-text="sidebarTree.preclinical.length + ' گروه'"></span>
+                                <i class="fas fa-chevron-down fp-tree-section-chevron"></i>
+                            </div>
+                            <template x-if="activeSidebarSection === 'preclinical'">
+                                <div class="fp-tree-children">
+                                    <template x-for="group in sidebarTree.preclinical" :key="'pc-g-' + group.id">
+                                        <div>
+                                            <div class="fp-tree-node"
+                                                 :class="activeAnchor === 'df-group-' + group.id ? 'is-active' : ''"
+                                                 @click="scrollToAnchor('df-group-' + group.id)">
+                                                <span class="fp-tree-node-dot"></span>
+                                                <span class="fp-tree-node-text" x-text="group.title || '(بدون عنوان)'"></span>
+                                            </div>
+                                            <template x-if="group.nodes && group.nodes.length > 0">
+                                                <div class="fp-tree-sub">
+                                                    <template x-for="node in group.nodes" :key="'pc-n-' + node.id">
+                                                        <div>
+                                                            <div class="fp-tree-node"
+                                                                 :class="activeAnchor === 'df-node-' + node.id ? 'is-active' : ''"
+                                                                 @click="scrollToAnchor('df-node-' + node.id)">
+                                                                <span class="fp-tree-node-dot"></span>
+                                                                <span class="fp-tree-node-text" x-text="node.title || '(بدون عنوان)'"></span>
+                                                            </div>
+                                                            <template x-if="node.children && node.children.length > 0">
+                                                                <div class="fp-tree-sub">
+                                                                    <template x-for="child in node.children" :key="'pc-c-' + child.id">
+                                                                        <div class="fp-tree-node"
+                                                                             :class="activeAnchor === 'df-child-' + child.id ? 'is-active' : ''"
+                                                                             :style="hasChildContent(child) ? '' : 'opacity: 0.5; cursor: default;'"
+                                                                             @click="hasChildContent(child) ? scrollToAnchor('df-child-' + child.id) : scrollToAnchor('df-node-' + node.id)">
+                                                                            <span class="fp-tree-node-dot"></span>
+                                                                            <span class="fp-tree-node-text" x-text="child.title || '(بدون عنوان)'"></span>
+                                                                        </div>
+                                                                    </template>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
+                    <!-- ۲. اوردر (اطلاعات پایه + بخش‌ها) -->
+                    <div class="fp-tree-section" :style="`--sec-c: ${theme().color};`">
+                        <div class="fp-tree-section-head"
+                             :class="(activeSidebarSection === 'order') ? 'is-expanded' : ''"
+                             @click="toggleSidebarSection('order')">
+                            <div class="fp-tree-section-icon" :style="`background: ${theme().color};`">
+                                <i class="fas fa-clipboard-list"></i>
+                            </div>
+                            <span class="fp-tree-section-title">اوردر</span>
+                            <span class="fp-tree-section-count" x-text="(sidebarTree.orderFields.length + sidebarTree.orderSections.length) + ' مورد'"></span>
+                            <i class="fas fa-chevron-down fp-tree-section-chevron"></i>
+                        </div>
+                        <template x-if="activeSidebarSection === 'order'">
+                            <div class="fp-tree-children">
+                                <template x-if="sidebarTree.orderFields.length > 0">
+                                    <div>
+                                        <div class="fp-tree-node"
+                                             :class="activeAnchor === 'order-info' ? 'is-active' : ''"
+                                             @click="scrollToAnchor('order-info')">
+                                            <span class="fp-tree-node-dot"></span>
+                                            <span class="fp-tree-node-text font-bold">اطلاعات پایه</span>
+                                        </div>
+                                        <div class="fp-tree-sub">
+                                            <template x-for="field in sidebarTree.orderFields" :key="'of-' + field.key">
+                                                <div class="fp-tree-node"
+                                                     :class="activeAnchor === 'field-' + field.key ? 'is-active' : ''"
+                                                     @click="scrollToAnchor('field-' + field.key)">
+                                                    <span class="fp-tree-node-dot"></span>
+                                                    <span class="fp-tree-node-text" x-text="field.labelFa"></span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <template x-if="sidebarTree.orderSections.length > 0">
+                                    <div>
+                                        <div class="fp-tree-node"
+                                             :class="activeAnchor === 'order-sections' ? 'is-active' : ''"
+                                             @click="scrollToAnchor('order-sections')">
+                                            <span class="fp-tree-node-dot"></span>
+                                            <span class="fp-tree-node-text font-bold">بخش‌ها و دستورات</span>
+                                        </div>
+                                        <div class="fp-tree-sub">
+                                            <template x-for="section in sidebarTree.orderSections" :key="'os-' + section.id">
+                                                <div class="fp-tree-node"
+                                                     :class="activeAnchor === 'section-' + section.id ? 'is-active' : ''"
+                                                     :style="`--sec-c: ${section.color || theme().color};`"
+                                                     @click="scrollToAnchor('section-' + section.id)">
+                                                    <span class="fp-tree-node-dot"></span>
+                                                    <span class="fp-tree-node-text" x-text="section.title || '(بدون عنوان)'"></span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- ۳. تعیین تکلیف -->
+                    <template x-if="sidebarTree.disposition">
+                        <div class="fp-tree-section" :style="`--sec-c: ${sidebarTree.disposition.color || theme().color};`">
+                            <div class="fp-tree-section-head"
+                                 :class="(activeSidebarSection === 'disposition') ? 'is-expanded' : ''"
+                                 @click="toggleSidebarSection('disposition')">
+                                <div class="fp-tree-section-icon" :style="`background: ${sidebarTree.disposition.color || theme().color};`">
+                                    <i class="fas fa-sitemap"></i>
+                                </div>
+                                <span class="fp-tree-section-title" x-text="sidebarTree.disposition.title || 'تعیین تکلیف'"></span>
+                                <span class="fp-tree-section-count" x-text="(sidebarTree.disposition.nodes || []).length + ' گره'"></span>
+                                <i class="fas fa-chevron-down fp-tree-section-chevron"></i>
+                            </div>
+                            <template x-if="activeSidebarSection === 'disposition'">
+                                <div class="fp-tree-children">
+                                    <template x-for="node in (sidebarTree.disposition.nodes || [])" :key="'dp-n-' + node.id">
+                                        <div>
+                                            <div class="fp-tree-node"
+                                                 :class="activeAnchor === 'disp-node-' + node.id ? 'is-active' : ''"
+                                                 @click="scrollToAnchor('disp-node-' + node.id)">
+                                                <span class="fp-tree-node-dot"></span>
+                                                <span class="fp-tree-node-text" x-text="node.title || '(بدون عنوان)'"></span>
+                                            </div>
+                                            <template x-if="node.children && node.children.length > 0">
+                                                <div class="fp-tree-sub">
+                                                    <template x-for="child in node.children" :key="'dp-c-' + child.id">
+                                                        <div class="fp-tree-node"
+                                                                             :class="activeAnchor === 'disp-child-' + child.id ? 'is-active' : ''"
+                                                                             :style="hasDispositionChildContent(child) ? '' : 'opacity: 0.5; cursor: default;'"
+                                                                             @click="hasDispositionChildContent(child) ? scrollToAnchor('disp-child-' + child.id) : scrollToAnchor('disp-node-' + node.id)">
+                                                                            <span class="fp-tree-node-dot"></span>
+                                                                            <span class="fp-tree-node-text" x-text="child.title || '(بدون عنوان)'"></span>
+                                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
+                    <!-- ۴. رسانه‌ها (placeholder — فعلا غیرفعال) -->
+                    <div class="fp-tree-section">
+                        <div class="fp-tree-section-head" style="opacity: 0.5; cursor: not-allowed;">
+                            <div class="fp-tree-section-icon" style="background: #94a3b8;">
+                                <i class="fas fa-photo-film"></i>
+                            </div>
+                            <span class="fp-tree-section-title">رسانه‌ها</span>
+                            <span class="fp-tree-section-count">به‌زودی</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rail (icon column) -->
+            <div class="mp-rail-pill my-auto">
+                <button class="mp-rail-btn"
+                        :class="(activeSidebarSection === 'preclinical' && sidebarOpen) ? 'is-active' : ''"
+                        :style="`--btn-c: ${theme().color};`"
+                        data-tip="پیش‌بالینی"
+                        @click="toggleSidebarSection('preclinical', true)"
+                        x-show="sidebarTree.preclinical && sidebarTree.preclinical.length > 0">
+                    <i class="fas fa-stethoscope text-sm"></i>
+                </button>
+                <button class="mp-rail-btn"
+                        :class="(activeSidebarSection === 'order' && sidebarOpen) ? 'is-active' : ''"
+                        :style="`--btn-c: ${theme().color};`"
+                        data-tip="اوردر"
+                        @click="toggleSidebarSection('order', true)">
+                    <i class="fas fa-clipboard-list text-sm"></i>
+                </button>
+                <button class="mp-rail-btn"
+                        :class="(activeSidebarSection === 'disposition' && sidebarOpen) ? 'is-active' : ''"
+                        :style="`--btn-c: ${sidebarTree.disposition?.color || theme().color};`"
+                        data-tip="تعیین تکلیف"
+                        @click="toggleSidebarSection('disposition', true)"
+                        x-show="sidebarTree.disposition">
+                    <i class="fas fa-sitemap text-sm"></i>
+                </button>
+                <button class="mp-rail-btn is-disabled"
+                        data-tip="رسانه‌ها — به‌زودی"
+                        disabled>
+                    <i class="fas fa-photo-film text-sm"></i>
+                </button>
+            </div>
         </div>
 
         <!-- ===== محتوای اوردر — واترمارک ===== -->
@@ -809,7 +1696,7 @@ img, a, button {
             <!-- ===== WARNING BOX ===== -->
             <section class="warning-box rounded-2xl p-4 sm:p-5">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-                    <div class="warning-icon flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center">
+                    <div class="warning-icon flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center">
                         <i class="fas fa-shield-alt text-white text-base"></i>
                     </div>
                     <div class="flex-1">
@@ -831,9 +1718,9 @@ img, a, button {
                 </div>
             </section>
 
-            <!-- ===== ① پیش‌بالینی (Dynamic Field Groups) — قبل از همه چیز ===== -->
+            <!-- ===== ① پیش‌بالینی (Dynamic Field Groups) ===== -->
             <template x-if="dynamicFields && dynamicFields.dynamic_field_groups && dynamicFields.dynamic_field_groups.length > 0">
-                <section class="main-section p-4 sm:p-5">
+                <section class="main-section p-4 sm:p-5" id="anchor-preclinical">
 
                     <div class="mb-4">
                         <div class="section-title">
@@ -850,16 +1737,27 @@ img, a, button {
                     <div class="space-y-3">
                         <template x-for="group in dynamicFields.dynamic_field_groups" :key="group.id">
                             <div class="section-block"
+                                 :id="'df-group-' + group.id"
                                  :style="dfTheme(group.color).style"
                                  :class="dfTheme(group.color).softBorder">
 
                                 <div class="section-block-header" :class="dfTheme(group.color).gradient">
-                                    <div class="flex items-center gap-3 min-w-0">
+                                    <div class="flex items-center gap-3 min-w-0 flex-1">
                                         <div class="section-block-icon">
                                             <i class="fas fa-folder-open text-sm"></i>
                                         </div>
                                         <h3 class="font-bold text-base leading-tight" x-text="group.title" dir="rtl"></h3>
                                     </div>
+                                    <template x-if="group.notes && group.notes.trim() !== ''">
+                                        <button type="button"
+                                                @click="openPopup($event, 'dfgroup-' + group.id)"
+                                                class="info-trigger"
+                                                style="background: rgba(255,255,255,0.2); color: white;"
+                                                :class="activePopup === 'dfgroup-' + group.id ? 'is-open' : ''"
+                                                title="توضیحات گروه">
+                                            <i class="fas fa-circle-info text-xs"></i>
+                                        </button>
+                                    </template>
                                     <span class="text-xs bg-white/25 rounded-full px-2.5 py-1 font-semibold flex-shrink-0"
                                           x-text="group.nodes.length + ' گره'"></span>
                                 </div>
@@ -872,22 +1770,25 @@ img, a, button {
                                     <div class="space-y-2.5">
                                         <template x-for="node in group.nodes" :key="node.id">
                                             <div class="tree-card"
+                                                 :id="'df-node-' + node.id"
                                                  :style="dfTheme(node.color).style"
                                                  :class="dfTheme(node.color).nodeBorder">
 
                                                 <button type="button"
-                                                        @click="node._open = !node._open"
+                                                        @click="hasNodeContent(node) ? (node._open = !node._open) : null"
                                                         class="tree-node-btn">
                                                     <div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                                                          :class="dfTheme(node.color).iconBg">
                                                         <i class="fas fa-circle-nodes text-xs" :class="dfTheme(node.color).iconText"></i>
                                                     </div>
                                                     <p class="flex-1 font-bold text-gray-800 text-sm text-right" x-text="node.title" dir="rtl"></p>
-                                                    <i class="fas flex-shrink-0 transition-transform duration-200 text-gray-400 text-xs"
-                                                       :class="node._open ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                                    <template x-if="hasNodeContent(node)">
+                                                        <i class="fas flex-shrink-0 transition-transform duration-200 text-gray-400 text-xs"
+                                                           :class="node._open ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                                    </template>
                                                 </button>
 
-                                                <div x-show="node._open && node.content && node.content.trim() !== ''"
+                                                <div x-show="node._open && hasNodeContent(node)"
                                                      x-transition:enter="transition ease-out duration-200"
                                                      x-transition:enter-start="opacity-0"
                                                      x-transition:enter-end="opacity-100"
@@ -913,28 +1814,29 @@ img, a, button {
                                                         <div class="p-3 space-y-2.5 border-t" :class="dfTheme(node.color).childBorder">
                                                             <template x-for="child in node.children" :key="child.id">
                                                                 <div class="tree-child-card"
+                                                                     :id="hasNodeContent(child) ? 'df-child-' + child.id : ''"
                                                                      :style="dfTheme(child.color).style"
                                                                      :class="dfTheme(child.color).childBorder">
 
                                                                     <div class="tree-child-row"
-                                                                         @click="child._open = !child._open">
+                                                                         @click="hasNodeContent(child) ? (child._open = !child._open) : null">
                                                                         <div class="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
                                                                              :class="dfTheme(child.color).iconBg">
                                                                             <i class="fas fa-circle-dot text-[9px]" :class="dfTheme(child.color).iconText"></i>
                                                                         </div>
                                                                         <p class="flex-1 text-sm font-semibold text-gray-800 leading-snug min-w-0"
                                                                            x-text="child.title" dir="rtl"></p>
-                                                                        <template x-if="child.content && child.content.trim() !== ''">
+                                                                        <template x-if="hasNodeContent(child)">
                                                                             <button @click.stop="child._open = !child._open" type="button"
                                                                                     class="content-toggle">
-                                                                                <i class="fas text-[9px]"
+                                                                                <i class="fas text-[9px] transition-transform duration-200"
                                                                                    :class="child._open ? 'fa-chevron-up' : 'fa-align-right'"></i>
                                                                                 <span x-text="child._open ? 'بستن' : 'محتوا'"></span>
                                                                             </button>
                                                                         </template>
                                                                     </div>
 
-                                                                    <div x-show="child._open && child.content && child.content.trim() !== ''"
+                                                                    <div x-show="child._open && hasNodeContent(child)"
                                                                          x-transition:enter="transition ease-out duration-200"
                                                                          x-transition:enter-start="opacity-0"
                                                                          x-transition:enter-end="opacity-100"
@@ -952,12 +1854,6 @@ img, a, button {
                                                         </div>
                                                     </div>
                                                 </template>
-
-                                                <template x-if="(!node.children || node.children.length === 0) && (!node.content || node.content.trim() === '')">
-                                                    <div x-show="node._open" style="display: none;">
-                                                        <p class="text-xs text-gray-400 text-center py-3 italic">محتوایی ثبت نشده است.</p>
-                                                    </div>
-                                                </template>
                                             </div>
                                         </template>
                                     </div>
@@ -969,7 +1865,7 @@ img, a, button {
             </template>
 
             <!-- ===== ② INFO CARDS (اطلاعات پایه) ===== -->
-            <section class="main-section p-4 sm:p-5">
+            <section class="main-section p-4 sm:p-5" id="anchor-order-info">
                 <div class="mb-4">
                     <div class="section-title">
                         <div class="section-title-icon" :class="theme().iconBg">
@@ -985,6 +1881,7 @@ img, a, button {
                 <div class="fields-group" :class="theme().softBorder" dir="ltr">
                     <template x-for="field in infoFields()" :key="field.key">
                         <div class="field-row"
+                            :id="'field-' + field.key"
                             :class="(field.key === 'imp' || field.key === 'condition') ? 'is-wide' : ''"
                             :style="theme().style">
                             <div class="flex items-start justify-between gap-3">
@@ -1008,9 +1905,9 @@ img, a, button {
 
                                 <template x-if="field.notes && field.notes.trim() !== ''">
                                     <button type="button"
-                                            @click="togglePopover($event, 'field-' + field.key)"
+                                            @click="openPopup($event, 'field-' + field.key)"
                                             class="info-trigger"
-                                            :class="activePopover === 'field-' + field.key ? 'is-open' : ''"
+                                            :class="activePopup === 'field-' + field.key ? 'is-open' : ''"
                                             title="توضیحات تکمیلی">
                                         <i class="fas fa-circle-info text-xs"></i>
                                     </button>
@@ -1034,9 +1931,9 @@ img, a, button {
                 </div>
             </section>
 
-            <!-- ===== ③ SECTIONS & ITEMS (بخش‌ها و دستورات) — با شماره‌گذاری ===== -->
+            <!-- ===== ③ SECTIONS & ITEMS (بخش‌ها و دستورات) ===== -->
             <template x-if="sections && sections.sections && sections.sections.length > 0">
-                <section class="main-section p-4 sm:p-5">
+                <section class="main-section p-4 sm:p-5" id="anchor-order-sections">
                     <div class="mb-4">
                         <div class="section-title">
                             <div class="section-title-icon" :class="theme().iconBg">
@@ -1052,6 +1949,7 @@ img, a, button {
                     <div class="space-y-3" dir="ltr">
                         <template x-for="section in sections.sections" :key="section.id">
                             <div class="section-block"
+                                 :id="'section-' + section.id"
                                  :style="sectionTheme(section.color).style"
                                  :class="sectionTheme(section.color).softBorder">
 
@@ -1072,27 +1970,24 @@ img, a, button {
 
                                     <template x-if="section.notes && section.notes.trim() !== ''">
                                         <button type="button"
-                                                @click="togglePopover($event, 'section-' + section.id)"
+                                                @click="openPopup($event, 'section-' + section.id)"
                                                 class="info-trigger"
                                                 style="background: rgba(255,255,255,0.2); color: white;"
-                                                :class="activePopover === 'section-' + section.id ? 'is-open' : ''"
+                                                :class="activePopup === 'section-' + section.id ? 'is-open' : ''"
                                                 title="توضیحات بخش">
                                             <i class="fas fa-circle-info text-xs"></i>
                                         </button>
                                     </template>
                                 </div>
 
-                                <!-- بدنه سکشن: رندر relationship_groups -->
+                                <!-- بدنه سکشن -->
                                 <div class="section-block-body" dir="ltr">
 
+                                    <!-- رندر relationship_groups -->
                                     <template x-if="section.relationship_groups && section.relationship_groups.length > 0">
                                         <div class="space-y-2">
                                             <template x-for="(rg, rgIndex) in section.relationship_groups" :key="rg.id">
                                                 <div>
-                                                    <!--
-                                                        divider بین گروه‌ها با operator label
-                                                        اولین گروه divider ندارد
-                                                    -->
                                                     <template x-if="rgIndex > 0">
                                                         <div class="group-divider my-2" :style="sectionTheme(section.color).style">
                                                             <div class="group-divider-line"></div>
@@ -1111,7 +2006,7 @@ img, a, button {
                                                                     <div>
                                                                         <template x-if="group.condition !== null">
                                                                             <div class="condition-box">
-                                                                                <span class="if-chip">IF</span>
+                                                                                <span class="if-chip !text-[12px] !fon-bold">IF</span>
                                                                                 <p class="text-sm font-semibold leading-snug flex-1"
                                                                                    :class="sectionTheme(section.color).conditionText"
                                                                                    dir="auto"
@@ -1126,7 +2021,6 @@ img, a, button {
                                                                                 <template x-for="item in group.items" :key="item.id">
                                                                                     <div class="item-row"
                                                                                          :style="sectionTheme(section.color).style">
-                                                                                        <!-- شماره آیتم -->
                                                                                         <div class="item-number-badge"
                                                                                              :class="sectionTheme(section.color).iconBg">
                                                                                             <span class="text-[11px] font-black"
@@ -1138,9 +2032,9 @@ img, a, button {
                                                                                            x-text="item.text"></p>
                                                                                         <template x-if="item.notes && item.notes.trim() !== ''">
                                                                                             <button type="button"
-                                                                                                    @click="togglePopover($event, 'item-' + item.id)"
+                                                                                                    @click="openPopup($event, 'item-' + item.id)"
                                                                                                     class="info-trigger flex-shrink-0"
-                                                                                                    :class="activePopover === 'item-' + item.id ? 'is-open' : ''"
+                                                                                                    :class="activePopup === 'item-' + item.id ? 'is-open' : ''"
                                                                                                     title="توضیحات آیتم">
                                                                                                 <i class="fas fa-circle-info text-xs"></i>
                                                                                             </button>
@@ -1178,7 +2072,6 @@ img, a, button {
                                                                                 <template x-for="drugItem in group.items" :key="drugItem.id">
                                                                                     <div class="drug-row"
                                                                                          :style="sectionTheme(section.color).style">
-                                                                                        <!-- شماره آیتم دارو -->
                                                                                         <div class="item-number-badge"
                                                                                              :class="sectionTheme(section.color).iconBg">
                                                                                             <span class="text-[11px] font-black"
@@ -1196,9 +2089,9 @@ img, a, button {
                                                                                         </div>
                                                                                         <template x-if="drugItem.notes && drugItem.notes.trim() !== ''">
                                                                                             <button type="button"
-                                                                                                    @click="togglePopover($event, 'drug-' + drugItem.id)"
+                                                                                                    @click="openPopup($event, 'drug-' + drugItem.id)"
                                                                                                     class="info-trigger flex-shrink-0"
-                                                                                                    :class="activePopover === 'drug-' + drugItem.id ? 'is-open' : ''"
+                                                                                                    :class="activePopup === 'drug-' + drugItem.id ? 'is-open' : ''"
                                                                                                     title="توضیحات دارو">
                                                                                                 <i class="fas fa-circle-info text-xs"></i>
                                                                                             </button>
@@ -1218,8 +2111,183 @@ img, a, button {
                                         </div>
                                     </template>
 
-                                    <!-- اگر هیچ relationship_group نداشت -->
-                                    <template x-if="!section.relationship_groups || section.relationship_groups.length === 0">
+                                    <!-- 🔥 باگ فیکس: رندر ungrouped_items (آیتم‌های متنی بدون گروه) -->
+                                    <template x-if="!section.is_drug_section && section.ungrouped_items && section.ungrouped_items.length > 0">
+                                        <div class="mt-2" :class="(section.relationship_groups && section.relationship_groups.length > 0) ? 'pt-3 border-t' : ''"
+                                             :style="sectionTheme(section.color).style"
+                                             style="border-color: color-mix(in srgb, var(--section-c) 12%, white);">
+                                            <div x-data="{ groups: groupItemsByCondition(section.ungrouped_items) }">
+                                                <div class="space-y-2">
+                                                    <template x-for="group in groups" :key="group.condition ? group.condition.id : 'nc-ung-' + section.id">
+                                                        <div>
+                                                            <template x-if="group.condition !== null">
+                                                                <div class="condition-box">
+                                                                    <span class="if-chip">IF</span>
+                                                                    <p class="text-sm font-semibold leading-snug flex-1"
+                                                                       :class="sectionTheme(section.color).conditionText"
+                                                                       dir="auto"
+                                                                       x-text="group.condition.text"></p>
+                                                                </div>
+                                                            </template>
+
+                                                            <div :class="group.condition !== null
+                                                                ? 'ml-3 border-l-2 pl-3 ' + sectionTheme(section.color).conditionBorder
+                                                                : ''">
+                                                                <div class="items-list">
+                                                                    <template x-for="item in group.items" :key="item.id">
+                                                                        <div class="item-row"
+                                                                             :style="sectionTheme(section.color).style">
+                                                                            <div class="item-number-badge"
+                                                                                 :class="sectionTheme(section.color).iconBg">
+                                                                                <span class="text-[11px] font-black"
+                                                                                      :class="sectionTheme(section.color).iconText"
+                                                                                      x-text="item.item_number"></span>
+                                                                            </div>
+                                                                            <p class="flex-1 text-sm text-gray-800 leading-relaxed font-medium min-w-0"
+                                                                               dir="ltr"
+                                                                               x-text="item.text"></p>
+                                                                            <template x-if="item.notes && item.notes.trim() !== ''">
+                                                                                <button type="button"
+                                                                                        @click="openPopup($event, 'item-' + item.id)"
+                                                                                        class="info-trigger flex-shrink-0"
+                                                                                        :class="activePopup === 'item-' + item.id ? 'is-open' : ''"
+                                                                                        title="توضیحات آیتم">
+                                                                                    <i class="fas fa-circle-info text-xs"></i>
+                                                                                </button>
+                                                                            </template>
+                                                                        </div>
+                                                                    </template>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    <!-- 🔥 باگ فیکس: رندر ungrouped_drug_items (آیتم‌های دارویی بدون گروه) -->
+                                    <template x-if="section.is_drug_section && section.ungrouped_drug_items && section.ungrouped_drug_items.length > 0">
+                                        <div class="mt-2" :class="(section.relationship_groups && section.relationship_groups.length > 0) ? 'pt-3 border-t' : ''"
+                                             :style="sectionTheme(section.color).style"
+                                             style="border-color: color-mix(in srgb, var(--section-c) 12%, white);">
+                                            <div x-data="{ groups: groupItemsByCondition(section.ungrouped_drug_items) }">
+                                                <div class="space-y-2">
+                                                    <template x-for="group in groups" :key="group.condition ? group.condition.id : 'nc-ungdrug-' + section.id">
+                                                        <div>
+                                                            <template x-if="group.condition !== null">
+                                                                <div class="condition-box">
+                                                                    <span class="if-chip">IF</span>
+                                                                    <p class="text-sm font-semibold leading-snug flex-1"
+                                                                       :class="sectionTheme(section.color).conditionText"
+                                                                       dir="auto"
+                                                                       x-text="group.condition.text"></p>
+                                                                </div>
+                                                            </template>
+
+                                                            <div :class="group.condition !== null
+                                                                ? 'ml-3 border-l-2 pl-3 ' + sectionTheme(section.color).conditionBorder
+                                                                : ''">
+                                                                <div class="items-list">
+                                                                    <template x-for="drugItem in group.items" :key="drugItem.id">
+                                                                        <div class="drug-row"
+                                                                             :style="sectionTheme(section.color).style">
+                                                                            <div class="item-number-badge"
+                                                                                 :class="sectionTheme(section.color).iconBg">
+                                                                                <span class="text-[11px] font-black"
+                                                                                      :class="sectionTheme(section.color).iconText"
+                                                                                      x-text="drugItem.item_number"></span>
+                                                                            </div>
+                                                                            <div class="drug-icon" :class="sectionTheme(section.color).iconBg">
+                                                                                <i class="fas fa-pills text-sm" :class="sectionTheme(section.color).iconText"></i>
+                                                                            </div>
+                                                                            <div class="flex-1 min-w-0">
+                                                                                <p class="text-sm font-bold text-gray-800 leading-tight" dir="ltr" x-text="drugItem.drug.title"></p>
+                                                                                <p class="text-xs font-mono mt-0.5" dir="ltr"
+                                                                                   :class="sectionTheme(section.color).drugCodeText"
+                                                                                   x-text="drugItem.drug.code"></p>
+                                                                            </div>
+                                                                            <template x-if="drugItem.notes && drugItem.notes.trim() !== ''">
+                                                                                <button type="button"
+                                                                                        @click="openPopup($event, 'drug-' + drugItem.id)"
+                                                                                        class="info-trigger flex-shrink-0"
+                                                                                        :class="activePopup === 'drug-' + drugItem.id ? 'is-open' : ''"
+                                                                                        title="توضیحات دارو">
+                                                                                    <i class="fas fa-circle-info text-xs"></i>
+                                                                                </button>
+                                                                            </template>
+                                                                        </div>
+                                                                    </template>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    <!-- 🔥 باگ فیکس: رندر ungrouped_items در سکشن دارویی (در صورت وجود) -->
+                                    <template x-if="section.is_drug_section && section.ungrouped_items && section.ungrouped_items.length > 0">
+                                        <div class="mt-2 pt-3 border-t"
+                                             :style="sectionTheme(section.color).style"
+                                             style="border-color: color-mix(in srgb, var(--section-c) 12%, white);">
+                                            <div class="text-xs font-bold mb-2" :class="sectionTheme(section.color).iconText">
+                                                <i class="fas fa-file-lines ml-1"></i>
+                                                آیتم‌های متنی این بخش:
+                                            </div>
+                                            <div x-data="{ groups: groupItemsByCondition(section.ungrouped_items) }">
+                                                <div class="space-y-2">
+                                                    <template x-for="group in groups" :key="group.condition ? group.condition.id : 'nc-ungtxt-drug-' + section.id">
+                                                        <div>
+                                                            <template x-if="group.condition !== null">
+                                                                <div class="condition-box">
+                                                                    <span class="if-chip">IF</span>
+                                                                    <p class="text-sm font-semibold leading-snug flex-1"
+                                                                       :class="sectionTheme(section.color).conditionText"
+                                                                       dir="auto"
+                                                                       x-text="group.condition.text"></p>
+                                                                </div>
+                                                            </template>
+
+                                                            <div :class="group.condition !== null
+                                                                ? 'ml-3 border-l-2 pl-3 ' + sectionTheme(section.color).conditionBorder
+                                                                : ''">
+                                                                <div class="items-list">
+                                                                    <template x-for="item in group.items" :key="item.id">
+                                                                        <div class="item-row"
+                                                                             :style="sectionTheme(section.color).style">
+                                                                            <div class="item-number-badge"
+                                                                                 :class="sectionTheme(section.color).iconBg">
+                                                                                <span class="text-[11px] font-black"
+                                                                                      :class="sectionTheme(section.color).iconText"
+                                                                                      x-text="item.item_number"></span>
+                                                                            </div>
+                                                                            <p class="flex-1 text-sm text-gray-800 leading-relaxed font-medium min-w-0"
+                                                                               dir="ltr"
+                                                                               x-text="item.text"></p>
+                                                                            <template x-if="item.notes && item.notes.trim() !== ''">
+                                                                                <button type="button"
+                                                                                        @click="openPopup($event, 'item-' + item.id)"
+                                                                                        class="info-trigger flex-shrink-0"
+                                                                                        :class="activePopup === 'item-' + item.id ? 'is-open' : ''"
+                                                                                        title="توضیحات آیتم">
+                                                                                    <i class="fas fa-circle-info text-xs"></i>
+                                                                                </button>
+                                                                            </template>
+                                                                        </div>
+                                                                    </template>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    <!-- اگر هیچ آیتمی نداشت -->
+                                    <template x-if="(!section.relationship_groups || section.relationship_groups.length === 0) && (!section.ungrouped_items || section.ungrouped_items.length === 0) && (!section.ungrouped_drug_items || section.ungrouped_drug_items.length === 0)">
                                         <p class="text-sm text-gray-400 text-center py-4 italic">آیتمی در این بخش تعریف نشده است.</p>
                                     </template>
 
@@ -1233,6 +2301,7 @@ img, a, button {
             <!-- ===== ④ DISPOSITION ===== -->
             <template x-if="disposition && disposition.emergency_disposition">
                 <section class="main-section p-4 sm:p-5"
+                         id="anchor-disposition"
                          :style="dfTheme(disposition.emergency_disposition.color).style">
 
                     <div class="mb-4">
@@ -1245,9 +2314,9 @@ img, a, button {
                                 <span class="section-subtitle">تعیین تکلیف اورژانس</span>
                                 <template x-if="disposition.emergency_disposition.notes && disposition.emergency_disposition.notes.trim() !== ''">
                                     <button type="button"
-                                            @click="togglePopover($event, 'disp-' + disposition.emergency_disposition.id)"
+                                            @click="openPopup($event, 'disp-' + disposition.emergency_disposition.id)"
                                             class="info-trigger"
-                                            :class="activePopover === 'disp-' + disposition.emergency_disposition.id ? 'is-open' : ''"
+                                            :class="activePopup === 'disp-' + disposition.emergency_disposition.id ? 'is-open' : ''"
                                             title="توضیحات disposition">
                                         <i class="fas fa-circle-info text-xs"></i>
                                     </button>
@@ -1259,11 +2328,12 @@ img, a, button {
                     <div class="space-y-2.5">
                         <template x-for="node in disposition.emergency_disposition.nodes" :key="node.id">
                             <div class="tree-card"
+                                 :id="'disp-node-' + node.id"
                                  :style="dfTheme(node.color).style"
                                  :class="dfTheme(node.color).nodeBorder">
 
                                 <button type="button"
-                                        @click="node._open = !node._open"
+                                        @click="hasDispositionContent(node) ? (node._open = !node._open) : null"
                                         class="tree-node-btn">
                                     <div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                                          :class="dfTheme(node.color).iconBg">
@@ -1274,11 +2344,13 @@ img, a, button {
                                           class="text-[11px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0"
                                           :class="dfTheme(node.color).chip"
                                           x-text="node.children.length + ' مورد'"></span>
-                                    <i class="fas flex-shrink-0 transition-transform duration-200 text-gray-400 text-xs"
-                                       :class="node._open ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                    <template x-if="hasDispositionContent(node)">
+                                        <i class="fas flex-shrink-0 transition-transform duration-200 text-gray-400 text-xs"
+                                           :class="node._open ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                    </template>
                                 </button>
 
-                                <div x-show="node._open"
+                                <div x-show="node._open && hasDispositionContent(node)"
                                      x-transition:enter="transition ease-out duration-200"
                                      x-transition:enter-start="opacity-0 -translate-y-1"
                                      x-transition:enter-end="opacity-100 translate-y-0"
@@ -1290,17 +2362,18 @@ img, a, button {
                                          :class="dfTheme(node.color).softBg + ' ' + dfTheme(node.color).nodeBorder">
                                         <template x-for="child in node.children" :key="child.id">
                                             <div class="tree-child-card"
+                                                 :id="hasDispositionChildContent(child) ? 'disp-child-' + child.id : ''"
                                                  :style="dfTheme(child.color).style"
                                                  :class="dfTheme(child.color).childBorder">
 
                                                 <div class="tree-child-row"
-                                                     @click="child._open = !child._open">
+                                                     @click="hasDispositionChildContent(child) ? (child._open = !child._open) : null">
                                                     <div class="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
                                                          :class="dfTheme(child.color).iconBg">
                                                         <i class="fas fa-circle-dot text-[9px]" :class="dfTheme(child.color).iconText"></i>
                                                     </div>
                                                     <p class="flex-1 text-sm font-semibold text-gray-800 leading-snug min-w-0" x-text="child.title" dir="rtl"></p>
-                                                    <template x-if="child.content && child.content.trim() !== ''">
+                                                    <template x-if="hasDispositionChildContent(child)">
                                                         <button @click.stop="child._open = !child._open" type="button"
                                                                 class="content-toggle">
                                                             <i class="fas text-[9px] transition-transform duration-200"
@@ -1310,7 +2383,7 @@ img, a, button {
                                                     </template>
                                                 </div>
 
-                                                <div x-show="child._open && child.content && child.content.trim() !== ''"
+                                                <div x-show="child._open && hasDispositionChildContent(child)"
                                                      x-transition:enter="transition ease-out duration-200"
                                                      x-transition:enter-start="opacity-0"
                                                      x-transition:enter-end="opacity-100"
@@ -1429,44 +2502,53 @@ img, a, button {
 
         </main>
 
-        <!-- ===== POPOVER PORTAL — teleport به body ===== -->
-        <template x-if="activePopover">
+        <!-- ===== POPUP مرکزی با blur ===== -->
+        <template x-if="activePopup">
             <div>
-                <div class="popover-overlay" @click="closePopover()"></div>
-                <div class="popover"
-                     :style="popoverStyle"
-                     x-transition:enter="transition ease-out duration-150"
-                     x-transition:enter-start="opacity-0 scale-95"
-                     x-transition:enter-end="opacity-100 scale-100"
-                     x-transition:leave="transition ease-in duration-100"
-                     x-transition:leave-start="opacity-100 scale-100"
-                     x-transition:leave-end="opacity-0 scale-95"
-                     dir="rtl">
-                    <div class="popover-header" :style="popoverTheme.style">
-                        <span class="popover-header-title"
-                              :style="popoverTheme.iconTextStyle"
-                              style="background: transparent;">
-                            <i class="fas fa-circle-info"></i>
-                            <span x-text="popoverData.title"></span>
+                <div class="popup-overlay"
+                     @click="closePopup()"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0"
+                     x-transition:enter-end="opacity-100"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100"
+                     x-transition:leave-end="opacity-0"></div>
+
+                <div class="popup-center"
+                     :style="popupTheme.style"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 scale-90 translate-y-4"
+                     x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-200"
+                     x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                     x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                     dir="rtl"
+                     @click.self="closePopup()">
+                    <div class="popup-header">
+                        <span class="popup-header-title">
+                            <span class="popup-header-icon">
+                                <i class="fas fa-circle-info text-sm"></i>
+                            </span>
+                            <span x-text="popupData.title"></span>
                         </span>
-                        <button @click="closePopover()" class="popover-close">
-                            <i class="fas fa-times text-xs"></i>
+                        <button @click="closePopup()" class="popup-close" title="بستن">
+                            <i class="fas fa-times text-sm"></i>
                         </button>
                     </div>
-                    <div class="popover-body" x-text="popoverData.content"></div>
+                    <div class="popup-body ck-content" x-html="popupData.content"></div>
                 </div>
             </div>
         </template>
 
         <!-- ===== MODAL: FULL FIELD CONTENT ===== -->
         <template x-if="fieldModal.open">
-            <div class="modal-backdrop fixed inset-0 z-[9999] flex items-center justify-center p-4"
-                @click.self="closeFieldModal()"
+            <div class="popup-overlay" @click.self="closeFieldModal()"
                 x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
                 x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-                <div class="modal-card max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col" @click.stop
-                    x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
-                    x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
+                <div class="popup-center" :style="theme().style"
+                    @click.stop
+                    x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-90 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                    x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100 translate-y-0" x-transition:leave-end="opacity-0 scale-95 translate-y-4">
                     <div class="px-5 py-3.5 text-white flex items-center justify-between flex-shrink-0" :class="theme().gradient">
                         <h3 class="text-base font-bold flex items-center gap-2">
                             <i class="fas fa-align-right text-sm"></i>
