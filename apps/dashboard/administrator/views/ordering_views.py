@@ -540,16 +540,13 @@ class OrderManageView(View):
                 if alias_formset:
                     alias_formset.save()
 
-                # پاک کردن گروه‌های ارتباطی قدیمی
-                old_groups = ItemRelationshipGroup.objects.filter(section__order=saved_order)
-                for group in old_groups:
-                    group.text_items.clear()
-                    group.drug_items.clear()
-                old_groups.delete()
-
                 section_map = {form.prefix: form.instance for form in section_formset}
                 saved_items_map = {}
 
+                # =======================================================================
+                # مرحله ۱: ابتدا تمام آیتم‌ها و داروها را ذخیره کن
+                # (این عملیات با آیدی روابط قبلی انجام می‌شود و خطایی ندارد)
+                # =======================================================================
                 for data in nested_sections:
                     if data['section_form'].prefix not in section_map:
                         continue
@@ -574,6 +571,24 @@ class OrderManageView(View):
                             saved_items_map[drug_form.prefix] = drug_form.instance
                             drug_form.instance.conditions.clear()
 
+                # =======================================================================
+                # مرحله ۲: پاکسازی ایمن دیتابیس از روابط قدیمی
+                # =======================================================================
+                # الف: قطع اتصال رکوردهای فرزند (جلوگیری از خطای 1452)
+                SectionItem.objects.filter(section__order=saved_order).update(relationship_group=None)
+                DrugSectionItem.objects.filter(section__order=saved_order).update(relationship_group=None)
+
+                # ب: حذف رکوردهای والد (گروه‌های ارتباطی)
+                ItemRelationshipGroup.objects.filter(section__order=saved_order).delete()
+
+                # =======================================================================
+                # مرحله ۳: بازسازی روابط و شرط‌های جدید
+                # =======================================================================
+                for data in nested_sections:
+                    section_instance = section_map.get(data['section_form'].prefix)
+                    if not section_instance or not section_instance.pk:
+                        continue
+
                     index = data['index']
 
                     # پردازش روابط
@@ -593,8 +608,9 @@ class OrderManageView(View):
                                     )
                                     for prefix in linked_prefixes:
                                         if prefix in saved_items_map:
-                                            saved_items_map[prefix].relationship_group = group
-                                            saved_items_map[prefix].save()
+                                            saved_item = saved_items_map[prefix]
+                                            saved_item.relationship_group = group
+                                            saved_item.save(update_fields=['relationship_group'])
                         except json.JSONDecodeError:
                             logger.error(f"Error decoding relationships JSON for section {index}")
 
@@ -707,7 +723,7 @@ class OrderManageView(View):
             'empty_drug_fs': DrugSectionItemFormSet(prefix='sections-__section_prefix__-drugs'),
             'active_tab': 'order',
             'alias_formset': alias_formset,
-            'errors_detail': errors_detail  # ← برای استفاده در template
+            'errors_detail': errors_detail
         }
         return render(request, self.template_name, context)
 

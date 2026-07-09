@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     "django_ckeditor_5",
     "corsheaders",
     'import_export',
-    'formset',
 
     "apps.accounts",
     "apps.home",
