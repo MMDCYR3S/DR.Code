@@ -227,6 +227,18 @@ LOGGING = {
             'formatter': 'verbose',
             'encoding': 'utf-8',
         },
+        
+        # ===== هندلر اختصاصی OrderManager ===== #
+        'order_manager_file': {
+            'level': 'DEBUG', # می‌توانید به INFO یا ERROR تغییر دهید
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'order_manager.log',
+            'maxBytes': 10 * 1024 * 1024,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+            'encoding': 'utf-8',
+        },
+
         # کنسول (اختیاری)
         'console': {
             'level': 'INFO',
@@ -291,6 +303,13 @@ LOGGING = {
         'zarinpal': {
             'handlers': ['payment_file', 'console'],
             'level': 'INFO',
+            'propagate': False,
+        },
+
+        # ===== لاگر اختصاصی OrderManager ===== #
+        'order_manager': {
+            'handlers': ['order_manager_file', 'console'],
+            'level': 'DEBUG', # برای ثبت تمام جزئیات خطاها
             'propagate': False,
         },
     },

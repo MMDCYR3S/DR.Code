@@ -1,6 +1,7 @@
 from django import forms
 from django.forms import inlineformset_factory, BaseInlineFormSet, modelformset_factory
 from django_ckeditor_5.widgets import CKEditor5Widget
+from slugify import slugify
 
 from apps.ordering.models import (
     Order, OrderSection, SectionItem, DrugSectionItem,
@@ -103,7 +104,30 @@ class OrderForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['category'].queryset = PrescriptionCategory.objects.all().order_by('title')
+        self.fields['name'].required = True
+        self.fields['name'].error_messages = {
+            'required': 'نام اوردر الزامی است.',
+            'unique': 'این نام قبلاً استفاده شده است. لطفاً نام دیگری انتخاب کنید.',
+        }
 
+    def clean_name(self):
+        """
+        اعتبارسنجی سفارشی برای فیلد name
+        """
+        name = self.cleaned_data.get('name')
+        if name:
+            slug = slugify(name, allow_unicode=False)
+            
+            existing = Order.objects.filter(slug=slug)
+            if self.instance.pk:
+                existing = existing.exclude(pk=self.instance.pk)
+            
+            if existing.exists():
+                raise forms.ValidationError(
+                    f'نام "{name}" قبلاً استفاده شده است. لطفاً نام دیگری انتخاب کنید.'
+                )
+        
+        return name
 
 class OrderSectionForm(forms.ModelForm):
     class Meta:

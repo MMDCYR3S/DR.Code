@@ -147,18 +147,6 @@ class Order(models.Model):
     def __str__(self):
         return f"Order [{self.category}]: {self.imp[:60]}"
 
-    def save(self, *args, **kwargs):
-        """
-        ساخت خودکار slug از روی name اگر خالی باشد
-        و بررسی تکراری نبودن slug
-        """
-        self.slug = slugify(self.name, allow_unicode=False)
-        
-        if Order.objects.filter(slug=self.slug).exclude(pk=self.pk).exists():
-            raise ValidationError(f'نام "{self.name}" قبلاً در یک سفارش دیگر استفاده شده است.')
-        
-        super().save(*args, **kwargs)
-
     # ─────────────────────────── تاریخ شمسی ──────────────────────────────
     @property
     def shamsi_created_at(self):
@@ -199,3 +187,32 @@ class Order(models.Model):
 
     def has_alias(self, name):
         return self.aliases.filter(name__iexact=name).exists() or self.name.lower() == name.lower()
+
+    def clean(self):
+        """
+        اعتبارسنجی در سطح مدل - این متد توسط ModelForm هم صدا زده می‌شود
+        """
+        if self.name:
+            # ساخت slug از name
+            potential_slug = slugify(self.name, allow_unicode=False)
+            
+            # بررسی تکراری نبودن slug (به جز خودش)
+            existing = Order.objects.filter(slug=potential_slug)
+            if self.pk:
+                existing = existing.exclude(pk=self.pk)
+            
+            if existing.exists():
+                raise ValidationError({
+                    'name': f'نام "{self.name}" قبلاً در یک سفارش دیگر استفاده شده است. لطفاً نام دیگری انتخاب کنید.'
+                })
+            
+    def save(self, *args, **kwargs):
+        """
+        ساخت خودکار slug از روی name
+        """
+        if self.name:
+            self.slug = slugify(self.name, allow_unicode=False)
+        if not kwargs.pop('skip_clean', False):
+            self.full_clean()
+        
+        super().save(*args, **kwargs)

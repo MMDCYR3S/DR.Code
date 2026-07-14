@@ -14,6 +14,7 @@ from django.utils.decorators import method_decorator
 from django.http import JsonResponse
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ValidationError
 
 from apps.prescriptions.models import Drug
 from apps.ordering.models import (
@@ -50,8 +51,7 @@ from ..forms import (
     OrderVideoFormSet,
 )
 
-logger = logging.getLogger(__name__)
-
+logger = logging.getLogger('order_manager')
 
 # ============================================================ #
 # ==================== Error Helper ========================== #
@@ -72,7 +72,6 @@ def _collect_form_errors(form, label: str) -> list[str]:
             msgs.append(f"{label} ← {human_field}: {err}")
     return msgs
 
-
 def _collect_formset_errors(formset, formset_label: str, form_label_fn=None) -> list[str]:
     """
     ارورهای یک فرم‌ست را با شماره فرم و نام فیلد برمی‌گرداند.
@@ -91,7 +90,6 @@ def _collect_formset_errors(formset, formset_label: str, form_label_fn=None) -> 
         for err in formset.non_form_errors():
             msgs.append(f"{formset_label}: {err}")
     return msgs
-
 
 def _emit_error_messages(request, all_error_lines: list[str], summary: str = 'لطفاً خطاهای زیر را برطرف کنید:') -> None:
     """
@@ -373,7 +371,6 @@ class OrderDeleteView(View):
             return JsonResponse({'success': False, 'message': 'خطا در حذف اوردر.', 'error': str(e)}, status=500)
 
 
-
 # ==================================================== #
 # ==================== Order View ==================== #
 # ==================================================== #
@@ -497,219 +494,248 @@ class OrderManageView(View):
                 logger.error(f"❌ Alias Formset Errors: {alias_formset.errors}")
 
         if form.is_valid() and section_formset.is_valid() and alias_valid:
-            saved_order = form.save(commit=False)
-            section_formset.instance = saved_order
-            if alias_formset:
-                alias_formset.instance = saved_order
-
-            for i, section_form in enumerate(section_formset):
-                if not section_form.cleaned_data and not section_form.instance.pk:
-                    continue
-                item_fs = SectionItemFormSet(request.POST, instance=section_form.instance, prefix=f"{section_form.prefix}-items")
-                drug_fs = DrugSectionItemFormSet(request.POST, instance=section_form.instance, prefix=f"{section_form.prefix}-drugs")
-
-                sec_name = section_form.instance.title or f"بخش {i + 1}"
-
-                if not item_fs.is_valid():
-                    all_nested_valid = False
-                    errors_detail['sections'][i] = {
-                        'section_errors': section_form.errors,
-                        'item_errors': item_fs.errors,
-                        'drug_errors': drug_fs.errors
-                    }
-                    logger.error(f"❌ Item Formset Errors (Section {i}): {item_fs.errors}")
-                if not drug_fs.is_valid():
-                    all_nested_valid = False
-                    if i not in errors_detail['sections']:
-                        errors_detail['sections'][i] = {}
-                    errors_detail['sections'][i]['drug_errors'] = drug_fs.errors
-                    logger.error(f"❌ Drug Formset Errors (Section {i}): {drug_fs.errors}")
-
-                nested_sections.append({
-                    'section_form': section_form,
-                    'item_fs': item_fs,
-                    'drug_fs': drug_fs,
-                    'index': i,
-                    '_has_error': i in errors_detail.get('sections', {})
-                })
-
-            if all_nested_valid:
-                saved_order.save()
-                form.save_m2m()
-                section_formset.save()
+            # ─────────────────── تغییر: اضافه شدن try/except ───────────────────
+            try:
+                saved_order = form.save(commit=False)
+                section_formset.instance = saved_order
                 if alias_formset:
-                    alias_formset.save()
+                    alias_formset.instance = saved_order
 
-                section_map = {form.prefix: form.instance for form in section_formset}
-                saved_items_map = {}
-
-                # =======================================================================
-                # مرحله ۱: ابتدا تمام آیتم‌ها و داروها را ذخیره کن
-                # (این عملیات با آیدی روابط قبلی انجام می‌شود و خطایی ندارد)
-                # =======================================================================
-                for data in nested_sections:
-                    if data['section_form'].prefix not in section_map:
+                for i, section_form in enumerate(section_formset):
+                    if not section_form.cleaned_data and not section_form.instance.pk:
                         continue
+                    item_fs = SectionItemFormSet(request.POST, instance=section_form.instance, prefix=f"{section_form.prefix}-items")
+                    drug_fs = DrugSectionItemFormSet(request.POST, instance=section_form.instance, prefix=f"{section_form.prefix}-drugs")
 
-                    section_instance = section_map.get(data['section_form'].prefix)
-                    if not section_instance or not section_instance.pk:
-                        continue
-                    
-                    data['item_fs'].instance = section_instance
-                    data['drug_fs'].instance = section_instance
+                    sec_name = section_form.instance.title or f"بخش {i + 1}"
 
-                    data['item_fs'].save()
-                    data['drug_fs'].save()
+                    if not item_fs.is_valid():
+                        all_nested_valid = False
+                        errors_detail['sections'][i] = {
+                            'section_errors': section_form.errors,
+                            'item_errors': item_fs.errors,
+                            'drug_errors': drug_fs.errors
+                        }
+                        logger.error(f"❌ Item Formset Errors (Section {i}): {item_fs.errors}")
+                    if not drug_fs.is_valid():
+                        all_nested_valid = False
+                        if i not in errors_detail['sections']:
+                            errors_detail['sections'][i] = {}
+                        errors_detail['sections'][i]['drug_errors'] = drug_fs.errors
+                        logger.error(f"❌ Drug Formset Errors (Section {i}): {drug_fs.errors}")
 
-                    for item_form in data['item_fs'].forms:
-                        if item_form.instance.pk and item_form not in data['item_fs'].deleted_forms:
-                            saved_items_map[item_form.prefix] = item_form.instance
-                            item_form.instance.conditions.clear()
+                    nested_sections.append({
+                        'section_form': section_form,
+                        'item_fs': item_fs,
+                        'drug_fs': drug_fs,
+                        'index': i,
+                        '_has_error': i in errors_detail.get('sections', {})
+                    })
 
-                    for drug_form in data['drug_fs'].forms:
-                        if drug_form.instance.pk and drug_form not in data['drug_fs'].deleted_forms:
-                            saved_items_map[drug_form.prefix] = drug_form.instance
-                            drug_form.instance.conditions.clear()
+                if all_nested_valid:
+                    saved_order.save()  # ⚠️ اینجا ممکنه ValidationError رخ بده (slug تکراری)
+                    form.save_m2m()
+                    section_formset.save()
+                    if alias_formset:
+                        alias_formset.save()
 
-                # =======================================================================
-                # مرحله ۲: پاکسازی ایمن دیتابیس از روابط قدیمی
-                # =======================================================================
-                # الف: قطع اتصال رکوردهای فرزند (جلوگیری از خطای 1452)
-                SectionItem.objects.filter(section__order=saved_order).update(relationship_group=None)
-                DrugSectionItem.objects.filter(section__order=saved_order).update(relationship_group=None)
+                    section_map = {form.prefix: form.instance for form in section_formset}
+                    saved_items_map = {}
 
-                # ب: حذف رکوردهای والد (گروه‌های ارتباطی)
-                ItemRelationshipGroup.objects.filter(section__order=saved_order).delete()
+                    # =======================================================================
+                    # مرحله ۱: ابتدا تمام آیتم‌ها و داروها را ذخیره کن
+                    # =======================================================================
+                    for data in nested_sections:
+                        if data['section_form'].prefix not in section_map:
+                            continue
 
-                # =======================================================================
-                # مرحله ۳: بازسازی روابط و شرط‌های جدید
-                # =======================================================================
-                for data in nested_sections:
-                    section_instance = section_map.get(data['section_form'].prefix)
-                    if not section_instance or not section_instance.pk:
-                        continue
+                        section_instance = section_map.get(data['section_form'].prefix)
+                        if not section_instance or not section_instance.pk:
+                            continue
+                        
+                        data['item_fs'].instance = section_instance
+                        data['drug_fs'].instance = section_instance
 
-                    index = data['index']
+                        data['item_fs'].save()
+                        data['drug_fs'].save()
 
-                    # پردازش روابط
-                    relationships_json = request.POST.get(f'section_relationships_{index}')
-                    if relationships_json:
-                        try:
-                            relationships_data = json.loads(relationships_json)
-                            for order_idx, rel_data in enumerate(relationships_data):
-                                operator = rel_data.get('operator')
-                                linked_prefixes = rel_data.get('items', [])
-                                
-                                if operator and linked_prefixes:
-                                    group = ItemRelationshipGroup.objects.create(
-                                        section=section_instance,
-                                        operator=operator,
-                                        order_index=order_idx
-                                    )
-                                    for prefix in linked_prefixes:
-                                        if prefix in saved_items_map:
-                                            saved_item = saved_items_map[prefix]
-                                            saved_item.relationship_group = group
-                                            saved_item.save(update_fields=['relationship_group'])
-                        except json.JSONDecodeError:
-                            logger.error(f"Error decoding relationships JSON for section {index}")
+                        for item_form in data['item_fs'].forms:
+                            if item_form.instance.pk and item_form not in data['item_fs'].deleted_forms:
+                                saved_items_map[item_form.prefix] = item_form.instance
+                                item_form.instance.conditions.clear()
 
-                    # پردازش شرط‌ها
-                    conditions_json = request.POST.get(f'section_conditions_{index}')
-                    if conditions_json:
-                        try:
-                            conditions_data = json.loads(conditions_json)
-                            for cond_data in conditions_data:
-                                cond_text = cond_data.get('text', '')
-                                linked_prefixes = cond_data.get('items', [])
-                                
-                                if cond_text and linked_prefixes:
-                                    condition_obj, _ = Condition.objects.get_or_create(text=cond_text)
-                                    for prefix in linked_prefixes:
-                                        if prefix in saved_items_map:
-                                            saved_items_map[prefix].conditions.add(condition_obj)
-                        except json.JSONDecodeError:
-                            logger.error(f"Error decoding conditions JSON for section {index}")
+                        for drug_form in data['drug_fs'].forms:
+                            if drug_form.instance.pk and drug_form not in data['drug_fs'].deleted_forms:
+                                saved_items_map[drug_form.prefix] = drug_form.instance
+                                drug_form.instance.conditions.clear()
 
-                messages.success(request, 'اوردر با موفقیت ذخیره شد.')
-                return redirect(reverse('dashboard:ordering:order_edit', kwargs={'pk': saved_order.pk}))
+                    # =======================================================================
+                    # مرحله ۲: پاکسازی ایمن دیتابیس از روابط قدیمی
+                    # =======================================================================
+                    SectionItem.objects.filter(section__order=saved_order).update(relationship_group=None)
+                    DrugSectionItem.objects.filter(section__order=saved_order).update(relationship_group=None)
+                    ItemRelationshipGroup.objects.filter(section__order=saved_order).delete()
 
-            else:
-                # ─── جمع‌آوری تمام خطاها با جزئیات کامل ───────────────────
-                all_error_lines = []
+                    # =======================================================================
+                    # مرحله ۳: بازسازی روابط و شرط‌های جدید
+                    # =======================================================================
+                    for data in nested_sections:
+                        section_instance = section_map.get(data['section_form'].prefix)
+                        if not section_instance or not section_instance.pk:
+                            continue
 
-                # ارورهای فرم اصلی
-                if errors_detail['base']:
-                    all_error_lines.extend(_collect_form_errors(form, 'اطلاعات پایه اوردر'))
+                        index = data['index']
 
-                # ارورهای alias
-                if alias_formset and errors_detail['aliases']:
+                        # پردازش روابط
+                        relationships_json = request.POST.get(f'section_relationships_{index}')
+                        if relationships_json:
+                            try:
+                                relationships_data = json.loads(relationships_json)
+                                for order_idx, rel_data in enumerate(relationships_data):
+                                    operator = rel_data.get('operator')
+                                    linked_prefixes = rel_data.get('items', [])
+                                    
+                                    if operator and linked_prefixes:
+                                        group = ItemRelationshipGroup.objects.create(
+                                            section=section_instance,
+                                            operator=operator,
+                                            order_index=order_idx
+                                        )
+                                        for prefix in linked_prefixes:
+                                            if prefix in saved_items_map:
+                                                saved_item = saved_items_map[prefix]
+                                                saved_item.relationship_group = group
+                                                saved_item.save(update_fields=['relationship_group'])
+                            except json.JSONDecodeError:
+                                logger.error(f"Error decoding relationships JSON for section {index}")
+
+                        # پردازش شرط‌ها
+                        conditions_json = request.POST.get(f'section_conditions_{index}')
+                        if conditions_json:
+                            try:
+                                conditions_data = json.loads(conditions_json)
+                                for cond_data in conditions_data:
+                                    cond_text = cond_data.get('text', '')
+                                    linked_prefixes = cond_data.get('items', [])
+                                    
+                                    if cond_text and linked_prefixes:
+                                        condition_obj, _ = Condition.objects.get_or_create(text=cond_text)
+                                        for prefix in linked_prefixes:
+                                            if prefix in saved_items_map:
+                                                saved_items_map[prefix].conditions.add(condition_obj)
+                            except json.JSONDecodeError:
+                                logger.error(f"Error decoding conditions JSON for section {index}")
+
+                    messages.success(request, 'اوردر با موفقیت ذخیره شد.')
+                    return redirect(reverse('dashboard:ordering:order_edit', kwargs={'pk': saved_order.pk}))
+
+                else:
+                    # ─── جمع‌آوری تمام خطاها با جزئیات کامل ───────────────────
+                    all_error_lines = []
+                    if errors_detail['base']:
+                        all_error_lines.extend(_collect_form_errors(form, 'اطلاعات پایه اوردر'))
+                    if alias_formset and errors_detail['aliases']:
+                        all_error_lines.extend(
+                            _collect_formset_errors(
+                                alias_formset,
+                                'نام‌های جایگزین',
+                                form_label_fn=lambda f, i: f.instance.alias or f"ردیف {i + 1}",
+                            )
+                        )
+                    for idx, errs in errors_detail['sections'].items():
+                        sec_form = nested_sections[idx]['section_form']
+                        sec_name = sec_form.instance.title or f"بخش {idx + 1}"
+                        if errs.get('section_errors'):
+                            all_error_lines.extend(_collect_form_errors(sec_form, f"سکشن «{sec_name}»"))
+                        item_fs = nested_sections[idx]['item_fs']
+                        if errs.get('item_errors'):
+                            all_error_lines.extend(
+                                _collect_formset_errors(
+                                    item_fs,
+                                    f"سکشن «{sec_name}» / آیتم‌های متنی",
+                                    form_label_fn=lambda f, i: f.instance.text[:20] if f.instance.text else f"آیتم {i + 1}",
+                                )
+                            )
+                        drug_fs = nested_sections[idx]['drug_fs']
+                        if errs.get('drug_errors'):
+                            all_error_lines.extend(
+                                _collect_formset_errors(
+                                    drug_fs,
+                                    f"سکشن «{sec_name}» / داروها",
+                                    form_label_fn=lambda f, i: str(f.instance.drug) if f.instance.drug_id else f"دارو {i + 1}",
+                                )
+                            )
+                    _emit_error_messages(request, all_error_lines, 'ذخیره اوردر ناموفق بود — خطاهای زیر را برطرف کنید:')
+
+            # ─────────────────── تغییر: گرفتن خطای ValidationError ───────────────────
+            except ValidationError as e:
+                # خطای اعتبارسنجی (مثلاً slug تکراری) را بگیر و به فرم اضافه کن
+                logger.error(f"❌ ValidationError during order save: {e}")
+                
+                # اگر خطا دیکشنری فیلدها رو داشته باشه (مثل clean مدل)
+                if hasattr(e, 'message_dict'):
+                    for field, errors in e.message_dict.items():
+                        for error in errors:
+                            form.add_error(field, error)
+                # اگر یک پیام ساده باشه
+                else:
+                    form.add_error('name', str(e))
+                
+                # تنظیم مجدد متغیرها برای نمایش دوباره فرم
+                all_nested_valid = False
+                errors_detail['base'] = form.errors
+
+        # ─── خارج از if اصلی: همیشه اگر به اینجا رسیدیم فرم رو دوباره نشون بده ───
+        # (چه خطا در مرحله اول باشه، چه nested invalid باشه، چه ValidationError)
+        all_error_lines = []
+
+        if errors_detail.get('base'):
+            all_error_lines.extend(_collect_form_errors(form, 'اطلاعات پایه اوردر'))
+
+        if not section_formset.is_valid():
+            all_error_lines.extend(
+                _collect_formset_errors(
+                    section_formset,
+                    'بخش‌ها',
+                    form_label_fn=lambda f, i: f.instance.title or f"بخش {i + 1}",
+                )
+            )
+
+        if alias_formset and errors_detail.get('aliases'):
+            all_error_lines.extend(
+                _collect_formset_errors(
+                    alias_formset,
+                    'نام‌های جایگزین',
+                    form_label_fn=lambda f, i: f.instance.alias or f"ردیف {i + 1}",
+                )
+            )
+
+        for idx, errs in errors_detail.get('sections', {}).items():
+            if idx < len(nested_sections):
+                sec_form = nested_sections[idx]['section_form']
+                sec_name = sec_form.instance.title or f"بخش {idx + 1}"
+                if errs.get('section_errors'):
+                    all_error_lines.extend(_collect_form_errors(sec_form, f"سکشن «{sec_name}»"))
+                item_fs = nested_sections[idx]['item_fs']
+                if errs.get('item_errors'):
                     all_error_lines.extend(
                         _collect_formset_errors(
-                            alias_formset,
-                            'نام‌های جایگزین',
-                            form_label_fn=lambda f, i: f.instance.alias or f"ردیف {i + 1}",
+                            item_fs,
+                            f"سکشن «{sec_name}» / آیتم‌های متنی",
+                            form_label_fn=lambda f, i: f.instance.text[:20] if f.instance.text else f"آیتم {i + 1}",
+                        )
+                    )
+                drug_fs = nested_sections[idx]['drug_fs']
+                if errs.get('drug_errors'):
+                    all_error_lines.extend(
+                        _collect_formset_errors(
+                            drug_fs,
+                            f"سکشن «{sec_name}» / داروها",
+                            form_label_fn=lambda f, i: str(f.instance.drug) if f.instance.drug_id else f"دارو {i + 1}",
                         )
                     )
 
-                # ارورهای سکشن‌ها و آیتم‌هایشان
-                for idx, errs in errors_detail['sections'].items():
-                    sec_form = nested_sections[idx]['section_form']
-                    sec_name = sec_form.instance.title or f"بخش {idx + 1}"
-
-                    # ارورهای خود سکشن
-                    if errs.get('section_errors'):
-                        all_error_lines.extend(_collect_form_errors(sec_form, f"سکشن «{sec_name}»"))
-
-                    # ارورهای آیتم‌های متنی
-                    item_fs = nested_sections[idx]['item_fs']
-                    if errs.get('item_errors'):
-                        all_error_lines.extend(
-                            _collect_formset_errors(
-                                item_fs,
-                                f"سکشن «{sec_name}» / آیتم‌های متنی",
-                                form_label_fn=lambda f, i: f.instance.text[:20] if f.instance.text else f"آیتم {i + 1}",
-                            )
-                        )
-
-                    # ارورهای آیتم‌های دارویی
-                    drug_fs = nested_sections[idx]['drug_fs']
-                    if errs.get('drug_errors'):
-                        all_error_lines.extend(
-                            _collect_formset_errors(
-                                drug_fs,
-                                f"سکشن «{sec_name}» / داروها",
-                                form_label_fn=lambda f, i: str(f.instance.drug) if f.instance.drug_id else f"دارو {i + 1}",
-                            )
-                        )
-
-                _emit_error_messages(request, all_error_lines, 'ذخیره اوردر ناموفق بود — خطاهای زیر را برطرف کنید:')
-
-        else:
-            # ─── ارورهای مرحله اول (قبل از nested) ────────────────────────
-            all_error_lines = []
-
-            if not form.is_valid():
-                all_error_lines.extend(_collect_form_errors(form, 'اطلاعات پایه اوردر'))
-
-            if not section_formset.is_valid():
-                all_error_lines.extend(
-                    _collect_formset_errors(
-                        section_formset,
-                        'بخش‌ها',
-                        form_label_fn=lambda f, i: f.instance.title or f"بخش {i + 1}",
-                    )
-                )
-
-            if alias_formset and not alias_valid:
-                all_error_lines.extend(
-                    _collect_formset_errors(
-                        alias_formset,
-                        'نام‌های جایگزین',
-                        form_label_fn=lambda f, i: f.instance.alias or f"ردیف {i + 1}",
-                    )
-                )
-
+        if all_error_lines:
             _emit_error_messages(request, all_error_lines, 'ذخیره اوردر ناموفق بود — خطاهای زیر را برطرف کنید:')
         
         context = {
