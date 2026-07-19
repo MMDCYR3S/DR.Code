@@ -34,6 +34,9 @@ function orderDetailApp() {
     // مدال نمایش فیلد (متن بلند)
     fieldModal: { open: false, title: "", subtitle: "", content: "", isHtml: false },
 
+    // تب فعال در بخش رسانه: 'images' | 'videos'
+    mediaTab: "images",
+
     watermarkText: "drcode-med.ir",
 
     // داده‌های API
@@ -98,6 +101,7 @@ function orderDetailApp() {
         this.loadDisposition(slug),
         this.loadDynamicFields(slug),
         this.loadSections(slug),
+        this.loadMedia(slug),
       ]);
 
       // ساخت درخت سایدبار بعد از لود داده‌ها
@@ -105,6 +109,7 @@ function orderDetailApp() {
         this.buildSidebarTree();
         this.autoExpandDisposition();
         this.autoExpandDynamicFields();
+        this.initMediaTab();
         this.initScrollSpy();
       });
     },
@@ -300,6 +305,17 @@ function orderDetailApp() {
         };
       }
 
+      // رسانه‌ها (media)
+      const imgs = (this.media?.images || []).slice().sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+      const vids = (this.media?.videos || []).slice().sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+      this.sidebarTree.media = {
+        imagesCount: imgs.length,
+        videosCount: vids.length,
+        totalCount: imgs.length + vids.length,
+        images: imgs,
+        videos: vids,
+      };
+
       // انتخاب سکشن اول به‌صورت پیش‌فرض
       if (this.sidebarTree.preclinical.length > 0) {
         this.activeSidebarSection = "preclinical";
@@ -307,6 +323,8 @@ function orderDetailApp() {
         this.activeSidebarSection = "order";
       } else if (this.sidebarTree.disposition) {
         this.activeSidebarSection = "disposition";
+      } else if (this.sidebarTree.media && this.sidebarTree.media.totalCount > 0) {
+        this.activeSidebarSection = "media";
       }
     },
 
@@ -392,6 +410,12 @@ function orderDetailApp() {
           ids.push("disp-node-" + n.id);
           (n.children || []).forEach(c => ids.push("disp-child-" + c.id));
         });
+      }
+      // media
+      if (this.sidebarTree.media && this.sidebarTree.media.totalCount > 0) {
+        ids.push("anchor-media");
+        ids.push("media-images");
+        ids.push("media-videos");
       }
 
       const result = [];
@@ -586,6 +610,52 @@ function orderDetailApp() {
         }
       }
 
+      // image-{idx} — توضیحات کپشن تصویر
+      if (id.startsWith("image-") && this.media?.images) {
+        const idx = parseInt(id.replace("image-", ""));
+        const img = this.media.images[idx];
+        if (img) {
+          const c = this.theme().color;
+          return {
+            title: "توضیحات تصویر #" + (idx + 1),
+            content: img.caption || "<p class='text-gray-500 text-sm'>کپشنی ثبت نشده است.</p>",
+            theme: {
+              style: `--popup-c: ${c};`,
+              iconTextStyle: `color: ${c};`,
+            },
+          };
+        }
+      }
+
+      // video-{idx} — توضیحات ویدیو
+      if (id.startsWith("video-") && this.media?.videos) {
+        const idx = parseInt(id.replace("video-", ""));
+        const vid = this.media.videos[idx];
+        if (vid) {
+          const c = this.theme().color;
+          const html = `
+            <div class="space-y-2">
+              <p class="font-bold text-base">${vid.title || "ویدیو پیوست شده"}</p>
+              ${vid.description ? `<div class="text-sm text-gray-700 leading-relaxed">${vid.description}</div>` : ""}
+              <a href="${vid.video_url || "#"}" target="_blank" rel="noopener noreferrer"
+                 class="inline-flex items-center gap-2 text-sm font-bold px-3 py-2 rounded-lg text-white"
+                 style="background: ${c};">
+                <i class="fas fa-external-link-alt"></i>
+                <span>مشاهده در منبع</span>
+              </a>
+            </div>
+          `;
+          return {
+            title: "جزئیات ویدیو #" + (idx + 1),
+            content: html,
+            theme: {
+              style: `--popup-c: ${c};`,
+              iconTextStyle: `color: ${c};`,
+            },
+          };
+        }
+      }
+
       return null;
     },
 
@@ -742,7 +812,7 @@ function orderDetailApp() {
     },
 
     // ─────────────────────────────────────────────────────────────────────────
-    // groupItemsByCondition
+    // groupItemsByCondition (LEGACY — نگه داشته شد برای backward compat)
     // ورودی: آرایه‌ای از text_items یا drug_items
     // خروجی: گروه‌بندی براساس condition
     // ─────────────────────────────────────────────────────────────────────────
@@ -772,6 +842,168 @@ function orderDetailApp() {
       });
 
       return groups;
+    },
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // flattenSectionRows — رندر مسطح آیتم‌های یک سکشن بر اساس order_index واقعی
+    //
+    // منطق پیاده‌سازی شده طبق داک Swagger:
+    //   ۱. آیتم‌های آزاد (ungrouped_items و ungrouped_drug_items) و relationship_groups
+    //      با هم بر اساس order_index مرتب می‌شوند تا ترتیب نمایش با item_number هم‌خوان باشه.
+    //   ۲. داخل هر relationship_group: ابتدا text_items سپس drug_items (هر کدام بر اساس order_index).
+    //   ۳. بین آیتم‌های متوالیِ داخل یک گروه، یک ردیف operator درج می‌شود (AND/OR/THEN).
+    //   ۴. is_drug_section فقط یک badge در هدر است و روی رندر آیتم‌ها اثر ندارد؛
+    //      هر سکشن می‌تواند هم text و هم drug داشته باشد.
+    //
+    // خروجی: آرایه‌ای از ردیف‌ها با یکی از این شکل‌ها:
+    //   { kind: 'text',     item, inGroup, groupId? }
+    //   { kind: 'drug',     item, inGroup, groupId? }
+    //   { kind: 'operator', operator, groupId }
+    // ─────────────────────────────────────────────────────────────────────────
+    flattenSectionRows(section) {
+      if (!section) return [];
+
+      const entries = [];
+
+      (section.ungrouped_items || []).forEach((item) => {
+        entries.push({ _type: "text", item, _oi: item.order_index ?? 0 });
+      });
+      (section.ungrouped_drug_items || []).forEach((item) => {
+        entries.push({ _type: "drug", item, _oi: item.order_index ?? 0 });
+      });
+      (section.relationship_groups || []).forEach((group) => {
+        entries.push({ _type: "group", group, _oi: group.order_index ?? 0 });
+      });
+
+      // stable sort by order_index (مهم: ترتیب واقعی نمایش)
+      entries.sort((a, b) => (a._oi ?? 0) - (b._oi ?? 0));
+
+      const rows = [];
+      entries.forEach((entry) => {
+        if (entry._type === "text") {
+          rows.push({ kind: "text", item: entry.item, inGroup: false });
+        } else if (entry._type === "drug") {
+          rows.push({ kind: "drug", item: entry.item, inGroup: false });
+        } else if (entry._type === "group") {
+          const g = entry.group;
+          const textItems = (g.text_items || [])
+            .slice()
+            .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
+            .map((i) => ({ kind: "text", item: i, inGroup: true, groupId: g.id }));
+          const drugItems = (g.drug_items || [])
+            .slice()
+            .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
+            .map((i) => ({ kind: "drug", item: i, inGroup: true, groupId: g.id }));
+          const combined = [...textItems, ...drugItems];
+
+          combined.forEach((row, idx) => {
+            if (idx > 0) {
+              rows.push({
+                kind: "operator",
+                operator: (g.operator || "AND").toUpperCase(),
+                groupId: g.id,
+              });
+            }
+            rows.push(row);
+          });
+        }
+      });
+
+      return rows;
+    },
+
+    // کلاس CSS برای badge اپراتور
+    operatorBadgeClass(op) {
+      const o = (op || "AND").toUpperCase();
+      if (o === "OR") return "op-or";
+      if (o === "THEN") return "op-then";
+      return "op-and";
+    },
+
+    // لیبل فارسی اپراتور
+    operatorLabel(op) {
+      const o = (op || "AND").toUpperCase();
+      if (o === "OR") return "یا (OR)";
+      if (o === "THEN") return "سپس (THEN)";
+      if (o === "AND") return "و (AND)";
+      return o;
+    },
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // رسانه‌ها (Media API)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // تصاویر مرتب‌شده بر اساس order_index
+    sortedImages() {
+      if (!this.media?.images) return [];
+      return this.media.images
+        .slice()
+        .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+    },
+
+    // ویدیوهای مرتب‌شده بر اساس order_index
+    sortedVideos() {
+      if (!this.media?.videos) return [];
+      return this.media.videos
+        .slice()
+        .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+    },
+
+    hasMedia() {
+      return (
+        !!this.media &&
+        (((this.media.images || []).length > 0) || ((this.media.videos || []).length > 0))
+      );
+    },
+
+    // تنظیم تب پیش‌فرض وقتی media بارگذاری شد
+    initMediaTab() {
+      if (this.sortedImages().length > 0) {
+        this.mediaTab = "images";
+      } else if (this.sortedVideos().length > 0) {
+        this.mediaTab = "videos";
+      }
+    },
+
+    // تشخیص اینکه آیا URL مربوط به آپارات است یا یوتیوب یا هرچیز دیگر
+    detectVideoProvider(url) {
+      if (!url) return "unknown";
+      const u = String(url).toLowerCase();
+      if (u.includes("aparat.com") || u.includes("/aparat/")) return "aparat";
+      if (u.includes("youtube.com") || u.includes("youtu.be")) return "youtube";
+      if (u.includes("vimeo.com")) return "vimeo";
+      return "link";
+    },
+
+    // ساخت embed URL برای آپارات/یوتیوب در صورت نیاز (fallback: استفاده از URL مستقیم)
+    buildEmbedUrl(url) {
+      const provider = this.detectVideoProvider(url);
+      if (provider === "youtube") {
+        // استخراج video id از URL یوتیوب
+        const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/);
+        if (m) return `https://www.youtube.com/embed/${m[1]}`;
+        return url;
+      }
+      if (provider === "aparat") {
+        // آپارات هم embed path داره
+        const m = url.match(/aparat\.com\/video\/[^/]+\/([A-Za-z0-9]+)/);
+        if (m) return `https://www.aparat.com/video/video/embed/videohash/${m[1]}/vt/frame`;
+        return url;
+      }
+      return url;
+    },
+
+    // شناسه‌سازی ویدیو (برای نمایش آیکون یا badge)
+    videoProviderLabel(url) {
+      const p = this.detectVideoProvider(url);
+      const map = {
+        aparat: "آپارات",
+        youtube: "یوتیوب",
+        vimeo: "Vimeo",
+        link: "لینک خارجی",
+        unknown: "نامشخص",
+      };
+      return map[p] || "لینک خارجی";
     },
 
     isLong(text, max = 130) {
