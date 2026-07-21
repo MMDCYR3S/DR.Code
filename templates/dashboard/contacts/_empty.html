@@ -1,0 +1,12 @@
+{# _empty.html — حالت خالی لیست پیام‌ها #}
+<div class="text-center py-14">
+    <div class="mx-auto w-fit bg-slate-100 rounded-full p-5 mb-4">
+        <i class="fa-solid fa-envelope-open-text text-3xl text-slate-400"></i>
+    </div>
+    <h3 class="text-lg font-medium text-slate-800 mb-1">
+        {% if search or status_filter != 'all' %}هیچ پیام مطابقی یافت نشد{% else %}هنوز پیامی ثبت نشده است{% endif %}
+    </h3>
+    <p class="text-slate-500 text-sm">
+        {% if search or status_filter != 'all' %}عبارت یا فیلتر دیگری را امتحان کنید{% else %}پیام‌های کاربران در اینجا نمایش داده می‌شوند{% endif %}
+    </p>
+</div>

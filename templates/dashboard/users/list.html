@@ -1,0 +1,166 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}مدیریت کاربران{% endblock %}
+
+{% block content %}
+<div class="container mx-auto" x-data="{ exportModalOpen: false }">
+
+    {# ===== سربرگ صفحه ===== #}
+    <div class="mb-6">
+        {% include 'components/atoms/breadcrumb.html' with items=breadcrumb extra_classes="mb-3" %}
+        <div class="flex flex-wrap justify-between items-center gap-3">
+            <h1 class="text-2xl font-bold text-slate-700 flex items-center gap-3">
+                <i class="fa-solid fa-users text-c1"></i> لیست کاربران
+            </h1>
+            <div class="flex flex-wrap gap-2">
+                <button @click="exportModalOpen = true"
+                        class="px-4 py-2 bg-c3 text-white rounded-lg text-sm hover:bg-c2 transition-colors flex items-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-file-export"></i> استخراج اطلاعات
+                </button>
+                <a href="{% url 'dashboard:users:admin_user_create' %}"
+                   class="px-4 py-2 bg-c1 text-white rounded-lg text-sm hover:bg-c2 transition-colors flex items-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-plus"></i> افزودن کاربر جدید
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {# ===== کارت‌های آمار ===== #}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {% include 'dashboard/users/partials/_stat_card.html' with icon='fa-solid fa-users' variant='c1' label='کل کاربران' value=stats.total_users %}
+        {% include 'dashboard/users/partials/_stat_card.html' with icon='fa-solid fa-crown' variant='green' label='کاربران ویژه' value=stats.premium_users %}
+        {% include 'dashboard/users/partials/_stat_card.html' with icon='fa-solid fa-clock' variant='orange' label='در انتظار تایید' value=stats.pending_verification %}
+        {% include 'dashboard/users/partials/_stat_card.html' with icon='fa-solid fa-circle-check' variant='green' label='تایید شده' value=stats.approved_users %}
+    </div>
+
+    {# ===== فرم جستجو و فیلتر ===== #}
+    <div class="bg-white p-4 rounded-xl shadow-sm mb-6">
+        <form method="GET" class="flex flex-col lg:flex-row gap-3 items-center w-full">
+            <div class="relative w-full lg:w-1/3">
+                <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <i class="fa-solid fa-magnifying-glass text-slate-400 text-sm"></i>
+                </span>
+                {{ search_form.search }}
+            </div>
+            <div class="w-full lg:w-1/6">{{ search_form.role }}</div>
+            <div class="w-full lg:w-1/6">{{ search_form.auth_status }}</div>
+            <div class="w-full lg:w-1/6">{{ search_form.sort_by }}</div>
+            <div class="w-full lg:w-auto lg:min-w-[120px]">
+                <button type="submit"
+                        class="w-full px-4 py-2.5 bg-c1 text-white rounded-lg text-sm hover:bg-c2 transition-colors flex justify-center items-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-filter"></i> اعمال
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {# ===== جدول کاربران (دسکتاپ) ===== #}
+    <div class="hidden lg:block bg-white rounded-xl shadow-sm overflow-hidden">
+        <table class="min-w-full text-sm">
+            <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
+                <tr>
+                    <th class="px-6 py-4 text-right font-medium">کاربر</th>
+                    <th class="px-6 py-4 text-right font-medium">نقش</th>
+                    <th class="px-6 py-4 text-right font-medium">وضعیت احراز هویت</th>
+                    <th class="px-6 py-4 text-right font-medium">تاریخ ثبت نام</th>
+                    <th class="px-6 py-4 text-center font-medium">عملیات</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+                {% for user in users %}
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="font-semibold text-slate-800">{{ user.full_name }}</div>
+                        <div class="text-xs text-slate-500 mt-1">{{ user.email|default:user.phone_number }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% include 'components/atoms/role_badge.html' with role=user.profile.role %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% include 'components/atoms/auth_status_badge.html' with status=user.profile.auth_status style='inline' %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-slate-500">{{ user.jalali_date }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        <a href="{% url 'dashboard:users:admin_user_detail' pk=user.id %}"
+                           class="inline-flex items-center gap-1 px-3 py-1.5 text-c1 bg-c5 rounded-lg text-xs font-medium hover:bg-c1 hover:text-white transition-colors">
+                            <i class="fa-solid fa-eye"></i> مشاهده و مدیریت
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-10 text-center text-slate-500">
+                        <i class="fa-solid fa-inbox text-3xl mb-3 text-slate-300 block"></i>
+                        هیچ کاربری یافت نشد
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# ===== کارت‌های موبایل ===== #}
+    <div class="grid grid-cols-1 gap-4 lg:hidden">
+        {% for user in users %}
+        <a href="{% url 'dashboard:users:admin_user_detail' pk=user.id %}"
+           class="block bg-white rounded-xl shadow-sm p-4 border border-slate-100 hover:border-c1 transition-colors">
+            <div class="flex justify-between items-start">
+                <div>
+                    <div class="font-semibold text-slate-800">{{ user.full_name }}</div>
+                    <div class="text-xs text-slate-500 mt-1">{{ user.email|default:user.phone_number }}</div>
+                </div>
+                {% include 'components/atoms/role_badge.html' with role=user.profile.role %}
+            </div>
+            <div class="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center text-sm">
+                {% include 'components/atoms/auth_status_badge.html' with status=user.profile.auth_status style='inline' %}
+                <span class="text-slate-400 text-xs">{{ user.jalali_date }}</span>
+            </div>
+        </a>
+        {% empty %}
+        {% include 'dashboard/partials/_empty_state.html' with title='هیچ کاربری یافت نشد' %}
+        {% endfor %}
+    </div>
+
+    {# ===== صفحه‌بندی ===== #}
+    {% include 'dashboard/partials/_pagination.html' %}
+
+    {# ===== مودال استخراج اطلاعات ===== #}
+    <div x-show="exportModalOpen" x-cloak @keydown.escape.window="exportModalOpen = false"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div @click="exportModalOpen = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div x-show="exportModalOpen" x-transition
+             class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
+            <form method="GET" action="{% url 'dashboard:users:admin_export_users' %}">
+                <div class="p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-c5">
+                            <i class="fa-solid fa-file-export text-c1"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-800">استخراج اطلاعات کاربران</h3>
+                    </div>
+                    <label for="roleSelect" class="block text-sm font-medium text-slate-700 mb-2">انتخاب نقش:</label>
+                    <select id="roleSelect" name="role"
+                            class="w-full px-4 py-2.5 border border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1">
+                        <option value="">همه کاربران</option>
+                        <option value="visitor">بازدیدکننده</option>
+                        <option value="regular">کاربر عادی</option>
+                        <option value="premium">کاربر ویژه</option>
+                        <option value="admin">ادمین</option>
+                    </select>
+                </div>
+                <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                    <button @click="exportModalOpen = false" type="button"
+                            class="py-2.5 px-4 text-sm font-semibold rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-colors">
+                        انصراف
+                    </button>
+                    <button type="submit"
+                            class="py-2.5 px-4 text-sm font-semibold rounded-lg bg-c1 text-white hover:bg-c2 transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-download"></i> دریافت فایل
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -7,6 +7,7 @@
 
 <div class="mb-6">
   <div class="flex items-center justify-between gap-4">
+    {% include 'components/atoms/breadcrumb.html' with items=breadcrumb extra_classes="mb-3" %}
 
     <nav class="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit">
 
@@ -78,13 +79,6 @@
       {% endif %}
 
     </nav>
-
-    <a href="{% url 'dashboard:ordering:order_list' %}"
-       class="flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-800
-              hover:underline transition-colors whitespace-nowrap">
-      <i class="fas fa-arrow-right text-xs"></i>
-      بازگشت به لیست
-    </a>
 
   </div>
 

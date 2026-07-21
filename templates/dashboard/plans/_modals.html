@@ -1,0 +1,173 @@
+<form style="display:none;">{% csrf_token %}</form>
+{# ===== مودال Membership (ایجاد/ویرایش) ===== #}
+<div x-show="isMembershipModalOpen" x-cloak @keydown.escape.window="closeMembershipModal()"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div @click="closeMembershipModal()" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+    <div x-show="isMembershipModalOpen" x-transition class="relative bg-white rounded-xl shadow-2xl w-full max-w-md my-8">
+        <div class="px-5 py-4 flex justify-between items-center border-b border-slate-100">
+            <h3 class="text-lg font-bold text-slate-800" x-text="membershipModalTitle"></h3>
+            <button @click="closeMembershipModal()" class="p-1.5 hover:bg-slate-100 rounded-full transition-colors">
+                <i class="fa-solid fa-times text-slate-500"></i>
+            </button>
+        </div>
+        <form @submit.prevent="submitMembershipForm()" class="p-6 space-y-5">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">عنوان <span class="text-red-500">*</span></label>
+                <input type="text" x-model="membershipForm.title" required
+                       class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">توضیحات</label>
+                <textarea x-model="membershipForm.description" rows="3"
+                          class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">ویژگی‌ها (Ctrl+انتخاب چندگانه)</label>
+                <select x-model="membershipForm.features" multiple
+                        class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors" style="min-height:100px;">
+                    {% for feature in features %}
+                    <option value="{{ feature.id }}">{{ feature.name }} ({{ feature.get_feature_type_display }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-center gap-2">
+                <input type="checkbox" x-model="membershipForm.is_active" id="membership_active"
+                       class="w-4 h-4 text-c1 bg-slate-100 border-slate-300 rounded focus:ring-c1 focus:ring-2 cursor-pointer">
+                <label for="membership_active" class="text-sm font-medium text-slate-700 cursor-pointer">فعال</label>
+            </div>
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button type="button" @click="closeMembershipModal()"
+                        class="py-2 px-5 text-sm font-semibold bg-white border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors">انصراف</button>
+                <button type="submit"
+                        class="py-2 px-6 text-sm font-semibold bg-c1 text-white rounded-lg hover:bg-c2 transition-colors shadow-sm">
+                    <span x-text="membershipFormSubmitText"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ===== مودال Plan (ایجاد/ویرایش) ===== #}
+<div x-show="isPlanModalOpen" x-cloak @keydown.escape.window="closePlanModal()"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div @click="closePlanModal()" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+    <div x-show="isPlanModalOpen" x-transition class="relative bg-white rounded-xl shadow-2xl w-full max-w-md my-8">
+        <div class="px-5 py-4 flex justify-between items-center border-b border-slate-100">
+            <h3 class="text-lg font-bold text-slate-800" x-text="planModalTitle"></h3>
+            <button @click="closePlanModal()" class="p-1.5 hover:bg-slate-100 rounded-full transition-colors">
+                <i class="fa-solid fa-times text-slate-500"></i>
+            </button>
+        </div>
+        <form @submit.prevent="submitPlanForm()" class="p-6 space-y-5">
+            <input type="hidden" x-model="planForm.membership">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">نام پلن <span class="text-red-500">*</span></label>
+                <input type="text" x-model="planForm.name" required
+                       class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">مدت (روز) <span class="text-red-500">*</span></label>
+                    <input type="number" x-model="planForm.duration_days" required min="1"
+                           class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">قیمت (تومان) <span class="text-red-500">*</span></label>
+                    <input type="number" x-model="planForm.price" required min="0"
+                           class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">برچسب نمایشی</label>
+                <select x-model="planForm.tag" class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+                    <option value="">بدون برچسب</option>
+                    {% for tag_value, tag_label in plan_tags %}
+                    <option value="{{ tag_value }}">{{ tag_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-center gap-2">
+                <input type="checkbox" x-model="planForm.is_active" id="plan_active"
+                       class="w-4 h-4 text-c1 bg-slate-100 border-slate-300 rounded focus:ring-c1 focus:ring-2 cursor-pointer">
+                <label for="plan_active" class="text-sm font-medium text-slate-700 cursor-pointer">فعال</label>
+            </div>
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button type="button" @click="closePlanModal()"
+                        class="py-2 px-5 text-sm font-semibold bg-white border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors">انصراف</button>
+                <button type="submit"
+                        class="py-2 px-6 text-sm font-semibold bg-c1 text-white rounded-lg hover:bg-c2 transition-colors shadow-sm">
+                    <span x-text="planFormSubmitText"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ===== مودال Feature (ایجاد/ویرایش) ===== #}
+<div x-show="isFeatureModalOpen" x-cloak @keydown.escape.window="closeFeatureModal()"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div @click="closeFeatureModal()" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+    <div x-show="isFeatureModalOpen" x-transition class="relative bg-white rounded-xl shadow-2xl w-full max-w-md my-8">
+        <div class="px-5 py-4 flex justify-between items-center border-b border-slate-100">
+            <h3 class="text-lg font-bold text-slate-800" x-text="featureModalTitle"></h3>
+            <button @click="closeFeatureModal()" class="p-1.5 hover:bg-slate-100 rounded-full transition-colors">
+                <i class="fa-solid fa-times text-slate-500"></i>
+            </button>
+        </div>
+        <form @submit.prevent="submitFeatureForm()" class="p-6 space-y-5">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">نام ویژگی <span class="text-red-500">*</span></label>
+                <input type="text" x-model="featureForm.name" required
+                       class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">نوع ویژگی <span class="text-red-500">*</span></label>
+                <select x-model="featureForm.feature_type" required class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+                    <option value="">انتخاب کنید</option>
+                    {% for value, label in feature_types %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">توضیحات</label>
+                <textarea x-model="featureForm.description" rows="3"
+                          class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors"></textarea>
+            </div>
+            <div class="flex items-center gap-2">
+                <input type="checkbox" x-model="featureForm.is_active" id="feature_active"
+                       class="w-4 h-4 text-c1 bg-slate-100 border-slate-300 rounded focus:ring-c1 focus:ring-2 cursor-pointer">
+                <label for="feature_active" class="text-sm font-medium text-slate-700 cursor-pointer">فعال</label>
+            </div>
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button type="button" @click="closeFeatureModal()"
+                        class="py-2 px-5 text-sm font-semibold bg-white border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors">انصراف</button>
+                <button type="submit"
+                        class="py-2 px-6 text-sm font-semibold bg-c1 text-white rounded-lg hover:bg-c2 transition-colors shadow-sm">
+                    <span x-text="featureFormSubmitText"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ===== مودال حذف ===== #}
+<div x-show="showDelete" x-cloak @keydown.escape.window="showDelete = false"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div @click="showDelete = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+    <div x-show="showDelete" x-transition class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm text-center p-6">
+        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+            <i class="fa-solid fa-triangle-exclamation text-red-600 text-xl"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-800 mb-2" x-text="deleteModalTitle"></h3>
+        <p class="text-sm text-slate-500 mb-5" x-text="deleteModalMessage"></p>
+        <form @submit.prevent="confirmDelete()">
+            <div class="flex justify-center gap-3">
+                <button type="button" @click="showDelete = false"
+                        class="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">انصراف</button>
+                <button type="submit"
+                        class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-sm">بله، حذف کن</button>
+            </div>
+        </form>
+    </div>
+</div>

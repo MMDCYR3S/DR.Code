@@ -1,0 +1,23 @@
+{# components/molecules/page_header.html — سربرگ صفحه: بردکرامب + عنوان + اکشن #}
+{# ورودی‌ها: breadcrumb (لیست [{label, url}])، title، icon، #}
+{#          action_url، action_label، action_icon (اختیاری) #}
+<div class="mb-6">
+    {% if breadcrumb %}
+        {% include 'components/atoms/breadcrumb.html' with items=breadcrumb extra_classes="mb-3" %}
+    {% endif %}
+
+    <div class="flex flex-wrap justify-between items-center gap-3">
+        <h1 class="text-2xl font-bold text-slate-700 flex items-center gap-3">
+            {% if icon %}<i class="{{ icon }} text-c1"></i>{% endif %}
+            {{ title }}
+        </h1>
+
+        {% if action_url and action_label %}
+            <a href="{{ action_url }}"
+               class="px-4 py-2 bg-c1 text-white rounded-lg text-sm hover:bg-c2 transition-colors flex items-center gap-2 shadow-sm">
+                <i class="{{ action_icon|default:'fa-solid fa-plus' }}"></i>
+                {{ action_label }}
+            </a>
+        {% endif %}
+    </div>
+</div>

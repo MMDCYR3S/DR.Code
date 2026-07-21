@@ -49,7 +49,7 @@ class MembershipForm(forms.ModelForm):
 class PlanForm(forms.ModelForm):
     class Meta:
         model = Plan
-        fields = ['membership', 'name', 'duration_days', 'price', 'is_active']
+        fields = ['membership', 'name', 'tag', 'duration_days', 'price', 'is_active']
         widgets = {
             'membership': forms.Select(attrs={
                 'class': 'w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200'
@@ -57,6 +57,9 @@ class PlanForm(forms.ModelForm):
             'name': forms.TextInput(attrs={
                 'class': 'w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200',
                 'placeholder': 'مثال: بسته ۱ ماهه'
+            }),
+            'tag': forms.Select(attrs={
+                'class': 'w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200'
             }),
             'duration_days': forms.NumberInput(attrs={
                 'class': 'w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200',

@@ -1,0 +1,18 @@
+{# components/atoms/auth_status_badge.html — نشان وضعیت احراز هویت | ورودی: status، style (badge|inline) #}
+{% if style == 'inline' %}
+    {% if status == 'APPROVED' %}
+        <span class="inline-flex items-center gap-1.5 text-green-600 font-medium"><i class="fa-solid fa-circle-check"></i> تایید شده</span>
+    {% elif status == 'REJECTED' %}
+        <span class="inline-flex items-center gap-1.5 text-red-600 font-medium"><i class="fa-solid fa-circle-xmark"></i> رد شده</span>
+    {% else %}
+        <span class="inline-flex items-center gap-1.5 text-slate-500 font-medium"><i class="fa-solid fa-circle-question"></i> در انتظار تایید</span>
+    {% endif %}
+{% else %}
+    {% if status == 'APPROVED' %}
+        <span class="inline-flex items-center px-3 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">تایید شده</span>
+    {% elif status == 'REJECTED' %}
+        <span class="inline-flex items-center px-3 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded-full">رد شده</span>
+    {% else %}
+        <span class="inline-flex items-center px-3 py-1 text-xs font-semibold text-orange-800 bg-orange-100 rounded-full">در انتظار تایید</span>
+    {% endif %}
+{% endif %}

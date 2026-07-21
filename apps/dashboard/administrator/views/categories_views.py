@@ -1,101 +1,93 @@
 from django.views.generic import ListView, View
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-
-import json
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse_lazy
+from django.contrib import messages
 
 from apps.prescriptions.models import PrescriptionCategory
-from apps.accounts.permissions import HasAdminAccessPermission
+from apps.accounts.permissions import IsTokenJtiActive, HasAdminAccessPermission
 from ..forms import CategoryForm, TAILWIND_COLOR_CHOICES
 
 
+# ===== لینک‌های پایه بردکرامب ===== #
+BREADCRUMB_HOME = {'label': 'داشبورد', 'url': reverse_lazy('dashboard:index:index')}
+
+
 # ================================================== #
-# ============= CATEGORY LIST VIEW ============= #
+# ================= لیست دسته‌بندی‌ها =============== #
 # ================================================== #
-class CategoryListView(LoginRequiredMixin, HasAdminAccessPermission, ListView):
-    """
-    نمایش لیست دسته‌بندی‌ها و مدیریت کامل عملیات CRUD از طریق AJAX.
-    """
+class CategoryListView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPermission, ListView):
+    """ لیست دسته‌بندی‌ها با جستجوی سرورساید و صفحه‌بندی """
+
     model = PrescriptionCategory
-    template_name = 'dashboard/categories/categories.html'
+    template_name = 'dashboard/categories/list.html'
     context_object_name = 'categories'
-    
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = PrescriptionCategory.objects.order_by('title')
+        search = self.request.GET.get('search', '').strip()
+        if search:
+            queryset = queryset.filter(title__icontains=search)
+        return queryset
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['form'] = CategoryForm()
-        
-        categories = self.get_queryset()
         color_map = dict(TAILWIND_COLOR_CHOICES)
-        
-        categories_data = [
-            {
-                'id': category.id,
-                'title': category.title,
-                'color_code': category.color_code,
-                'color_name': color_map.get(category.color_code, '')
-            }
-            for category in categories
-        ]
-        context['categories_json'] = json.dumps(categories_data)
-        
+        for category in context['categories']:
+            category.color_name = color_map.get(category.color_code, '')
+        context['form'] = CategoryForm()
+        context['color_choices'] = [c for c in TAILWIND_COLOR_CHOICES if c[0]]
+        context['breadcrumb'] = [BREADCRUMB_HOME, {'label': 'مدیریت دسته‌بندی‌ها', 'url': ''}]
+        context['search'] = self.request.GET.get('search', '')
+        context['stats'] = {
+            'total': PrescriptionCategory.objects.count(),
+        }
         return context
-    
+
+
 # ================================================== #
-# ============= CATEGORY CREATE VIEW ============= #
+# ================= ایجاد دسته‌بندی ================= #
 # ================================================== #
-class CategoryCreateView(LoginRequiredMixin, HasAdminAccessPermission, View):
-    """ ویو برای ایجاد دسته‌بندی جدید """
-    
+class CategoryCreateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPermission, View):
+    """ ایجاد دسته‌بندی جدید (POST + redirect) """
+
     def post(self, request, *args, **kwargs):
         form = CategoryForm(request.POST)
         if form.is_valid():
             category = form.save()
-            return JsonResponse({
-                'success': True,
-                'message': 'دسته‌بندی با موفقیت ایجاد شد.',
-                'category': {
-                    'id': category.id,
-                    'title': category.title,
-                    'color_code': category.color_code,
-                    'color_name': dict(form.fields['color_code'].choices).get(category.color_code)
-                }
-            }, status=201)
-        return JsonResponse({'success': False, 'message': 'اطلاعات وارد شده معتبر نیست.' ,'errors': form.errors}, status=400)
-    
+            messages.success(request, f'دسته‌بندی «{category.title}» با موفقیت ایجاد شد.')
+        else:
+            messages.error(request, f'اطلاعات وارد شده معتبر نیست: {form.errors.as_text()}')
+        return redirect('dashboard:categories:category_list')
+
+
 # ================================================== #
-# ============= CATEGORY UPDATE VIEW ============= #
+# ================ ویرایش دسته‌بندی ================ #
 # ================================================== #
-class CategoryUpdateView(LoginRequiredMixin, HasAdminAccessPermission, View):
-    """ ویو برای ویرایش یک دسته‌بندی """
-    
+class CategoryUpdateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPermission, View):
+    """ ویرایش دسته‌بندی (POST + redirect) """
+
     def post(self, request, pk, *args, **kwargs):
         category = get_object_or_404(PrescriptionCategory, pk=pk)
         form = CategoryForm(request.POST, instance=category)
         if form.is_valid():
             category = form.save()
-            return JsonResponse({
-                'success': True,
-                'message': 'دسته‌بندی با موفقیت ویرایش شد.',
-                'category': {
-                    'id': category.id,
-                    'title': category.title,
-                    'color_code': category.color_code,
-                    'color_name': dict(form.fields['color_code'].choices).get(category.color_code)
-                }
-            })
-        return JsonResponse({'success': False, 'message': 'اطلاعات وارد شده معتبر نیست.', 'errors': form.errors}, status=400)
-    
+            messages.success(request, f'دسته‌بندی «{category.title}» با موفقیت ویرایش شد.')
+        else:
+            messages.error(request, f'اطلاعات وارد شده معتبر نیست: {form.errors.as_text()}')
+        return redirect('dashboard:categories:category_list')
+
+
 # ================================================== #
-# ============= CATEGORY DELETE VIEW ============= #
+# ================= حذف دسته‌بندی ================== #
 # ================================================== #
-class CategoryDeleteView(LoginRequiredMixin, HasAdminAccessPermission, View):
-    """ ویو برای حذف یک دسته‌بندی """
-    
+class CategoryDeleteView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPermission, View):
+    """ حذف دسته‌بندی (POST + redirect) """
+
     def post(self, request, pk, *args, **kwargs):
         category = get_object_or_404(PrescriptionCategory, pk=pk)
-        try:
-            category.delete()
-            return JsonResponse({'success': True,'message': 'دسته‌بندی با موفقیت حذف شد.',})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': 'خطا در حذف دسته‌بندی.', 'error': str(e)}, status=500)
+        title = category.title
+        category.delete()
+        messages.success(request, f'دسته‌بندی «{title}» با موفقیت حذف شد.')
+        return redirect('dashboard:categories:category_list')

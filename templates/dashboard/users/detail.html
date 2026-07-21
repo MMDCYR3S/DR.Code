@@ -1,0 +1,239 @@
+{% extends 'dashboard/base.html' %}
+{% load file_filters %}
+
+{% block title %}{% if is_create %}افزودن کاربر جدید{% else %}{{ target_user.full_name }}{% endif %}{% endblock %}
+
+{% block content %}
+{# ================================================================= #}
+{# ==================== حالت ایجاد کاربر جدید ==================== #}
+{# ================================================================= #}
+{% if is_create %}
+<div class="container mx-auto max-w-3xl">
+    {% include 'components/molecules/page_header.html' with breadcrumb=breadcrumb title='افزودن کاربر جدید' icon='fa-solid fa-user-plus' %}
+
+    <div class="bg-white rounded-xl shadow-sm p-6">
+        <form method="POST" x-data="{ role: '{{ form.role.value|default:'regular' }}' }">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {% include 'dashboard/users/partials/_field.html' with field=form.first_name %}
+                {% include 'dashboard/users/partials/_field.html' with field=form.last_name %}
+                {% include 'dashboard/users/partials/_field.html' with field=form.email %}
+                {% include 'dashboard/users/partials/_field.html' with field=form.phone_number %}
+                {% include 'dashboard/users/partials/_field.html' with field=form.password %}
+                {% include 'dashboard/users/partials/_field.html' with field=form.medical_code %}
+                <div x-data @change="role = $event.target.value">
+                    {% include 'dashboard/users/partials/_field.html' with field=form.role %}
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6 pt-6 border-t border-slate-100">
+                <a href="{% url 'dashboard:users:admin_users_list' %}"
+                   class="py-2.5 px-5 text-sm font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
+                    انصراف
+                </a>
+                <button type="submit"
+                        class="py-2.5 px-5 text-sm font-semibold rounded-lg bg-c1 text-white hover:bg-c2 transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-check"></i> افزودن کاربر
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% else %}
+{# ================================================================= #}
+{# ============= حالت مشاهده / ویرایش / احراز هویت ============= #}
+{# ================================================================= #}
+<div class="container mx-auto"
+     x-data="userDetail({{ target_user.id }}, '{{ target_user.full_name|escapejs }}', {{ open_edit|yesno:'true,false' }})">
+
+    {% include 'components/molecules/page_header.html' with breadcrumb=breadcrumb title=target_user.full_name icon='fa-solid fa-user' %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {# ===== ستون راست: مدارک و احراز هویت ===== #}
+        <div class="lg:col-span-1 space-y-6">
+
+            {# مدارک ارسالی #}
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h3 class="text-lg font-semibold text-slate-700 mb-4">مدارک ارسالی</h3>
+                {% if documents %}
+                <div class="grid grid-cols-2 gap-3">
+                    {% for doc in documents %}
+                        {% if doc.file.url|file_filter == 'pdf' %}
+                        <a href="{{ doc.file.url }}" target="_blank" download
+                           class="col-span-2 flex items-center justify-center gap-2 p-4 bg-c5 hover:bg-c1 hover:text-white text-c1 font-semibold rounded-lg transition-colors">
+                            <i class="fa-solid fa-file-pdf text-xl"></i> دانلود فایل PDF
+                        </a>
+                        {% else %}
+                        <button type="button" @click="imageUrl = '{{ doc.file.url }}'; imageViewerOpen = true">
+                            <img src="{{ doc.file.url }}" alt="مدرک"
+                                 class="rounded-lg w-full h-auto object-cover border-2 border-slate-200 hover:border-c1 transition">
+                        </button>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-sm text-slate-500">هیچ مدرکی بارگذاری نشده است.</p>
+                {% endif %}
+
+                {% if profile.auth_link %}
+                <a href="{{ profile.auth_link }}" target="_blank"
+                   class="inline-flex items-center gap-1.5 mt-4 text-sm text-c1 hover:underline">
+                    لینک صفحه نظام پزشکی <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                </a>
+                {% endif %}
+            </div>
+
+            {# احراز هویت (فقط در حالت PENDING) #}
+            {% if profile.auth_status == 'PENDING' %}
+            <div class="bg-white p-6 rounded-xl shadow-sm border-2 border-dashed border-orange-300">
+                <h3 class="text-lg font-semibold text-slate-700 mb-4">بررسی احراز هویت</h3>
+                <div class="flex gap-3">
+                    <button type="button" @click="approveModalOpen = true"
+                            class="flex-1 py-2.5 px-4 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition">
+                        تایید هویت
+                    </button>
+                    <button type="button" @click="rejectModalOpen = true"
+                            class="flex-1 py-2.5 px-4 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition">
+                        رد هویت
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        {# ===== ستون چپ: مشخصات + اشتراک ===== #}
+        <div class="lg:col-span-2 space-y-6">
+
+            {# مشخصات کاربری (مشاهده / ویرایش inline) #}
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
+                        مشخصات کاربری
+                        {% include 'components/atoms/auth_status_badge.html' with status=profile.auth_status %}
+                    </h3>
+                    <button type="button" x-show="!editing" @click="editing = true"
+                            class="text-sm text-c1 hover:text-c2 font-medium flex items-center gap-1">
+                        <i class="fa-solid fa-pen-to-square"></i> ویرایش
+                    </button>
+                </div>
+
+                {# --- حالت مشاهده --- #}
+                <dl x-show="!editing" class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                    <div class="flex flex-col"><dt class="text-slate-500">نام و نام خانوادگی:</dt><dd class="font-medium mt-1">{{ target_user.full_name }}</dd></div>
+                    <div class="flex flex-col"><dt class="text-slate-500">شماره تماس:</dt><dd class="font-medium mt-1">{{ target_user.phone_number }}</dd></div>
+                    <div class="flex flex-col"><dt class="text-slate-500">ایمیل:</dt><dd class="font-medium mt-1">{{ target_user.email|default:'ثبت نشده' }}</dd></div>
+                    <div class="flex flex-col"><dt class="text-slate-500">تاریخ ثبت نام:</dt><dd class="font-medium mt-1">{{ target_user.shamsi_date_joined }}</dd></div>
+                    <div class="flex flex-col"><dt class="text-slate-500">نقش:</dt><dd class="mt-1">{% include 'components/atoms/role_badge.html' with role=profile.role %}</dd></div>
+                    <div class="flex flex-col"><dt class="text-slate-500">وضعیت حساب:</dt>
+                        <dd class="font-medium mt-1">{% if target_user.is_active %}<span class="text-green-600">فعال</span>{% else %}<span class="text-red-600">غیرفعال</span>{% endif %}</dd>
+                    </div>
+                    <div class="flex flex-col sm:col-span-2"><dt class="text-slate-500">کد نظام پزشکی:</dt>
+                        <dd class="font-medium mt-1 p-2 bg-slate-50 rounded-md">{{ profile.medical_code|default:'وارد نشده' }}</dd>
+                    </div>
+                    {% if profile.rejection_reason %}
+                    <div class="flex flex-col sm:col-span-2"><dt class="text-slate-500">دلیل رد:</dt>
+                        <dd class="font-medium mt-1 p-2 bg-red-50 text-red-700 rounded-md">{{ profile.rejection_reason }}</dd>
+                    </div>
+                    {% endif %}
+                </dl>
+
+                {# --- حالت ویرایش inline --- #}
+                <form x-show="editing" x-cloak method="POST" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="edit">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {% include 'dashboard/users/partials/_field.html' with field=user_form.first_name %}
+                        {% include 'dashboard/users/partials/_field.html' with field=user_form.last_name %}
+                        {% include 'dashboard/users/partials/_field.html' with field=user_form.email %}
+                        {% include 'dashboard/users/partials/_field.html' with field=profile_form.role %}
+                        {% include 'dashboard/users/partials/_field.html' with field=profile_form.auth_status %}
+                        {% include 'dashboard/users/partials/_field.html' with field=profile_form.medical_code %}
+                        <div class="sm:col-span-2">{% include 'dashboard/users/partials/_field.html' with field=profile_form.rejection_reason %}</div>
+                        <label class="sm:col-span-2 flex items-center gap-2 cursor-pointer">
+                            {{ user_form.is_active }}
+                            <span class="text-sm text-slate-700">حساب کاربری فعال باشد</span>
+                        </label>
+                    </div>
+                    <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                        <button type="button" @click="editing = false"
+                                class="py-2 px-4 text-sm font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">انصراف</button>
+                        <button type="submit"
+                                class="py-2 px-4 text-sm font-semibold rounded-lg bg-c1 text-white hover:bg-c2 transition">ذخیره تغییرات</button>
+                    </div>
+                </form>
+
+                {# اکشن‌های عمومی #}
+                <div x-show="!editing" class="border-t mt-6 pt-4 flex flex-wrap gap-3">
+                    <button type="button" @click="deleteModalOpen = true"
+                            class="flex-1 min-w-[140px] py-2 px-4 text-sm font-semibold bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition">حذف کاربر</button>
+                    <a href="{% url 'dashboard:users:admin_users_list' %}"
+                       class="flex-1 min-w-[140px] py-2 px-4 text-sm font-semibold bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition text-center">بازگشت به لیست</a>
+                </div>
+            </div>
+
+            {# مدیریت اشتراک (سمت کلاینت با API) #}
+            <div class="bg-white p-6 rounded-xl shadow-sm border-2" :class="hasActiveSubscription ? 'border-green-300' : 'border-slate-200'">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-slate-700">مدیریت اشتراک</h3>
+                    <span x-show="hasActiveSubscription" x-cloak
+                          class="px-3 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">اشتراک فعال</span>
+                </div>
+
+                <div x-show="hasActiveSubscription && activeSubscription" x-cloak class="mb-4">
+                    <div class="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border border-green-200 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                        <div class="flex flex-col"><span class="text-slate-500 text-xs">نام پلن:</span><span class="font-semibold mt-1" x-text="activeSubscription?.plan_name"></span></div>
+                        <div class="flex flex-col"><span class="text-slate-500 text-xs">تاریخ انقضا:</span><span class="font-semibold mt-1" x-text="activeSubscription?.end_date"></span></div>
+                        <div class="flex flex-col"><span class="text-slate-500 text-xs">روزهای باقیمانده:</span><span class="font-semibold mt-1" :class="activeSubscription?.days_remaining < 7 ? 'text-red-600' : 'text-green-600'" x-text="activeSubscription?.days_remaining + ' روز'"></span></div>
+                        <div class="flex flex-col"><span class="text-slate-500 text-xs">وضعیت:</span><span class="font-semibold mt-1 text-green-600" x-text="activeSubscription?.status_display"></span></div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button x-show="!hasActiveSubscription" @click="openCreateSubscriptionModal()"
+                            class="flex-1 py-2.5 px-4 bg-c1 text-white font-semibold rounded-lg hover:bg-c2 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus"></i> افزودن اشتراک
+                    </button>
+                    <button x-show="hasActiveSubscription" x-cloak @click="openEditSubscriptionModal()"
+                            class="flex-1 py-2.5 px-4 bg-amber-500 text-white font-semibold rounded-lg hover:bg-amber-600 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-pen-to-square"></i> ویرایش اشتراک
+                    </button>
+                    <button x-show="hasActiveSubscription" x-cloak @click="openExtendSubscriptionModal()"
+                            class="flex-1 py-2.5 px-4 bg-purple-500 text-white font-semibold rounded-lg hover:bg-purple-600 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left"></i> تمدید اشتراک
+                    </button>
+                </div>
+
+                <div x-show="allSubscriptions.length > 0" x-cloak class="mt-6 border-t pt-4">
+                    <h4 class="text-sm font-semibold text-slate-600 mb-3">تاریخچه اشتراک‌ها</h4>
+                    <div class="space-y-2 max-h-60 overflow-y-auto">
+                        <template x-for="sub in allSubscriptions" :key="sub.id">
+                            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs flex justify-between items-start">
+                                <div class="space-y-1">
+                                    <div class="font-semibold" x-text="sub.plan_name"></div>
+                                    <div class="text-slate-500"><span x-text="sub.start_date"></span> تا <span x-text="sub.end_date"></span></div>
+                                </div>
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                                      :class="{ 'bg-green-200 text-green-800': sub.status === 'active', 'bg-red-200 text-red-800': sub.status === 'expired', 'bg-gray-200 text-gray-800': sub.status === 'canceled' }"
+                                      x-text="sub.status_display"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include 'dashboard/users/partials/_user_modals.html' %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if not is_create %}
+{% include 'dashboard/users/partials/_user_detail_js.html' %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,286 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}مدیریت کدهای تخفیف{% endblock %}
+
+{% block content %}
+<div class="container mx-auto"
+     x-data="discountManager({
+        createUrl: '{% url 'dashboard:orders:discount_create' %}',
+        updateUrlTpl: '{% url 'dashboard:orders:discount_update' 0 %}',
+        deleteUrlTpl: '{% url 'dashboard:orders:discount_delete' 0 %}'
+     })">
+
+    {# ===== سربرگ صفحه ===== #}
+    <div class="mb-6">
+        {% include 'components/atoms/breadcrumb.html' with items=breadcrumb extra_classes="mb-3" %}
+        <div class="flex flex-wrap justify-between items-center gap-3">
+            <h1 class="text-2xl font-bold text-slate-700 flex items-center gap-3">
+                <i class="fa-solid fa-tags text-c1"></i> مدیریت کدهای تخفیف
+            </h1>
+            <button type="button" @click="openCreate()"
+                    class="px-4 py-2 bg-c1 text-white rounded-lg text-sm hover:bg-c2 transition-colors flex items-center gap-2 shadow-sm">
+                <i class="fa-solid fa-plus"></i> افزودن کد تخفیف جدید
+            </button>
+        </div>
+    </div>
+
+    {# ===== کارت‌های آمار ===== #}
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        {% include 'components/molecules/stat_card.html' with icon='fa-solid fa-ticket' variant='c1' label='کل کدها' value=stats.total %}
+        {% include 'components/molecules/stat_card.html' with icon='fa-solid fa-check-circle' variant='green' label='فعال' value=stats.active %}
+        {% include 'components/molecules/stat_card.html' with icon='fa-solid fa-times-circle' variant='red' label='غیرفعال' value=stats.inactive %}
+    </div>
+
+    {# ===== جستجو و فیلتر ===== #}
+    <div class="bg-white p-4 rounded-xl shadow-sm mb-6">
+        <form method="GET" class="flex flex-col lg:flex-row gap-3 items-center w-full">
+            <div class="relative w-full lg:flex-1">
+                <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <i class="fa-solid fa-magnifying-glass text-slate-400 text-sm"></i>
+                </span>
+                <input type="text" name="search" value="{{ search }}"
+                       placeholder="جستجو در عنوان یا کد تخفیف..."
+                       class="w-full pr-10 pl-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+            </div>
+            <div class="w-full lg:w-52">
+                <select name="status"
+                        class="w-full px-4 py-2.5 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors text-sm">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>همه</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>فعال</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>غیرفعال</option>
+                </select>
+            </div>
+            <div class="w-full lg:w-auto lg:min-w-[120px]">
+                <button type="submit"
+                        class="w-full px-4 py-2.5 bg-c1 text-white rounded-lg text-sm hover:bg-c2 transition-colors flex justify-center items-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-filter"></i> اعمال
+                </button>
+            </div>
+            {% if search or status_filter != 'all' %}
+            <a href="{% url 'dashboard:orders:discount_list' %}"
+               class="w-full lg:w-auto px-4 py-2.5 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200 transition-colors flex justify-center items-center gap-2">
+                <i class="fa-solid fa-xmark"></i> پاک کردن
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    {# ===== جدول کدهای تخفیف (دسکتاپ) ===== #}
+    <div class="hidden lg:block bg-white rounded-xl shadow-sm overflow-hidden">
+        <table class="min-w-full text-sm">
+            <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
+                <tr>
+                    <th class="px-6 py-4 text-right font-medium">عنوان</th>
+                    <th class="px-6 py-4 text-right font-medium">کد</th>
+                    <th class="px-6 py-4 text-right font-medium">درصد</th>
+                    <th class="px-6 py-4 text-right font-medium">تاریخ شروع</th>
+                    <th class="px-6 py-4 text-right font-medium">تاریخ پایان</th>
+                    <th class="px-6 py-4 text-right font-medium">استفاده</th>
+                    <th class="px-6 py-4 text-right font-medium">وضعیت</th>
+                    <th class="px-6 py-4 text-center font-medium">عملیات</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for discount in discounts %}
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4 font-semibold text-slate-800">{{ discount.title|default:"بدون نام" }}</td>
+                    <td class="px-6 py-4">
+                        <span class="text-slate-600 font-mono">{{ discount.code }}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="font-semibold text-emerald-600">{{ discount.discount_percent }}٪</span>
+                    </td>
+                    <td class="px-6 py-4 text-slate-500 text-xs">{{ discount.shamsi_start_at }}</td>
+                    <td class="px-6 py-4 text-slate-500 text-xs">{{ discount.shamsi_end_at }}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-600">{{ discount.usage_count }}/{{ discount.max_usage }}</span>
+                            <div class="w-16 bg-slate-200 rounded-full h-1.5">
+                                <div class="bg-c1 h-1.5 rounded-full" style="width: {{ discount.usage_percent }}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if discount.is_active %}
+                            <span class="px-2.5 py-1 text-xs font-medium text-emerald-700 bg-emerald-100 rounded-full">فعال</span>
+                        {% else %}
+                            <span class="px-2.5 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">غیرفعال</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex justify-center items-center gap-1">
+                            <button type="button" title="ویرایش"
+                                @click="openEdit({{ discount.id }}, '{{ discount.title|escapejs }}', '{{ discount.code|escapejs }}', {{ discount.discount_percent }}, '{{ discount.start_at|date:'Y-m-d\TH:i'|default:'' }}', '{{ discount.end_at|date:'Y-m-d\TH:i'|default:'' }}', {{ discount.max_usage }}, {{ discount.is_active|yesno:'true,false' }})"
+                                class="p-2 text-slate-500 hover:text-c1 rounded-md hover:bg-slate-100 transition-colors">
+                                <i class="fa-solid fa-pencil"></i>
+                            </button>
+                            <button type="button" title="حذف"
+                                @click="openDelete({{ discount.id }}, '{{ discount.code|escapejs }}')"
+                                class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100 transition-colors">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8">{% include 'dashboard/discounts/_empty.html' %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# ===== کارت‌های موبایل ===== #}
+    <div class="lg:hidden space-y-4">
+        {% for discount in discounts %}
+        <div class="bg-white rounded-xl shadow-sm p-4">
+            <div class="flex justify-between items-start gap-3">
+                <div class="flex-1 min-w-0">
+                    <h3 class="font-bold text-slate-800 mb-2 break-words">{{ discount.title|default:"بدون نام" }}</h3>
+                    <div class="space-y-1.5 text-sm text-slate-600">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-barcode w-4 text-slate-400"></i>
+                            <span class="font-mono">{{ discount.code }}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold text-emerald-600">{{ discount.discount_percent }}٪</span>
+                            <span class="text-xs">{{ discount.usage_count }}/{{ discount.max_usage }} استفاده</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            {% if discount.is_active %}
+                                <span class="px-2 py-0.5 text-xs font-medium text-emerald-700 bg-emerald-100 rounded-full">فعال</span>
+                            {% else %}
+                                <span class="px-2 py-0.5 text-xs font-medium text-red-700 bg-red-100 rounded-full">غیرفعال</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1 flex-shrink-0">
+                    <button type="button"
+                        @click="openEdit({{ discount.id }}, '{{ discount.title|escapejs }}', '{{ discount.code|escapejs }}', {{ discount.discount_percent }}, '{{ discount.start_at|date:'Y-m-d\TH:i'|default:'' }}', '{{ discount.end_at|date:'Y-m-d\TH:i'|default:'' }}', {{ discount.max_usage }}, {{ discount.is_active|yesno:'true,false' }})"
+                        class="p-2 text-slate-500 hover:text-c1 rounded-md hover:bg-slate-100 transition-colors">
+                        <i class="fa-solid fa-pencil"></i>
+                    </button>
+                    <button type="button"
+                        @click="openDelete({{ discount.id }}, '{{ discount.code|escapejs }}')"
+                        class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100 transition-colors">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        {% include 'dashboard/discounts/_empty.html' %}
+        {% endfor %}
+    </div>
+
+    {# ===== صفحه‌بندی ===== #}
+    {% include 'dashboard/partials/_pagination.html' %}
+
+    {# ===== مودال ایجاد / ویرایش ===== #}
+    <div x-show="showForm" x-cloak @keydown.escape.window="showForm = false"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div @click="showForm = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div x-show="showForm" x-transition class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg my-8">
+            <div class="px-5 py-4 flex justify-between items-center border-b border-slate-100">
+                <h3 class="text-lg font-bold text-slate-800" x-text="isEdit ? 'ویرایش کد تخفیف' : 'افزودن کد تخفیف جدید'"></h3>
+                <button type="button" @click="showForm = false" class="p-1.5 hover:bg-slate-100 rounded-full transition-colors">
+                    <i class="fa-solid fa-times text-slate-500"></i>
+                </button>
+            </div>
+            <form method="POST" :action="formAction">
+                {% csrf_token %}
+                <div class="p-6 space-y-5">
+                    <div>
+                        <label for="id_title" class="block text-sm font-medium text-slate-700 mb-2">عنوان</label>
+                        <input type="text" name="title" id="id_title" x-model="discount.title"
+                               placeholder="نام کد را وارد کنید"
+                               class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+                    </div>
+                    <div>
+                        <label for="id_code" class="block text-sm font-medium text-slate-700 mb-2">کد تخفیف</label>
+                        <input type="text" name="code" id="id_code" x-model="discount.code"
+                               placeholder="کد را وارد کنید (اختیاری)"
+                               class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors font-mono dir-ltr">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="id_discount_percent" class="block text-sm font-medium text-slate-700 mb-2">درصد تخفیف *</label>
+                            <input type="number" name="discount_percent" id="id_discount_percent" x-model="discount.discount_percent" required min="1" max="100"
+                                   class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+                        </div>
+                        <div>
+                            <label for="id_max_usage" class="block text-sm font-medium text-slate-700 mb-2">حداکثر استفاده *</label>
+                            <input type="number" name="max_usage" id="id_max_usage" x-model="discount.max_usage" required min="1"
+                                   class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="id_start_at" class="block text-sm font-medium text-slate-700 mb-2">تاریخ شروع</label>
+                            <input type="datetime-local" name="start_at" id="id_start_at" x-model="discount.start_at"
+                                   class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+                        </div>
+                        <div>
+                            <label for="id_end_at" class="block text-sm font-medium text-slate-700 mb-2">تاریخ پایان</label>
+                            <input type="datetime-local" name="end_at" id="id_end_at" x-model="discount.end_at"
+                                   class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" name="is_active" id="id_is_active" x-model="discount.is_active"
+                               class="w-4 h-4 text-c1 bg-slate-100 border-slate-300 rounded focus:ring-c1 focus:ring-2 cursor-pointer">
+                        <label for="id_is_active" class="text-sm font-medium text-slate-700 cursor-pointer">
+                            کد تخفیف فعال است
+                        </label>
+                    </div>
+                </div>
+                <div class="px-6 py-4 bg-slate-50 rounded-b-xl flex justify-end items-center gap-3">
+                    <button type="button" @click="showForm = false"
+                            class="py-2 px-5 text-sm font-semibold bg-white border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors">
+                        انصراف
+                    </button>
+                    <button type="submit"
+                            class="py-2 px-6 text-sm font-semibold bg-c1 text-white rounded-lg hover:bg-c2 transition-colors shadow-sm">
+                        ذخیره
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# ===== مودال حذف ===== #}
+    <div x-show="showDelete" x-cloak @keydown.escape.window="showDelete = false"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div @click="showDelete = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div x-show="showDelete" x-transition class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm text-center p-6">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <i class="fa-solid fa-triangle-exclamation text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-2">حذف کد تخفیف</h3>
+            <p class="text-sm text-slate-500 mb-5">
+                آیا از حذف کد <strong class="text-slate-700 break-words" x-text="discount.title"></strong> مطمئن هستید؟
+            </p>
+            <form method="POST" :action="deleteAction">
+                {% csrf_token %}
+                <div class="flex justify-center gap-3">
+                    <button type="button" @click="showDelete = false"
+                            class="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
+                        انصراف
+                    </button>
+                    <button type="submit"
+                            class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-sm">
+                        بله، حذف کن
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard/discounts.js' %}"></script>
+{% endblock %}

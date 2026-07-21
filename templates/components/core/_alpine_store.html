@@ -1,0 +1,79 @@
+<script>
+document.addEventListener('alpine:init', () => {
+    // استور مرکزی
+    Alpine.store('app', {
+        notifications: [],
+        addNotification(message, type = 'success') {
+            this.notifications.push({ message, type, id: Date.now() });
+            setTimeout(() => {
+                this.notifications = this.notifications.filter(n => n.id !== Date.now());
+            }, 5000);
+        },
+        clearNotifications() {
+            this.notifications = [];
+        }
+    });
+
+    // داده مودال
+    Alpine.data('modal', (config = {}) => ({
+        isOpen: false,
+        title: config.title || '',
+        size: config.size || 'md',
+        onClose: config.onClose || null,
+
+        open() {
+            this.isOpen = true;
+            document.body.classList.add('overflow-hidden');
+        },
+
+        close() {
+            this.isOpen = false;
+            document.body.classList.remove('overflow-hidden');
+            if (typeof this.onClose === 'function') this.onClose();
+        },
+
+        toggle() {
+            this.isOpen ? this.close() : this.open();
+        }
+    }));
+
+    // داده دکمه
+    Alpine.data('button', (config = {}) => ({
+        isLoading: false,
+        disabled: config.disabled || false,
+        variant: config.variant || 'primary',
+        size: config.size || 'md',
+
+        async handleClick(event) {
+            if (this.isLoading || this.disabled) return;
+            if (config.action) {
+                this.isLoading = true;
+                try {
+                    await config.action(event);
+                } finally {
+                    this.isLoading = false;
+                }
+            }
+            this.$dispatch('button-clicked', { element: this.$el, event });
+        }
+    }));
+
+    // داده صفحه‌بندی
+    Alpine.data('pagination', (config = {}) => ({
+        currentPage: config.currentPage || 1,
+        totalPages: config.totalPages || 1,
+        onPageChange: config.onPageChange || null,
+
+        goTo(page) {
+            if (page < 1 || page > this.totalPages) return;
+            this.currentPage = page;
+            if (typeof this.onPageChange === 'function') {
+                this.onPageChange(page);
+            }
+        },
+
+        next() { this.goTo(this.currentPage + 1); },
+        prev() { this.goTo(this.currentPage - 1); }
+    }));
+});
+</script>

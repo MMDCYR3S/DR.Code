@@ -1,0 +1,17 @@
+<div class="text-center py-14">
+    <div class="mx-auto w-fit bg-slate-100 rounded-full p-5 mb-4">
+        <i class="fa-solid fa-file-prescription text-3xl text-slate-400"></i>
+    </div>
+    <h3 class="text-lg font-medium text-slate-800 mb-1">
+        {% if search or category_filter %}هیچ نسخه‌ای مطابق با جستجو یافت نشد{% else %}هنوز نسخه‌ای ثبت نشده است{% endif %}
+    </h3>
+    <p class="text-slate-500 text-sm mb-4">
+        {% if search or category_filter %}عبارت یا فیلتر دیگری را امتحان کنید{% else %}برای شروع، اولین نسخه را اضافه کنید{% endif %}
+    </p>
+    {% if not search and not category_filter %}
+    <a href="{% url 'dashboard:prescriptions:prescription_create' %}"
+       class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-c1 bg-c5 rounded-lg hover:bg-c4 transition-colors">
+        <i class="fa-solid fa-plus"></i> افزودن نسخه جدید
+    </a>
+    {% endif %}
+</div>

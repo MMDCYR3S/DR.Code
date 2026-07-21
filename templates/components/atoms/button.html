@@ -1,0 +1,69 @@
+{# components/atoms/button.html #}
+{% with 
+    tag=tag|default:"button"
+    href=href|default:"#"
+    variant=variant|default:"primary"
+    size=size|default:"md"
+    type=type|default:"button"
+    label=label|default:"دکمه"
+    loading_text=loading_text|default:"در حال ارسال..."
+    disabled=disabled|default:False
+    icon=icon|default:""
+    icon_position=icon_position|default:"right"
+    extra_classes=extra_classes|default:""
+    action=action|default:"null"
+%}
+
+{% if tag == 'a' %}
+<a href="{{ href }}"
+    class="inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-200 shadow-sm
+    {% if variant == 'primary' %} bg-c1 hover:bg-c2 text-white {% endif %}
+    {% if variant == 'success' %} bg-c3 hover:bg-c2 text-white {% endif %}
+    {% if variant == 'danger' %} bg-red-600 hover:bg-red-700 text-white {% endif %}
+    {% if variant == 'secondary' %} bg-slate-100 hover:bg-slate-200 text-slate-700 {% endif %}
+    {% if variant == 'outline' %} bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 {% endif %}
+    {% if size == 'xs' %} px-2 py-1 text-xs {% endif %}
+    {% if size == 'sm' %} px-3 py-1.5 text-sm {% endif %}
+    {% if size == 'md' %} px-5 py-2.5 text-base {% endif %}
+    {% if size == 'lg' %} px-7 py-3 text-lg {% endif %}
+    {{ extra_classes }}"
+>
+    {% if icon and icon_position == 'left' %}<i class="{{ icon }}"></i>{% endif %}
+    <span>{{ label }}</span>
+    {% if icon and icon_position == 'right' %}<i class="{{ icon }}"></i>{% endif %}
+</a>
+{% else %}
+<button type="{{ type }}"
+    x-data="button({
+        variant: '{{ variant }}',
+        size: '{{ size }}',
+        disabled: {{ disabled|yesno:"true,false" }},
+        action: {{ action|default:"null" }}
+    })"
+    @click="handleClick"
+    :disabled="isLoading || disabled"
+    :class="{
+        'bg-c1 hover:bg-c2 text-white': variant === 'primary',
+        'bg-c3 hover:bg-c2 text-white': variant === 'success',
+        'bg-red-600 hover:bg-red-700 text-white': variant === 'danger',
+        'bg-slate-100 hover:bg-slate-200 text-slate-700': variant === 'secondary',
+        'bg-white border border-slate-300 hover:bg-slate-50 text-slate-700': variant === 'outline',
+        'px-2 py-1 text-xs': size === 'xs',
+        'px-3 py-1.5 text-sm': size === 'sm',
+        'px-5 py-2.5 text-base': size === 'md',
+        'px-7 py-3 text-lg': size === 'lg',
+        'opacity-60 cursor-not-allowed': isLoading || disabled,
+        'shadow-sm': variant !== 'outline' && variant !== 'secondary'
+    }"
+    class="inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-200 {{ extra_classes }}"
+>
+    <svg x-show="isLoading" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+    {% if icon and icon_position == 'left' %}<i x-show="!isLoading" class="{{ icon }}"></i>{% endif %}
+    <span x-text="isLoading ? '{{ loading_text }}' : '{{ label }}'"></span>
+    {% if icon and icon_position == 'right' %}<i x-show="!isLoading" class="{{ icon }}"></i>{% endif %}
+</button>
+{% endif %}
+{% endwith %}

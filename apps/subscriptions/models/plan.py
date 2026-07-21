@@ -4,6 +4,14 @@ from .membership import Membership
 
 import jdatetime
 
+# ========= Plan Tags Enum ========= #
+class PlanTag(models.TextChoices):
+    """انواع برچسب‌های نمایشی برای پلن‌ها"""
+    MOST_POPULAR = "most_popular", "محبوب‌ترین"
+    BEST_VALUE = "best_value", "به‌صرفه‌ترین"
+    SPECIAL_OFFER = "special_offer", "پیشنهاد ویژه"
+    DISCOUNTED = "discounted", "تخفیف ویژه"
+
 # ========= Plan Model ========= #
 class Plan(models.Model):
     """
@@ -16,6 +24,13 @@ class Plan(models.Model):
         verbose_name="برای کدام نوع اشتراک؟"
     )
     name = models.CharField(max_length=100, verbose_name="نام بسته")
+    tag = models.CharField(
+        max_length=50,
+        choices=PlanTag.choices,
+        null=True,
+        blank=True,
+        verbose_name="برچسب نمایشی"
+    )
     duration_days = models.PositiveIntegerField(verbose_name="مدت زمان (به روز)")
     price = models.IntegerField(default=0, verbose_name="قیمت (ریال)")
     is_active = models.BooleanField(default=True, verbose_name="بسته فعال است؟")
@@ -29,10 +44,7 @@ class Plan(models.Model):
         jdate = jdatetime.datetime.fromgregorian(datetime=self.created_at)
         return jdate.strftime("%Y/%m/%d - %H:%M")
 
-
-
     class Meta:
-        # جلوگیری از تعریف دو بسته با مدت زمان یکسان برای یک نوع اشتراک
         unique_together = ('membership', 'duration_days') 
         ordering = ['duration_days']
         

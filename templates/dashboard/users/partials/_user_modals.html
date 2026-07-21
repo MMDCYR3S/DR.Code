@@ -1,0 +1,206 @@
+{# _user_modals.html — مودال‌های صفحه کاربر (احراز، حذف، نمایش مدرک، اشتراک) #}
+{# نیازمند x-data="userDetail(...)" در والد #}
+
+{# ===== مودال تایید احراز هویت ===== #}
+<div x-show="approveModalOpen" x-cloak @keydown.escape.window="approveModalOpen = false"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div @click="approveModalOpen = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+    <div x-show="approveModalOpen" x-transition class="relative bg-white rounded-2xl shadow-xl w-full max-w-md">
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="approve">
+            <div class="p-6">
+                <h3 class="text-lg font-bold text-slate-800 mb-4">تایید احراز هویت</h3>
+                <div class="bg-yellow-50 border-r-4 border-yellow-400 p-3 mb-4 text-sm text-yellow-700">
+                    وارد کردن کد نظام پزشکی برای تایید هویت <strong>الزامی</strong> است.
+                </div>
+                <label for="medical_code" class="block text-sm font-medium text-slate-700 mb-2">کد نظام پزشکی <span class="text-red-500">*</span></label>
+                <input type="text" id="medical_code" name="medical_code" required minlength="5" maxlength="50"
+                       class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                       placeholder="کد نظام پزشکی را وارد کنید">
+            </div>
+            <div class="px-6 py-4 bg-slate-50 rounded-b-2xl flex justify-end gap-3">
+                <button type="button" @click="approveModalOpen = false" class="py-2 px-4 text-sm font-semibold bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition">انصراف</button>
+                <button type="submit" class="py-2 px-4 text-sm font-semibold bg-green-500 text-white rounded-lg hover:bg-green-600 transition">تایید نهایی</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ===== مودال رد احراز هویت ===== #}
+<div x-show="rejectModalOpen" x-cloak @keydown.escape.window="rejectModalOpen = false"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div @click="rejectModalOpen = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+    <div x-show="rejectModalOpen" x-transition class="relative bg-white rounded-2xl shadow-xl w-full max-w-md">
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reject">
+            <div class="p-6">
+                <h3 class="text-lg font-bold text-slate-800">دلیل رد هویت</h3>
+                <p class="text-sm text-slate-500 mt-1">این پیام برای کاربر ارسال خواهد شد.</p>
+                <textarea name="rejection_reason" rows="4" required
+                          class="w-full mt-4 px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1"
+                          placeholder="مثال: تصویر کارت ملی ارسالی خوانا نیست..."></textarea>
+            </div>
+            <div class="px-6 py-4 bg-slate-50 rounded-b-2xl flex justify-end gap-3">
+                <button type="button" @click="rejectModalOpen = false" class="py-2 px-4 text-sm font-semibold bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition">انصراف</button>
+                <button type="submit" class="py-2 px-4 text-sm font-semibold bg-red-500 text-white rounded-lg hover:bg-red-600 transition">ارسال و رد کردن</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ===== مودال حذف کاربر ===== #}
+<div x-show="deleteModalOpen" x-cloak @keydown.escape.window="deleteModalOpen = false"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div @click="deleteModalOpen = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+    <div x-show="deleteModalOpen" x-transition class="relative bg-white rounded-2xl shadow-xl w-full max-w-sm text-center p-6">
+        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+            <i class="fa-solid fa-triangle-exclamation text-xl text-red-600"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-800 mb-2">حذف کاربر</h3>
+        <p class="text-sm text-slate-500 mb-6">آیا از حذف <strong x-text="userName"></strong> مطمئن هستید؟ این عمل غیرقابل بازگشت است.</p>
+        <div class="flex justify-center gap-3">
+            <button @click="deleteModalOpen = false" class="py-2 px-4 text-sm font-semibold bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition">انصراف</button>
+            <form method="POST" :action="`/dashboard/admin/users/${userId}/delete/`">
+                {% csrf_token %}
+                <button type="submit" class="py-2 px-4 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 transition">بله، حذف کن</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ===== نمایش‌دهنده تصویر مدرک ===== #}
+<div x-show="imageViewerOpen" x-cloak @keydown.escape.window="imageViewerOpen = false"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div @click="imageViewerOpen = false" class="absolute inset-0 bg-slate-900/70"></div>
+    <div class="relative max-w-4xl max-h-full">
+        <img :src="imageUrl" alt="نمایش مدرک" class="rounded-lg shadow-2xl max-w-full max-h-[90vh]">
+        <button @click="imageViewerOpen = false" class="absolute -top-3 -left-3 bg-white rounded-full p-1.5 text-slate-600 hover:text-red-600 transition">
+            <i class="fa-solid fa-times"></i>
+        </button>
+    </div>
+</div>
+
+{# ===== مودال افزودن اشتراک ===== #}
+<div x-show="createSubscriptionModalOpen" x-cloak @keydown.escape.window="createSubscriptionModalOpen = false"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div @click="createSubscriptionModalOpen = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+    <div x-show="createSubscriptionModalOpen" x-transition class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg">
+        <form @submit.prevent="createSubscription()" class="p-6 space-y-4">
+            <h3 class="text-lg font-bold text-slate-800">افزودن اشتراک جدید</h3>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">انتخاب پلن اشتراک <span class="text-red-500">*</span></label>
+                <select x-model="subscriptionForm.plan_id" @change="updatePlanPrice()" required
+                        class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1">
+                    <option value="">لطفاً یک پلن انتخاب کنید</option>
+                    <template x-for="plan in availablePlans" :key="plan.id">
+                        <option :value="plan.id" x-text="plan.name + ' - ' + plan.membership + ' (' + plan.duration_months + ' ماه)'"></option>
+                    </template>
+                </select>
+            </div>
+            <div x-show="subscriptionForm.plan_id" x-cloak>
+                <label class="block text-sm font-medium text-slate-700 mb-2">مبلغ (تومان)</label>
+                <input type="text" x-model="subscriptionForm.payment_amount" readonly
+                       class="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-lg text-slate-600 cursor-not-allowed">
+            </div>
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button type="button" @click="createSubscriptionModalOpen = false" class="py-2 px-4 text-sm font-semibold bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition">انصراف</button>
+                <button type="submit" :disabled="isProcessing" class="py-2 px-4 text-sm font-semibold bg-c1 text-white rounded-lg hover:bg-c2 transition disabled:opacity-50">
+                    <span x-show="!isProcessing">ثبت اشتراک</span><span x-show="isProcessing" x-cloak>در حال پردازش...</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ===== مودال ویرایش اشتراک ===== #}
+<div x-show="editSubscriptionModalOpen" x-cloak @keydown.escape.window="editSubscriptionModalOpen = false"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div @click="editSubscriptionModalOpen = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+    <div x-show="editSubscriptionModalOpen" x-transition class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg">
+        <form @submit.prevent="updateSubscription()" class="p-6 space-y-4">
+            <h3 class="text-lg font-bold text-slate-800">ویرایش اشتراک</h3>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">پلن اشتراک</label>
+                <select x-model="editForm.plan_id" @change="updateEditPlanPrice()"
+                        class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1">
+                    <template x-for="plan in availablePlans" :key="plan.id">
+                        <option :value="plan.id" x-text="plan.name"></option>
+                    </template>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">وضعیت</label>
+                <select x-model="editForm.status"
+                        class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1">
+                    <option value="active">فعال</option>
+                    <option value="expired">منقضی</option>
+                    <option value="canceled">لغو شده</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">مبلغ (تومان)</label>
+                <input type="text" x-model="editForm.payment_amount" readonly
+                       class="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-lg text-slate-600 cursor-not-allowed">
+            </div>
+            <div class="flex justify-between items-center pt-4 border-t border-slate-100">
+                <button type="button" @click="openDeleteSubscriptionModal()" class="py-2 px-4 text-sm font-semibold bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition flex items-center gap-2">
+                    <i class="fa-solid fa-trash"></i> حذف
+                </button>
+                <div class="flex gap-3">
+                    <button type="button" @click="editSubscriptionModalOpen = false" class="py-2 px-4 text-sm font-semibold bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition">انصراف</button>
+                    <button type="submit" :disabled="isProcessing" class="py-2 px-4 text-sm font-semibold bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition disabled:opacity-50">
+                        <span x-show="!isProcessing">ذخیره</span><span x-show="isProcessing" x-cloak>در حال پردازش...</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ===== مودال تمدید اشتراک ===== #}
+<div x-show="extendSubscriptionModalOpen" x-cloak @keydown.escape.window="extendSubscriptionModalOpen = false"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div @click="extendSubscriptionModalOpen = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+    <div x-show="extendSubscriptionModalOpen" x-transition class="relative bg-white rounded-2xl shadow-xl w-full max-w-md">
+        <form @submit.prevent="extendSubscription()" class="p-6 space-y-4">
+            <h3 class="text-lg font-bold text-slate-800">تمدید اشتراک</h3>
+            <div class="bg-purple-50 p-3 rounded-lg border border-purple-200 text-sm">
+                <span class="text-slate-600">تاریخ انقضای فعلی:</span>
+                <span class="font-semibold text-slate-800" x-text="activeSubscription?.end_date"></span>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">تعداد روز تمدید <span class="text-red-500">*</span></label>
+                <input type="number" x-model="extendForm.days_to_add" min="1" max="365" required
+                       class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                       placeholder="مثلاً: 30">
+            </div>
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button type="button" @click="extendSubscriptionModalOpen = false" class="py-2 px-4 text-sm font-semibold bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition">انصراف</button>
+                <button type="submit" :disabled="isProcessing || !extendForm.days_to_add" class="py-2 px-4 text-sm font-semibold bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition disabled:opacity-50">
+                    <span x-show="!isProcessing">تمدید</span><span x-show="isProcessing" x-cloak>در حال پردازش...</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ===== مودال حذف اشتراک ===== #}
+<div x-show="deleteSubscriptionModalOpen" x-cloak @keydown.escape.window="deleteSubscriptionModalOpen = false"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div @click="deleteSubscriptionModalOpen = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+    <div x-show="deleteSubscriptionModalOpen" x-transition class="relative bg-white rounded-2xl shadow-xl w-full max-w-md text-center p-6">
+        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+            <i class="fa-solid fa-triangle-exclamation text-xl text-red-600"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-800 mb-2">حذف اشتراک</h3>
+        <p class="text-sm text-slate-500 mb-6">آیا از حذف اشتراک این کاربر مطمئن هستید؟ این عملیات قابل بازگشت نیست.</p>
+        <div class="flex justify-center gap-3">
+            <button @click="deleteSubscriptionModalOpen = false" class="py-2 px-4 text-sm font-semibold bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition">انصراف</button>
+            <button @click="confirmDeleteSubscription()" :disabled="isProcessing" class="py-2 px-4 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50">
+                <span x-show="!isProcessing">بله، حذف کن</span><span x-show="isProcessing" x-cloak>در حال پردازش...</span>
+            </button>
+        </div>
+    </div>
+</div>

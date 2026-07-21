@@ -1,0 +1,17 @@
+<div class="text-center py-14">
+    <div class="mx-auto w-fit bg-slate-100 rounded-full p-5 mb-4">
+        <i class="fa-solid fa-video text-3xl text-slate-400"></i>
+    </div>
+    <h3 class="text-lg font-medium text-slate-800 mb-1">
+        {% if search %}هیچ ویدیویی مطابق با جستجو یافت نشد{% else %}هنوز ویدیویی ثبت نشده است{% endif %}
+    </h3>
+    <p class="text-slate-500 text-sm mb-4">
+        {% if search %}عبارت دیگری را امتحان کنید{% else %}برای شروع، اولین ویدیو آموزشی را اضافه کنید{% endif %}
+    </p>
+    {% if not search %}
+    <button type="button" @click="openCreate()"
+            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-c1 bg-c5 rounded-lg hover:bg-c4 transition-colors">
+        <i class="fa-solid fa-plus"></i> افزودن ویدیو جدید
+    </button>
+    {% endif %}
+</div>

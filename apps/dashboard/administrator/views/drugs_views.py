@@ -1,187 +1,104 @@
 from django.views.generic import ListView, View
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse_lazy
+from django.contrib import messages
 from django.db.models import Q
 
-import json
-
 from apps.prescriptions.models import Drug
-from apps.accounts.permissions import HasAdminAccessPermission
+from apps.accounts.permissions import IsTokenJtiActive, HasAdminAccessPermission
 from ..forms import DrugForm
 
 
+# ===== لینک‌های پایه بردکرامب ===== #
+BREADCRUMB_HOME = {'label': 'داشبورد', 'url': reverse_lazy('dashboard:index:index')}
+BREADCRUMB_DRUGS = {'label': 'مدیریت داروها', 'url': reverse_lazy('dashboard:drugs:drug_list')}
+
+
 # ================================================== #
-# ============= DRUG LIST VIEW ============= #
+# ==================== لیست داروها ================= #
 # ================================================== #
-class DrugListView(LoginRequiredMixin, HasAdminAccessPermission, ListView):
-    """
-    نمایش لیست داروها و مدیریت کامل عملیات CRUD از طریق AJAX.
-    """
+class DrugListView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPermission, ListView):
+    """ لیست داروها با جستجوی سرورساید، فیلتر نوع و صفحه‌بندی """
+
     model = Drug
-    template_name = 'dashboard/drugs/drugs.html'
+    template_name = 'dashboard/drugs/list.html'
     context_object_name = 'drugs'
-    ordering = ['-created_at']
-    
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = Drug.objects.order_by('-created_at')
+
+        search = self.request.GET.get('search', '').strip()
+        drug_type = self.request.GET.get('type', '').strip()
+
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) | Q(code__icontains=search)
+            )
+        if drug_type == 'order':
+            queryset = queryset.filter(is_for_order=True)
+        elif drug_type == 'prescription':
+            queryset = queryset.filter(is_for_order=False)
+
+        return queryset
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['form'] = DrugForm()
-        
-        drugs = self.get_queryset()
-        
-        drugs_data = [
-            {
-                'id': drug.id,
-                'title': drug.title,
-                'code': drug.code or '',
-                'is_for_order': drug.is_for_order,
-                'created_at': drug.shamsi_created_at,
-                'updated_at': drug.shamsi_updated_at,
-            }
-            for drug in drugs
-        ]
-        context['drugs_json'] = json.dumps(drugs_data)
-        
+        context['breadcrumb'] = [BREADCRUMB_HOME, {'label': 'مدیریت داروها', 'url': ''}]
+        context['search'] = self.request.GET.get('search', '')
+        context['drug_type'] = self.request.GET.get('type', '')
+        context['stats'] = {
+            'total': Drug.objects.count(),
+            'order': Drug.objects.filter(is_for_order=True).count(),
+            'prescription': Drug.objects.filter(is_for_order=False).count(),
+        }
         return context
 
 
 # ================================================== #
-# ============= DRUG CREATE VIEW ============= #
+# ==================== ایجاد دارو ================== #
 # ================================================== #
-class DrugCreateView(LoginRequiredMixin, HasAdminAccessPermission, View):
-    """ ویو برای ایجاد دارو جدید """
-    
+class DrugCreateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPermission, View):
+    """ ایجاد داروی جدید از طریق فرم (POST + redirect) """
+
     def post(self, request, *args, **kwargs):
         form = DrugForm(request.POST)
         if form.is_valid():
             drug = form.save()
-            return JsonResponse({
-                'success': True,
-                'message': 'دارو با موفقیت ایجاد شد.',
-                'drug': {
-                    'id': drug.id,
-                    'title': drug.title,
-                    'code': drug.code or '',
-                    'created_at': drug.shamsi_created_at,
-                    'updated_at': drug.shamsi_updated_at,
-                }
-            }, status=201)
-        return JsonResponse({
-            'success': False, 
-            'message': 'اطلاعات وارد شده معتبر نیست.',
-            'errors': form.errors
-        }, status=400)
+            messages.success(request, f'داروی «{drug.title}» با موفقیت ایجاد شد.')
+        else:
+            messages.error(request, f'اطلاعات وارد شده معتبر نیست: {form.errors.as_text()}')
+        return redirect('dashboard:drugs:drug_list')
 
 
 # ================================================== #
-# ============= DRUG UPDATE VIEW ============= #
+# =================== ویرایش دارو ================== #
 # ================================================== #
-class DrugUpdateView(LoginRequiredMixin, HasAdminAccessPermission, View):
-    """ ویو برای ویرایش یک دارو """
-    
+class DrugUpdateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPermission, View):
+    """ ویرایش دارو (POST + redirect) """
+
     def post(self, request, pk, *args, **kwargs):
         drug = get_object_or_404(Drug, pk=pk)
         form = DrugForm(request.POST, instance=drug)
         if form.is_valid():
             drug = form.save()
-            return JsonResponse({
-                'success': True,
-                'message': 'دارو با موفقیت ویرایش شد.',
-                'drug': {
-                    'id': drug.id,
-                    'title': drug.title,
-                    'code': drug.code or '',
-                    'created_at': drug.shamsi_created_at,
-                    'updated_at': drug.shamsi_updated_at,
-                }
-            })
-        return JsonResponse({
-            'success': False, 
-            'message': 'اطلاعات وارد شده معتبر نیست.', 
-            'errors': form.errors
-        }, status=400)
+            messages.success(request, f'داروی «{drug.title}» با موفقیت ویرایش شد.')
+        else:
+            messages.error(request, f'اطلاعات وارد شده معتبر نیست: {form.errors.as_text()}')
+        return redirect('dashboard:drugs:drug_list')
 
 
 # ================================================== #
-# ============= DRUG DELETE VIEW ============= #
+# ==================== حذف دارو =================== #
 # ================================================== #
-class DrugDeleteView(LoginRequiredMixin, HasAdminAccessPermission, View):
-    """ ویو برای حذف یک دارو """
-    
+class DrugDeleteView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPermission, View):
+    """ حذف دارو (POST + redirect) """
+
     def post(self, request, pk, *args, **kwargs):
         drug = get_object_or_404(Drug, pk=pk)
-        try:
-            drug_title = drug.title
-            drug.delete()
-            return JsonResponse({
-                'success': True,
-                'message': f'دارو «{drug_title}» با موفقیت حذف شد.',
-            })
-        except Exception as e:
-            return JsonResponse({
-                'success': False, 
-                'message': 'خطا در حذف دارو.', 
-                'error': str(e)
-            }, status=500)
-
-
-# ================================================== #
-# ============= DRUG DETAIL VIEW ============= #
-# ================================================== #
-class DrugDetailView(LoginRequiredMixin, HasAdminAccessPermission, View):
-    """ ویو برای نمایش جزئیات یک دارو """
-    
-    def get(self, request, pk, *args, **kwargs):
-        try:
-            drug = get_object_or_404(Drug, pk=pk)
-            return JsonResponse({
-                'success': True,
-                'drug': {
-                    'id': drug.id,
-                    'title': drug.title,
-                    'code': drug.code or '',
-                    'created_at': drug.shamsi_created_at,
-                    'updated_at': drug.shamsi_updated_at,
-                }
-            })
-        except Exception as e:
-            return JsonResponse({
-                'success': False, 
-                'message': 'خطا در بارگیری اطلاعات دارو.',
-                'error': str(e)
-            }, status=500)
-
-# ================================================== #
-# ============= DRUG SEARCH VIEW ============= #
-# ================================================== #
-class DrugSearchView(LoginRequiredMixin, HasAdminAccessPermission, View):
-    """ ویو برای جستجوی داروها بر اساس نام یا کد """
-    
-    def get(self, request, *args, **kwargs):
-        search_query = request.GET.get('q', '').strip()
-        
-        if not search_query:
-            drugs = Drug.objects.all().order_by('-created_at')
-        else:
-            drugs = Drug.objects.filter(
-                Q(title__icontains=search_query) | 
-                Q(code__icontains=search_query)
-            ).order_by('-created_at')
-        
-        drugs_data = [
-            {
-                'id': drug.id,
-                'title': drug.title,
-                'code': drug.code or '',
-                'is_for_order': drug.is_for_order,
-                'created_at': drug.shamsi_created_at,
-                'updated_at': drug.shamsi_updated_at,
-            }
-            for drug in drugs
-        ]
-        
-        return JsonResponse({
-            'success': True,
-            'drugs': drugs_data,
-            'count': len(drugs_data)
-        })
+        title = drug.title
+        drug.delete()
+        messages.success(request, f'داروی «{title}» با موفقیت حذف شد.')
+        return redirect('dashboard:drugs:drug_list')

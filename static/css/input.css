@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@source "../";
+@source "../../";
 
 @theme {
   --color-c1: #0077b6;

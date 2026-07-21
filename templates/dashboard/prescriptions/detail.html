@@ -1,0 +1,317 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}جزئیات نسخه: {{ prescription.title }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto"
+     x-data="prescriptionDetailManager({
+        deleteUrl: '{% url 'dashboard:prescriptions:prescription_delete' prescription.pk %}'
+     })">
+
+    {# ===== سربرگ ===== #}
+    <div class="mb-6">
+        {% include 'components/molecules/page_header.html' with breadcrumb=breadcrumb title=prescription.title icon='fa-solid fa-file-prescription' %}
+        
+        <div class="flex flex-wrap justify-between items-center gap-3 mt-4">
+            <div class="flex items-center gap-3">
+                <span class="w-4 h-4 rounded-full {{ category_color }}"></span>
+                <span class="text-sm text-slate-500">دسته‌بندی: {{ prescription.category.title|default:'بدون دسته‌بندی' }}</span>
+                {% if prescription.access_level == 'PREMIUM' %}
+                    <span class="px-3 py-1 text-xs font-semibold text-purple-700 bg-purple-100 rounded-full">ویژه</span>
+                {% else %}
+                    <span class="px-3 py-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full">رایگان</span>
+                {% endif %}
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="{% url 'dashboard:prescriptions:prescription_update' prescription.pk %}"
+                   class="px-4 py-2 bg-c1 text-white rounded-lg text-sm hover:bg-c2 transition-colors shadow-sm flex items-center gap-2">
+                    <i class="fa-solid fa-pencil"></i> ویرایش
+                </a>
+                <a href="{% url 'dashboard:prescriptions:prescription_list' %}"
+                   class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200 transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-right"></i> بازگشت
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {# ===== ستون اصلی (۲ ستون) ===== #}
+        <div class="lg:col-span-2 space-y-6">
+
+            {# ── اطلاعات پایه ── #}
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
+                    <i class="fa-solid fa-info-circle text-c1"></i>
+                    <h3 class="text-sm font-semibold text-slate-700">اطلاعات پایه</h3>
+                </div>
+                <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-xs text-slate-400 mb-1">عنوان نسخه</p>
+                        <p class="font-medium">{{ prescription.title }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-400 mb-1">دسته‌بندی</p>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full {{ category_color }}"></span>
+                            <span>{{ prescription.category.title|default:'بدون دسته‌بندی' }}</span>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-400 mb-1">سطح دسترسی</p>
+                        {% if prescription.access_level == 'PREMIUM' %}
+                            <span class="px-3 py-1 text-xs font-semibold text-purple-700 bg-purple-100 rounded-full">ویژه</span>
+                        {% else %}
+                            <span class="px-3 py-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full">رایگان</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-400 mb-1">تاریخ ایجاد</p>
+                        <p class="font-medium">{{ prescription.shamsi_created_at }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-400 mb-1">آخرین بروزرسانی</p>
+                        <p class="font-medium">{{ prescription.shamsi_updated_at }}</p>
+                    </div>
+                </div>
+            </div>
+
+            {# ── توضیحات ── #}
+            {% if prescription.detailed_description %}
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
+                    <i class="fa-solid fa-align-left text-c1"></i>
+                    <h3 class="text-sm font-semibold text-slate-700">توضیحات تکمیلی</h3>
+                </div>
+                <div class="p-5 prose prose-slate max-w-none" style="direction: rtl;">
+                    {{ prescription.detailed_description|linebreaks }}
+                </div>
+            </div>
+            {% endif %}
+
+            {# ── داروها ── #}
+            {% if grouped_drugs %}
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-pills text-c1"></i>
+                        <h3 class="text-sm font-semibold text-slate-700">لیست داروها</h3>
+                        <span class="text-xs text-slate-400">({{ prescription.prescriptiondrug_set.count }} دارو)</span>
+                    </div>
+                </div>
+                <div class="p-4 space-y-4">
+                    {% for group_key, drugs in grouped_drugs.items %}
+                    <div class="shadow shadow-c1/50 bg-c2/20 rounded-md overflow-hidden">
+                        <div class="px-4 py-2 border-b border-c2/20 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full {{ category_color }}"></span>
+                                <span class="font-bold text-sm">
+                                    {% if group_key == 'no_group' %}
+                                        بدون گروه
+                                    {% else %}
+                                        گروه {{ group_key }}
+                                    {% endif %}
+                                </span>
+                                <span class="text-xs text-slate-500">({{ drugs|length }} دارو)</span>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm">
+                                <thead class="">
+                                    <tr>
+                                        <th class="px-4 py-2 text-right text-xs font-semibold text-slate-600">#</th>
+                                        <th class="px-4 py-2 text-right text-xs font-semibold text-slate-600">نام دارو</th>
+                                        <th class="px-4 py-2 text-right text-xs font-semibold text-slate-600">کد</th>
+                                        <th class="px-4 py-2 text-right text-xs font-semibold text-slate-600">دوز</th>
+                                        <th class="px-4 py-2 text-right text-xs font-semibold text-slate-600">مقدار</th>
+                                        <th class="px-4 py-2 text-right text-xs font-semibold text-slate-600">نوع</th>
+                                        <th class="px-4 py-2 text-right text-xs font-semibold text-slate-600">جایگزین</th>
+                                        <th class="px-4 py-2 text-right text-xs font-semibold text-slate-600">توضیحات</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    {% for drug in drugs %}
+                                    <tr class="{% if drug.is_combination %}bg-purple-50/30{% endif %}">
+                                        <td class="px-4 py-2.5 text-center text-slate-500">{{ forloop.counter }}</td>
+                                        <td class="px-4 py-2.5 font-medium">{{ drug.drug.title }}</td>
+                                        <td class="px-4 py-2.5 text-slate-600 font-mono">{{ drug.drug.code|default:'-' }}</td>
+                                        <td class="px-4 py-2.5">{{ drug.dosage|default:'-' }}</td>
+                                        <td class="px-4 py-2.5 text-center">{{ drug.amount|default:1 }}</td>
+                                        <td class="px-4 py-2.5">
+                                            {% if drug.is_combination %}
+                                                <span class="px-2 py-0.5 text-xs font-medium text-purple-700 bg-purple-100 rounded-full">ترکیبی</span>
+                                            {% else %}
+                                                <span class="px-2 py-0.5 text-xs font-medium text-slate-600 bg-slate-100 rounded-full">عادی</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-4 py-2.5">
+                                            {% if drug.is_substitute %}
+                                                <span class="px-2 py-0.5 text-xs font-medium text-green-700 bg-green-100 rounded-full">جایگزین</span>
+                                            {% else %}
+                                                <span class="px-2 py-0.5 text-xs font-medium text-slate-600 bg-slate-100 rounded-full">غیرجایگزین</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-4 py-2.5 text-slate-500 text-xs">{{ drug.instructions|default:'-'|linebreaksbr }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {# ── نام‌های جایگزین ── #}
+            {% if prescription.aliases.exists %}
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
+                    <i class="fa-solid fa-tag text-c1"></i>
+                    <h3 class="text-sm font-semibold text-slate-700">نام‌های جایگزین</h3>
+                </div>
+                <div class="p-5 flex flex-wrap gap-2">
+                    {% for alias in prescription.aliases.all %}
+                    <span class="px-3 py-1 text-sm rounded-full {% if alias.is_primary %}bg-c1 text-white{% else %}bg-slate-100 text-slate-700{% endif %}">
+                        {{ alias.name }}
+                        {% if alias.is_primary %}<i class="fa-solid fa-star text-yellow-300 mr-1"></i>{% endif %}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {# ── ویدیوها ── #}
+            {% if prescription.videos.exists %}
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
+                    <i class="fa-solid fa-video text-c1"></i>
+                    <h3 class="text-sm font-semibold text-slate-700">ویدیوهای آموزشی</h3>
+                </div>
+                <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for video in prescription.videos.all %}
+                    <div class="bg-c1/5  border border-x-0 border-y-c1/20 rounded-lg p-3 hover:shadow transition">
+                        <h4 class="font-medium text-slate-800">{{ video.title|default:'بدون عنوان' }}</h4>
+                        {% if video.description %}<p class="text-xs text-slate-500 mt-1">{{ video.description }}</p>{% endif %}
+                        <a href="{{ video.video_url }}" target="_blank" class="inline-flex items-center mt-2 text-sm text-c1 hover:underline">
+                            <i class="fa-solid fa-external-link ml-1"></i> مشاهده ویدیو
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {# ── تصاویر ── #}
+            {% if prescription.images.exists %}
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
+                    <i class="fa-solid fa-image text-c1"></i>
+                    <h3 class="text-sm font-semibold text-slate-700">تصاویر</h3>
+                </div>
+                <div class="p-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {% for image in prescription.images.all %}
+                    <div class="border rounded-lg overflow-hidden hover:shadow transition">
+                        <img src="{{ image.image.url }}" alt="{{ image.caption|default:'تصویر نسخه' }}" class="w-full h-32 object-cover">
+                        {% if image.caption %}
+                        <div class="p-2 bg-slate-50 text-xs text-slate-600 text-center">{{ image.caption }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        {# ===== سایدبار (۱ ستون) ===== #}
+        <div class="lg:col-span-1 space-y-6">
+
+            {# ── آمار ── #}
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="px-5 py-3 bg-slate-50 border-b border-slate-200">
+                    <h3 class="text-sm font-semibold text-slate-700">آمار نسخه</h3>
+                </div>
+                <div class="p-4 grid grid-cols-2 gap-3">
+                    <div class="text-center bg-indigo-50 rounded-lg p-3">
+                        <p class="text-xl font-bold text-indigo-700">{{ prescription.prescriptiondrug_set.count }}</p>
+                        <p class="text-xs text-indigo-500">دارو</p>
+                    </div>
+                    <div class="text-center bg-amber-50 rounded-lg p-3">
+                        <p class="text-xl font-bold text-amber-700">{{ prescription.images.count }}</p>
+                        <p class="text-xs text-amber-500">تصویر</p>
+                    </div>
+                    <div class="text-center bg-purple-50 rounded-lg p-3 col-span-2">
+                        <p class="text-xl font-bold text-purple-700">{{ prescription.videos.count }}</p>
+                        <p class="text-xs text-purple-500">ویدیو</p>
+                    </div>
+                </div>
+            </div>
+
+            {# ── عملیات ── #}
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="px-5 py-3 bg-slate-50 border-b border-slate-200">
+                    <h3 class="text-sm font-semibold text-slate-700">عملیات</h3>
+                </div>
+                <div class="p-4 space-y-2">
+                    <a href="{% url 'dashboard:prescriptions:prescription_update' prescription.pk %}"
+                       class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-c1 rounded-lg hover:bg-c2 transition shadow-sm">
+                        <i class="fa-solid fa-pencil"></i> ویرایش نسخه
+                    </a>
+                    <button @click="deleteModalOpen = true"
+                            class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition shadow-sm">
+                        <i class="fa-solid fa-trash"></i> حذف نسخه
+                    </button>
+                    <a href="{% url 'dashboard:prescriptions:prescription_list' %}"
+                       class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition">
+                        <i class="fa-solid fa-arrow-right"></i> بازگشت به لیست
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    {# ===== مودال حذف ===== #}
+    <div x-show="deleteModalOpen" x-cloak @keydown.escape.window="deleteModalOpen = false"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div @click="deleteModalOpen = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div x-show="deleteModalOpen" x-transition class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm text-center p-6">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <i class="fa-solid fa-triangle-exclamation text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-2">حذف نسخه</h3>
+            <p class="text-sm text-slate-500 mb-5">
+                آیا از حذف نسخه <strong class="text-slate-700 break-words">{{ prescription.title }}</strong> مطمئن هستید؟
+            </p>
+            <form method="POST" :action="deleteUrl">
+                {% csrf_token %}
+                <div class="flex justify-center gap-3">
+                    <button type="button" @click="deleteModalOpen = false"
+                            class="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
+                        انصراف
+                    </button>
+                    <button type="submit"
+                            class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-sm">
+                        بله، حذف کن
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('prescriptionDetailManager', (config) => ({
+        deleteModalOpen: false,
+        deleteUrl: config.deleteUrl,
+    }));
+});
+</script>
+{% endblock %}

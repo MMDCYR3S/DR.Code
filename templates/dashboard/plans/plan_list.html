@@ -168,6 +168,7 @@
                             <th scope="col" class="px-6 py-4 text-right font-medium">مدت زمان (روز)</th>
                             <th scope="col" class="px-6 py-4 text-right font-medium">قیمت (تومان)</th>
                             <th scope="col" class="px-6 py-4 text-center font-medium">وضعیت</th>
+                            <th scope="col" class="px-6 py-4 text-center font-medium">برچسب</th>
                             <th scope="col" class="px-6 py-4 text-center font-medium">تاریخ ایجاد</th>
                             <th scope="col" class="px-6 py-4 text-center font-medium">عملیات</th>
                         </tr>
@@ -199,6 +200,16 @@
                                         <i class="fa-solid fa-times ml-1"></i>
                                         غیرفعال
                                     </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                {% if plan.tag %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                        <i class="fa-solid fa-star ml-1 text-[10px]"></i>
+                                        {{ plan.get_tag_display }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-slate-400 text-xs">—</span>
                                 {% endif %}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-slate-600">
@@ -240,7 +251,14 @@
                 <div class="bg-white rounded-xl shadow-sm p-4 border border-slate-200">
                     <div class="flex justify-between items-start mb-3">
                         <div class="flex-1">
-                            <h3 class="font-bold text-slate-800 mb-2">{{ plan.name }}</h3>
+                            <h3 class="font-bold text-slate-800 mb-2 flex items-center gap-2">
+                                {{ plan.name }}
+                                {% if plan.tag %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-indigo-100 text-indigo-800">
+                                        {{ plan.get_tag_display }}
+                                    </span>
+                                {% endif %}
+                            </h3>
                             <div class="space-y-2">
                                 <p class="text-sm text-slate-600">
                                     Membership: 
@@ -316,7 +334,7 @@ document.addEventListener('alpine:init', () => {
         editingId: null,
         
         // Forms
-        planForm: { membership: '', name: '', duration_days: '', price: '', is_active: true },
+        planForm: { membership: '', name: '', tag: '', duration_days: '', price: '', is_active: true },
         membershipForm: { title: '', description: '', features: [], is_active: true },
         featureForm: { 
             name: '', 
@@ -449,7 +467,7 @@ document.addEventListener('alpine:init', () => {
 
         resetForm(type) {
             const forms = {
-                plan: { membership: '', name: '', duration_days: '', price: '', is_active: true },
+                plan: { membership: '', name: '', tag: '', duration_days: '', price: '', is_active: true },
                 membership: { title: '', description: '', features: [], is_active: true },
                 feature: { name: '', description: '' }
             };
@@ -475,6 +493,7 @@ document.addEventListener('alpine:init', () => {
                         this.planForm = {
                             membership: formData.membership.toString(),
                             name: formData.name,
+                            tag: formData.tag || '',
                             duration_days: formData.duration_days.toString(),
                             price: formData.price,
                             is_active: formData.is_active

@@ -1,0 +1,220 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}سوالات کاربران{% endblock %}
+
+{% block content %}
+<div class="container mx-auto"
+     x-data="questionManager({
+        deleteUrlTpl: '{% url 'dashboard:questions:action' 0 %}',
+        markReadUrlTpl: '{% url 'dashboard:questions:action' 0 %}',
+        markUnreadUrlTpl: '{% url 'dashboard:questions:action' 0 %}'
+     })">
+
+    {# ===== سربرگ صفحه ===== #}
+    <div class="mb-6">
+        {% include 'components/atoms/breadcrumb.html' with items=breadcrumb extra_classes="mb-3" %}
+        <div class="flex flex-wrap justify-between items-center gap-3">
+            <h1 class="text-2xl font-bold text-slate-700 flex items-center gap-3">
+                <i class="fa-solid fa-comments text-c1"></i> سوالات کاربران
+            </h1>
+        </div>
+    </div>
+
+    {# ===== کارت‌های آمار ===== #}
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        {% include 'components/molecules/stat_card.html' with icon='fa-solid fa-comments' variant='c1' label='کل سوالات' value=stats.total_questions %}
+        {% include 'components/molecules/stat_card.html' with icon='fa-solid fa-clock' variant='purple' label='پاسخ داده نشده' value=stats.unread_questions %}
+        {% include 'components/molecules/stat_card.html' with icon='fa-solid fa-check-circle' variant='green' label='پاسخ داده شده' value=stats.read_questions %}
+    </div>
+
+    {# ===== جستجو و فیلتر ===== #}
+    <div class="bg-white p-4 rounded-xl shadow-sm mb-6">
+        <form method="GET" class="flex flex-col lg:flex-row gap-3 items-center w-full">
+            <div class="relative w-full lg:flex-1">
+                <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <i class="fa-solid fa-magnifying-glass text-slate-400 text-sm"></i>
+                </span>
+                <input type="text" name="search" value="{{ search }}"
+                       placeholder="جستجو در متن سوال، نام کاربر یا عنوان نسخه..."
+                       class="w-full pr-10 pl-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+            </div>
+            <div class="w-full lg:w-52">
+                <select name="status"
+                        class="w-full px-4 py-2.5 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors text-sm">
+                    <option value="" {% if status == '' %}selected{% endif %}>همه</option>
+                    <option value="unread" {% if status == 'unread' %}selected{% endif %}>پاسخ داده نشده</option>
+                    <option value="read" {% if status == 'read' %}selected{% endif %}>پاسخ داده شده</option>
+                </select>
+            </div>
+            <div class="w-full lg:w-auto lg:min-w-[120px]">
+                <button type="submit"
+                        class="w-full px-4 py-2.5 bg-c1 text-white rounded-lg text-sm hover:bg-c2 transition-colors flex justify-center items-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-filter"></i> اعمال
+                </button>
+            </div>
+            {% if search or status %}
+            <a href="{% url 'dashboard:questions:list' %}"
+               class="w-full lg:w-auto px-4 py-2.5 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200 transition-colors flex justify-center items-center gap-2">
+                <i class="fa-solid fa-xmark"></i> 
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    {# ===== جدول (دسکتاپ) ===== #}
+    <div class="hidden lg:block bg-white rounded-xl shadow-sm overflow-hidden">
+        <table class="min-w-full text-sm">
+            <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
+                <tr>
+                    <th class="px-6 py-4 text-right font-medium">فرستنده</th>
+                    <th class="px-6 py-4 text-right font-medium">نسخه و سوال</th>
+                    <th class="px-6 py-4 text-right font-medium">تاریخ</th>
+                    <th class="px-6 py-4 text-center font-medium">عملیات</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for question in questions %}
+                <tr class="hover:bg-slate-50 transition-colors {% if not question.is_answered %}question-unread{% endif %}">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10">
+                                <div class="h-10 w-10 rounded-full bg-slate-200 flex items-center justify-center">
+                                    <i class="fa-solid fa-user text-slate-500"></i>
+                                </div>
+                            </div>
+                            <div class="mr-3">
+                                <div class="font-semibold text-slate-800">{{ question.user.full_name }}</div>
+                                <div class="text-xs text-slate-500">{{ question.user.email|default:question.user.phone_number }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="font-semibold text-slate-800">
+                            <i class="fa-solid fa-file-prescription text-c1 ml-2"></i>
+                            {{ question.prescription.title }}
+                        </div>
+                        <div class="text-sm text-slate-500 mt-1 line-clamp-2">{{ question.question_text }}</div>
+                    </td>
+                    <td class="px-6 py-4 text-slate-500 text-xs">
+                        <div>{{ question.jalali_date }}</div>
+                        <div>{{ question.jalali_time }}</div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex justify-center items-center gap-1">
+                            <a href="{% url 'dashboard:questions:detail' question.id %}"
+                               class="p-2 text-slate-500 hover:text-c1 rounded-md hover:bg-slate-100 transition-colors" title="مشاهده / پاسخ">
+                                <i class="fa-solid fa-eye"></i>
+                            </a>
+                            <button type="button" title="حذف"
+                                @click="openDelete({{ question.id }}, '{{ question.user.full_name|escapejs }}')"
+                                class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100 transition-colors">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                            {% if not question.is_answered %}
+                            <button type="button" title="علامت‌گذاری به عنوان خوانده شده"
+                                @click="markAsRead({{ question.id }})"
+                                class="p-2 text-slate-500 hover:text-green-600 rounded-md hover:bg-slate-100 transition-colors">
+                                <i class="fa-solid fa-check"></i>
+                            </button>
+                            {% else %}
+                            <button type="button" title="علامت‌گذاری به عنوان خوانده نشده"
+                                @click="markAsUnread({{ question.id }})"
+                                class="p-2 text-slate-500 hover:text-orange-600 rounded-md hover:bg-slate-100 transition-colors">
+                                <i class="fa-solid fa-undo"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4">{% include 'dashboard/messages/_empty.html' %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# ===== کارت‌های موبایل ===== #}
+    <div class="lg:hidden space-y-4">
+        {% for question in questions %}
+        <div class="bg-white rounded-xl shadow-sm p-4 {% if not question.is_answered %}border-r-4 border-r-c1{% endif %}">
+            <div class="flex justify-between items-start gap-3">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-user text-slate-500 text-sm"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-800 text-sm">{{ question.user.full_name }}</div>
+                            <div class="text-xs text-slate-500">{{ question.user.email|default:question.user.phone_number }}</div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="font-semibold text-slate-700 text-sm">
+                            <i class="fa-solid fa-file-prescription text-c1 ml-1"></i>
+                            {{ question.prescription.title }}
+                        </div>
+                        <p class="text-sm text-slate-600 mt-1 line-clamp-2">{{ question.question_text }}</p>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs text-slate-400">
+                        <i class="fa-solid fa-calendar-plus w-4"></i>
+                        <span>{{ question.jalali_date }} {{ question.jalali_time }}</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1 flex-shrink-0">
+                    <a href="{% url 'dashboard:questions:detail' question.id %}"
+                       class="p-2 text-slate-500 hover:text-c1 rounded-md hover:bg-slate-100 transition-colors">
+                        <i class="fa-solid fa-eye"></i>
+                    </a>
+                    <button type="button"
+                        @click="openDelete({{ question.id }}, '{{ question.user.full_name|escapejs }}')"
+                        class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100 transition-colors">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        {% include 'dashboard/messages/_empty.html' %}
+        {% endfor %}
+    </div>
+
+    {# ===== صفحه‌بندی ===== #}
+    {% include 'dashboard/partials/_pagination.html' %}
+
+    {# ===== مودال حذف ===== #}
+    <div x-show="showDelete" x-cloak @keydown.escape.window="showDelete = false"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div @click="showDelete = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div x-show="showDelete" x-transition class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm text-center p-6">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <i class="fa-solid fa-triangle-exclamation text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-2">حذف سوال</h3>
+            <p class="text-sm text-slate-500 mb-5">
+                آیا از حذف سوال کاربر <strong class="text-slate-700 break-words" x-text="question.user"></strong> مطمئن هستید؟
+            </p>
+            <form method="POST" :action="deleteAction">
+                {% csrf_token %}
+                <div class="flex justify-center gap-3">
+                    <button type="button" @click="showDelete = false"
+                            class="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
+                        انصراف
+                    </button>
+                    <button type="submit"
+                            class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-sm">
+                        بله، حذف کن
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard/questions.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,255 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}مدیریت داروها{% endblock %}
+
+{% block content %}
+<div class="container mx-auto"
+     x-data="drugManager({
+        createUrl: '{% url 'dashboard:drugs:drug_create' %}',
+        updateUrlTpl: '{% url 'dashboard:drugs:drug_update' 0 %}',
+        deleteUrlTpl: '{% url 'dashboard:drugs:drug_delete' 0 %}'
+     })">
+
+    {# ===== سربرگ صفحه ===== #}
+    <div class="mb-6">
+        {% include 'components/atoms/breadcrumb.html' with items=breadcrumb extra_classes="mb-3" %}
+        <div class="flex flex-wrap justify-between items-center gap-3">
+            <h1 class="text-2xl font-bold text-slate-700 flex items-center gap-3">
+                <i class="fa-solid fa-pills text-c1"></i> مدیریت داروها
+            </h1>
+            <button type="button" @click="openCreate()"
+                    class="px-4 py-2 bg-c1 text-white rounded-lg text-sm hover:bg-c2 transition-colors flex items-center gap-2 shadow-sm">
+                <i class="fa-solid fa-plus"></i> افزودن دارو جدید
+            </button>
+        </div>
+    </div>
+
+    {# ===== کارت‌های آمار ===== #}
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        {% include 'components/molecules/stat_card.html' with icon='fa-solid fa-capsules' variant='c1' label='کل داروها' value=stats.total %}
+        {% include 'components/molecules/stat_card.html' with icon='fa-solid fa-cart-shopping' variant='purple' label='داروهای اوردری' value=stats.order %}
+        {% include 'components/molecules/stat_card.html' with icon='fa-solid fa-prescription' variant='green' label='داروهای نسخه‌ای' value=stats.prescription %}
+    </div>
+
+    {# ===== جستجو و فیلتر ===== #}
+    <div class="bg-white p-4 rounded-xl shadow-sm mb-6">
+        <form method="GET" class="flex flex-col lg:flex-row gap-3 items-center w-full">
+            <div class="relative w-full lg:flex-1">
+                <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <i class="fa-solid fa-magnifying-glass text-slate-400 text-sm"></i>
+                </span>
+                <input type="text" name="search" value="{{ search }}"
+                       placeholder="جستجو بر اساس نام دارو یا کد دارو..."
+                       class="w-full pr-10 pl-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+            </div>
+            <div class="w-full lg:w-52">
+                <select name="type"
+                        class="w-full px-4 py-2.5 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors text-sm">
+                    <option value="" {% if drug_type == '' %}selected{% endif %}>همه داروها</option>
+                    <option value="order" {% if drug_type == 'order' %}selected{% endif %}>اوردری</option>
+                    <option value="prescription" {% if drug_type == 'prescription' %}selected{% endif %}>نسخه‌ای</option>
+                </select>
+            </div>
+            <div class="w-full lg:w-auto lg:min-w-[120px]">
+                <button type="submit"
+                        class="w-full px-4 py-2.5 bg-c1 text-white rounded-lg text-sm hover:bg-c2 transition-colors flex justify-center items-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-filter"></i> اعمال
+                </button>
+            </div>
+            {% if search or drug_type %}
+            <a href="{% url 'dashboard:drugs:drug_list' %}"
+               class="w-full lg:w-auto px-4 py-2.5 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200 transition-colors flex justify-center items-center gap-2">
+                <i class="fa-solid fa-xmark"></i> 
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    {# ===== جدول داروها (دسکتاپ) ===== #}
+    <div class="hidden lg:block bg-white rounded-xl shadow-sm overflow-hidden">
+        <table class="min-w-full text-sm">
+            <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
+                <tr>
+                    <th class="px-6 py-4 text-right font-medium">نام دارو</th>
+                    <th class="px-6 py-4 text-right font-medium">کد دارو</th>
+                    <th class="px-6 py-4 text-right font-medium">نوع</th>
+                    <th class="px-6 py-4 text-right font-medium">تاریخ ایجاد</th>
+                    <th class="px-6 py-4 text-right font-medium">آخرین بروزرسانی</th>
+                    <th class="px-6 py-4 text-center font-medium">عملیات</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for drug in drugs %}
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4 font-semibold text-slate-800">{{ drug.title }}</td>
+                    <td class="px-6 py-4">
+                        {% if drug.code %}
+                            <span class="text-slate-600 font-mono">{{ drug.code }}</span>
+                        {% else %}
+                            <span class="text-slate-400">بدون کد</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if drug.is_for_order %}
+                            <span class="px-2.5 py-1 text-xs font-medium text-purple-700 bg-purple-100 rounded-full">اوردری</span>
+                        {% else %}
+                            <span class="px-2.5 py-1 text-xs font-medium text-emerald-700 bg-emerald-100 rounded-full">نسخه‌ای</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-slate-500 text-xs">{{ drug.shamsi_created_at }}</td>
+                    <td class="px-6 py-4 text-slate-500 text-xs">{{ drug.shamsi_updated_at }}</td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex justify-center items-center gap-1">
+                            <button type="button" title="ویرایش"
+                                @click="openEdit({{ drug.id }}, '{{ drug.title|escapejs }}', '{{ drug.code|escapejs }}', {{ drug.is_for_order|yesno:'true,false' }})"
+                                class="p-2 text-slate-500 hover:text-c1 rounded-md hover:bg-slate-100 transition-colors">
+                                <i class="fa-solid fa-pencil"></i>
+                            </button>
+                            <button type="button" title="حذف"
+                                @click="openDelete({{ drug.id }}, '{{ drug.title|escapejs }}')"
+                                class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100 transition-colors">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">{% include 'dashboard/drugs/_empty.html' %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# ===== کارت‌های موبایل ===== #}
+    <div class="lg:hidden space-y-4">
+        {% for drug in drugs %}
+        <div class="bg-white rounded-xl shadow-sm p-4">
+            <div class="flex justify-between items-start gap-3">
+                <div class="flex-1 min-w-0">
+                    <h3 class="font-bold text-slate-800 mb-2 break-words">{{ drug.title }}</h3>
+                    <div class="space-y-1.5 text-sm text-slate-600">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-barcode w-4 text-slate-400"></i>
+                            {% if drug.code %}<span class="font-mono break-all">{{ drug.code }}</span>{% else %}<span class="text-slate-400">بدون کد</span>{% endif %}
+                        </div>
+                        <div class="flex items-center gap-2">
+                            {% if drug.is_for_order %}
+                                <span class="px-2 py-0.5 text-xs font-medium text-purple-700 bg-purple-100 rounded-full">اوردری</span>
+                            {% else %}
+                                <span class="px-2 py-0.5 text-xs font-medium text-emerald-700 bg-emerald-100 rounded-full">نسخه‌ای</span>
+                            {% endif %}
+                        </div>
+                        <div class="flex items-center gap-2 text-xs text-slate-400">
+                            <i class="fa-solid fa-calendar-plus w-4"></i>
+                            <span>{{ drug.shamsi_created_at }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1 flex-shrink-0">
+                    <button type="button"
+                        @click="openEdit({{ drug.id }}, '{{ drug.title|escapejs }}', '{{ drug.code|escapejs }}', {{ drug.is_for_order|yesno:'true,false' }})"
+                        class="p-2 text-slate-500 hover:text-c1 rounded-md hover:bg-slate-100 transition-colors">
+                        <i class="fa-solid fa-pencil"></i>
+                    </button>
+                    <button type="button"
+                        @click="openDelete({{ drug.id }}, '{{ drug.title|escapejs }}')"
+                        class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100 transition-colors">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        {% include 'dashboard/drugs/_empty.html' %}
+        {% endfor %}
+    </div>
+
+    {# ===== صفحه‌بندی ===== #}
+    {% include 'dashboard/partials/_pagination.html' %}
+
+    {# ===== مودال ایجاد / ویرایش ===== #}
+    <div x-show="showForm" x-cloak @keydown.escape.window="showForm = false"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div @click="showForm = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div x-show="showForm" x-transition class="relative bg-white rounded-xl shadow-2xl w-full max-w-md my-8">
+            <div class="px-5 py-4 flex justify-between items-center border-b border-slate-100">
+                <h3 class="text-lg font-bold text-slate-800" x-text="isEdit ? 'ویرایش دارو' : 'افزودن دارو جدید'"></h3>
+                <button type="button" @click="showForm = false" class="p-1.5 hover:bg-slate-100 rounded-full transition-colors">
+                    <i class="fa-solid fa-times text-slate-500"></i>
+                </button>
+            </div>
+            <form method="POST" :action="formAction">
+                {% csrf_token %}
+                <div class="p-6 space-y-5">
+                    <div>
+                        <label for="id_title" class="block text-sm font-medium text-slate-700 mb-2">
+                            {{ form.title.label }} <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="title" id="id_title" x-model="drug.title" required
+                               placeholder="نام دارو را وارد کنید"
+                               class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+                    </div>
+                    <div>
+                        <label for="id_code" class="block text-sm font-medium text-slate-700 mb-2">{{ form.code.label }}</label>
+                        <input type="text" name="code" id="id_code" x-model="drug.code"
+                               placeholder="کد دارو را وارد کنید (اختیاری)"
+                               class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" name="is_for_order" id="id_is_for_order" x-model="drug.is_for_order"
+                               class="w-4 h-4 text-c1 bg-slate-100 border-slate-300 rounded focus:ring-c1 focus:ring-2 cursor-pointer">
+                        <label for="id_is_for_order" class="text-sm font-medium text-slate-700 cursor-pointer">
+                            {{ form.is_for_order.label }}
+                        </label>
+                    </div>
+                </div>
+                <div class="px-6 py-4 bg-slate-50 rounded-b-xl flex justify-end items-center gap-3">
+                    <button type="button" @click="showForm = false"
+                            class="py-2 px-5 text-sm font-semibold bg-white border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors">
+                        انصراف
+                    </button>
+                    <button type="submit"
+                            class="py-2 px-6 text-sm font-semibold bg-c1 text-white rounded-lg hover:bg-c2 transition-colors shadow-sm">
+                        ذخیره
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# ===== مودال حذف ===== #}
+    <div x-show="showDelete" x-cloak @keydown.escape.window="showDelete = false"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div @click="showDelete = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div x-show="showDelete" x-transition class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm text-center p-6">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <i class="fa-solid fa-triangle-exclamation text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-2">حذف دارو</h3>
+            <p class="text-sm text-slate-500 mb-5">
+                آیا از حذف داروی <strong class="text-slate-700 break-words" x-text="drug.title"></strong> مطمئن هستید؟
+            </p>
+            <form method="POST" :action="deleteAction">
+                {% csrf_token %}
+                <div class="flex justify-center gap-3">
+                    <button type="button" @click="showDelete = false"
+                            class="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
+                        انصراف
+                    </button>
+                    <button type="submit"
+                            class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-sm">
+                        بله، حذف کن
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard/drugs.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,18 @@
+{# components/atoms/badge.html #}
+{% with 
+    text=text|default:""
+    variant=variant|default:"primary"
+    size=size|default:"md"
+%}
+<span class="inline-flex items-center justify-center font-medium rounded-full
+    {% if variant == 'primary' %} bg-c5 text-c1 {% endif %}
+    {% if variant == 'success' %} bg-green-100 text-green-700 {% endif %}
+    {% if variant == 'danger' %} bg-red-100 text-red-700 {% endif %}
+    {% if variant == 'warning' %} bg-yellow-100 text-yellow-700 {% endif %}
+    {% if variant == 'secondary' %} bg-slate-100 text-slate-700 {% endif %}
+    {% if size == 'xs' %} px-2 py-0.5 text-xs {% endif %}
+    {% if size == 'sm' %} px-2.5 py-1 text-sm {% endif %}
+    {% if size == 'md' %} px-3 py-1.5 text-base {% endif %}
+"
+>{{ text }}</span>
+{% endwith %}

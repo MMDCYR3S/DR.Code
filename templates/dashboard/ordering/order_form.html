@@ -15,13 +15,13 @@
 {% block content %}
 <div class="container mx-auto px-4 py-6 max-w-8xl">
 
-  {% include "dashboard/ordering/partials/_order_tabs.html" %}
-  
-  <div class="flex justify-between items-center mb-5">
-    <h1 class="text-xl font-bold text-gray-800">
-      {% if is_update %}ویرایش اوردر: {{ form.instance.name }}{% else %}افزودن اوردر جدید{% endif %}
-    </h1>
-  </div>
+    {% include 'dashboard/ordering/partials/_order_tabs.html' with order=order active_tab=active_tab %}
+    <div class="flex flex-wrap justify-between items-center gap-3">
+        <h1 class="text-2xl font-bold text-slate-700 flex items-center gap-3">
+            <i class="fa-solid fa-file-medical text-c1"></i>
+            {% if order %}ویرایش اوردر: {{ order.name }}{% else %}افزودن اوردر جدید{% endif %}
+        </h1>
+    </div>
 
   <form id="orderForm" method="post">
     {% csrf_token %}

@@ -1,0 +1,10 @@
+{# components/atoms/role_badge.html — نشان نقش کاربر | ورودی: role #}
+{% if role == 'premium' %}
+    <span class="inline-flex items-center px-3 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">کاربر ویژه</span>
+{% elif role == 'regular' %}
+    <span class="inline-flex items-center px-3 py-1 text-xs font-semibold text-c1 bg-c5 rounded-full">کاربر عادی</span>
+{% elif role == 'visitor' %}
+    <span class="inline-flex items-center px-3 py-1 text-xs font-semibold text-slate-700 bg-slate-100 rounded-full">بازدیدکننده</span>
+{% elif role == 'admin' %}
+    <span class="inline-flex items-center px-3 py-1 text-xs font-semibold text-orange-800 bg-orange-100 rounded-full">ادمین</span>
+{% endif %}

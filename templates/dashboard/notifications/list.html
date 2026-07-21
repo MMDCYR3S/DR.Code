@@ -1,0 +1,347 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}مدیریت اعلان‌ها{% endblock %}
+
+{% block content %}
+<div class="container mx-auto"
+     x-data="notificationManager({
+        userSearchUrl: '{% url 'dashboard:notifications:user_search_json' %}',
+        singleCreateUrl: '{% url 'dashboard:notifications:single_create' %}',
+        groupCreateUrl: '{% url 'dashboard:notifications:announcement_create' %}',
+        singleDeleteTpl: '{% url 'dashboard:notifications:single_delete' 0 %}',
+        groupDeleteTpl: '{% url 'dashboard:notifications:announcement_delete' 0 %}'
+     })">
+
+    {# ===== سربرگ صفحه ===== #}
+    <div class="mb-6">
+        {% include 'components/atoms/breadcrumb.html' with items=breadcrumb extra_classes="mb-3" %}
+        <div class="flex flex-wrap justify-between items-center gap-3">
+            <h1 class="text-2xl font-bold text-slate-700 flex items-center gap-3">
+                <i class="fa-solid fa-bell text-c1"></i> مدیریت اعلان‌ها
+            </h1>
+            <button type="button" @click="openCreate()"
+                    class="px-4 py-2 bg-c1 text-white rounded-lg text-sm hover:bg-c2 transition-colors flex items-center gap-2 shadow-sm">
+                <i class="fa-solid fa-paper-plane"></i> ارسال اعلان جدید
+            </button>
+        </div>
+    </div>
+
+    {# ===== کارت‌های آمار ===== #}
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        {% include 'components/molecules/stat_card.html' with icon='fa-solid fa-envelope' variant='c1' label='اعلان‌های تکی' value=stats.total_single %}
+        {% include 'components/molecules/stat_card.html' with icon='fa-solid fa-envelope-open' variant='orange' label='خوانده‌نشده' value=stats.unread %}
+        {% include 'components/molecules/stat_card.html' with icon='fa-solid fa-bullhorn' variant='purple' label='پیام‌های گروهی' value=stats.announcements %}
+    </div>
+
+    {# ===== جستجو و فیلتر ===== #}
+    <div class="bg-white p-4 rounded-xl shadow-sm mb-6">
+        <form method="GET" class="flex flex-col lg:flex-row gap-3 items-center w-full">
+            <div class="relative w-full lg:flex-1">
+                <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <i class="fa-solid fa-magnifying-glass text-slate-400 text-sm"></i>
+                </span>
+                <input type="text" name="search" value="{{ search }}"
+                       placeholder="جستجو در عنوان، متن یا نام گیرنده..."
+                       class="w-full pr-10 pl-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+            </div>
+            <div class="w-full lg:w-52">
+                <select name="filter"
+                        class="w-full px-4 py-2.5 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors text-sm">
+                    <option value="all" {% if filter_type == 'all' %}selected{% endif %}>همه اعلان‌ها</option>
+                    <option value="unread" {% if filter_type == 'unread' %}selected{% endif %}>خوانده‌نشده</option>
+                    <option value="read" {% if filter_type == 'read' %}selected{% endif %}>خوانده‌شده</option>
+                </select>
+            </div>
+            <div class="w-full lg:w-auto lg:min-w-[120px]">
+                <button type="submit"
+                        class="w-full px-4 py-2.5 bg-c1 text-white rounded-lg text-sm hover:bg-c2 transition-colors flex justify-center items-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-filter"></i> اعمال
+                </button>
+            </div>
+            {% if search or filter_type != 'all' %}
+            <a href="{% url 'dashboard:notifications:notifications_list' %}"
+               class="w-full lg:w-auto px-4 py-2.5 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200 transition-colors flex justify-center items-center gap-2">
+                <i class="fa-solid fa-xmark"></i> 
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    {# ===== لیست اعلان‌ها ===== #}
+    <div class="space-y-3" x-data="{ expanded: null }">
+        {% for notif in notifications %}
+        {# --- کارت اعلان (تکی یا گروهی) --- #}
+        <div class="bg-white rounded-xl shadow-sm border-r-4 overflow-hidden transition-all
+             {% if notif.type == 'group' %}border-purple-400{% elif notif.is_read %}border-emerald-400{% else %}border-amber-400{% endif %}">
+            <div class="p-4 flex items-start gap-3">
+                {# آیکون نوع #}
+                <div class="flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center
+                     {% if notif.type == 'group' %}bg-purple-100 text-purple-600{% else %}bg-c5 text-c1{% endif %}">
+                    <i class="fa-solid {% if notif.type == 'group' %}fa-bullhorn{% else %}fa-envelope{% endif %}"></i>
+                </div>
+
+                {# محتوا #}
+                <div class="flex-1 min-w-0">
+                    <div class="flex flex-wrap items-center gap-2 mb-1">
+                        <h3 class="font-bold text-slate-800 break-words">{{ notif.title }}</h3>
+                        {% if notif.type == 'group' %}
+                        <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">
+                            <i class="fa-solid fa-bullhorn ml-1"></i>پیام گروهی
+                        </span>
+                        {% else %}
+                        <span class="text-[10px] px-2 py-0.5 rounded-full font-medium
+                             {% if notif.is_read %}bg-emerald-100 text-emerald-700{% else %}bg-amber-100 text-amber-700{% endif %}">
+                            {% if notif.is_read %}خوانده شده{% else %}نخوانده{% endif %}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mb-2">
+                        {% if notif.type == 'single' %}
+                        <span class="flex items-center gap-1">
+                            <i class="fa-solid fa-user text-slate-400"></i> {{ notif.recipient_name }}
+                        </span>
+                        {% else %}
+                        <span class="flex items-center gap-1 text-purple-600">
+                            <i class="fa-solid fa-users"></i> {{ notif.total_sent }} گیرنده
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <i class="fa-solid fa-eye text-slate-400"></i> {{ notif.read_count }} بازدید ({{ notif.read_percent }}٪)
+                        </span>
+                        {% endif %}
+                        <span class="flex items-center gap-1">
+                            <i class="fa-solid fa-clock text-slate-400"></i> {{ notif.created_at_shamsi }}
+                        </span>
+                    </div>
+
+                    <p class="text-sm text-slate-600 line-clamp-2 leading-relaxed">{{ notif.message_preview }}</p>
+                </div>
+
+                {# عملیات #}
+                <div class="flex items-center gap-1 flex-shrink-0">
+                    <button type="button" title="مشاهده جزئیات"
+                        @click="expanded === '{{ notif.type }}-{{ notif.id }}' ? expanded = null : expanded = '{{ notif.type }}-{{ notif.id }}'"
+                        class="p-2 text-slate-500 hover:text-c1 rounded-md hover:bg-slate-100 transition-colors">
+                        <i class="fa-solid fa-chevron-down transition-transform"
+                           :class="expanded === '{{ notif.type }}-{{ notif.id }}' ? 'rotate-180' : ''"></i>
+                    </button>
+                    <button type="button" title="حذف"
+                        @click="openDelete('{{ notif.type }}', {{ notif.id }}, '{{ notif.title|escapejs }}')"
+                        class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100 transition-colors">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+
+            {# بخش جزئیات (آکاردئون) #}
+            <div x-show="expanded === '{{ notif.type }}-{{ notif.id }}'" x-collapse x-cloak
+                 class="border-t border-slate-100 bg-slate-50 px-4 py-4">
+                {% if notif.type == 'group' %}
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="md:border-l md:border-slate-200 md:pl-6">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase mb-3 tracking-wider">نمونه گیرندگان</h4>
+                        <ul class="space-y-2">
+                            {% for sample in notif.samples %}
+                            <li class="flex items-center justify-between text-sm">
+                                <span class="flex items-center text-slate-700">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-300 ml-2"></span>{{ sample.name }}
+                                </span>
+                                <span class="text-[10px] px-1.5 py-0.5 rounded
+                                     {% if sample.status == 'خوانده' %}bg-emerald-100 text-emerald-700{% else %}bg-slate-200 text-slate-500{% endif %}">
+                                    {{ sample.status }}
+                                </span>
+                            </li>
+                            {% empty %}
+                            <li class="text-sm text-slate-400">گیرنده‌ای ثبت نشده است</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-500 uppercase mb-3 tracking-wider">متن کامل پیام</h4>
+                        <p class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap p-3 bg-white border border-slate-200 rounded-lg">{{ notif.full_message }}</p>
+                    </div>
+                </div>
+                {% else %}
+                <h4 class="text-xs font-bold text-slate-500 uppercase mb-3 tracking-wider">متن کامل پیام</h4>
+                <p class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap p-3 bg-white border border-slate-200 rounded-lg">{{ notif.full_message }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        {# --- حالت خالی --- #}
+        <div class="text-center py-14 bg-white rounded-xl shadow-sm">
+            <div class="mx-auto w-fit bg-slate-100 rounded-full p-5 mb-4">
+                <i class="fa-solid fa-bell-slash text-3xl text-slate-400"></i>
+            </div>
+            <h3 class="text-lg font-medium text-slate-800 mb-1">
+                {% if search or filter_type != 'all' %}هیچ اعلان مطابقی یافت نشد{% else %}هنوز اعلانی ارسال نشده است{% endif %}
+            </h3>
+            <p class="text-slate-500 text-sm mb-4">
+                {% if search or filter_type != 'all' %}عبارت یا فیلتر دیگری را امتحان کنید{% else %}برای شروع، اولین اعلان را ارسال کنید{% endif %}
+            </p>
+            {% if not search and filter_type == 'all' %}
+            <button type="button" @click="openCreate()"
+                    class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-c1 bg-c5 rounded-lg hover:bg-c4 transition-colors">
+                <i class="fa-solid fa-paper-plane"></i> ارسال اعلان جدید
+            </button>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    {# ===== صفحه‌بندی ===== #}
+    {% include 'dashboard/partials/_pagination.html' %}
+
+    {# ===== مودال ارسال اعلان ===== #}
+    <div x-show="showForm" x-cloak @keydown.escape.window="showForm = false"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div @click="showForm = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div x-show="showForm" x-transition class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg my-8">
+            <div class="px-5 py-4 flex justify-between items-center border-b border-slate-100">
+                <h3 class="text-lg font-bold text-slate-800">ارسال اعلان جدید</h3>
+                <button type="button" @click="showForm = false" class="p-1.5 hover:bg-slate-100 rounded-full transition-colors">
+                    <i class="fa-solid fa-times text-slate-500"></i>
+                </button>
+            </div>
+
+            {# تب‌ها #}
+            <div class="flex border-b border-slate-100">
+                <button type="button" @click="mode = 'single'"
+                        class="flex-1 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                        :class="mode === 'single' ? 'text-c1 border-b-2 border-c1 bg-c5/40' : 'text-slate-500 hover:text-slate-700'">
+                    <i class="fa-solid fa-envelope"></i> اعلان تکی
+                </button>
+                <button type="button" @click="mode = 'group'"
+                        class="flex-1 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                        :class="mode === 'group' ? 'text-c1 border-b-2 border-c1 bg-c5/40' : 'text-slate-500 hover:text-slate-700'">
+                    <i class="fa-solid fa-bullhorn"></i> پیام گروهی
+                </button>
+            </div>
+
+            {# فرم اعلان تکی #}
+            <form method="POST" :action="singleCreateUrl" x-show="mode === 'single'">
+                {% csrf_token %}
+                <div class="p-6 space-y-5">
+                    {# اتوکمپلیت گیرنده #}
+                    <div class="relative">
+                        <label class="block text-sm font-medium text-slate-700 mb-2">گیرنده <span class="text-red-500">*</span></label>
+                        <input type="hidden" name="recipient" :value="selectedUser.id" required>
+                        <div x-show="selectedUser.id" class="flex items-center justify-between px-3 py-2.5 bg-c5 border border-c3 rounded-lg mb-1">
+                            <span class="text-sm text-slate-700">
+                                <i class="fa-solid fa-user-check text-c1 ml-1"></i>
+                                <span x-text="selectedUser.full_name"></span>
+                            </span>
+                            <button type="button" @click="clearUser()" class="text-slate-400 hover:text-red-500">
+                                <i class="fa-solid fa-times"></i>
+                            </button>
+                        </div>
+                        <input type="text" x-show="!selectedUser.id" x-model="userQuery" @input.debounce.300ms="searchUsers()"
+                               placeholder="نام، شماره تلفن یا کد نظام پزشکی..."
+                               class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+                        {# نتایج جستجو #}
+                        <div x-show="userResults.length > 0 && !selectedUser.id"
+                             class="absolute z-10 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+                            <template x-for="user in userResults" :key="user.id">
+                                <button type="button" @click="selectUser(user)"
+                                        class="w-full text-right px-4 py-2.5 hover:bg-slate-50 border-b border-slate-50 last:border-0 transition-colors">
+                                    <div class="text-sm font-medium text-slate-800" x-text="user.full_name"></div>
+                                    <div class="text-xs text-slate-400" x-text="user.subtext + ' · ' + user.role"></div>
+                                </button>
+                            </template>
+                        </div>
+                        <p x-show="userSearching" class="text-xs text-slate-400 mt-1">در حال جستجو...</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">عنوان <span class="text-red-500">*</span></label>
+                        <input type="text" name="title" required placeholder="عنوان پیام را وارد کنید..."
+                               class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">متن پیام <span class="text-red-500">*</span></label>
+                        <textarea name="message" rows="4" required placeholder="متن پیام خود را بنویسید..."
+                                  class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors resize-none"></textarea>
+                    </div>
+                </div>
+                <div class="px-6 py-4 bg-slate-50 rounded-b-xl flex justify-end items-center gap-3">
+                    <button type="button" @click="showForm = false"
+                            class="py-2 px-5 text-sm font-semibold bg-white border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors">انصراف</button>
+                    <button type="submit" :disabled="!selectedUser.id"
+                            class="py-2 px-6 text-sm font-semibold bg-c1 text-white rounded-lg hover:bg-c2 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                        ارسال اعلان
+                    </button>
+                </div>
+            </form>
+
+            {# فرم پیام گروهی #}
+            <form method="POST" :action="groupCreateUrl" x-show="mode === 'group'">
+                {% csrf_token %}
+                <div class="p-6 space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">گروه هدف <span class="text-red-500">*</span></label>
+                        <select name="target_role" required
+                                class="w-full px-4 py-2.5 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+                            {% for value, label in roles %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">عنوان <span class="text-red-500">*</span></label>
+                        <input type="text" name="title" required placeholder="عنوان اطلاعیه عمومی..."
+                               class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">متن پیام <span class="text-red-500">*</span></label>
+                        <textarea name="message" rows="4" required placeholder="متن اطلاعیه را بنویسید..."
+                                  class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors resize-none"></textarea>
+                    </div>
+                    <div class="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                        <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+                        <span>این پیام برای همه کاربران گروه انتخاب‌شده ارسال می‌شود و قابل بازگشت نیست.</span>
+                    </div>
+                </div>
+                <div class="px-6 py-4 bg-slate-50 rounded-b-xl flex justify-end items-center gap-3">
+                    <button type="button" @click="showForm = false"
+                            class="py-2 px-5 text-sm font-semibold bg-white border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors">انصراف</button>
+                    <button type="submit"
+                            class="py-2 px-6 text-sm font-semibold bg-c1 text-white rounded-lg hover:bg-c2 transition-colors shadow-sm">
+                        ارسال گروهی
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# ===== مودال حذف ===== #}
+    <div x-show="showDelete" x-cloak @keydown.escape.window="showDelete = false"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div @click="showDelete = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div x-show="showDelete" x-transition class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm text-center p-6">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <i class="fa-solid fa-triangle-exclamation text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-2">حذف اعلان</h3>
+            <p class="text-sm text-slate-500 mb-2">
+                آیا از حذف <strong class="text-slate-700 break-words" x-text="deleteTitle"></strong> مطمئن هستید؟
+            </p>
+            <p x-show="deleteType === 'group'" class="text-xs text-amber-600 mb-4">
+                تمام اعلان‌های ارسال‌شده به کاربران نیز حذف خواهند شد.
+            </p>
+            <form method="POST" :action="deleteAction" class="mt-3">
+                {% csrf_token %}
+                <div class="flex justify-center gap-3">
+                    <button type="button" @click="showDelete = false"
+                            class="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">انصراف</button>
+                    <button type="submit"
+                            class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-sm">بله، حذف کن</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard/notifications.js' %}"></script>
+{% endblock %}

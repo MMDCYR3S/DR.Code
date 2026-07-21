@@ -1,0 +1,240 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}مدیریت پیام‌ها{% endblock %}
+
+{% block content %}
+<div class="container mx-auto"
+     x-data="contactManager({
+        deleteUrlTpl: '{% url 'dashboard:contacts:contact_delete' 0 %}',
+        detailUrlTpl: '{% url 'dashboard:contacts:contact_detail' 0 %}',
+        bulkDeleteUrl: '{% url 'dashboard:contacts:contacts_bulk_delete' %}'
+     })">
+
+    {# ===== سربرگ صفحه ===== #}
+    <div class="mb-6">
+        {% include 'components/atoms/breadcrumb.html' with items=breadcrumb extra_classes="mb-3" %}
+        <div class="flex flex-wrap justify-between items-center gap-3">
+            <h1 class="text-2xl font-bold text-slate-700 flex items-center gap-3">
+                <i class="fa-solid fa-envelope text-c1"></i> مدیریت پیام‌ها
+            </h1>
+        </div>
+    </div>
+
+    {# ===== کارت‌های آمار ===== #}
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        {% include 'components/molecules/stat_card.html' with icon='fa-solid fa-inbox' variant='c1' label='کل پیام‌ها' value=stats.total %}
+        {% include 'components/molecules/stat_card.html' with icon='fa-solid fa-envelope-circle-check' variant='green' label='پاسخ داده شده' value=stats.answered %}
+        {% include 'components/molecules/stat_card.html' with icon='fa-solid fa-envelope-open-text' variant='yellow' label='خوانده نشده' value=stats.unread %}
+    </div>
+
+    {# ===== جستجو و فیلتر ===== #}
+    <div class="bg-white p-4 rounded-xl shadow-sm mb-6">
+        <form method="GET" class="flex flex-col lg:flex-row gap-3 items-center w-full">
+            <div class="relative w-full lg:flex-1">
+                <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <i class="fa-solid fa-magnifying-glass text-slate-400 text-sm"></i>
+                </span>
+                <input type="text" name="search" value="{{ search }}"
+                       placeholder="جستجو در نام، ایمیل یا موضوع..."
+                       class="w-full pr-10 pl-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+            </div>
+            <div class="w-full lg:w-52">
+                <select name="status"
+                        class="w-full px-4 py-2.5 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors text-sm">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>همه پیام‌ها</option>
+                    <option value="unread" {% if status_filter == 'unread' %}selected{% endif %}>خوانده نشده</option>
+                    <option value="read" {% if status_filter == 'read' %}selected{% endif %}>خوانده شده</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>در انتظار</option>
+                    <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>در حال بررسی</option>
+                    <option value="answered" {% if status_filter == 'answered' %}selected{% endif %}>پاسخ داده شده</option>
+                    <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>بسته شده</option>
+                </select>
+            </div>
+            <div class="w-full lg:w-auto lg:min-w-[120px]">
+                <button type="submit"
+                        class="w-full px-4 py-2.5 bg-c1 text-white rounded-lg text-sm hover:bg-c2 transition-colors flex justify-center items-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-filter"></i> اعمال
+                </button>
+            </div>
+            {% if search or status_filter != 'all' %}
+            <a href="{% url 'dashboard:contacts:contacts_list' %}"
+               class="w-full lg:w-auto px-4 py-2.5 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200 transition-colors flex justify-center items-center gap-2">
+                <i class="fa-solid fa-xmark"></i>
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    {# ===== دکمه حذف دسته‌جمعی ===== #}
+    <div x-show="selectedMessages.length > 0" x-cloak class="mb-4">
+        <button @click="showBulkDeleteModal = true"
+                class="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm hover:bg-red-100 transition-colors flex items-center gap-2 shadow-sm">
+            <i class="fa-solid fa-trash-can"></i>
+            حذف موارد انتخابی (<span x-text="selectedMessages.length"></span>)
+        </button>
+    </div>
+
+    {# ===== جدول پیام‌ها (دسکتاپ) ===== #}
+    <div class="hidden lg:block bg-white rounded-xl shadow-sm overflow-hidden">
+        <table class="min-w-full text-sm">
+            <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
+                <tr>
+                    <th class="px-4 py-4 text-center font-medium">
+                        <input type="checkbox" @change="toggleSelectAll($el.checked)" :checked="allSelected"
+                               class="rounded border-slate-300 text-c1 focus:ring-c1">
+                    </th>
+                    <th class="px-6 py-4 text-right font-medium">فرستنده</th>
+                    <th class="px-6 py-4 text-right font-medium">موضوع</th>
+                    <th class="px-6 py-4 text-right font-medium">ایمیل</th>
+                    <th class="px-6 py-4 text-right font-medium">وضعیت</th>
+                    <th class="px-6 py-4 text-right font-medium">تاریخ دریافت</th>
+                    <th class="px-6 py-4 text-center font-medium">عملیات</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for contact in contacts %}
+                <tr class="hover:bg-slate-50 transition-colors cursor-pointer"
+                    @click="openDetail({{ contact.pk }})">
+                    <td class="px-4 py-4 text-center" @click.stop>
+                        <input type="checkbox" x-model="selectedMessages" value="{{ contact.pk }}"
+                               class="rounded border-slate-300 text-c1 focus:ring-c1">
+                    </td>
+                    <td class="px-6 py-4 font-semibold text-slate-800">{{ contact.full_name }}</td>
+                    <td class="px-6 py-4 text-slate-600">{{ contact.subject_display }}</td>
+                    <td class="px-6 py-4 text-slate-500">{{ contact.email }}</td>
+                    <td class="px-6 py-4">
+                        {% if contact.status == 'pending' %}
+                            <span class="px-2.5 py-1 text-xs font-medium text-yellow-700 bg-yellow-100 rounded-full">در انتظار</span>
+                        {% elif contact.status == 'in_progress' %}
+                            <span class="px-2.5 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full">در حال بررسی</span>
+                        {% elif contact.status == 'answered' %}
+                            <span class="px-2.5 py-1 text-xs font-medium text-emerald-700 bg-emerald-100 rounded-full">پاسخ داده شده</span>
+                        {% elif contact.status == 'closed' %}
+                            <span class="px-2.5 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded-full">بسته شده</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-slate-500 text-xs">{{ contact.shamsi_created_at }}</td>
+                    <td class="px-6 py-4 text-center" @click.stop>
+                        <div class="flex justify-center items-center gap-1">
+                            <button type="button" title="مشاهده"
+                                @click="openDetail({{ contact.pk }})"
+                                class="p-2 text-slate-500 hover:text-c1 rounded-md hover:bg-slate-100 transition-colors">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                            <button type="button" title="حذف"
+                                @click="openDelete({{ contact.pk }}, '{{ contact.subject_display|escapejs }}')"
+                                class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100 transition-colors">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">{% include 'dashboard/contacts/_empty.html' %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# ===== کارت‌های موبایل ===== #}
+    <div class="lg:hidden space-y-4">
+        {% for contact in contacts %}
+        <div class="bg-white rounded-xl shadow-sm p-4 cursor-pointer" @click="openDetail({{ contact.pk }})">
+            <div class="flex justify-between items-start gap-3">
+                <div class="flex-1 min-w-0">
+                    <h3 class="font-bold text-slate-800 mb-1 break-words">{{ contact.full_name }}</h3>
+                    <p class="text-sm text-slate-600 mb-2 break-words">{{ contact.subject_display }}</p>
+                    <div class="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                        <span>{{ contact.shamsi_created_at }}</span>
+                        {% if contact.status == 'pending' %}
+                            <span class="px-2 py-0.5 text-xs font-medium text-yellow-700 bg-yellow-100 rounded-full">در انتظار</span>
+                        {% elif contact.status == 'in_progress' %}
+                            <span class="px-2 py-0.5 text-xs font-medium text-blue-700 bg-blue-100 rounded-full">در حال بررسی</span>
+                        {% elif contact.status == 'answered' %}
+                            <span class="px-2 py-0.5 text-xs font-medium text-emerald-700 bg-emerald-100 rounded-full">پاسخ داده شده</span>
+                        {% elif contact.status == 'closed' %}
+                            <span class="px-2 py-0.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-full">بسته شده</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="flex items-center gap-1 flex-shrink-0" @click.stop>
+                    <button type="button" @click="openDetail({{ contact.pk }})"
+                            class="p-2 text-slate-500 hover:text-c1 rounded-md hover:bg-slate-100 transition-colors">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                    <button type="button" @click="openDelete({{ contact.pk }}, '{{ contact.subject_display|escapejs }}')"
+                            class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100 transition-colors">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        {% include 'dashboard/contacts/_empty.html' %}
+        {% endfor %}
+    </div>
+
+    {# ===== صفحه‌بندی ===== #}
+    {% include 'dashboard/partials/_pagination.html' %}
+
+    {# ===== مودال حذف تکی ===== #}
+    <div x-show="showDeleteModal" x-cloak @keydown.escape.window="showDeleteModal = false"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div @click="showDeleteModal = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div x-show="showDeleteModal" x-transition class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm text-center p-6">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <i class="fa-solid fa-triangle-exclamation text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-2">حذف پیام</h3>
+            <p class="text-sm text-slate-500 mb-5">
+                آیا از حذف پیام <strong class="text-slate-700 break-words" x-text="deleteTitle"></strong> مطمئن هستید؟
+            </p>
+            <form method="POST" :action="deleteAction">
+                {% csrf_token %}
+                <div class="flex justify-center gap-3">
+                    <button type="button" @click="showDeleteModal = false"
+                            class="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
+                        انصراف
+                    </button>
+                    <button type="submit"
+                            class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-sm">
+                        بله، حذف کن
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# ===== مودال حذف دسته‌جمعی ===== #}
+    <div x-show="showBulkDeleteModal" x-cloak @keydown.escape.window="showBulkDeleteModal = false"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div @click="showBulkDeleteModal = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div x-show="showBulkDeleteModal" x-transition class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm text-center p-6">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <i class="fa-solid fa-triangle-exclamation text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-2">حذف دسته‌جمعی</h3>
+            <p class="text-sm text-slate-500 mb-5">
+                آیا از حذف <strong class="text-slate-700" x-text="selectedMessages.length"></strong> پیام انتخاب‌شده مطمئن هستید؟
+            </p>
+            <div class="flex justify-center gap-3">
+                <button type="button" @click="showBulkDeleteModal = false"
+                        class="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
+                    انصراف
+                </button>
+                <button type="button" @click="bulkDelete()"
+                        class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-sm">
+                    بله، حذف کن
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard/contacts.js' %}"></script>
+{% endblock %}

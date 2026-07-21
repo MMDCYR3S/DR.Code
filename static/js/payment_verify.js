@@ -137,10 +137,40 @@ function paymentVerifyApp(serverData = null) {
         },
 
         async verifyParspal(order_id, status_code, token) {
-            // منطق پارس‌پال که قبلاً داشتی و دست‌نخورده باقی می‌ماند
-            // ... (کد پارس‌پال که در سوال بود اینجا قرار می‌گیرد) ...
-            // برای خلاصه شدن اینجا تکرار نکردم، همان کد قبلی را اینجا بگذار
-            // فقط در انتهای موفقیت: await this.syncUserProfile();
+            if (this.isVerifying) return;
+            this.isVerifying = true;
+
+            try {
+                // اگر بک‌اند در کال‌بک استاتوسی غیر از 100 را با موفقیت همراه نکرده باشد
+                if (status_code && status_code !== '100' && status_code !== 'SUCCESSFUL') {
+                    throw new Error('پرداخت لغو شد یا ناموفق بود.');
+                }
+
+                // فراخوانی متد تایید پارس‌پال
+                // مطمئن شوید متد verifyParspalPayment در فایل api.js درخواست POST به /payments/parspal/verify/ می‌زند
+                const result = await API.payment.verifyParspalPayment(order_id);
+
+                if (result.success) {
+                    this.success = true;
+                    // استخراج شماره رسید بر اساس خروجی بک‌اند شما
+                    this.refId = result.data.receipt_number || result.data.reference_number || order_id;
+                    this.paymentDate = this.formatDate(new Date());
+                    this.paymentGateway = 'parspal';
+                    
+                    this.showConfetti();
+                    await this.syncUserProfile(); // همگام‌سازی برای آپدیت دسترسی‌ها
+                } else {
+                    throw new Error(result.message || 'خطا در تایید نهایی پرداخت پارس‌پال');
+                }
+
+            } catch (error) {
+                console.error('❌ ParsPal Verify Error:', error);
+                this.success = false;
+                this.errorMessage = error.message || 'خطای نامشخص در تایید پرداخت';
+            } finally {
+                this.loading = false;
+                this.isVerifying = false;
+            }
         },
 
         // ==========================================

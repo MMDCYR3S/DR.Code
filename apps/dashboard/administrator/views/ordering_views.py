@@ -4,8 +4,7 @@ import logging
 from django.shortcuts import (
     render, redirect, get_object_or_404
 )
-from django.views import View
-from django.views.generic import DetailView
+from django.views.generic import DetailView, ListView, View
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 from django.db.models import Q, Max, Prefetch
@@ -191,89 +190,101 @@ class OrderCopyView(LoginRequiredMixin, View):
         messages.success(request, f'اوردر با موفقیت کپی شد. اکنون در حال ویرایش نسخه کپی هستید.')
         return redirect(reverse('dashboard:ordering:order_edit', kwargs={'pk': new_order.pk}))
 
-# ===================================================== #
-# ==================== Order List ===================== #
-# ===================================================== #
-class OrderListView(View):
-    template_name = 'dashboard/ordering/orders.html'
+# ============================================================ #
+# ==================== Order List View ======================== #
+# ============================================================ #
+class OrderListView(LoginRequiredMixin, ListView):
+    """
+    لیست اوردرها با جستجو، فیلتر دسته‌بندی، مرتب‌سازی و صفحه‌بندی
+    مطابق با الگوی نمونه (مدیریت داروها)
+    """
+    model = Order
+    template_name = 'dashboard/ordering/list.html'
+    context_object_name = 'orders'
     paginate_by = 15
 
-    def get(self, request):
-        from django.core.paginator import Paginator
+    def get_queryset(self):
+        queryset = Order.objects.select_related('category').order_by('-created_at')
 
-        qs = Order.objects.all()
+        search = self.request.GET.get('search', '').strip()
+        category = self.request.GET.get('category')
+        sort_by = self.request.GET.get('sort_by', '-created_at')
 
-        filter_form = OrderFilterForm(request.GET or None)
+        if search:
+            queryset = queryset.filter(Q(name__icontains=search))
+        if category:
+            queryset = queryset.filter(category_id=category)
+        if sort_by:
+            queryset = queryset.order_by(sort_by)
 
-        if filter_form.is_valid():
-            search = filter_form.cleaned_data.get('search', '').strip()
-            category = filter_form.cleaned_data.get('category')
-            sort_by = filter_form.cleaned_data.get('sort_by') or '-created_at'
+        return queryset
 
-            if search:
-                qs = qs.filter(Q(name__icontains=search))
-            if category:
-                qs = qs.filter(category=category)
-            qs = qs.order_by(sort_by)
-        else:
-            qs = qs.order_by('-created_at')
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
 
-        paginator = Paginator(qs, self.paginate_by)
-        page_obj = paginator.get_page(request.GET.get('page', 1))
+        # ===== بردکرامب ===== #
+        context['breadcrumb'] = [
+            {'label': 'داشبورد', 'url': reverse_lazy('dashboard:index:index')},
+            {'label': 'مدیریت اوردرها', 'url': ''}
+        ]
 
-        context = {
-            'orders': page_obj,
-            'page_obj': page_obj,
-            'is_paginated': page_obj.has_other_pages(),
-            'filter_form': filter_form,
+        # ===== جستجو و فیلترهای جاری ===== #
+        context['search'] = self.request.GET.get('search', '')
+        context['category_filter'] = self.request.GET.get('category', '')
+        context['sort_by'] = self.request.GET.get('sort_by', '-created_at')
+
+        # ===== آمار کارت‌ها ===== #
+        total = Order.objects.count()
+        active = Order.objects.filter(is_active=True).count() if hasattr(Order, 'is_active') else 0
+        draft = Order.objects.filter(is_draft=True).count() if hasattr(Order, 'is_draft') else 0
+
+        context['stats'] = {
+            'total': total,
+            'active': active,
+            'draft': draft,
         }
-        return render(request, self.template_name, context)
 
-# =========================================================== #
-# ==================== Order Detail View ==================== #
-# =========================================================== #
+        # ===== لیست دسته‌بندی‌ها برای فیلتر ===== #
+        from apps.prescriptions.models import PrescriptionCategory
+        context['categories'] = PrescriptionCategory.objects.all().order_by('title')
+
+        return context
+
+
+# ============================================================ #
+# ==================== Order Detail View ====================== #
+# ============================================================ #
 class OrderDetailView(LoginRequiredMixin, DetailView):
     """
-    نمایش جزئیات کامل یک اوردر شامل:
-      - اطلاعات پایه (imp, condition, diet, action, position, notes)
-      - بخش‌ها (Sections) با آیتم‌های متنی، داروها، شرط‌ها و روابط منطقی
-      - اطلاعات پیش‌بالینی (DynamicFieldGroups → DynamicFieldNodes درختی)
-      - تعیین تکلیف اورژانس (EmergencyDisposition + درخت گره‌ها)
-      - تصاویر (OrderImage)
-      - ویدیوها (OrderVideo)
+    نمایش جزییات کامل یک اوردر با تمام روابط (بخش‌ها، آیتم‌ها، داروها،
+    گروه‌های پیش‌بالینی، تعیین تکلیف اورژانس، تصاویر، ویدیوها)
     """
- 
     model = Order
-    template_name = "dashboard/ordering/order_detail.html"
-    context_object_name = "order"
- 
+    template_name = 'dashboard/ordering/detail.html'
+    context_object_name = 'order'
+
     def get_queryset(self):
-        """
-        queryset بهینه با prefetch_related برای تمام روابط مورد نیاز.
-        از N+1 query جلوگیری می‌کند.
-        """
- 
-        # ── Prefetch شرط‌های آیتم‌های متنی ──────────────────────────────
+        # ── Prefetch شرط‌های آیتم‌های متنی ──
         item_conditions_prefetch = Prefetch(
             "conditions",
             queryset=Condition.objects.order_by("order_index"),
         )
- 
-        # ── Prefetch آیتم‌های متنی با شرط‌هایشان ──────────────────────
+
+        # ── Prefetch آیتم‌های متنی با شرط‌ها ──
         items_prefetch = Prefetch(
             "items",
             queryset=SectionItem.objects.prefetch_related(
                 item_conditions_prefetch,
             ).select_related("relationship_group").order_by("order_index"),
         )
- 
-        # ── Prefetch شرط‌های آیتم‌های دارویی ────────────────────────────
+
+        # ── Prefetch شرط‌های آیتم‌های دارویی ──
         drug_item_conditions_prefetch = Prefetch(
             "conditions",
             queryset=Condition.objects.order_by("order_index"),
         )
- 
-        # ── Prefetch آیتم‌های دارویی با شرط‌ها ──────────────────────────
+
+        # ── Prefetch آیتم‌های دارویی با شرط‌ها ──
         drug_items_prefetch = Prefetch(
             "drug_items",
             queryset=DrugSectionItem.objects.select_related(
@@ -282,14 +293,14 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
                 drug_item_conditions_prefetch,
             ).order_by("order_index"),
         )
- 
-        # ── Prefetch گروه‌های ارتباطی (OR/AND/THEN) ─────────────────────
+
+        # ── Prefetch گروه‌های ارتباطی ──
         relationship_groups_prefetch = Prefetch(
             "relationship_groups",
             queryset=ItemRelationshipGroup.objects.order_by("order_index"),
         )
- 
-        # ── Prefetch بخش‌ها با همه زیرمجموعه‌ها ────────────────────────
+
+        # ── Prefetch بخش‌ها ──
         sections_prefetch = Prefetch(
             "sections",
             queryset=OrderSection.objects.prefetch_related(
@@ -298,8 +309,8 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
                 relationship_groups_prefetch,
             ).order_by("order_index"),
         )
- 
-        # ── Prefetch گره‌های پیش‌بالینی (درختی، یک سطح فرزند) ──────────
+
+        # ── Prefetch گره‌های پیش‌بالینی ──
         preclinical_children_prefetch = Prefetch(
             "children",
             queryset=DynamicFieldNode.objects.order_by("order_index"),
@@ -316,8 +327,8 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
                 preclinical_root_nodes_prefetch
             ).order_by("order_index"),
         )
- 
-        # ── Prefetch گره‌های تعیین تکلیف (یک سطح فرزند) ────────────────
+
+        # ── Prefetch گره‌های تعیین تکلیف ──
         emergency_children_prefetch = Prefetch(
             "children",
             queryset=EmergencyNode.objects.order_by("order_index"),
@@ -334,42 +345,45 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
                 emergency_nodes_prefetch
             ),
         )
- 
+
         return (
             Order.objects.select_related("category")
             .prefetch_related(
                 sections_prefetch,
                 dynamic_groups_prefetch,
                 disposition_prefetch,
-                Prefetch(
-                    "images",
-                    queryset=OrderImage.objects.order_by("order_index"),
-                ),
-                Prefetch(
-                    "videos",
-                    queryset=OrderVideo.objects.order_by("order_index"),
-                ),
+                Prefetch("images", queryset=OrderImage.objects.order_by("order_index")),
+                Prefetch("videos", queryset=OrderVideo.objects.order_by("order_index")),
             )
         )
- 
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["is_detail"] = True
+
+        # ===== بردکرامب ===== #
+        context['breadcrumb'] = [
+            {'label': 'داشبورد', 'url': reverse_lazy('dashboard:index:index')},
+            {'label': 'مدیریت اوردرها', 'url': reverse_lazy('dashboard:ordering:order_list')},
+            {'label': self.object.name, 'url': ''}
+        ]
+
         return context
- 
-# ====================================================== #
-# ==================== Order Delete ==================== #
-# ====================================================== #
-class OrderDeleteView(View):
+
+
+# ============================================================ #
+# ==================== Order Delete View ====================== #
+# ============================================================ #
+class OrderDeleteView(LoginRequiredMixin, View):
+    """
+    حذف اوردر (با نمایش پیام موفقیت و ریدایرکت به لیست)
+    مطابق با الگوی نمونه (ارسال فرم POST)
+    """
     def post(self, request, pk):
         order = get_object_or_404(Order, pk=pk)
-        order_name = order.name
-        try:
-            order.delete()
-            return JsonResponse({'success': True, 'message': f'اوردر «{order_name}» با موفقیت حذف شد.'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': 'خطا در حذف اوردر.', 'error': str(e)}, status=500)
-
+        name = order.name
+        order.delete()
+        messages.success(request, f'اوردر «{name}» با موفقیت حذف شد.')
+        return redirect('dashboard:ordering:order_list')
 
 # ==================================================== #
 # ==================== Order View ==================== #
@@ -459,6 +473,11 @@ class OrderManageView(View):
             'active_tab': 'order',
             'alias_formset': alias_formset,
         }
+        context['breadcrumb'] = [
+            {'label': 'داشبورد', 'url': reverse_lazy('dashboard:index:index')},
+            {'label': 'مدیریت اوردرها', 'url': reverse_lazy('dashboard:ordering:order_list')},
+            {'label': 'افزودن اوردر جدید' if not order else f'ویرایش اوردر: {order.name}', 'url': ''}
+        ]
         return render(request, self.template_name, context)
     
     @transaction.atomic
@@ -855,7 +874,12 @@ class PreClinicalManageView(View):
             'new_group_form': DynamicFieldGroupForm(prefix='new_group'),
             'child_form': DynamicFieldChildNodeForm(),
             'color_choices': TailwindColor.choices,
-            'active_tab': 'preclinical',}
+            'active_tab': 'preclinical',
+            'breadcrumb': [
+                {'label': 'داشبورد', 'url': reverse_lazy('dashboard:index:index')},
+                {'label': 'مدیریت اوردرها', 'url': reverse_lazy('dashboard:ordering:order_list')},
+                {'label': 'افزودن اوردر جدید' if not order else f'ویرایش اوردر: {order.name}', 'url': ''}
+            ]}
 
     def get(self, request, order_pk):
         order = self.get_order(order_pk)
@@ -1049,6 +1073,11 @@ class EmergencyDispositionManageView(View):
             'color_choices': TailwindColor.choices,
             'child_form': EmergencyChildNodeForm(),
             'active_tab': 'emergency',
+            'breadcrumb': [
+                {'label': 'داشبورد', 'url': reverse_lazy('dashboard:index:index')},
+                {'label': 'مدیریت اوردرها', 'url': reverse_lazy('dashboard:ordering:order_list')},
+                {'label': 'افزودن اوردر جدید' if not order else f'ویرایش اوردر: {order.name}', 'url': ''}
+            ]
         }
 
     # ===== GET ===== #
@@ -1215,6 +1244,11 @@ class OrderMediaManageView(View):
             'image_fs': image_fs or OrderImageFormSet(instance=order, prefix='images'),
             'video_fs': video_fs or OrderVideoFormSet(instance=order, prefix='videos'),
             'active_tab': 'media',
+            'breadcrumb': [
+                {'label': 'داشبورد', 'url': reverse_lazy('dashboard:index:index')},
+                {'label': 'مدیریت اوردرها', 'url': reverse_lazy('dashboard:ordering:order_list')},
+                {'label': 'افزودن اوردر جدید' if not order else f'ویرایش اوردر: {order.name}', 'url': ''}
+            ]
         }
 
     def get(self, request, order_pk):

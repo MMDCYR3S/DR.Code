@@ -1,0 +1,35 @@
+{# components/atoms/pagination.html #}
+{% with 
+    current_page=current_page|default:1
+    total_pages=total_pages|default:1
+    on_page_change=on_page_change|default:"null"
+%}
+<div x-data="pagination({
+    currentPage: {{ current_page }},
+    totalPages: {{ total_pages }},
+    onPageChange: {{ on_page_change|default:"null" }}
+})" class="mt-8 flex justify-center">
+    <nav class="flex items-center space-x-2 space-x-reverse bg-white p-2 rounded-xl shadow-sm">
+        <button @click="prev()" :disabled="currentPage === 1"
+            class="px-3 py-2 text-slate-500 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <i class="fa-solid fa-chevron-right ml-1 text-xs"></i> قبلی
+        </button>
+        
+        <template x-for="num in Array.from({length: totalPages}, (_, i) => i + 1)" :key="num">
+            <button @click="goTo(num)"
+                :class="{
+                    'px-4 py-2 text-white bg-c1 rounded-lg font-medium shadow-sm': currentPage === num,
+                    'px-4 py-2 text-slate-600 rounded-lg hover:bg-slate-100 transition-colors': currentPage !== num
+                }"
+                x-text="num"
+                x-show="Math.abs(num - currentPage) <= 2 || num === 1 || num === totalPages"
+            ></button>
+        </template>
+        
+        <button @click="next()" :disabled="currentPage === totalPages"
+            class="px-3 py-2 text-slate-500 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            بعدی <i class="fa-solid fa-chevron-left mr-1 text-xs"></i>
+        </button>
+    </nav>
+</div>
+{% endwith %}

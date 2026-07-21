@@ -1,0 +1,72 @@
+{# components/atoms/input.html #}
+{% with 
+    type=type|default:"text"
+    name=name|default:""
+    value=value|default:""
+    placeholder=placeholder|default:""
+    model=model|default:""
+    required=required|default:False
+    disabled=disabled|default:False
+    extra_classes=extra_classes|default:""
+    
+    # ویژگی‌های مخصوص textarea
+    rows=rows|default:4
+    cols=cols|default:""
+    
+    # ویژگی‌های مخصوص number
+    min=min|default:""
+    max=max|default:""
+    step=step|default:""
+    
+    # ویژگی‌های مخصوص select
+    options=options|default:""   # لیست دیکشنری‌ها [{"value": "x", "label": "y"}]
+    select_placeholder=select_placeholder|default:"انتخاب کنید"
+%}
+
+{# =============== select =============== #}
+{% if type == 'select' %}
+<select name="{{ name }}"
+    {% if model %}x-model="{{ model }}"{% endif %}
+    {% if required %}required{% endif %}
+    {% if disabled %}disabled{% endif %}
+    class="w-full px-4 py-2.5 text-center border border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-all disabled:opacity-60 disabled:cursor-not-allowed {{ extra_classes }}"
+>
+    {% if options %}
+        {% for option in options %}
+            <option value="{{ option.value }}">{{ option.label }}</option>
+        {% endfor %}
+    {% else %}
+        <option value="">{{ select_placeholder }}</option>
+    {% endif %}
+</select>
+
+{# =============== textarea =============== #}
+{% elif type == 'textarea' %}
+<textarea name="{{ name }}"
+    {% if model %}x-model="{{ model }}"{% endif %}
+    {% if required %}required{% endif %}
+    {% if disabled %}disabled{% endif %}
+    rows="{{ rows }}"
+    {% if cols %}cols="{{ cols }}"{% endif %}
+    placeholder="{{ placeholder }}"
+    class="w-full px-4 py-2.5 text-center border border-slate-200 rounded-lg bg-white text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-all disabled:opacity-60 disabled:cursor-not-allowed resize-y {{ extra_classes }}"
+>{{ value }}</textarea>
+
+{# =============== سایر انواع (text, email, password, number, tel, url, search, ...) =============== #}
+{% else %}
+<input type="{{ type }}"
+    name="{{ name }}"
+    value="{{ value }}"
+    placeholder="{{ placeholder }}"
+    {% if model %}x-model="{{ model }}"{% endif %}
+    {% if required %}required{% endif %}
+    {% if disabled %}disabled{% endif %}
+    {% if type == 'number' %}
+        {% if min %}min="{{ min }}"{% endif %}
+        {% if max %}max="{{ max }}"{% endif %}
+        {% if step %}step="{{ step }}"{% endif %}
+    {% endif %}
+    class="w-full px-4 py-2.5 text-center border border-slate-200 rounded-lg bg-white text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-all disabled:opacity-60 disabled:cursor-not-allowed {{ extra_classes }}"
+>
+{% endif %}
+{% endwith %}

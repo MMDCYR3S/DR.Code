@@ -1,0 +1,218 @@
+{% extends 'dashboard/base.html' %}
+{% load static humanize %}
+
+{% block title %}مدیریت پلن‌ها و Membership‌ها{% endblock %}
+
+{% block content %}
+<div class="container mx-auto"
+     x-data="planManager({
+        membershipCreateUrl: '{% url 'dashboard:plans:membership_create' %}',
+        membershipUpdateUrlTpl: '{% url 'dashboard:plans:membership_update' 0 %}',
+        membershipDeleteUrlTpl: '{% url 'dashboard:plans:membership_delete' 0 %}',
+        featureCreateUrl: '{% url 'dashboard:plans:feature_create' %}',
+        featureDetailUrlTpl: '{% url 'dashboard:plans:feature_detail' 0 %}',
+        featureUpdateUrlTpl: '{% url 'dashboard:plans:feature_update' 0 %}',
+        featureDeleteUrlTpl: '{% url 'dashboard:plans:feature_delete' 0 %}',
+        planCreateUrl: '{% url 'dashboard:plans:plan_create' %}',
+        planDetailUrlTpl: '{% url 'dashboard:plans:plan_detail' 0 %}',
+        planUpdateUrlTpl: '{% url 'dashboard:plans:plan_update' 0 %}',
+        planDeleteUrlTpl: '{% url 'dashboard:plans:plan_delete' 0 %}'
+     })">
+    <form style="display:none;">{% csrf_token %}</form>
+    {# ===== سربرگ صفحه ===== #}
+    <div class="mb-6">
+        {% include 'components/atoms/breadcrumb.html' with items=breadcrumb extra_classes="mb-3" %}
+        <div class="flex flex-wrap justify-between items-center gap-3">
+            <h1 class="text-2xl font-bold text-slate-700 flex items-center gap-3">
+                <i class="fa-solid fa-layer-group text-c1"></i> مدیریت پلن‌ها و Membership‌ها
+            </h1>
+            <button type="button" @click="openAddMembershipModal()"
+                    class="px-4 py-2 bg-c1 text-white rounded-lg text-sm hover:bg-c2 transition-colors flex items-center gap-2 shadow-sm">
+                <i class="fa-solid fa-plus"></i> افزودن Membership جدید
+            </button>
+        </div>
+    </div>
+
+    {# ===== کارت‌های آمار ===== #}
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        {% include 'components/molecules/stat_card.html' with icon='fa-solid fa-layer-group' variant='c1' label='کل Membership‌ها' value=stats.total_memberships %}
+        {% include 'components/molecules/stat_card.html' with icon='fa-solid fa-check-circle' variant='green' label='فعال' value=stats.active_memberships %}
+        {% include 'components/molecules/stat_card.html' with icon='fa-solid fa-box' variant='purple' label='تعداد پلن‌ها' value=stats.total_plans %}
+    </div>
+
+    {# ===== بخش Membership‌ها (جدول/کارت) ===== #}
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+        <div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+            <h2 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <i class="fa-solid fa-layer-group text-c1"></i> انواع Membership
+            </h2>
+            <span class="text-xs text-slate-400">{{ memberships|length }} مورد</span>
+        </div>
+
+        {# جدول دسکتاپ #}
+        <div class="hidden lg:block overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
+                    <tr>
+                        <th class="px-6 py-4 text-right font-medium">عنوان</th>
+                        <th class="px-6 py-4 text-right font-medium">توضیحات</th>
+                        <th class="px-6 py-4 text-right font-medium">تعداد پلن</th>
+                        <th class="px-6 py-4 text-right font-medium">تعداد فیچر</th>
+                        <th class="px-6 py-4 text-center font-medium">وضعیت</th>
+                        <th class="px-6 py-4 text-center font-medium">عملیات</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for membership in memberships %}
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4 font-semibold text-slate-800">{{ membership.title }}</td>
+                        <td class="px-6 py-4 text-slate-600 text-sm max-w-xs truncate">{{ membership.description|default:'—' }}</td>
+                        <td class="px-6 py-4 text-slate-600">{{ membership.plans.count }}</td>
+                        <td class="px-6 py-4 text-slate-600">{{ membership.features.count }}</td>
+                        <td class="px-6 py-4 text-center">
+                            {% if membership.is_active %}
+                                <span class="px-2.5 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">فعال</span>
+                            {% else %}
+                                <span class="px-2.5 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">غیرفعال</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex justify-center items-center gap-1">
+                                <a href="{% url 'dashboard:plans:membership_detail' membership.pk %}"
+                                   class="p-2 text-slate-500 hover:text-blue-600 rounded-md hover:bg-slate-100 transition-colors" title="مشاهده جزئیات">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
+                                <button type="button" title="ویرایش"
+                                        @click="openEditMembershipModal({{ membership.id }}, '{{ membership.title|escapejs }}', '{{ membership.description|escapejs }}', {{ membership.is_active|yesno:'true,false' }}, [{% for f in membership.features.all %}{{ f.id }}{% if not forloop.last %}, {% endif %}{% endfor %}])"
+                                        class="p-2 text-slate-500 hover:text-c1 rounded-md hover:bg-slate-100 transition-colors">
+                                    <i class="fa-solid fa-pencil"></i>
+                                </button>
+                                <button type="button" title="حذف"
+                                        @click="openDeleteMembership({{ membership.id }}, '{{ membership.title|escapejs }}')"
+                                        class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100 transition-colors">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6">{% include 'dashboard/plans/_empty_membership.html' %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# کارت‌های موبایل #}
+        <div class="lg:hidden p-4 space-y-4">
+            {% for membership in memberships %}
+            <div class="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="font-bold text-slate-800">{{ membership.title }}</h3>
+                        <p class="text-sm text-slate-500 mt-1 line-clamp-2">{{ membership.description|default:'بدون توضیحات' }}</p>
+                    </div>
+                    <span class="px-2.5 py-1 text-xs font-medium rounded-full {% if membership.is_active %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+                        {% if membership.is_active %}فعال{% else %}غیرفعال{% endif %}
+                    </span>
+                </div>
+                <div class="mt-3 flex items-center gap-3 text-xs text-slate-500">
+                    <span><i class="fa-solid fa-box ml-1"></i>{{ membership.plans.count }} پلن</span>
+                    <span><i class="fa-solid fa-star ml-1"></i>{{ membership.features.count }} فیچر</span>
+                </div>
+                <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <a href="{% url 'dashboard:plans:membership_detail' membership.pk %}"
+                       class="text-sm text-blue-600 hover:underline font-medium">مشاهده جزئیات</a>
+                    <div class="flex items-center gap-1">
+                        <button @click="openEditMembershipModal({{ membership.id }}, '{{ membership.title|escapejs }}', '{{ membership.description|escapejs }}', {{ membership.is_active|yesno:'true,false' }}, [{% for f in membership.features.all %}{{ f.id }}{% if not forloop.last %}, {% endif %}{% endfor %}])"
+                                class="p-1.5 text-slate-500 hover:text-c1 rounded-md hover:bg-slate-100 transition-colors">
+                            <i class="fa-solid fa-pencil text-sm"></i>
+                        </button>
+                        <button @click="openDeleteMembership({{ membership.id }}, '{{ membership.title|escapejs }}')"
+                                class="p-1.5 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100 transition-colors">
+                            <i class="fa-solid fa-trash text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            {% include 'dashboard/plans/_empty_membership.html' %}
+            {% endfor %}
+        </div>
+    </div>
+
+    {# ===== بخش Features (جدول) ===== #}
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+            <h2 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <i class="fa-solid fa-star text-yellow-500"></i> ویژگی‌ها (Features)
+            </h2>
+            <button type="button" @click="openAddFeatureModal()"
+                    class="px-3 py-1.5 text-xs font-medium text-white bg-yellow-500 rounded-lg hover:bg-yellow-600 transition-colors">
+                <i class="fa-solid fa-plus ml-1"></i> افزودن ویژگی
+            </button>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
+                    <tr>
+                        <th class="px-6 py-4 text-right font-medium">نام ویژگی</th>
+                        <th class="px-6 py-4 text-right font-medium">نوع</th>
+                        <th class="px-6 py-4 text-right font-medium">شناسه (Slug)</th>
+                        <th class="px-6 py-4 text-center font-medium">وضعیت</th>
+                        <th class="px-6 py-4 text-center font-medium">عملیات</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for feature in features %}
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4 font-semibold text-slate-800">{{ feature.name }}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2.5 py-1 text-xs font-medium text-purple-700 bg-purple-100 rounded-full">
+                                {{ feature.get_feature_type_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-slate-500 font-mono text-xs" dir="ltr">{{ feature.slug }}</td>
+                        <td class="px-6 py-4 text-center">
+                            {% if feature.is_active %}
+                                <span class="px-2.5 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">فعال</span>
+                            {% else %}
+                                <span class="px-2.5 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">غیرفعال</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex justify-center items-center gap-1">
+                                <button type="button" title="ویرایش"
+                                        @click="openEditFeatureModal({{ feature.id }})"
+                                        class="p-2 text-slate-500 hover:text-c1 rounded-md hover:bg-slate-100 transition-colors">
+                                    <i class="fa-solid fa-pencil"></i>
+                                </button>
+                                <button type="button" title="حذف"
+                                        @click="openDeleteFeature({{ feature.id }}, '{{ feature.name|escapejs }}')"
+                                        class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100 transition-colors">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">{% include 'dashboard/plans/_empty_feature.html' %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {# ===== مودال‌ها ===== #}
+    {% include 'dashboard/plans/_modals.html' %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard/plans.js' %}"></script>
+{% endblock %}

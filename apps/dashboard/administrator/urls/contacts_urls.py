@@ -2,12 +2,12 @@ from django.urls import path
 from ..views import (
     ContactsListView,
     ContactDetailView,
-    ContactDeleteView,
     ContactMarkReadView,
-    ContactsBulkDeleteView
+    ContactDeleteView,
+    ContactsBulkDeleteView,
 )
 
-app_name = "contacts"
+app_name = 'contacts'
 
 urlpatterns = [
     path('contacts/', ContactsListView.as_view(), name='contacts_list'),

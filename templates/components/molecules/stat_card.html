@@ -1,0 +1,16 @@
+{# components/molecules/stat_card.html — کارت آمار #}
+{# ورودی: icon، label، value، variant (c1|green|orange|purple|red) #}
+<div class="bg-white rounded-xl shadow-sm p-4 flex items-center gap-4">
+    <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-xl
+        {% if variant == 'green' %} bg-green-100 text-green-600
+        {% elif variant == 'orange' %} bg-orange-100 text-orange-500
+        {% elif variant == 'purple' %} bg-purple-100 text-purple-600
+        {% elif variant == 'red' %} bg-red-100 text-red-600
+        {% else %} bg-c5 text-c1 {% endif %}">
+        <i class="{{ icon }} text-lg"></i>
+    </div>
+    <div>
+        <div class="text-2xl font-bold text-slate-800">{{ value }}</div>
+        <div class="text-xs text-slate-500 mt-0.5">{{ label }}</div>
+    </div>
+</div>

@@ -1,0 +1,231 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% load dashboard_tags %}
+
+{% block title %}مدیریت اوردرها{% endblock %}
+
+{% block content %}
+<div class="container mx-auto"
+     x-data="orderManager({
+        deleteUrlTpl: '{% url 'dashboard:ordering:order_delete' 0 %}'
+     })">
+
+    {# ===== سربرگ صفحه ===== #}
+    <div class="mb-6">
+        {% include 'components/atoms/breadcrumb.html' with items=breadcrumb extra_classes="mb-3" %}
+        <div class="flex flex-wrap justify-between items-center gap-3">
+            <h1 class="text-2xl font-bold text-slate-700 flex items-center gap-3">
+                <i class="fa-solid fa-file-medical text-c1"></i> مدیریت اوردرها
+            </h1>
+            <a href="{% url 'dashboard:ordering:order_create' %}"
+               class="px-4 py-2 bg-c1 text-white rounded-lg text-sm hover:bg-c2 transition-colors flex items-center gap-2 shadow-sm">
+                <i class="fa-solid fa-plus"></i> اوردر جدید
+            </a>
+        </div>
+    </div>
+
+    {# ===== کارت‌های آمار ===== #}
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        {% include 'components/molecules/stat_card.html' with icon='fa-solid fa-list' variant='c1' label='کل اوردرها' value=stats.total %}
+        {% include 'components/molecules/stat_card.html' with icon='fa-solid fa-check-circle' variant='green' label='فعال' value=stats.active %}
+        {% include 'components/molecules/stat_card.html' with icon='fa-solid fa-pen-fancy' variant='purple' label='پیش‌نویس' value=stats.draft %}
+    </div>
+
+    {# ===== جستجو و فیلتر ===== #}
+    <div class="bg-white p-4 rounded-xl shadow-sm mb-6">
+        <form method="GET" class="flex flex-col lg:flex-row gap-3 items-center w-full">
+            <div class="relative w-full lg:flex-1">
+                <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <i class="fa-solid fa-magnifying-glass text-slate-400 text-sm"></i>
+                </span>
+                <input type="text" name="search" value="{{ search }}"
+                       placeholder="جستجو بر اساس نام اوردر..."
+                       class="w-full pr-10 pl-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors">
+            </div>
+            <div class="w-full lg:w-52">
+                <select name="category" class="w-full px-4 py-2.5 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors text-sm">
+                    <option value="">همه دسته‌بندی‌ها</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if category_filter == cat.id|stringformat:"s" %}selected{% endif %}>
+                        {{ cat.title }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="w-full lg:w-52">
+                <select name="sort_by" class="w-full px-4 py-2.5 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors text-sm">
+                    <option value="-created_at" {% if sort_by == '-created_at' %}selected{% endif %}>جدیدترین</option>
+                    <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>قدیمی‌ترین</option>
+                    <option value="name" {% if sort_by == 'name' %}selected{% endif %}>بر اساس نام (الفبا)</option>
+                    <option value="-name" {% if sort_by == '-name' %}selected{% endif %}>بر اساس نام (الفبا معکوس)</option>
+                </select>
+            </div>
+            <div class="w-full lg:w-auto lg:min-w-[120px]">
+                <button type="submit"
+                        class="w-full px-4 py-2.5 bg-c1 text-white rounded-lg text-sm hover:bg-c2 transition-colors flex justify-center items-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-filter"></i> اعمال
+                </button>
+            </div>
+            {% if search or category_filter %}
+            <a href="{% url 'dashboard:ordering:order_list' %}"
+               class="w-full lg:w-auto px-4 py-2.5 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200 transition-colors flex justify-center items-center gap-2">
+                <i class="fa-solid fa-xmark"></i>
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    {# ===== جدول (دسکتاپ) ===== #}
+    <div class="hidden lg:block bg-white rounded-xl shadow-sm overflow-hidden">
+        <table class="min-w-full text-sm">
+            <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
+                <tr>
+                    <th class="px-6 py-4 text-right font-medium">نام اوردر</th>
+                    <th class="px-6 py-4 text-right font-medium">دسته‌بندی</th>
+                    <th class="px-6 py-4 text-right font-medium">وضعیت</th>
+                    <th class="px-6 py-4 text-right font-medium">تاریخ ایجاد</th>
+                    <th class="px-6 py-4 text-center font-medium">عملیات</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for order in orders %}
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4 font-semibold text-slate-800">{{ order.name }}</td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center gap-1.5 text-sm text-slate-600">
+                            {% if order.category.color_code %}
+                            <span class="w-2 h-2 rounded-full" style="background-color: {{ order.category.color_code }}"></span>
+                            {% endif %}
+                            {{ order.category.title }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        {% access_level_badge order %}
+                    </td>
+                    <td class="px-6 py-4 text-slate-500 text-xs">{{ order.shamsi_created_at }}</td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex justify-center items-center gap-1">
+                            <a href="{% url 'dashboard:ordering:order_detail' order.pk %}"
+                               class="p-2 text-slate-500 hover:text-green-600 rounded-md hover:bg-slate-100 transition-colors" title="مشاهده">
+                                <i class="fa-solid fa-eye"></i>
+                            </a>
+                            <a href="{% url 'dashboard:ordering:order_edit' order.pk %}"
+                               class="p-2 text-slate-500 hover:text-c1 rounded-md hover:bg-slate-100 transition-colors" title="ویرایش">
+                                <i class="fa-solid fa-pencil"></i>
+                            </a>
+                            <form method="POST" action="{% url 'dashboard:ordering:order_copy' order.pk %}" class="inline" onsubmit="return confirm('آیا از کپی کردن این اوردر اطمینان دارید؟');">
+                                {% csrf_token %}
+                                <button type="submit" class="p-2 text-slate-500 hover:text-blue-600 rounded-md hover:bg-slate-100 transition-colors" title="کپی">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </form>
+                            <button type="button" title="حذف"
+                                    @click="openDelete({{ order.pk }}, '{{ order.name|escapejs }}')"
+                                    class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100 transition-colors">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">{% include 'dashboard/ordering/_empty.html' %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# ===== کارت‌های موبایل ===== #}
+    <div class="lg:hidden space-y-4">
+        {% for order in orders %}
+        <div class="bg-white rounded-xl shadow-sm p-4">
+            <div class="flex justify-between items-start gap-3">
+                <div class="flex-1 min-w-0">
+                    <h3 class="font-bold text-slate-800 mb-2 break-words">{{ order.name }}</h3>
+                    <div class="space-y-1.5 text-sm text-slate-600">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-tag w-4 text-slate-400"></i>
+                            <span>{{ order.category.title }}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            {% access_level_badge order %}
+                        </div>
+                        <div class="flex items-center gap-2 text-xs text-slate-400">
+                            <i class="fa-solid fa-calendar-plus w-4"></i>
+                            <span>{{ order.shamsi_created_at }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1 flex-shrink-0">
+                    <a href="{% url 'dashboard:ordering:order_detail' order.pk %}"
+                       class="p-2 text-slate-500 hover:text-green-600 rounded-md hover:bg-slate-100 transition-colors">
+                        <i class="fa-solid fa-eye"></i>
+                    </a>
+                    <a href="{% url 'dashboard:ordering:order_edit' order.pk %}"
+                       class="p-2 text-slate-500 hover:text-c1 rounded-md hover:bg-slate-100 transition-colors">
+                        <i class="fa-solid fa-pencil"></i>
+                    </a>
+                    <button type="button"
+                            @click="openDelete({{ order.pk }}, '{{ order.name|escapejs }}')"
+                            class="p-2 text-slate-500 hover:text-red-600 rounded-md hover:bg-slate-100 transition-colors">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        {% include 'dashboard/ordering/_empty.html' %}
+        {% endfor %}
+    </div>
+
+    {# ===== صفحه‌بندی ===== #}
+    {% include 'dashboard/partials/_pagination.html' %}
+
+    {# ===== مودال حذف ===== #}
+    <div x-show="showDelete" x-cloak @keydown.escape.window="showDelete = false"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div @click="showDelete = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div x-show="showDelete" x-transition class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm text-center p-6">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <i class="fa-solid fa-triangle-exclamation text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-2">حذف اوردر</h3>
+            <p class="text-sm text-slate-500 mb-5">
+                آیا از حذف اوردر <strong class="text-slate-700 break-words" x-text="order.title"></strong> مطمئن هستید؟
+            </p>
+            <form method="POST" :action="deleteAction">
+                {% csrf_token %}
+                <div class="flex justify-center gap-3">
+                    <button type="button" @click="showDelete = false"
+                            class="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
+                        انصراف
+                    </button>
+                    <button type="submit"
+                            class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-sm">
+                        بله، حذف کن
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('orderManager', (config) => ({
+            showDelete: false,
+            deleteAction: '',
+            order: { id: null, title: '' },
+
+            openDelete(id, title) {
+                this.order = { id, title };
+                this.deleteAction = config.deleteUrlTpl.replace('0', id);
+                this.showDelete = true;
+            },
+        }));
+    });
+</script>
+{% endblock %}

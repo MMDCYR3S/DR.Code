@@ -33,17 +33,17 @@ class CategoryForm(forms.ModelForm):
         choices=TAILWIND_COLOR_CHOICES,
         label="رنگ دسته‌بندی",
         widget=forms.Select(attrs={
-            'class': 'w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400'
+            'class': 'w-full px-4 py-2.5 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors'
         })
     )
-    
+
     class Meta:
         model = PrescriptionCategory
         fields = ['title', 'color_code']
         widgets = {
             'title': forms.TextInput(attrs={
                 'placeholder': 'مثال: روانپزشکی',
-                'class': 'w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400'
+                'class': 'w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-c1 focus:border-c1 transition-colors'
             })
         }
         labels = {

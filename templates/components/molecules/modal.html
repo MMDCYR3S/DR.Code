@@ -1,0 +1,54 @@
+{# components/molecules/modal.html #}
+{% with 
+    id=id|default:"global-modal"
+    title=title|default:""
+    size=size|default:"md"
+    close_on_backdrop=close_on_backdrop|default:True
+    icon=icon|default:""
+%}
+<div x-data="modal({ title: '{{ title }}', size: '{{ size }}' })"
+    x-show="isOpen"
+    x-cloak
+    @keydown.escape.window="close()"
+    @open-modal.window="if ($event.detail.id === '{{ id }}') open()"
+    @close-modal.window="if ($event.detail.id === '{{ id }}') close()"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    
+    <div x-show="isOpen"
+        x-transition:enter="ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="ease-in duration-200"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
+        @click="{% if close_on_backdrop %}close(){% endif %}">
+    </div>
+
+    <div x-show="isOpen"
+        x-transition:enter="ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100"
+        x-transition:leave="ease-in duration-200"
+        x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-95"
+        class="relative bg-white rounded-2xl shadow-2xl w-full max-h-[90vh] overflow-y-auto
+        {% if size == 'sm' %} max-w-sm {% elif size == 'md' %} max-w-md {% elif size == 'lg' %} max-w-lg {% elif size == 'xl' %} max-w-xl {% endif %}"
+        @click.away="close()">
+        
+        <div class="flex items-center justify-between p-5 border-b border-slate-200">
+            <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                {% if icon %}<i class="{{ icon }} text-c1"></i>{% endif %}
+                <span x-text="title"></span>
+            </h3>
+            <button @click="close()" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+        </div>
+
+        <div class="p-6">
+            {{ slot }}
+        </div>
+    </div>
+</div>
+{% endwith %}

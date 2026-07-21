@@ -1,0 +1,250 @@
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('userDetail', (userId, userName, openEdit = false) => ({
+        // --- وضعیت عمومی ---
+        userId: userId,
+        userName: userName,
+        editing: openEdit,
+        isProcessing: false,
+
+        // --- مودال‌ها ---
+        approveModalOpen: false,
+        rejectModalOpen: false,
+        deleteModalOpen: false,
+        imageViewerOpen: false,
+        imageUrl: '',
+
+        // --- مودال‌های اشتراک ---
+        createSubscriptionModalOpen: false,
+        editSubscriptionModalOpen: false,
+        extendSubscriptionModalOpen: false,
+        deleteSubscriptionModalOpen: false,
+
+        // --- داده اشتراک ---
+        hasActiveSubscription: false,
+        activeSubscription: null,
+        allSubscriptions: [],
+        availablePlans: [],
+        selectedPlanInfo: null,
+
+        subscriptionForm: { user_id: userId, plan_id: '', payment_amount: '' },
+        editForm: { subscription_id: '', plan_id: '', payment_amount: '', status: 'active' },
+        extendForm: { days_to_add: 30 },
+
+        // --- راه‌اندازی ---
+        init() {
+            this.loadSubscriptionData();
+            this.loadAvailablePlans();
+        },
+
+        getCSRF() {
+            return document.querySelector('[name=csrfmiddlewaretoken]')?.value ?? '';
+        },
+
+        notify(message, type = 'success') {
+            window.dispatchEvent(new CustomEvent('notify', { detail: { message, type } }));
+        },
+
+        formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        },
+
+        // ===== بارگذاری داده اشتراک =====
+        async loadSubscriptionData() {
+            try {
+                const res = await fetch(`/dashboard/admin/subscriptions/user/${this.userId}/`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.hasActiveSubscription = data.has_active_subscription;
+                    this.activeSubscription = data.active_subscription;
+                    this.allSubscriptions = data.subscriptions;
+                }
+            } catch (error) {
+                console.error('Error loading subscription data:', error);
+            }
+        },
+
+        async loadAvailablePlans() {
+            try {
+                const res = await fetch('/dashboard/admin/subscriptions/plans/', {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await res.json();
+                if (data.success) this.availablePlans = data.plans;
+            } catch (error) {
+                console.error('Error loading plans:', error);
+            }
+        },
+
+        // ===== افزودن اشتراک =====
+        openCreateSubscriptionModal() {
+            this.subscriptionForm = { user_id: this.userId, plan_id: '', payment_amount: '' };
+            this.selectedPlanInfo = null;
+            this.createSubscriptionModalOpen = true;
+        },
+
+        updatePlanPrice() {
+            const plan = this.availablePlans.find(p => p.id == this.subscriptionForm.plan_id);
+            if (plan) {
+                this.subscriptionForm.payment_amount = this.formatNumber(plan.price);
+                this.selectedPlanInfo = plan;
+            }
+        },
+
+        async createSubscription() {
+            this.isProcessing = true;
+            try {
+                const formData = new FormData();
+                formData.append('user_id', this.subscriptionForm.user_id);
+                formData.append('plan_id', this.subscriptionForm.plan_id);
+                formData.append('payment_amount', this.subscriptionForm.payment_amount.replace(/,/g, ''));
+                formData.append('csrfmiddlewaretoken', this.getCSRF());
+
+                const res = await fetch('/dashboard/admin/subscriptions/create/', {
+                    method: 'POST', body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.notify(data.message, 'success');
+                    this.createSubscriptionModalOpen = false;
+                    await this.loadSubscriptionData();
+                } else {
+                    this.notify(data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error creating subscription:', error);
+                this.notify('خطا در ایجاد اشتراک', 'error');
+            } finally {
+                this.isProcessing = false;
+            }
+        },
+
+        // ===== ویرایش اشتراک =====
+        async openEditSubscriptionModal() {
+            if (!this.activeSubscription) return;
+            try {
+                const res = await fetch(`/dashboard/admin/subscriptions/${this.activeSubscription.id}/edit/`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.editForm = {
+                        subscription_id: data.subscription.id,
+                        plan_id: data.subscription.plan_id,
+                        payment_amount: this.formatNumber(data.subscription.payment_amount),
+                        status: data.subscription.status
+                    };
+                    this.editSubscriptionModalOpen = true;
+                }
+            } catch (error) {
+                console.error('Error loading subscription:', error);
+                this.notify('خطا در بارگذاری اطلاعات', 'error');
+            }
+        },
+
+        updateEditPlanPrice() {
+            const plan = this.availablePlans.find(p => p.id == this.editForm.plan_id);
+            if (plan) this.editForm.payment_amount = this.formatNumber(plan.price);
+        },
+
+        async updateSubscription() {
+            this.isProcessing = true;
+            try {
+                const formData = new FormData();
+                formData.append('plan_id', this.editForm.plan_id);
+                formData.append('payment_amount', this.editForm.payment_amount.replace(/,/g, ''));
+                formData.append('status', this.editForm.status);
+                formData.append('csrfmiddlewaretoken', this.getCSRF());
+
+                const res = await fetch(`/dashboard/admin/subscriptions/${this.editForm.subscription_id}/edit/`, {
+                    method: 'POST', body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.notify(data.message, 'success');
+                    this.editSubscriptionModalOpen = false;
+                    await this.loadSubscriptionData();
+                } else {
+                    this.notify(data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error updating subscription:', error);
+                this.notify('خطا در بروزرسانی اشتراک', 'error');
+            } finally {
+                this.isProcessing = false;
+            }
+        },
+
+        // ===== تمدید اشتراک =====
+        openExtendSubscriptionModal() {
+            this.extendForm.days_to_add = 30;
+            this.extendSubscriptionModalOpen = true;
+        },
+
+        async extendSubscription() {
+            if (!this.activeSubscription) return;
+            this.isProcessing = true;
+            try {
+                const formData = new FormData();
+                formData.append('days_to_add', this.extendForm.days_to_add);
+                formData.append('csrfmiddlewaretoken', this.getCSRF());
+
+                const res = await fetch(`/dashboard/admin/subscriptions/${this.activeSubscription.id}/extend/`, {
+                    method: 'POST', body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.notify(data.message, 'success');
+                    this.extendSubscriptionModalOpen = false;
+                    await this.loadSubscriptionData();
+                } else {
+                    this.notify(data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error extending subscription:', error);
+                this.notify('خطا در تمدید اشتراک', 'error');
+            } finally {
+                this.isProcessing = false;
+            }
+        },
+
+        // ===== حذف اشتراک =====
+        openDeleteSubscriptionModal() {
+            this.editSubscriptionModalOpen = false;
+            this.deleteSubscriptionModalOpen = true;
+        },
+
+        async confirmDeleteSubscription() {
+            if (!this.activeSubscription) return;
+            this.isProcessing = true;
+            try {
+                const formData = new FormData();
+                formData.append('csrfmiddlewaretoken', this.getCSRF());
+
+                const res = await fetch(`/dashboard/admin/subscriptions/${this.activeSubscription.id}/delete/`, {
+                    method: 'POST', body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.notify(data.message, 'success');
+                    this.deleteSubscriptionModalOpen = false;
+                    await this.loadSubscriptionData();
+                } else {
+                    this.notify(data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting subscription:', error);
+                this.notify('خطا در حذف اشتراک', 'error');
+            } finally {
+                this.isProcessing = false;
+            }
+        },
+    }));
+});
+</script>

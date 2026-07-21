@@ -10,8 +10,10 @@
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
     <link rel="stylesheet" href="{% static 'fa/css/all.min.css' %}">
     <script defer src="{% static 'vendor/cdn.min.js' %}"></script>
+    {% include 'components/core/_alpine_store.html' %}
     <!--<script src="{% static 'vendor/cdn.js' %}"></script>-->
     <script src="{% static 'vendor/Sortable.min.js' %}"></script>
+    <script src="{% static 'vendor/axios.min.js' %}"></script>
 
     <link rel="icon" type="image/x-icon" href="{% static 'pics/favicon.ico' %}">
 
@@ -432,15 +434,15 @@
                  {% endif %}
              </a>
      
-             <a href="{% url 'dashboard:questions:questions_list' %}" 
+             <a href="{% url 'dashboard:questions:list' %}" 
                 class="relative flex items-center px-6 py-3 transition-all duration-200 text-sm group
-                {% if '/questions/' in request.path or request.resolver_match.url_name == 'questions_list' %} bg-white text-slate-900 font-bold rounded-r-3xl {% else %} text-slate-400 hover:border-r  hover:border-r-white hover:bg-gradient-to-l from-white/50 to-slate-900 rounded-2xl hover:text-slate-900 hover:ml-1 {% endif %}">
-                 {% if '/questions/' in request.path or request.resolver_match.url_name == 'questions_list' %}
+                {% if '/questions/' in request.path or request.resolver_match.url_name == 'list' %} bg-white text-slate-900 font-bold rounded-r-3xl {% else %} text-slate-400 hover:border-r  hover:border-r-white hover:bg-gradient-to-l from-white/50 to-slate-900 rounded-2xl hover:text-slate-900 hover:ml-1 {% endif %}">
+                 {% if '/questions/' in request.path or request.resolver_match.url_name == 'list' %}
                      <span class="absolute -top-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-bl-3xl"></span></span>
                  {% endif %}
-                 <i class="fa-solid fa-comments text-base w-5 text-center transition-colors {% if '/questions/' in request.path or request.resolver_match.url_name == 'questions_list' %}text-blue-600{% else %}text-slate-500 group-hover:text-slate-300{% endif %}"></i>
+                 <i class="fa-solid fa-comments text-base w-5 text-center transition-colors {% if '/questions/' in request.path or request.resolver_match.url_name == 'list' %}text-blue-600{% else %}text-slate-500 group-hover:text-slate-300{% endif %}"></i>
                  <span class="mx-3">سوالات کاربران</span>
-                 {% if '/questions/' in request.path or request.resolver_match.url_name == 'questions_list' %}
+                 {% if '/questions/' in request.path or request.resolver_match.url_name == 'list' %}
                      <span class="absolute -bottom-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-tl-3xl"></span></span>
                  {% endif %}
              </a>
@@ -484,15 +486,15 @@
                  {% endif %}
              </a>
      
-             <a href="{% url 'dashboard:tutorials:admin_tutorials' %}" 
+             <a href="{% url 'dashboard:tutorials:tutorial_list' %}" 
                 class="relative flex items-center px-6 py-3 transition-all duration-200 text-sm group
-                {% if '/tutorials/' in request.path or request.resolver_match.url_name == 'admin_tutorials' %} bg-white text-slate-900 font-bold rounded-r-3xl {% else %} text-slate-400 hover:border-r  hover:border-r-white hover:bg-gradient-to-l from-white/50 to-slate-900 rounded-2xl hover:text-slate-900 hover:ml-1 {% endif %}">
-                 {% if '/tutorials/' in request.path or request.resolver_match.url_name == 'admin_tutorials' %}
+                {% if '/tutorials/' in request.path or request.resolver_match.url_name == 'tutorial_list' %} bg-white text-slate-900 font-bold rounded-r-3xl {% else %} text-slate-400 hover:border-r  hover:border-r-white hover:bg-gradient-to-l from-white/50 to-slate-900 rounded-2xl hover:text-slate-900 hover:ml-1 {% endif %}">
+                 {% if '/tutorials/' in request.path or request.resolver_match.url_name == 'tutorial_list' %}
                      <span class="absolute -top-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-bl-3xl"></span></span>
                  {% endif %}
-                 <i class="fa-solid fa-video text-base w-5 text-center transition-colors {% if '/tutorials/' in request.path or request.resolver_match.url_name == 'admin_tutorials' %}text-blue-600{% else %}text-slate-500 group-hover:text-slate-300{% endif %}"></i>
+                 <i class="fa-solid fa-video text-base w-5 text-center transition-colors {% if '/tutorials/' in request.path or request.resolver_match.url_name == 'tutorial_list' %}text-blue-600{% else %}text-slate-500 group-hover:text-slate-300{% endif %}"></i>
                  <span class="mx-3">ویدیوهای آموزشی</span>
-                 {% if '/tutorials/' in request.path or request.resolver_match.url_name == 'admin_tutorials' %}
+                 {% if '/tutorials/' in request.path or request.resolver_match.url_name == 'tutorial_list' %}
                      <span class="absolute -bottom-6 left-0 w-6 h-6 bg-white"><span class="absolute inset-0 bg-slate-900 rounded-tl-3xl"></span></span>
                  {% endif %}
              </a>

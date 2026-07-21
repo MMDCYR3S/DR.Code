@@ -1,0 +1,18 @@
+{# _empty.html — حالت خالی لیست داروها #}
+<div class="text-center py-14">
+    <div class="mx-auto w-fit bg-slate-100 rounded-full p-5 mb-4">
+        <i class="fa-solid fa-pills text-3xl text-slate-400"></i>
+    </div>
+    <h3 class="text-lg font-medium text-slate-800 mb-1">
+        {% if search or drug_type %}هیچ داروی مطابقی یافت نشد{% else %}هنوز دارویی ثبت نشده است{% endif %}
+    </h3>
+    <p class="text-slate-500 text-sm mb-4">
+        {% if search or drug_type %}عبارت یا فیلتر دیگری را امتحان کنید{% else %}برای شروع، اولین دارو را اضافه کنید{% endif %}
+    </p>
+    {% if not search and not drug_type %}
+    <button type="button" @click="openCreate()"
+            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-c1 bg-c5 rounded-lg hover:bg-c4 transition-colors">
+        <i class="fa-solid fa-plus"></i> افزودن دارو جدید
+    </button>
+    {% endif %}
+</div>
