@@ -499,7 +499,8 @@ function orderDetailApp() {
         }
       }
 
-      // item-{id} — جستجو در relationship_groups[].text_items و ungrouped_items
+      // item-{id} — جستجو در: relationship_groups[].text_items، ungrouped_items، items
+      // (پشتیبانی از هر دو شکل API)
       if (id.startsWith("item-") && this.sections?.sections) {
         const itemId = parseInt(id.replace("item-", ""));
         for (const section of this.sections.sections) {
@@ -521,9 +522,24 @@ function orderDetailApp() {
               }
             }
           }
-          // ۲. جستجو در ungrouped_items
+          // ۲. جستجو در ungrouped_items (شکل Swagger)
           if (section.ungrouped_items) {
             const item = section.ungrouped_items.find(i => i.id === itemId);
+            if (item) {
+              const color = isValidHexColor(section.color) ? section.color : ORDER_DEFAULT_COLOR;
+              return {
+                title: "توضیحات آیتم" + (item.item_number ? " #" + item.item_number : ""),
+                content: item.notes || "",
+                theme: {
+                  style: `--popup-c: ${color};`,
+                  iconTextStyle: `color: ${color};`,
+                },
+              };
+            }
+          }
+          // ۳. جستجو در items (شکل API واقعی تولید)
+          if (section.items) {
+            const item = section.items.find(i => i.id === itemId);
             if (item) {
               const color = isValidHexColor(section.color) ? section.color : ORDER_DEFAULT_COLOR;
               return {
@@ -539,7 +555,8 @@ function orderDetailApp() {
         }
       }
 
-      // drug-{id} — جستجو در relationship_groups[].drug_items و ungrouped_drug_items
+      // drug-{id} — جستجو در: relationship_groups[].drug_items، ungrouped_drug_items، drug_items
+      // (پشتیبانی از هر دو شکل API)
       if (id.startsWith("drug-") && this.sections?.sections) {
         const drugId = parseInt(id.replace("drug-", ""));
         for (const section of this.sections.sections) {
@@ -561,9 +578,24 @@ function orderDetailApp() {
               }
             }
           }
-          // ۲. جستجو در ungrouped_drug_items
+          // ۲. جستجو در ungrouped_drug_items (شکل Swagger)
           if (section.ungrouped_drug_items) {
             const drug = section.ungrouped_drug_items.find(d => d.id === drugId);
+            if (drug) {
+              const color = isValidHexColor(section.color) ? section.color : ORDER_DEFAULT_COLOR;
+              return {
+                title: "توضیحات دارو: " + (drug.drug?.title || ""),
+                content: drug.notes || "",
+                theme: {
+                  style: `--popup-c: ${color};`,
+                  iconTextStyle: `color: ${color};`,
+                },
+              };
+            }
+          }
+          // ۳. جستجو در drug_items (شکل API واقعی تولید — در سطح سکشن)
+          if (section.drug_items) {
+            const drug = section.drug_items.find(d => d.id === drugId);
             if (drug) {
               const color = isValidHexColor(section.color) ? section.color : ORDER_DEFAULT_COLOR;
               return {
@@ -847,13 +879,29 @@ function orderDetailApp() {
     // ─────────────────────────────────────────────────────────────────────────
     // flattenSectionRows — رندر مسطح آیتم‌های یک سکشن بر اساس order_index واقعی
     //
-    // منطق پیاده‌سازی شده طبق داک Swagger:
-    //   ۱. آیتم‌های آزاد (ungrouped_items و ungrouped_drug_items) و relationship_groups
-    //      با هم بر اساس order_index مرتب می‌شوند تا ترتیب نمایش با item_number هم‌خوان باشه.
-    //   ۲. داخل هر relationship_group: ابتدا text_items سپس drug_items (هر کدام بر اساس order_index).
-    //   ۳. بین آیتم‌های متوالیِ داخل یک گروه، یک ردیف operator درج می‌شود (AND/OR/THEN).
-    //   ۴. is_drug_section فقط یک badge در هدر است و روی رندر آیتم‌ها اثر ندارد؛
-    //      هر سکشن می‌تواند هم text و هم drug داشته باشد.
+    // ⚠️ این متد هر دو شکل API را پشتیبانی می‌کند:
+    //
+    //   شکل ۱ (API واقعی تولید — در ۱۰ نمونه‌ی واقعی سایت):
+    //     section.items         → آرایه آیتم‌های متنی (در سطح سکشن)
+    //     section.drug_items    → آرایه آیتم‌های دارویی (در سطح سکشن)
+    //     section.all_conditions
+    //     (بدون ungrouped_* یا relationship_groups)
+    //     (آیتم‌ها معمولاً item_number ندارند → خودمان شماره می‌دهیم)
+    //
+    //   شکل ۲ (مستندات Swagger — نمونه‌ی قدیمی/تمیز):
+    //     section.ungrouped_items
+    //     section.ungrouped_drug_items
+    //     section.relationship_groups (با text_items + drug_items داخل گروه)
+    //
+    // منطق:
+    //   ۱. text items: ترجیح ungrouped_items (اگر غیرخالی)، وگرنه items
+    //   ۲. drug items: ترجیح ungrouped_drug_items (اگر غیرخالی)، وگرنه drug_items
+    //   ۳. relationship_groups: اگر موجود باشد، پشتیبانی می‌شود
+    //   ۴. هر سه دسته با هم بر اساس order_index مرتب می‌شوند
+    //   ۵. داخل هر گروه: ابتدا text_items سپس drug_items (هر کدام بر اساس order_index)
+    //   ۶. بین آیتم‌های متوالیِ داخل یک گروه، اپراتور درج می‌شود (AND/OR/THEN)
+    //   ۷. is_drug_section فقط یک badge در هدر است؛ هر سکشن می‌تواند هم text و هم drug داشته باشد
+    //   ۸. اگر آیتم item_number نداشت، شمارهٔ متوالی محاسبه می‌شود
     //
     // خروجی: آرایه‌ای از ردیف‌ها با یکی از این شکل‌ها:
     //   { kind: 'text',     item, inGroup, groupId? }
@@ -863,38 +911,74 @@ function orderDetailApp() {
     flattenSectionRows(section) {
       if (!section) return [];
 
+      // ── نرمالایز: پشتیبانی از هر دو شکل API ──
+      const textItemsSource =
+        (section.ungrouped_items && section.ungrouped_items.length > 0)
+          ? section.ungrouped_items
+          : (section.items || []);
+      const drugItemsSource =
+        (section.ungrouped_drug_items && section.ungrouped_drug_items.length > 0)
+          ? section.ungrouped_drug_items
+          : (section.drug_items || []);
+      const groupsSource = section.relationship_groups || [];
+
+      // ساخت entry های قابل مرتب‌سازی
       const entries = [];
 
-      (section.ungrouped_items || []).forEach((item) => {
+      textItemsSource.forEach((item) => {
+        if (!item) return;
         entries.push({ _type: "text", item, _oi: item.order_index ?? 0 });
       });
-      (section.ungrouped_drug_items || []).forEach((item) => {
+      drugItemsSource.forEach((item) => {
+        if (!item) return;
         entries.push({ _type: "drug", item, _oi: item.order_index ?? 0 });
       });
-      (section.relationship_groups || []).forEach((group) => {
+      groupsSource.forEach((group) => {
+        if (!group) return;
         entries.push({ _type: "group", group, _oi: group.order_index ?? 0 });
       });
 
-      // stable sort by order_index (مهم: ترتیب واقعی نمایش)
+      // stable sort by order_index (ترتیب واقعی نمایش)
       entries.sort((a, b) => (a._oi ?? 0) - (b._oi ?? 0));
 
+      // ساخت ردیف‌های نهایی + شماره‌گذاری خودکار در صورت نبود item_number
       const rows = [];
+      let autoCounter = 0;
+
+      const withNumber = (item) => {
+        autoCounter++;
+        if (item.item_number === undefined || item.item_number === null) {
+          // کپی سطحی با item_number محاسبه‌شده
+          return { ...item, item_number: autoCounter };
+        }
+        return item;
+      };
+
       entries.forEach((entry) => {
         if (entry._type === "text") {
-          rows.push({ kind: "text", item: entry.item, inGroup: false });
+          rows.push({
+            kind: "text",
+            item: withNumber(entry.item),
+            inGroup: false,
+          });
         } else if (entry._type === "drug") {
-          rows.push({ kind: "drug", item: entry.item, inGroup: false });
+          rows.push({
+            kind: "drug",
+            item: withNumber(entry.item),
+            inGroup: false,
+          });
         } else if (entry._type === "group") {
           const g = entry.group;
-          const textItems = (g.text_items || [])
+          const textInGroup = (g.text_items || [])
             .slice()
-            .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
-            .map((i) => ({ kind: "text", item: i, inGroup: true, groupId: g.id }));
-          const drugItems = (g.drug_items || [])
+            .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+          const drugInGroup = (g.drug_items || [])
             .slice()
-            .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
-            .map((i) => ({ kind: "drug", item: i, inGroup: true, groupId: g.id }));
-          const combined = [...textItems, ...drugItems];
+            .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+          const combined = [
+            ...textInGroup.map((i) => ({ kind: "text", item: i, inGroup: true, groupId: g.id })),
+            ...drugInGroup.map((i) => ({ kind: "drug", item: i, inGroup: true, groupId: g.id })),
+          ];
 
           combined.forEach((row, idx) => {
             if (idx > 0) {
@@ -904,7 +988,12 @@ function orderDetailApp() {
                 groupId: g.id,
               });
             }
-            rows.push(row);
+            rows.push({
+              kind: row.kind,
+              item: withNumber(row.item),
+              inGroup: true,
+              groupId: g.id,
+            });
           });
         }
       });
