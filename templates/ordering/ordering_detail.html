@@ -2394,63 +2394,77 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
 
                                 <!-- بدنه سکشن -->
                                 <div class="section-block-body" dir="ltr"
-                                     x-data="{
-                                       get flatRows() { return flattenSectionRows(section); },
-                                       get hasItems() { return this.flatRows.length > 0; }
-                                     }">
+                                    x-data="{
+                                    get flatRows() { return flattenSectionRows(section); },
+                                    get hasItems() { return this.flatRows.length > 0; },
+                                    
+                                    // استخراج رشته‌ی یکتای شروط برای مقایسه
+                                    getConditionStr(row) {
+                                        if (!row || !row.item || !row.item.conditions || row.item.conditions.length === 0) return '';
+                                        return row.item.conditions.map(c => c.id).sort().join(',');
+                                    },
+                                    
+                                    // بررسی اینکه آیا این ردیف شروع یک گروه شرطی جدید است
+                                    isNewConditionGroup(idx) {
+                                        const row = this.flatRows[idx];
+                                        if (row.kind === 'operator') return false;
+                                        
+                                        const currentCond = this.getConditionStr(row);
+                                        if (!currentCond) return false;
+                                        
+                                        let prevRow = null;
+                                        for (let i = idx - 1; i >= 0; i--) {
+                                            if (this.flatRows[i].kind !== 'operator') {
+                                                prevRow = this.flatRows[i];
+                                                break;
+                                            }
+                                        }
+                                        const prevCond = prevRow ? this.getConditionStr(prevRow) : '';
+                                        return currentCond !== prevCond;
+                                    }
+                                    }">
 
-                                    <!-- ============================================================
-                                         🆕 رندر مسطح آیتم‌ها (نسخه ۳.۱ — Alpine-safe)
-                                         - ادغام ungrouped_items / ungrouped_drug_items / relationship_groups
-                                           بر اساس order_index واقعی (تطبیق با item_number)
-                                         - درج اپراتور (AND/OR/THEN) بین آیتم‌های داخل یک گروه
-                                         - پشتیبانی همزمان از text_items و drug_items در هر سکشن
-                                           (فارغ از پرچم is_drug_section که فقط badge هدر است)
-                                         - هر ردیف یک <div> ریشه دارد (الزام Alpine برای x-for)
-                                         ============================================================ -->
                                     <template x-if="hasItems">
                                         <div class="items-list-flat">
                                             <template x-for="(row, idx) in flatRows" :key="row.kind + '-' + idx">
                                                 <div class="row-wrapper" :class="'row-' + row.kind">
 
+                                                    <!-- ───── CONDITION HEADER ───── -->
+                                                    <template x-if="isNewConditionGroup(idx)">
+                                                        <div class="condition-group-header mb-2 mt-4 ml-6 relative">
+                                                            <!-- خط اتصال دهنده هدر به آیتم‌ها -->
+                                                            <div class="absolute -left-4 top-1/2 bottom-0 w-4 border-l-2 border-t-2 border-gray-300 rounded-tl-lg"></div>
+                                                            
+                                                            <div class="condition-pre-line relative z-10 shadow-sm border border-gray-200 bg-white rounded-md p-2">
+                                                                <template x-for="cond in row.item.conditions" :key="cond.id">
+                                                                    <div class="condition-inline flex items-start gap-2">
+                                                                        <span class="if-chip bg-gray-700 text-white text-[10px] px-1.5 py-0.5 rounded font-bold mt-0.5">IF</span>
+                                                                        <p class="cond-text flex-1 text-sm font-medium"
+                                                                        :class="sectionTheme(section.color).conditionText"
+                                                                        dir="auto"
+                                                                        x-text="cond.text"></p>
+                                                                    </div>
+                                                                </template>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+
                                                     <!-- ───── TEXT ITEM ───── -->
                                                     <template x-if="row.kind === 'text'">
-                                                        <div class="item-card"
-                                                             :class="row.inGroup ? 'in-group' : ''"
-                                                             :style="sectionTheme(section.color).style">
+                                                        <div class="item-card transition-all duration-200"
+                                                            :class="[
+                                                                row.inGroup ? 'in-group' : '',
+                                                                getConditionStr(row) ? 'ml-6 border-l-4 border-gray-400 bg-gray-50/50 rounded-l-none' : ''
+                                                            ]"
+                                                            :style="sectionTheme(section.color).style">
 
-                                                            <!-- شروط (conditions) بالای آیتم -->
-                                                            <template x-if="row.item.conditions && row.item.conditions.length > 0">
-                                                                <div class="condition-pre-line">
-                                                                    <template x-for="cond in row.item.conditions" :key="cond.id">
-                                                                        <div class="condition-inline">
-                                                                            <span class="if-chip">IF</span>
-                                                                            <p class="cond-text flex-1"
-                                                                               :class="sectionTheme(section.color).conditionText"
-                                                                               dir="auto"
-                                                                               x-text="cond.text"></p>
-                                                                        </div>
-                                                                    </template>
-                                                                </div>
-                                                            </template>
-
-                                                            <!-- محتوای آیتم -->
                                                             <div class="item-row-inner">
-                                                                <div class="item-number-badge"
-                                                                     :class="sectionTheme(section.color).iconBg">
-                                                                    <span class="text-[11px] font-black"
-                                                                          :class="sectionTheme(section.color).iconText"
-                                                                          x-text="row.item.item_number"></span>
+                                                                <div class="item-number-badge" :class="sectionTheme(section.color).iconBg">
+                                                                    <span class="text-[11px] font-black" :class="sectionTheme(section.color).iconText" x-text="row.item.item_number"></span>
                                                                 </div>
-                                                                <p class="flex-1 text-sm text-gray-800 leading-relaxed font-medium min-w-0"
-                                                                   dir="ltr"
-                                                                   x-text="row.item.text"></p>
+                                                                <p class="flex-1 text-sm text-gray-800 leading-relaxed font-medium min-w-0" dir="ltr" x-text="row.item.text"></p>
                                                                 <template x-if="row.item.notes && row.item.notes.trim() !== ''">
-                                                                    <button type="button"
-                                                                            @click="openPopup($event, 'item-' + row.item.id)"
-                                                                            class="info-trigger flex-shrink-0"
-                                                                            :class="activePopup === 'item-' + row.item.id ? 'is-open' : ''"
-                                                                            title="توضیحات آیتم">
+                                                                    <button type="button" @click="openPopup($event, 'item-' + row.item.id)" class="info-trigger flex-shrink-0" :class="activePopup === 'item-' + row.item.id ? 'is-open' : ''">
                                                                         <i class="fas fa-circle-info text-xs"></i>
                                                                     </button>
                                                                 </template>
@@ -2460,49 +2474,26 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
 
                                                     <!-- ───── DRUG ITEM ───── -->
                                                     <template x-if="row.kind === 'drug'">
-                                                        <div class="item-card"
-                                                             :class="row.inGroup ? 'in-group' : ''"
-                                                             :style="sectionTheme(section.color).style">
-
-                                                            <template x-if="row.item.conditions && row.item.conditions.length > 0">
-                                                                <div class="condition-pre-line">
-                                                                    <template x-for="cond in row.item.conditions" :key="cond.id">
-                                                                        <div class="condition-inline">
-                                                                            <span class="if-chip">IF</span>
-                                                                            <p class="cond-text flex-1"
-                                                                               :class="sectionTheme(section.color).conditionText"
-                                                                               dir="auto"
-                                                                               x-text="cond.text"></p>
-                                                                        </div>
-                                                                    </template>
-                                                                </div>
-                                                            </template>
+                                                        <div class="item-card transition-all duration-200"
+                                                            :class="[
+                                                                row.inGroup ? 'in-group' : '',
+                                                                getConditionStr(row) ? 'ml-6 border-l-4 border-gray-400 bg-gray-50/50 rounded-l-none' : ''
+                                                            ]"
+                                                            :style="sectionTheme(section.color).style">
 
                                                             <div class="item-row-inner drug-row-inner">
-                                                                <div class="item-number-badge"
-                                                                     :class="sectionTheme(section.color).iconBg">
-                                                                    <span class="text-[11px] font-black"
-                                                                          :class="sectionTheme(section.color).iconText"
-                                                                          x-text="row.item.item_number"></span>
+                                                                <div class="item-number-badge" :class="sectionTheme(section.color).iconBg">
+                                                                    <span class="text-[11px] font-black" :class="sectionTheme(section.color).iconText" x-text="row.item.item_number"></span>
                                                                 </div>
                                                                 <div class="drug-icon" :class="sectionTheme(section.color).iconBg">
                                                                     <i class="fas fa-pills text-sm" :class="sectionTheme(section.color).iconText"></i>
                                                                 </div>
                                                                 <div class="flex-1 min-w-0">
-                                                                    <p class="text-sm font-bold text-gray-800 leading-tight"
-                                                                       dir="ltr"
-                                                                       x-text="row.item.drug && row.item.drug.title"></p>
-                                                                    <p class="text-xs font-mono mt-0.5"
-                                                                       dir="ltr"
-                                                                       :class="sectionTheme(section.color).drugCodeText"
-                                                                       x-text="row.item.drug && row.item.drug.code"></p>
+                                                                    <p class="text-sm font-bold text-gray-800 leading-tight" dir="ltr" x-text="row.item.drug && row.item.drug.title"></p>
+                                                                    <p class="text-xs font-mono mt-0.5" dir="ltr" :class="sectionTheme(section.color).drugCodeText" x-text="row.item.drug && row.item.drug.code"></p>
                                                                 </div>
                                                                 <template x-if="row.item.notes && row.item.notes.trim() !== ''">
-                                                                    <button type="button"
-                                                                            @click="openPopup($event, 'drug-' + row.item.id)"
-                                                                            class="info-trigger flex-shrink-0"
-                                                                            :class="activePopup === 'drug-' + row.item.id ? 'is-open' : ''"
-                                                                            title="توضیحات دارو">
+                                                                    <button type="button" @click="openPopup($event, 'drug-' + row.item.id)" class="info-trigger flex-shrink-0" :class="activePopup === 'drug-' + row.item.id ? 'is-open' : ''">
                                                                         <i class="fas fa-circle-info text-xs"></i>
                                                                     </button>
                                                                 </template>
@@ -2510,16 +2501,13 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                                                         </div>
                                                     </template>
 
-                                                    <!-- ───── OPERATOR SEPARATOR ─────
-                                                         بین هر دو آیتم متوالیِ داخل یک
-                                                         relationship_group درج می‌شود. -->
+                                                    <!-- ───── OPERATOR SEPARATOR ───── -->
                                                     <template x-if="row.kind === 'operator'">
                                                         <div class="operator-separator"
-                                                             :style="sectionTheme(section.color).style">
+                                                            :class="getConditionStr(flatRows[idx-1]) ? 'ml-6' : ''"
+                                                            :style="sectionTheme(section.color).style">
                                                             <div class="op-line"></div>
-                                                            <span class="operator-badge"
-                                                                  :class="operatorBadgeClass(row.operator)"
-                                                                  x-text="operatorLabel(row.operator)"></span>
+                                                            <span class="operator-badge" :class="operatorBadgeClass(row.operator)" x-text="operatorLabel(row.operator)"></span>
                                                             <div class="op-line"></div>
                                                         </div>
                                                     </template>
@@ -2529,12 +2517,12 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                                         </div>
                                     </template>
 
-                                    <!-- اگر هیچ آیتمی نداشت -->
                                     <template x-if="!hasItems">
                                         <p class="text-sm text-gray-400 text-center py-4 italic">آیتمی در این بخش تعریف نشده است.</p>
                                     </template>
-
                                 </div>
+
+
                             </div>
                         </template>
                     </div>

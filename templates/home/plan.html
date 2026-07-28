@@ -154,84 +154,119 @@
 
     <!-- بخش دوم: پلن‌های اشتراک -->
     <section id="plans" x-show="!loading" class="mb-20 fade-in-up" style="animation-delay: 0.2s;">
-        <h2 class="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-4">
             پلن اشتراک ویژه خود را انتخاب کنید
         </h2>
-        
-        <!-- Plans Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-            <template x-for="(plan, index) in plans" :key="plan.id">
-                <div 
-                    class="plan-card bg-white rounded-2xl overflow-hidden shadow-lg relative"
-                    :class="{ 'ring-4 ring-orange-400': plan.is_recommended }"
-                    :style="`animation-delay: ${index * 0.1}s`"
-                >
-                    <!-- Best Value Badge -->
-                    <div 
-                        x-show="plan.is_recommended" 
-                        class="best-value-badge absolute top-4 left-4 px-4 py-2 rounded-full text-white text-sm font-bold"
-                    >
-                        <i class="fas fa-star ml-1"></i>
-                        بهترین انتخاب
-                    </div>
+        <p class="text-center text-gray-500 mb-12">هر نوع اشتراک، پلن‌های زمانی متفاوتی دارد. مناسب‌ترین را انتخاب کنید.</p>
 
-                    <!-- Card Header -->
-                    <div class="bg-gradient-to-br from-c1 to-c2 text-white p-8">
-                        <h3 class="text-2xl font-bold mb-2" x-text="plan.name"></h3>
-                        <p class="text-white/80" x-text="plan.membership_name"></p>
-                        <div class="mt-6">
-                            <span class="text-4xl font-bold" x-text="plan.formatted_price"></span>
-                        </div>
-                        <p class="text-sm text-white/70 mt-2">
-                            <span x-text="plan.duration_months"></span> ماه اشتراک
-                        </p>
-                    </div>
-
-                    <!-- Card Body -->
-                    <div class="p-8">
-                        <!-- Features List -->
-                        <ul class="space-y-4 mb-8">
-                            <li class="flex items-center gap-3">
-                                <i class="fas fa-check-circle feature-check"></i>
-                                <span class="text-gray-700">دسترسی به تمام نسخه‌ها</span>
-                            </li>
-                            <li class="flex items-center gap-3">
-                                <i class="fas fa-check-circle feature-check"></i>
-                                <span class="text-gray-700">مشاهده جزئیات کامل</span>
-                            </li>
-                            <li class="flex items-center gap-3">
-                                <i class="fas fa-check-circle feature-check"></i>
-                                <span class="text-gray-700">پشتیبانی علمی تخصصی</span>
-                            </li>
-                            <li class="flex items-center gap-3">
-                                <i class="fas fa-check-circle feature-check"></i>
-                                <span class="text-gray-700">ویدیوهای آموزشی</span>
-                            </li>
-                            <li class="flex items-center gap-3">
-                                <i class="fas fa-check-circle feature-check"></i>
-                                <span class="text-gray-700">محدودیت نشست همزمان</span>
-                            </li>
-                        </ul>
-
-                        <!-- CTA Button -->
-                        <button 
-                            @click="selectPlan(plan)"
-                            class="w-full bg-gradient-to-r from-c1 to-c2 hover:from-c2 hover:to-c1 text-white font-bold py-4 rounded-xl transition-all duration-300 transform hover:scale-105"
-                        >
-                            <i class="fas fa-shopping-cart ml-2"></i>
-                            خرید اشتراک
-                        </button>
-                    </div>
-
-                    <!-- Discount Badge (if applicable) -->
-                    <div x-show="plan.discount_percent" class="absolute top-4 right-4">
-                        <div class="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold">
-                            <span x-text="plan.discount_percent"></span>٪ تخفیف
-                        </div>
+        <template x-for="group in groupedPlans" :key="group.membership_name">
+            <div class="mb-16">
+            <!-- عنوان گروه membership -->
+            <div class="w-full mb-8">
+                <div class="max-w-7xl mx-auto">
+                    <div class="rounded-xl bg-gradient-to-br from-c1 to-c2 px-8 py-4 text-center">
+                        <h3 class="text-xl font-bold text-white text-x1-700" x-text="group.membership_name"></h3>
+                        <p class="text-sm text-white mt-1" x-show="group.membership_description" x-text="group.membership_description"></p>
                     </div>
                 </div>
-            </template>
-        </div>
+            </div>
+
+
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+                    <template x-for="(plan, index) in group.plans" :key="plan.id">
+                        <div
+                            class="plan-card bg-white rounded-2xl overflow-hidden shadow-lg relative flex flex-col"
+                            :class="{ 'ring-4 ring-orange-400': plan.tag_value === 'popular' || plan.tag_value === 'best_value' }"
+                            :style="`animation-delay: ${index * 0.1}s`"
+                        >
+                            <!-- Tag Badge (از API) -->
+                            <div
+                                x-show="plan.tag_display"
+                                class="best-value-badge absolute top-4 left-4 px-4 py-2 rounded-full text-white text-sm font-bold z-10"
+                                :class="{
+                                    'bg-gradient-to-r from-amber-400 to-orange-500': plan.tag_value === 'popular',
+                                    'bg-gradient-to-r from-sky-500 to-blue-600': plan.tag_value === 'best_value',
+                                    'bg-gradient-to-r from-green-500 to-emerald-600': plan.tag_value === 'new',
+                                    'bg-gradient-to-r from-purple-500 to-pink-500': !['popular','best_value','new'].includes(plan.tag_value)
+                                }"
+                            >
+                                <i class="fas fa-star ml-1" x-show="plan.tag_value === 'popular'"></i>
+                                <i class="fas fa-crown ml-1" x-show="plan.tag_value === 'best_value'"></i>
+                                <i class="fas fa-bolt ml-1" x-show="plan.tag_value === 'new'"></i>
+                                <span x-text="plan.tag_display"></span>
+                            </div>
+
+                            <!-- Card Header -->
+                            <div class="bg-gradient-to-br from-c1 to-c2 text-white p-8" :class="{ 'pt-14': plan.tag_display }">
+                                <h3 class="text-2xl font-bold mb-2" x-text="plan.name"></h3>
+                                <div class="mt-4">
+                                    <span class="text-4xl font-bold" x-text="plan.formatted_price"></span>
+                                </div>
+                                <p class="text-sm text-white/70 mt-2">
+                                    <span x-text="plan.duration_months"></span> ماه اشتراک
+                                </p>
+                            </div>
+
+                            <!-- Card Body -->
+                            <div class="p-8 flex flex-col flex-grow">
+                                <!-- Features از API -->
+                                <ul class="space-y-3 mb-8 flex-grow">
+                                    <template x-for="feature in plan.features" :key="feature.name">
+                                        <li class="flex items-start gap-3">
+                                            <i class="fas fa-check-circle feature-check mt-0.5 flex-shrink-0"></i>
+                                            <div>
+                                                <span class="text-gray-700 font-medium" x-text="feature.name"></span>
+                                                <p class="text-xs text-gray-400" x-show="feature.description" x-text="feature.description"></p>
+                                            </div>
+                                        </li>
+                                    </template>
+                                    <li class="flex items-center gap-3">
+                                        <i class="fas fa-check-circle feature-check flex-shrink-0"></i>
+                                        <div>
+                                            <span class="text-gray-700">مشاهده جزئیات کامل</span>
+                                            <p class="text-xs text-gray-400">
+                                                مشاهده جزئیات صفحات تخصصی با تمامی اطلاعات
+                                            </p>
+                                        </div>
+                                    </li>
+                                    <li class="flex items-center gap-3">
+                                        <i class="fas fa-check-circle feature-check flex-shrink-0"></i>
+                                        <div>
+                                            <span class="text-gray-700">پشتیبانی علمی تخصصی</span>
+                                            <p class="text-xs text-gray-400">
+                                                توانایی پرسش‌های تخصصی برای هر قابلیت
+                                            </p>
+                                        </div>
+                                    </li>
+                                    <li class="flex items-center gap-3">
+                                        <i class="fas fa-check-circle feature-check flex-shrink-0"></i>
+                                        <div>
+                                            <span class="text-gray-700">محدودیت نشست همزمان</span>
+                                            <p class="text-xs text-gray-400">
+                                                محدودیت اتصال فقط با یک دستگاه
+                                            </p>
+                                        </div>
+                                    </li>
+                                    <!-- fallback اگر features خالی بود -->
+                                    <template x-if="!plan.features || plan.features.length === 0">
+                                        <li class="text-gray-400 text-sm">دسترسی کامل به امکانات اشتراک</li>
+                                    </template>
+                                </ul>
+
+                                <button
+                                    @click="selectPlan(plan)"
+                                    class="w-full bg-gradient-to-r from-c1 to-c2 hover:from-c2 hover:to-c1 text-white font-bold py-4 rounded-xl transition-all duration-300 transform hover:scale-105"
+                                >
+                                    <i class="fas fa-shopping-cart ml-2"></i>
+                                    خرید اشتراک
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </template>
     </section>
 
     <!-- بخش سوم: جدول مقایسه -->
@@ -257,6 +292,18 @@
                         <td class="py-4 px-6 text-center">
                             <i class="fas fa-check-circle feature-check"></i>
                             <span class="text-gray-700 mr-2">همه نسخه‌ها</span>
+                        </td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="py-4 px-6 text-gray-700">
+                            دسترسی به اوردرهای پزشکی
+                        </td>
+                        <td class="py-4 px-6 text-center">
+                            <span class="py-4 px-6 text-center text-gray-500">فقط اوردرهای رایگان</span>
+                        </td>
+                        <td class="py-4 px-6 text-center">
+                            <i class="fas fa-check-circle feature-check"></i>
+                            <span class="text-gray-700 mr-2">تمامی اوردرهای پزشکی</span>
                         </td>
                     </tr>
                     <tr class="hover:bg-gray-50 transition">
@@ -317,7 +364,25 @@
                         </div>
                     </div>
                 </div>
-                
+
+                <div class="p-6 bg-gray-50">
+                    <h3 class="font-bold text-lg mb-1 text-gray-800">دسترسی به اوردرهای پزشکی</h3>
+                    <p class="text-xs text-gray-400 mb-4">نسخه‌های استاندارد بر اساس گایدلاین‌های روز</p>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">کاربر عادی:</span>
+                            <span class="text-gray-500">فقط اوردرهای رایگان</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">کاربر ویژه:</span>
+                            <span class="flex items-center gap-2">
+                                <i class="fas fa-check-circle feature-check"></i>
+                                <span>تمامی اوردرهای پزشکی</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="p-6">
                     <h3 class="font-bold text-lg mb-4 text-gray-800">مشاهده جزئیات کامل نسخه</h3>
                     <div class="space-y-3">
