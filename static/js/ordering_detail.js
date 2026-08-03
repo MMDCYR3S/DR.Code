@@ -765,8 +765,8 @@ function orderDetailApp() {
         {
           key: "action",
           icon: "fa-hand-holding-medical",
-          labelEn: "Action",
-          labelFa: "اقدام",
+          labelEn: "Activity",
+          labelFa: "فعالیت",
           value: this.order.action,
           notes: this.order.action_notes,
         },

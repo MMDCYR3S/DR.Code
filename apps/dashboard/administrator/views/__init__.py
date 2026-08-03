@@ -7,20 +7,8 @@ from .users_views import (
     ExportUsersToExcelView
 )
 
-from .categories_views import (
-    CategoryCreateView,
-    CategoryListView,
-    CategoryDeleteView,
-    CategoryUpdateView
-)
-
-from .prescriptions_views import(
-    PrescriptionListView,
-    PrescriptionCreateView,
-    PrescriptionUpdateView,
-    PrescriptionDeleteView,
-    PrescriptionDetailView
-)
+from .categories_views import *
+from .prescriptions_views import *
 
 from .contacts_views import (
     ContactsListView,

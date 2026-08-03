@@ -9,4 +9,5 @@ urlpatterns = [
     path('prescriptions/create/', PrescriptionCreateView.as_view(), name='prescription_create'),
     path('prescriptions/update/<int:pk>/', PrescriptionUpdateView.as_view(), name='prescription_update'),
     path('prescriptions/delete/<int:pk>/', PrescriptionDeleteView.as_view(), name='prescription_delete'),
+    path('drugs/create-ajax/', DrugCreateAjaxView.as_view(), name='drug_create_ajax'),
 ]

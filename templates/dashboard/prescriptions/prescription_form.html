@@ -979,66 +979,62 @@ document.addEventListener('DOMContentLoaded', function() {
             const originalBtnText = submitBtn.innerHTML;
             
             // ذخیره تمام مقادیر فرم قبل از ایجاد دارو
-            const formTitle = document.getElementById('id_title').value;
-            const formDescription = document.getElementById('id_description').value;
-            const formCategory = document.getElementById('id_category').value;
-            const formAccessLevel = document.getElementById('id_access_level').value;
-            const formIsActive = document.getElementById('id_is_active').checked;
+            // const formTitle = document.getElementById('id_title').value;
+            // const formDescription = document.getElementById('id_description').value;
+            // const formCategory = document.getElementById('id_category').value;
+            // const formAccessLevel = document.getElementById('id_access_level').value;
+            // const formIsActive = document.getElementById('id_is_active').checked;
             
             // نمایش بارگذاری
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin ml-2"></i>در حال ایجاد...';
             submitBtn.disabled = true;
             
-            fetch("{% url 'dashboard:drugs:drug_create' %}", {
+            fetch("{% url 'dashboard:prescriptions:drug_create_ajax' %}", {
                 method: 'POST',
                 body: formData,
                 headers: {
                     'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest',   // این هدر ضروری است
                 }
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // نمایش پیام موفقیت
-                    alert(data.message);
-                    
-                    // اضافه کردن دارو به لیست allDrugs
+                    // ۱. اضافه کردن به allDrugs (برای جستجوی بعدی)
                     allDrugs.push({
                         id: data.drug.id,
                         title: data.drug.title,
                         code: data.drug.code
                     });
-                    
-                    // اضافه کردن دارو به لیست انتخاب شده‌ها
+
+                    // ۲. اضافه کردن به لیست انتخاب‌شده
                     const drugData = {
                         id: data.drug.id,
                         title: data.drug.title,
                         code: data.drug.code
                     };
-                    
                     const drugDetails = {
                         dosage: '',
                         amount: 1,
                         instructions: '',
                         is_combination: false,
+                        is_substitute: false,
                         order: selectedDrugs.length + 1
                     };
-                    
                     addDrugToList(drugData, drugDetails);
                     updateEmptyState();
-                    
-                    // بستن مودال و بازگرداندن تمام مقادیر فرم
+
+                    // ۳. بستن مودال
                     closeModal();
-                    document.getElementById('id_title').value = formTitle;
-                    document.getElementById('id_description').value = formDescription;
-                    document.getElementById('id_category').value = formCategory;
-                    document.getElementById('id_access_level').value = formAccessLevel;
-                    document.getElementById('id_is_active').checked = formIsActive;
+
+                    // ۴. (اختیاری) نمایش پیام موفقیت
+                    alert(data.message);
                 } else {
                     // نمایش خطاها
                     let errorMsg = data.message || 'خطا در ایجاد دارو';
                     if (data.errors) {
-                        errorMsg += '\nنام یا کد دارو قبلا وجود داشته است!';
+                        // می‌توانید خطاها را به‌صورت دقیق‌تر نمایش دهید
+                        errorMsg += '\n' + Object.values(data.errors).flat().join('\n');
                     }
                     alert(errorMsg);
                 }

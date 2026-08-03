@@ -7,8 +7,9 @@ from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.db.models import Q, Prefetch
+from django.http import JsonResponse
 
-from .mixins import PrescriptionFormMixin
+from apps.dashboard.administrator.forms import DrugForm
 from ..forms.prescriptions_forms import *
 from apps.prescriptions.models import Prescription, PrescriptionDrug
 from apps.accounts.permissions import HasAdminAccessPermission, IsTokenJtiActive
@@ -337,3 +338,26 @@ class PrescriptionUpdateView(LoginRequiredMixin, UpdateView):
                 order=drug_data['order'],
                 group_number=drug_data.get('group_number')
             )
+
+class DrugCreateAjaxView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPermission, View):
+    """ایجاد داروی جدید با Ajax (فقط برای مودال نسخه)"""
+    
+    def post(self, request, *args, **kwargs):
+        form = DrugForm(request.POST)
+        if form.is_valid():
+            drug = form.save()
+            return JsonResponse({
+                'success': True,
+                'message': f'داروی «{drug.title}» با موفقیت ایجاد شد.',
+                'drug': {
+                    'id': drug.id,
+                    'title': drug.title,
+                    'code': drug.code,
+                }
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'اطلاعات وارد شده معتبر نیست.',
+                'errors': form.errors.get_json_data()
+            }, status=400)
