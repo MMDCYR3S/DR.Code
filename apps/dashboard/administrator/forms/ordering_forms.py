@@ -1,3 +1,5 @@
+import re
+
 from django import forms
 from django.forms import inlineformset_factory, BaseInlineFormSet, modelformset_factory
 from django_ckeditor_5.widgets import CKEditor5Widget
@@ -14,6 +16,12 @@ from apps.prescriptions.models.category import PrescriptionCategory
 from apps.prescriptions.models.drug import Drug
 
 
+def clean_ckeditor_value(value):
+    if not value:
+        return ''
+    stripped = re.sub(r'<[^>]+>', '', value).replace('&nbsp;', '').strip()
+    return value if stripped else ''
+
 # ===== Shared Styles ===== #
 INPUT_CLASSES_LTR = 'w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition text-left'
 INPUT_CLASSES_RTL = 'w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition text-right'
@@ -21,12 +29,7 @@ CHECKBOX_CLASSES = 'form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 
 
 
 class CleanFileInput(forms.ClearableFileInput):
-    """
-    مثل ClearableFileInput هست ولی بخش "Currently: … / Change:" رو
-    حذف می‌کنه و فقط یک <input type="file"> ساده رندر می‌کنه.
-    پیش‌نمایش تصویر موجود را HTML مستقیماً در تمپلیت نشون می‌ده.
-    """
-    template_name = 'django/forms/widgets/file.html'  # فقط input خام
+    template_name = 'django/forms/widgets/file.html'
 
 # ====================================================== #
 # ==================== Order Filter Form =============== #
@@ -111,23 +114,36 @@ class OrderForm(forms.ModelForm):
         }
 
     def clean_name(self):
-        """
-        اعتبارسنجی سفارشی برای فیلد name
-        """
         name = self.cleaned_data.get('name')
         if name:
             slug = slugify(name, allow_unicode=False)
-            
             existing = Order.objects.filter(slug=slug)
             if self.instance.pk:
                 existing = existing.exclude(pk=self.instance.pk)
-            
             if existing.exists():
                 raise forms.ValidationError(
                     f'نام "{name}" قبلاً استفاده شده است. لطفاً نام دیگری انتخاب کنید.'
                 )
-        
         return name
+
+    def clean_imp_notes(self):
+        return clean_ckeditor_value(self.cleaned_data.get('imp_notes', ''))
+
+    def clean_condition_notes(self):
+        return clean_ckeditor_value(self.cleaned_data.get('condition_notes', ''))
+
+    def clean_diet_notes(self):
+        return clean_ckeditor_value(self.cleaned_data.get('diet_notes', ''))
+
+    def clean_action_notes(self):
+        return clean_ckeditor_value(self.cleaned_data.get('action_notes', ''))
+
+    def clean_position_notes(self):
+        return clean_ckeditor_value(self.cleaned_data.get('position_notes', ''))
+
+    def clean_notes(self):
+        return clean_ckeditor_value(self.cleaned_data.get('notes', ''))
+
 
 class OrderSectionForm(forms.ModelForm):
     class Meta:
@@ -149,6 +165,10 @@ class OrderSectionForm(forms.ModelForm):
     def clean_order_index(self):
         return self.cleaned_data.get('order_index') or 0
 
+    def clean_notes(self):
+        return clean_ckeditor_value(self.cleaned_data.get('notes', ''))
+
+
 class SectionItemForm(forms.ModelForm):
     class Meta:
         model = SectionItem
@@ -166,6 +186,10 @@ class SectionItemForm(forms.ModelForm):
 
     def clean_order_index(self):
         return self.cleaned_data.get('order_index') or 0
+
+    def clean_notes(self):
+        return clean_ckeditor_value(self.cleaned_data.get('notes', ''))
+
 
 class DrugSectionItemForm(forms.ModelForm):
     class Meta:
@@ -185,6 +209,10 @@ class DrugSectionItemForm(forms.ModelForm):
 
     def clean_order_index(self):
         return self.cleaned_data.get('order_index') or 0
+
+    def clean_notes(self):
+        return clean_ckeditor_value(self.cleaned_data.get('notes', ''))
+
 
 class BaseOrderSectionFormSet(BaseInlineFormSet):
     def _construct_form(self, i, **kwargs):
@@ -226,7 +254,6 @@ class DynamicFieldGroupForm(forms.ModelForm):
 
 
 class DynamicFieldRootNodeForm(forms.ModelForm):
-    """گره‌های ریشه (parent=None)"""
     class Meta:
         model = DynamicFieldNode
         fields = ['title', 'color', 'order_index']
@@ -246,7 +273,6 @@ class DynamicFieldRootNodeForm(forms.ModelForm):
 
 
 class DynamicFieldChildNodeForm(forms.ModelForm):
-    """گره‌های فرزند"""
     class Meta:
         model = DynamicFieldNode
         fields = ['title', 'content', 'color', 'order_index']
@@ -268,6 +294,9 @@ class DynamicFieldChildNodeForm(forms.ModelForm):
 
     def clean_order_index(self):
         return self.cleaned_data.get('order_index') or 0
+
+    def clean_content(self):
+        return clean_ckeditor_value(self.cleaned_data.get('content', ''))
 
 
 class SkipEmptyNodeFormSet(BaseInlineFormSet):
@@ -311,7 +340,6 @@ class EmergencyDispositionForm(forms.ModelForm):
 
 
 class EmergencyRootNodeForm(forms.ModelForm):
-    """گره‌های ریشه (parent=None)"""
     class Meta:
         model = EmergencyNode
         fields = ['title', 'color', 'order_index']
@@ -334,7 +362,6 @@ class EmergencyRootNodeForm(forms.ModelForm):
 
 
 class EmergencyChildNodeForm(forms.ModelForm):
-    """گره‌های فرزند"""
     class Meta:
         model = EmergencyNode
         fields = ['title', 'content', 'color', 'order_index']
@@ -361,6 +388,10 @@ class EmergencyChildNodeForm(forms.ModelForm):
 
     def clean_order_index(self):
         return self.cleaned_data.get('order_index') or 0
+
+    def clean_content(self):
+        return clean_ckeditor_value(self.cleaned_data.get('content', ''))
+
 
 class SkipEmptyNodeFormSet(BaseInlineFormSet):
     def full_clean(self):

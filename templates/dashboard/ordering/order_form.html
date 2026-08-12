@@ -490,6 +490,29 @@ function destroyEditorsInContainer(container) {
         }
     });
 }
+
+function cleanEmptyCKEditorValues() {
+    const textareas = document.querySelectorAll('textarea.django_ckeditor_5');
+    
+    textareas.forEach(textarea => {
+        const editor = textarea.ckeditorInstance;
+        if (editor) {
+            let data = editor.getData();
+            
+            // حذف تمامی تگ‌های HTML
+            let textOnly = data.replace(/<[^>]*>?/gm, '');
+            textOnly = textOnly.replace(/&nbsp;/g, '').replace(/\u00A0/g, '').trim();
+            
+            if (textOnly === '') {
+                editor.setData('');
+                textarea.value = '';
+            } else {
+                textarea.value = data;
+            }
+        }
+    });
+}
+
 // ==================== Sections / Items ====================
 function addSection() {
     const container = $(SELECTORS.sectionsContainer);
@@ -743,6 +766,7 @@ function syncRelationshipsPayload() {
 }
 
 function handleFormSubmit() {
+    cleanEmptyCKEditorValues();
     syncOrderIndexes();
     syncConditionsPayload();
     syncRelationshipsPayload();
