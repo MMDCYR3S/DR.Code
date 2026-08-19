@@ -50,7 +50,7 @@ class OrderListView(generics.ListAPIView):
     ordering = ['-created_at']
 
     def get_queryset(self):
-        qs = Order.objects.select_related('category').distinct()
+        qs = Order.objects.filter(is_active=True).select_related('category').distinct()
 
         access_level = self.request.query_params.get('access_level')
         if access_level in ('FREE', 'PREMIUM'):

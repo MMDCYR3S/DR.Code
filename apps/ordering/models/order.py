@@ -126,6 +126,13 @@ class Order(models.Model):
         verbose_name='سطح دسترسی'
     )
 
+    # ─────────────────────────── وضعیت فعال/غیرفعال ───────────────────────
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="فعال",
+        help_text="در صورت غیرفعال بودن، این اوردر در لیست‌های عمومی نمایش داده نمی‌شود",
+    )
+
     # ─────────────────────────── رنگ‌بندی ────────────────────────────────
     color = models.CharField(
         max_length=30,

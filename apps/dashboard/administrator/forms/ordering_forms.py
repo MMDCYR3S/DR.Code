@@ -84,7 +84,7 @@ class OrderForm(forms.ModelForm):
         fields = [
             'name', 'imp', 'imp_notes', 'condition', 'condition_notes',
             'diet', 'diet_notes', 'action', 'action_notes',
-            'position', 'position_notes', 'notes', 'category', 'color', 'access_level',
+            'position', 'position_notes', 'notes', 'category', 'color', 'access_level', 'is_active',
         ]
         widgets = {
             'name': forms.TextInput(attrs={'class': INPUT_CLASSES_RTL, 'placeholder': 'نام اوردر...'}),
@@ -102,6 +102,7 @@ class OrderForm(forms.ModelForm):
             'category': forms.Select(attrs={'class': INPUT_CLASSES_RTL}),
             'color': forms.Select(attrs={'class': INPUT_CLASSES_LTR}),
             'access_level': forms.RadioSelect(attrs={'class': 'access-level-radio'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'sr-only peer'}),
         }
 
     def __init__(self, *args, **kwargs):

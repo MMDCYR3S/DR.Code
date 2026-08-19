@@ -13,6 +13,7 @@ const orderingApp = (() => {
         pagedOrders:        [],   // فقط صفحه جاری
         categories:         [],
         selectedCategories: [],
+        selectedAccessLevels: [],
         searchQuery:        "",
         sortOrdering:       "",
         loading:            true,
@@ -26,6 +27,12 @@ const orderingApp = (() => {
 
     const els = {
         skeletonGrid:    () => $("skeleton-grid"),
+        btnAccessDropdown:    () => $("btn-access-dropdown"),
+        accessDropdownPanel:  () => $("access-dropdown-panel"),
+        accessDropdownLabel:  () => $("access-dropdown-label"),
+        accessDropdownChevron:() => $("access-dropdown-chevron"),
+        chkAccessFree:        () => $("chk-access-free"),
+        chkAccessPremium:     () => $("chk-access-premium"),
         cardsGrid:       () => $("cards-grid"),
         emptyState:      () => $("empty-state"),
         paginationWrap:  () => $("pagination-wrap"),
@@ -158,6 +165,47 @@ const orderingApp = (() => {
         updateResultsBadge(total);
     }
 
+    function toggleAccessDropdown() {
+        els.accessDropdownPanel().classList.toggle("hidden");
+        els.accessDropdownChevron().classList.toggle("rotate-180");
+    }
+
+    function closeAccessDropdown() {
+        els.accessDropdownPanel().classList.add("hidden");
+        els.accessDropdownChevron().classList.remove("rotate-180");
+    }
+
+    function toggleAccessLevel(level) {
+        const idx = state.selectedAccessLevels.indexOf(level);
+        if (idx > -1) state.selectedAccessLevels.splice(idx, 1);
+        else          state.selectedAccessLevels.push(level);
+        renderAccessDropdown();
+        applyAll();
+    }
+
+    function renderAccessDropdown() {
+        const freeActive    = state.selectedAccessLevels.includes("FREE");
+        const premiumActive = state.selectedAccessLevels.includes("PREMIUM");
+
+        els.chkAccessFree().checked    = freeActive;
+        els.chkAccessPremium().checked = premiumActive;
+
+        let label = "همه سطوح";
+        if (freeActive && premiumActive)      label = "۲ سطح انتخاب شد";
+        else if (freeActive)                  label = "رایگان";
+        else if (premiumActive)               label = "ویژه";
+        els.accessDropdownLabel().textContent = label;
+
+        els.btnAccessDropdown().classList.toggle("border-c1", state.selectedAccessLevels.length > 0);
+        els.btnAccessDropdown().classList.toggle("text-c1", state.selectedAccessLevels.length > 0);
+
+        els.clearFiltersBtn().classList.toggle(
+            "hidden",
+            state.selectedCategories.length === 0 && state.selectedAccessLevels.length === 0
+        );
+    }
+
+
     // ── Render ─────────────────────────────────────────────────────────────
     function showSkeleton(show) {
         els.skeletonGrid().classList.toggle("hidden", !show);
@@ -198,6 +246,14 @@ const orderingApp = (() => {
         const catTitle = order.category?.title     || "—";
         const catColor = order.category?.color_code || "bg-gray-400";
 
+        const accessBadge = order.access_level === "PREMIUM"
+        ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
+               <i class="fas fa-crown text-[10px]"></i> ویژه
+           </span>`
+        : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium">
+               <i class="fas fa-unlock-alt text-[10px]"></i> رایگان
+           </span>`;
+
         // هایلایت متن جستجو در عنوان
         const rawName = order.name || "";
         const name    = state.searchQuery.trim()
@@ -225,11 +281,7 @@ const orderingApp = (() => {
                             <span class="w-2 h-2 rounded-full ${catColor}"></span>
                             <span class="text-xs font-medium text-c1">${catTitle}</span>
                         </div>
-                        <!-- <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-white text-xs font-medium"
-                              style="background:${hex}">
-                            <span class="w-1.5 h-1.5 rounded-full bg-white/60"></span>
-                            ${order.color || "—"}
-                        </span> -->
+                        ${accessBadge}
                     </div>
 
                     <!-- Title با هایلایت سرچ -->
@@ -281,7 +333,7 @@ const orderingApp = (() => {
         });
 
         updateAllButton();
-        els.clearFiltersBtn().classList.toggle("hidden", state.selectedCategories.length === 0);
+        // els.clearFiltersBtn().classList.toggle("hidden", state.selectedCategories.length === 0);
     }
 
     function updateAllButton() {
@@ -331,13 +383,14 @@ const orderingApp = (() => {
     }
 
     function updateResultsBadge(total) {
-        if (state.searchQuery.trim() !== "" || state.selectedCategories.length > 0) {
+        if (state.searchQuery.trim() !== "" || state.selectedCategories.length > 0 || state.selectedAccessLevels.length > 0) {
             els.resultsBadge().classList.remove("hidden");
             els.resultsText().textContent = `${total} نتیجه یافت شد`;
         } else {
             els.resultsBadge().classList.add("hidden");
         }
     }
+
 
     // ── Actions ────────────────────────────────────────────────────────────
     function performSearch() {
@@ -374,10 +427,12 @@ const orderingApp = (() => {
     }
 
     function clearFilters() {
-        state.selectedCategories = [];
-        els.sortSelect().value   = "";
-        state.sortOrdering       = "";
+        state.selectedCategories   = [];
+        state.selectedAccessLevels = [];
+        els.sortSelect().value     = "";
+        state.sortOrdering         = "";
         renderCategories();
+        renderAccessDropdown();
         applyAll();
     }
 
@@ -394,13 +449,15 @@ const orderingApp = (() => {
     }
 
     function resetAll() {
-        els.searchInput().value  = "";
-        state.searchQuery        = "";
-        state.selectedCategories = [];
-        state.currentPage        = 1;
-        els.sortSelect().value   = "";
-        state.sortOrdering       = "";
+        els.searchInput().value    = "";
+        state.searchQuery          = "";
+        state.selectedCategories   = [];
+        state.selectedAccessLevels = [];
+        state.currentPage          = 1;
+        els.sortSelect().value     = "";
+        state.sortOrdering         = "";
         renderCategories();
+        renderAccessDropdown();
         applyAll();
     }
 
@@ -414,8 +471,21 @@ const orderingApp = (() => {
         els.searchInput().addEventListener("input",   performSearch);
         els.searchBtn().addEventListener("click",     performSearch);
         els.searchInput().addEventListener("keydown", (e) => { if (e.key === "Enter") performSearch(); });
+
+        document.addEventListener("click", (e) => {
+            const panel  = els.accessDropdownPanel();
+            const button = els.btnAccessDropdown();
+            if (!panel.classList.contains("hidden") &&
+                !panel.contains(e.target) && !button.contains(e.target)) {
+                closeAccessDropdown();
+            }
+        });
+
+        renderAccessDropdown();
         init();
     }
+
+
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", boot);
@@ -427,6 +497,8 @@ const orderingApp = (() => {
         state,
         toggleAllCategories,
         toggleCategory,
+        toggleAccessDropdown,
+        toggleAccessLevel,
         applyFilters,
         clearFilters,
         goToPage,

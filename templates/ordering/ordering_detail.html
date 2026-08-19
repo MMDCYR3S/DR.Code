@@ -1697,11 +1697,7 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                             <span x-text="order?.category?.title"></span>
                         </span>
 
-                        <button @click="copySlug()" class="slug-chip" title="کپی شناسه">
-                            <i class="fas fa-hashtag text-[9px]"></i>
-                            <span x-text="order?.slug" dir="ltr"></span>
-                            <i class="fas fa-copy text-[9px] opacity-60"></i>
-                        </button>
+                        
                     </div>
                 </div>
 
@@ -1710,24 +1706,6 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                         <span class="mp-title-dot dyn-dot" :title="'تم رنگی: ' + theme().name"></span>
                         <div class="mp-title-text">
                             <h1 x-text="order?.name"></h1>
-
-                            <template x-if="order?.aliases && order.aliases.length > 0">
-                                <div class="mp-aliases-row">
-                                    <span class="text-[11px] font-bold text-gray-500 ml-1 inline-flex items-center gap-1">
-                                        <i class="fas fa-tags text-[9px]"></i>نام‌های مستعار:
-                                    </span>
-                                    <template x-for="alias in order.aliases" :key="alias.id">
-                                        <span class="alias-chip"
-                                              :class="alias.is_primary ? 'is-primary' : ''"
-                                              :title="alias.is_primary ? 'نام اصلی' : ''">
-                                            <template x-if="alias.is_primary">
-                                                <i class="fas fa-star text-[8px]"></i>
-                                            </template>
-                                            <span x-text="alias.name"></span>
-                                        </span>
-                                    </template>
-                                </div>
-                            </template>
 
                             <template x-if="order?.notes && order.notes.trim() !== ''">
                                 <div class="order-description-card mt-4">

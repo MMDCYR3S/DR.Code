@@ -108,7 +108,6 @@ function orderDetailApp() {
       this.$nextTick(() => {
         this.buildSidebarTree();
         this.autoExpandDisposition();
-        this.autoExpandDynamicFields();
         this.initMediaTab();
         this.initScrollSpy();
       });
