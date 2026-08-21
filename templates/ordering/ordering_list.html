@@ -217,43 +217,16 @@
                                 <span class="text-xs opacity-70">(<span id="total-count-pill">0</span>)</span>
                             </button>
 
-                            <!-- ─── Access Level Filter (Dropdown) ─── -->
-                            <div class="relative mt-4">
-                                <div class="flex items-center gap-3">
-                                    <span class="hidden md:block text-sm font-medium text-gray-500 uppercase tracking-wider">دسترسی:</span>
-
-                                    <button id="btn-access-dropdown"
-                                        class="px-5 py-2.5 rounded-xl font-medium transition-all duration-300 whitespace-nowrap flex items-center gap-2 border-2 border-gray-200 bg-white text-gray-700 hover:border-c1/40"
-                                        onclick="orderingApp.toggleAccessDropdown()">
-                                        <i class="fas fa-filter text-gray-400 text-xs"></i>
-                                        <span id="access-dropdown-label">همه سطوح</span>
-                                        <i id="access-dropdown-chevron"
-                                        class="fas fa-chevron-down text-xs text-gray-400 transition-transform duration-300"></i>
-                                    </button>
-                                </div>
-
-                                <!-- Panel -->
-                                <div id="access-dropdown-panel"
-                                    class="hidden absolute z-50 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 origin-top-right">
-
-                                    <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-emerald-50 cursor-pointer transition-colors duration-200">
-                                        <input type="checkbox" id="chk-access-free"
-                                            class="w-4 h-4 rounded border-gray-300 text-emerald-500 focus:ring-emerald-400"
-                                            onchange="orderingApp.toggleAccessLevel('FREE')">
-                                        <i class="fas fa-unlock-alt text-emerald-500 text-xs"></i>
-                                        <span class="text-sm text-gray-700">رایگان</span>
-                                    </label>
-
-                                    <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-amber-50 cursor-pointer transition-colors duration-200">
-                                        <input type="checkbox" id="chk-access-premium"
-                                            class="w-4 h-4 rounded border-gray-300 text-amber-500 focus:ring-amber-400"
-                                            onchange="orderingApp.toggleAccessLevel('PREMIUM')">
-                                        <i class="fas fa-crown text-amber-500 text-xs"></i>
-                                        <span class="text-sm text-gray-700">ویژه</span>
-                                    </label>
-                                </div>
+                            <!-- ─── Access Level Filter ─── -->
+                            <div>
+                                <select id="access-level-select"
+                                    class="px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-c1 focus:outline-none transition-all bg-white text-gray-700"
+                                    onchange="orderingApp.applyAccessFilter(this.value)">
+                                    <option value="">همه اوردرها</option>
+                                    <option value="FREE">رایگان</option>
+                                    <option value="PREMIUM">ویژه</option>
+                                </select>
                             </div>
-
 
                             <!-- Sort select -->
                             <div>
@@ -282,7 +255,6 @@
                 </button>
             </div>
         </section>
-    </section>
 
     <!-- ─── Main Cards Grid ─── -->
     <section class="container mx-auto px-4 py-12">

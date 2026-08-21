@@ -1707,7 +1707,7 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                         <div class="mp-title-text">
                             <h1 x-text="order?.name"></h1>
 
-                            <template x-if="order?.notes && order.notes.trim() !== ''">
+                            <template x-if="hasRealContent(order?.notes)">
                                 <div class="order-description-card mt-4">
                                     <div class="order-description-header">
                                         <i class="fas fa-notes-medical"></i>
@@ -2108,6 +2108,32 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                 </div>
             </section>
 
+            <!-- ===== DRUG WARNING ===== -->
+            <div class="mb-4 pb-4 border-r-4 border-blue-600 rounded-xl bg-blue-50 p-4">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center bg-blue-600">
+                        <i class="fas fa-shield-alt text-white text-base"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-sm sm:text-base font-bold text-blue-800 mb-1.5 flex items-center gap-2" dir="rtl">
+                            <i class="fas fa-exclamation-triangle text-blue-500 text-xs"></i>
+                            <span>نکته مهم در مورد داروها</span>
+                        </h3>
+                        <div class="text-xs sm:text-sm text-blue-900 leading-relaxed space-y-1" dir="rtl">
+                            <p class="font-semibold">
+                                <i class="fas fa-info-circle text-blue-500 ml-1 text-[10px]"></i>
+                                همکار گرامی؛ مجموعه دکتر کد هیچ‌گونه مسئولیتی در قبال نسخه‌های ثبت‌شده از جانب شما ندارد.
+                            </p>
+                            <p class="font-medium">
+                                <i class="fas fa-ban text-blue-500 ml-1 text-[10px]"></i>
+                                پیش از تجویز از انطباق نام و دوز دارو با وضعیت بالینی بیمار اطمینان حاصل کنید.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
             <!-- ===== ① پیش‌بالینی (Dynamic Field Groups) ===== -->
             <template x-if="dynamicFields && dynamicFields.dynamic_field_groups && dynamicFields.dynamic_field_groups.length > 0">
                 <section class="main-section p-4 sm:p-5" id="anchor-preclinical">
@@ -2138,7 +2164,7 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                                         </div>
                                         <h3 class="font-bold text-base leading-tight" x-text="group.title" dir="rtl"></h3>
                                     </div>
-                                    <template x-if="group.notes && group.notes.trim() !== ''">
+                                    <template x-if="hasRealContent(group.notes)">
                                         <button type="button"
                                                 @click="openPopup($event, 'dfgroup-' + group.id)"
                                                 class="info-trigger"
@@ -2293,7 +2319,7 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                                     </div>
                                 </div>
 
-                                <template x-if="field.notes && field.notes.trim() !== ''">
+                                <template x-if="hasRealContent(field.notes)">
                                     <button type="button"
                                             @click="openPopup($event, 'field-' + field.key)"
                                             class="info-trigger"
@@ -2358,7 +2384,7 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                                         </div>
                                     </div>
 
-                                    <template x-if="section.notes && section.notes.trim() !== ''">
+                                    <template x-if="hasRealContent(section.notes)">
                                         <button type="button"
                                                 @click="openPopup($event, 'section-' + section.id)"
                                                 class="info-trigger"
@@ -2419,7 +2445,7 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                                                             <span class="text-[11px] font-black" :class="sectionTheme(section.color).iconText" x-text="row.item.item_number"></span>
                                                             </div>
                                                             <p class="flex-1 text-sm text-gray-800 leading-relaxed font-medium min-w-0" dir="ltr" x-text="row.item.text"></p>
-                                                            <template x-if="row.item.notes && row.item.notes.trim() !== ''">
+                                                            <template x-if="hasRealContent(row.item.notes)">
                                                             <button type="button" @click="openPopup($event, 'item-' + row.item.id)" class="info-trigger flex-shrink-0" :class="activePopup === 'item-' + row.item.id ? 'is-open' : ''">
                                                                 <i class="fas fa-circle-info text-xs"></i>
                                                             </button>
@@ -2444,7 +2470,7 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                                                             <p class="text-sm font-bold text-gray-800 leading-tight" dir="ltr" x-text="row.item.drug && row.item.drug.title"></p>
                                                             <p class="text-xs font-mono mt-0.5" dir="ltr" :class="sectionTheme(section.color).drugCodeText" x-text="row.item.drug && row.item.drug.code"></p>
                                                             </div>
-                                                            <template x-if="row.item.notes && row.item.notes.trim() !== ''">
+                                                            <template x-if="hasRealContent(row.item.notes)">
                                                             <button type="button" @click="openPopup($event, 'drug-' + row.item.id)" class="info-trigger flex-shrink-0" :class="activePopup === 'drug-' + row.item.id ? 'is-open' : ''">
                                                                 <i class="fas fa-circle-info text-xs"></i>
                                                             </button>
@@ -2487,7 +2513,7 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                             <div class="flex-1 min-w-0 flex items-center gap-3">
                                 <h2 class="section-title-text" x-text="disposition.emergency_disposition.title" dir="rtl"></h2>
                                 <span class="section-subtitle">تعیین تکلیف اورژانس</span>
-                                <template x-if="disposition.emergency_disposition.notes && disposition.emergency_disposition.notes.trim() !== ''">
+                                <template x-if="hasRealContent(disposition.emergency_disposition.notes)">
                                     <button type="button"
                                             @click="openPopup($event, 'disp-' + disposition.emergency_disposition.id)"
                                             class="info-trigger"

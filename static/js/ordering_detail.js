@@ -133,6 +133,18 @@ function orderDetailApp() {
       }, { passive: true });
     },
 
+    hasRealContent(value) {
+      if (!value || typeof value !== "string") return false;
+      if (value.trim() === "") return false;
+
+      const textOnly = value
+        .replace(/<[^>]*>/g, " ")
+        .replace(/&nbsp;|&#160;|\s+/g, " ") 
+        .trim();
+
+      return textOnly.length > 0;
+    },
+
     // ----- Data Loading -----
     async loadOrderBase(slug) {
       try {

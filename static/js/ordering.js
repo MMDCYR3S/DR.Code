@@ -8,31 +8,26 @@ const orderingApp = (() => {
 
     // ── State ──────────────────────────────────────────────────────────────
     const state = {
-        allOrders:          [],   // تمام داده‌ها از API
-        filteredOrders:     [],   // بعد از اعمال سرچ + فیلتر
-        pagedOrders:        [],   // فقط صفحه جاری
+        allOrders:          [],
+        filteredOrders:     [],
+        pagedOrders:        [],
         categories:         [],
         selectedCategories: [],
-        selectedAccessLevels: [],
         searchQuery:        "",
         sortOrdering:       "",
         loading:            true,
         currentPage:        1,
         itemsPerPage:       12,
+        activeAccessLevel:  null,
         searchTimeout:      null,
     };
+
 
     // ── DOM refs ───────────────────────────────────────────────────────────
     const $ = (id) => document.getElementById(id);
 
     const els = {
         skeletonGrid:    () => $("skeleton-grid"),
-        btnAccessDropdown:    () => $("btn-access-dropdown"),
-        accessDropdownPanel:  () => $("access-dropdown-panel"),
-        accessDropdownLabel:  () => $("access-dropdown-label"),
-        accessDropdownChevron:() => $("access-dropdown-chevron"),
-        chkAccessFree:        () => $("chk-access-free"),
-        chkAccessPremium:     () => $("chk-access-premium"),
         cardsGrid:       () => $("cards-grid"),
         emptyState:      () => $("empty-state"),
         paginationWrap:  () => $("pagination-wrap"),
@@ -119,7 +114,6 @@ const orderingApp = (() => {
     function applyAll() {
         let list = [...state.allOrders];
 
-        // ۱. سرچ روی name + slug + category.title
         if (state.searchQuery.trim() !== "") {
             const q = state.searchQuery.trim().toLowerCase();
             list = list.filter((o) => {
@@ -130,12 +124,14 @@ const orderingApp = (() => {
             });
         }
 
-        // ۲. فیلتر دسته‌بندی
         if (state.selectedCategories.length > 0) {
             list = list.filter((o) => state.selectedCategories.includes(o.category?.id));
         }
 
-        // ۳. مرتب‌سازی
+        if (state.activeAccessLevel) {
+            list = list.filter((o) => o.access_level === state.activeAccessLevel);
+        }
+
         if (state.sortOrdering) {
             const desc = state.sortOrdering.startsWith("-");
             const key  = state.sortOrdering.replace("-", "");
@@ -149,10 +145,10 @@ const orderingApp = (() => {
         }
 
         state.filteredOrders = list;
-        // به صفحه اول برگرد وقتی فیلتر عوض شد
         state.currentPage = 1;
         paginate();
     }
+
 
     function paginate() {
         const total = state.filteredOrders.length;
@@ -163,16 +159,6 @@ const orderingApp = (() => {
         renderCards();
         renderPagination();
         updateResultsBadge(total);
-    }
-
-    function toggleAccessDropdown() {
-        els.accessDropdownPanel().classList.toggle("hidden");
-        els.accessDropdownChevron().classList.toggle("rotate-180");
-    }
-
-    function closeAccessDropdown() {
-        els.accessDropdownPanel().classList.add("hidden");
-        els.accessDropdownChevron().classList.remove("rotate-180");
     }
 
     function toggleAccessLevel(level) {
@@ -383,7 +369,7 @@ const orderingApp = (() => {
     }
 
     function updateResultsBadge(total) {
-        if (state.searchQuery.trim() !== "" || state.selectedCategories.length > 0 || state.selectedAccessLevels.length > 0) {
+        if (state.searchQuery.trim() !== "" || state.selectedCategories.length > 0 || state.activeAccessLevel) {
             els.resultsBadge().classList.remove("hidden");
             els.resultsText().textContent = `${total} نتیجه یافت شد`;
         } else {
@@ -427,12 +413,13 @@ const orderingApp = (() => {
     }
 
     function clearFilters() {
-        state.selectedCategories   = [];
-        state.selectedAccessLevels = [];
-        els.sortSelect().value     = "";
-        state.sortOrdering         = "";
+        state.selectedCategories = [];
+        state.activeAccessLevel  = null;
+        document.getElementById('access-level-select').value = "";
+        els.sortSelect().value   = "";
+        state.sortOrdering       = "";
         renderCategories();
-        renderAccessDropdown();
+        updateClearButton();
         applyAll();
     }
 
@@ -448,17 +435,31 @@ const orderingApp = (() => {
         window.location.href = `/ordering/${slug}`;
     }
 
+    function updateClearButton() {
+        els.clearFiltersBtn().classList.toggle(
+            "hidden",
+            state.selectedCategories.length === 0 && !state.activeAccessLevel
+        );
+    }
+
     function resetAll() {
         els.searchInput().value    = "";
         state.searchQuery          = "";
         state.selectedCategories   = [];
-        state.selectedAccessLevels = [];
         state.currentPage          = 1;
         els.sortSelect().value     = "";
         state.sortOrdering         = "";
+        state.activeAccessLevel    = null;
+        document.getElementById('access-level-select').value = "";
         renderCategories();
-        renderAccessDropdown();
         applyAll();
+    }
+
+
+    function applyAccessFilter(value) {
+        state.activeAccessLevel = value || null;
+        applyAll();
+        updateClearButton();
     }
 
     // ── Utils ──────────────────────────────────────────────────────────────
@@ -472,20 +473,8 @@ const orderingApp = (() => {
         els.searchBtn().addEventListener("click",     performSearch);
         els.searchInput().addEventListener("keydown", (e) => { if (e.key === "Enter") performSearch(); });
 
-        document.addEventListener("click", (e) => {
-            const panel  = els.accessDropdownPanel();
-            const button = els.btnAccessDropdown();
-            if (!panel.classList.contains("hidden") &&
-                !panel.contains(e.target) && !button.contains(e.target)) {
-                closeAccessDropdown();
-            }
-        });
-
-        renderAccessDropdown();
         init();
     }
-
-
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", boot);
@@ -497,8 +486,7 @@ const orderingApp = (() => {
         state,
         toggleAllCategories,
         toggleCategory,
-        toggleAccessDropdown,
-        toggleAccessLevel,
+        applyAccessFilter,
         applyFilters,
         clearFilters,
         goToPage,

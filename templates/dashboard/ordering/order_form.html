@@ -266,32 +266,37 @@
         </div>
 
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            <!-- وضعیت فعال/غیرفعال -->
-            <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                <div class="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-l from-gray-50 to-rose-50 border-b border-gray-200">
-                    <span class="w-2 h-2 rounded-full bg-rose-400 inline-block flex-shrink-0"></span>
-                    <h3 class="text-sm font-semibold text-gray-700">وضعیت نمایش</h3>
-                </div>
-                <div class="p-4">
-                    <label class="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-gray-200 cursor-pointer">
-                        <div>
-                            <span class="text-sm font-medium text-gray-800">اوردر فعال است</span>
-                            <p class="text-xs text-gray-400 mt-0.5">در صورت غیرفعال بودن، در لیست عمومی نمایش داده نمی‌شود</p>
-                        </div>
-                        <div class="relative inline-flex items-center">
-                            <input type="checkbox"
-                                name="{{ form.is_active.html_name }}"
-                                {% if form.is_active.value %}checked{% endif %}
-                                class="sr-only peer">
-                            <div class="w-11 h-6 bg-gray-200 rounded-full peer
-                                        peer-checked:bg-green-500 transition-colors
-                                        after:content-[''] after:absolute after:top-0.5 after:right-0.5
-                                        after:bg-white after:rounded-full after:h-5 after:w-5
-                                        after:transition-all peer-checked:after:-translate-x-5"></div>
-                        </div>
+            <!-- هدر کارت -->
+            <div class="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-l from-gray-50 to-rose-50 border-b border-gray-200">
+                <span class="w-2 h-2 rounded-full bg-rose-400 inline-block flex-shrink-0"></span>
+                <h3 class="text-sm font-semibold text-gray-700">وضعیت نمایش</h3>
+            </div>
+            
+            <!-- محتوای کارت (Dropdown) -->
+            <div class="p-4">
+                <div class="flex flex-col gap-2">
+                    <label for="id_{{ form.is_active.html_name }}" class="text-sm font-medium text-gray-800">
+                        تعیین وضعیت اوردر
                     </label>
+                    
+                    <select id="id_{{ form.is_active.html_name }}" 
+                            name="{{ form.is_active.html_name }}"
+                            class="w-full px-4 py-2.5 rounded-lg border-2 border-gray-200 focus:border-rose-400 focus:outline-none focus:ring-0 transition-all bg-white text-gray-700 cursor-pointer text-sm appearance-none">
+                        <option value="True" {% if form.is_active.value %}selected{% endif %}>
+                            فعال (نمایش در لیست عمومی)
+                        </option>
+                        <option value="False" {% if not form.is_active.value %}selected{% endif %}>
+                            غیرفعال (پنهان از لیست عمومی)
+                        </option>
+                    </select>
+                    
+                    <p class="text-xs text-gray-400 mt-1">
+                        در صورت تغییر به حالت غیرفعال، این اوردر از دید کاربران پنهان خواهد شد.
+                    </p>
                 </div>
             </div>
+        </div>
+
             <!-- سطح دسترسی -->
             <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-l from-gray-50 to-amber-50 border-b border-gray-200">
