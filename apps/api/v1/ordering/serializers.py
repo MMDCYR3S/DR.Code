@@ -7,6 +7,12 @@ from apps.ordering.models import (
 )
 from apps.prescriptions.models import Drug, PrescriptionCategory
 
+# ========== ORDER ALIAS SERIALIZER ========== #
+class OrderAliasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderAlias
+        fields = ['id', 'name', 'is_primary']
+
 
 def build_item_numbering(order_instance):
     """
@@ -88,6 +94,7 @@ class OrderCategorySerializer(serializers.ModelSerializer):
 # ========== ORDER LIST SERIALIZER ========== #
 class OrderListSerializer(serializers.ModelSerializer):
     category = OrderCategorySerializer(read_only=True)
+    aliases = OrderAliasSerializer(many=True, read_only=True)
 
     url_base = serializers.SerializerMethodField()
     url_sections = serializers.SerializerMethodField()
@@ -101,6 +108,7 @@ class OrderListSerializer(serializers.ModelSerializer):
             'id', 'name', 'slug', 'color',
             'access_level',
             'category',
+            'aliases',          # ← اضافه شد
             'url_base', 'url_sections', 'url_disposition',
             'url_dynamic_fields', 'url_media',
         ]
@@ -141,14 +149,6 @@ class DrugSerializer(serializers.ModelSerializer):
     class Meta:
         model = Drug
         fields = ['id', 'title', 'code']
-
-
-# ========== ORDER ALIAS SERIALIZER ========== #
-class OrderAliasSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OrderAlias
-        fields = ['id', 'name', 'is_primary']
-
 
 # ========== SHARED MIXIN: ITEM NUMBERING ========== #
 class ItemNumberMixin(serializers.Serializer):

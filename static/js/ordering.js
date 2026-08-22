@@ -120,7 +120,10 @@ const orderingApp = (() => {
                 const name     = (o.name             || "").toLowerCase();
                 const slug     = (o.slug             || "").toLowerCase();
                 const catTitle = (o.category?.title  || "").toLowerCase();
-                return name.includes(q) || slug.includes(q) || catTitle.includes(q);
+                const aliasMatch = (o.aliases || []).some(
+                    (a) => (a.name || "").toLowerCase().includes(q)
+                );
+                return name.includes(q) || slug.includes(q) || catTitle.includes(q) || aliasMatch;
             });
         }
 
