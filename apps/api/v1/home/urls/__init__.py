@@ -6,4 +6,5 @@ urlpatterns = [
     path("", include("apps.api.v1.home.urls.contact_urls")),
     path("", include("apps.api.v1.home.urls.tutorial_vid_urls")),
     path("", include("apps.api.v1.home.urls.index_urls")),
+    path("", include("apps.api.v1.home.urls.search_urls")),
 ]

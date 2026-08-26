@@ -103,14 +103,14 @@
             font-family: 'Vazirmatn', sans-serif; 
             box-sizing: border-box; 
         }
+
+        [x-cloak] { display: none !important; }
     </style>
 
 </head>
 
 <body>
-    <div id="wrapper" class="flex flex-col min-h-screen" x-data="{ 
-        mobileMenu: false , 
-    }">
+<div id="wrapper" class="flex flex-col min-h-screen" x-data="{ mobileMenu: false, searchOpen: false }">
 
         <header id="header">
             {% block header %}
@@ -249,6 +249,14 @@
                         </div>
                     </div>
                 </div>
+
+                <button @click="searchOpen = true" 
+                    class="relative p-2.5 text-gray-500 hover:text-c1 transition-all duration-300 rounded-xl hover:bg-gray-50 border border-transparent hover:border-gray-100 focus:outline-none"
+                    aria-label="جستجو">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5.5 w-5.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </button>
 
                 <div id="auth-btn-mobile">
                     <button class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-gray-900 to-gray-800 hover:from-c1 hover:to-c1 shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:shadow-[0_4px_20px_rgba(var(--c1-rgb,0,102,204),0.3)] transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0" onclick="Auth.showAuthModal()">
@@ -702,9 +710,124 @@
             {% endblock footer %}
         </footer>
 
+    <!-- Search Modal -->
+    <div x-show="searchOpen" 
+        x-cloak
+        @click.away="searchOpen = false"
+        @keydown.escape.window="searchOpen = false"
+        class="fixed inset-x-0 top-16 lg:top-22 bottom-0 z-[70] bg-white/95 backdrop-blur-xl overflow-y-auto"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 translate-y-4"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 translate-y-0"
+        x-transition:leave-end="opacity-0 translate-y-4">
+        
+        <div class="container mx-auto px-4 lg:px-8 py-6">
+            <div x-data="searchComponent()" class="max-w-4xl mx-auto">
+                <!-- Search Input -->
+                <div class="relative mb-6">
+                    <span class="absolute inset-y-0 right-4 flex items-center text-gray-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </span>
+                    <input type="text" 
+                        x-model="query" 
+                        @input.debounce.500ms="search" 
+                        placeholder="جستجو در اوردرها و نسخه‌ها..."
+                        class="w-full pl-4 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-lg font-medium text-gray-800 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-c1 focus:ring-4 focus:ring-c1/10 transition-all duration-300">
+                </div>
+
+                <!-- Loading -->
+                <div x-show="loading" class="text-center py-10">
+                    <div class="animate-spin rounded-full h-8 w-8 border-2 border-c1 border-t-transparent mx-auto"></div>
+                    <p class="mt-3 text-sm text-gray-500">در حال جستجو...</p>
+                </div>
+
+                <!-- No Results -->
+                <div x-show="!loading && searched && orders.length === 0 && prescriptions.length === 0" 
+                    class="text-center py-16">
+                    <div class="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 border border-gray-100 mx-auto mb-4">
+                        <i class="fas fa-search text-2xl text-gray-300"></i>
+                    </div>
+                    <p class="text-gray-700 font-bold">نتیجه‌ای یافت نشد</p>
+                    <p class="text-xs text-gray-400 mt-2">عبارت دیگری را امتحان کنید</p>
+                </div>
+
+                <!-- Results -->
+                <div x-show="!loading && (orders.length > 0 || prescriptions.length > 0)" class="space-y-8">
+                    
+                    <!-- Orders Results -->
+                    <div x-show="orders.length > 0">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <span class="w-8 h-8 rounded-lg bg-c1/10 text-c1 flex items-center justify-center">
+                                <i class="fas fa-file-prescription text-sm"></i>
+                            </span>
+                            اوردرها
+                            <span class="text-xs font-normal text-gray-400" x-text="'(' + orders.length + ')'"></span>
+                        </h3>
+                        <div class="grid gap-3">
+                            <template x-for="order in orders" :key="order.id">
+                                <a :href="'/ordering/' + order.slug + '/'" 
+                                class="group bg-white border border-gray-100 rounded-xl p-4 hover:border-c1/30 hover:shadow-sm transition-all duration-300">
+                                    <div class="flex justify-between items-start gap-4">
+                                        <div class="flex-1 min-w-0">
+                                            <h4 class="font-bold text-gray-800 group-hover:text-c1 transition-colors line-clamp-1" x-text="order.name"></h4>
+                                            <p class="text-xs text-gray-500 mt-1 line-clamp-1" x-text="order.imp"></p>
+                                        </div>
+                                        <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-gray-50 text-gray-500 border border-gray-100" x-text="order.category_name"></span>
+                                    </div>
+                                    <div class="flex flex-wrap gap-1.5 mt-3">
+                                        <template x-for="alias in order.aliases" :key="alias">
+                                            <span class="text-[10px] bg-gray-50 text-gray-500 px-2 py-0.5 rounded border border-gray-100" x-text="alias"></span>
+                                        </template>
+                                    </div>
+                                </a>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Prescriptions Results -->
+                    <div x-show="prescriptions.length > 0">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <span class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                                <i class="fas fa-pills text-sm"></i>
+                            </span>
+                            نسخه‌ها
+                            <span class="text-xs font-normal text-gray-400" x-text="'(' + prescriptions.length + ')'"></span>
+                        </h3>
+                        <div class="grid gap-3">
+                            <template x-for="prescription in prescriptions" :key="prescription.id">
+                                <a :href="'/prescriptions/' + prescription.slug + '/'" 
+                                class="group bg-white border border-gray-100 rounded-xl p-4 hover:border-emerald-300/40 hover:shadow-sm transition-all duration-300">
+                                    <div class="flex justify-between items-start gap-4">
+                                        <div class="flex-1 min-w-0">
+                                            <h4 class="font-bold text-gray-800 group-hover:text-emerald-600 transition-colors line-clamp-1" x-text="prescription.title"></h4>
+                                            <p class="text-xs text-gray-500 mt-1 line-clamp-1" x-text="prescription.category_name"></p>
+                                        </div>
+                                        <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-gray-50 text-gray-500 border border-gray-100" x-text="prescription.access_level"></span>
+                                    </div>
+                                    <div class="flex flex-wrap gap-1.5 mt-3">
+                                        <template x-for="alias in prescription.aliases" :key="alias">
+                                            <span class="text-[10px] bg-gray-50 text-gray-500 px-2 py-0.5 rounded border border-gray-100" x-text="alias"></span>
+                                        </template>
+                                    </div>
+                                </a>
+                            </template>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
     </div>
     {% block extra_js %}
     {% endblock extra_js %}
+
+    
 
     <div id="auth-modal" class="fixed inset-0 w-full h-full bg-slate-900/40 backdrop-blur-xl flex items-center justify-center z-[1000] p-4 overflow-y-auto" style="display: none;">
     
@@ -1124,6 +1247,44 @@ document.getElementById('forgot-password-modal')?.addEventListener('click', func
 
         } catch (e) {
             console.error('updateAuthWarningBar error:', e);
+        }
+    }
+</script>
+
+<script>
+    function searchComponent() {
+        return {
+            query: '',
+            orders: [],
+            prescriptions: [],
+            loading: false,
+            searched: false,
+            searchUrl: "{% url 'api:v1:home:search' %}",
+
+            async search() {
+                this.searched = true;
+                const q = this.query.trim();
+                if (q.length === 0) {
+                    this.orders = [];
+                    this.prescriptions = [];
+                    return;
+                }
+
+                this.loading = true;
+                try {
+                    const response = await axios.get(this.searchUrl, {
+                        params: { q: q }
+                    });
+                    this.orders = response.data.orders || [];
+                    this.prescriptions = response.data.prescriptions || [];
+                } catch (error) {
+                    console.error('Search error:', error);
+                    this.orders = [];
+                    this.prescriptions = [];
+                } finally {
+                    this.loading = false;
+                }
+            }
         }
     }
 </script>

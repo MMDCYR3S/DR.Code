@@ -5,3 +5,4 @@ from .index_views import (
     RecentPrescriptionsAPIView,
     RecentTutorialAPIView
 )
+from .search_views import *

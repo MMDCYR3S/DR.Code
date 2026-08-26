@@ -1,3 +1,4 @@
 from .contact_serializers import ContactSerializer, ContactListSerializer
 from .tutorial_vid_serializers import *
 from .index_serializers import RecentPrescriptionSerializer, RecentTutorialSerializer
+from .search_serializers import *
