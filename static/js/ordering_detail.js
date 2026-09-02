@@ -71,63 +71,6 @@ function orderDetailApp() {
 
     showBackToTop: false,
 
-    // ----- NEW state (sidebar search / copy / toast / current-section) -----
-    sidebarFilter: "",
-    copiedKey: null,
-    toast: { visible: false, message: "" },
-    _toastTimer: null,
-    currentSectionLabel: "",
-
-    // ----- NEW state (CRON-REVIEW-2: theme picker / collapsible sections / keyboard nav) -----
-    mpProgress: 0,
-    themeColor: null,  // null = use order.color (preserves existing behavior); set by setTheme()
-    themeOptions: [
-      { color: "#0ea5e9", name: "آبی آسمانی" },
-      { color: "#10b981", name: "سبز زمردی" },
-      { color: "#e11d48", name: "قرمز رز" },
-      { color: "#8b5cf6", name: "بنفش" },
-      { color: "#f59e0b", name: "کهربایی" },
-    ],
-    collapsedSections: { preclinical: false, orderinfo: false, sections: false, disposition: false, media: false },
-    _kbFocusIndex: -1,
-    _viewerInstance: null,
-    // ----- NEW state (DJANGO-SYNC-3: dark mode / share / reading time / prev-next / history) -----
-    isDarkMode: false,
-    shareModalOpen: false,
-    shareUrl: "",
-    shareTitle: "",
-    qrDataUrl: "",
-    readingTimeMin: 0,
-    sectionNavList: [],
-    sectionNavIndex: -1,
-
-    // ----- NEW state (DJANGO-SYNC-4: bookmarks / help / font size / tour / minimap) -----
-    bookmarks: [],
-    helpOpen: false,
-    fontSizeIdx: 1, // 0=sm,1=md,2=lg,3=xl
-    fontSizes: ["sm","md","lg","xl"],
-    fontLabels: ["کوچک","متوسط","بزرگ","خیلی بزرگ"],
-    tourActive: false,
-    tourStep: 0,
-    tourSteps: [
-      { selector:".mp-theme-picker", title:"انتخابگر تم رنگ", desc:"با کلیک روی نقاط رنگی، تم اوردر را به سلیقه خود تغییر دهید. انتخاب شما ذخیره می‌شود." },
-      { selector:".mp-dark-toggle", title:"حالت تاریک/روشن", desc:"با کلیک روی این دکمه بین حالت تاریک و روشن جابه‌جا شوید. مناسب مطالعه در شب." },
-      { selector:".mp-rail", title:"فهرست اوردر", desc:"با هاور روی این نوار، فهرست کامل اوردر باز می‌شود. می‌توانید جستجو کنید یا بخش‌ها را باز/بسته کنید." },
-      { selector:".mp-prevnext", title:"ناوبری بخش‌ها", desc:"با این دکمه‌ها یا کلیدهای PageUp/PageDown بین بخش‌های اوردر جابه‌جا شوید." },
-      { selector:".mp-minimap", title:"نقشهٔ کوچک", desc:"این نقاط نشان‌دهنده‌ی بخش‌های اوردر هستند. بخش فعلی هایلایت شده است." },
-      { selector:"#anchor-order-info", title:"اطلاعات پایه", desc:"مقادیر فیلدها را می‌توانید با دکمه کپی کپی کنید. برای مقادیر طولانی، دکمه نمایش کامل موجود است." },
-      { selector:".mp-star-btn", title:"نشان‌گذاری", desc:"با کلیک روی ستاره، بخش‌های مهم را نشان‌گذاری کنید. نشان‌ها در سایدبار نمایش داده می‌شوند." },
-      { selector:".mp-help-overlay", title:"میانبرهای کیبورد", desc:"هر زمان با فشردن کلید ? این راهنما را ببینید. میانبرهای زیادی برای استفاده سریع موجود است." },
-    ],
-    tourSpotlightStyle: "",
-    tourCardStyle: "",
-    minimapSegments: [],
-    // NEW (DJANGO-SYNC-5): content stats
-    statsOpen: false,
-    contentStats: { totalWords: 0, totalSections: 0, sectionStats: [] },
-    // NEW (DJANGO-SYNC-5): focus mode
-    focusMode: false,
-
     // ----- Init -----
     async init() {
       const slug = this.getSlugFromURL();
@@ -161,26 +104,12 @@ function orderDetailApp() {
         this.loadMedia(slug),
       ]);
 
-      // DJANGO-SYNC-3: load persisted theme + dark mode, compute reading time, build section nav, load history
-      this.loadTheme();
-      this.loadDarkMode();
-      // DJANGO-SYNC-4: load font size, bookmarks, build mini-map, check onboarding
-      this.loadFontSize();
-      this.loadBookmarks();
-      this.computeReadingTime();
-      this.$nextTick(() => { this.buildMinimap(); });
-
       // ساخت درخت سایدبار بعد از لود داده‌ها
       this.$nextTick(() => {
         this.buildSidebarTree();
         this.autoExpandDisposition();
         this.initMediaTab();
         this.initScrollSpy();
-        // CRON-REVIEW-2: URL hash deep-linking (e.g. /ordering/<slug>#df-node-123)
-        this.initHashHandler();
-        // CRON-REVIEW-2: Viewer.js initialization is handled by the inline script at the
-        // bottom of the page, which exposes window.myOrderMediaGalleryInstance.
-        // openLightbox() reads from there, so no initViewer() call is needed here.
       });
     },
 
@@ -410,90 +339,84 @@ function orderDetailApp() {
       }
     },
 
-    // باز کردن والد(های) یک anchor قبل از اسکرول — تا زیرمجموعه‌های پیش‌بالینی
-    // و تعیین تکلیف اورژانسی که در حالت جمع‌شده (display:none) هستند، باز و قابل
-    // دیدن شوند. این متد روی داده‌های واکنش‌گرای Alpine (dynamicFields / disposition)
-    // عمل می‌کند و پرچم _open را روی والد و خود فرزند (در صورت داشتن محتوا) set می‌کند.
-    expandToAnchor(anchorId) {
+    // باز کردن سکشن‌های جمع‌شده‌ی مرتبط با یک anchor (پیش‌بالینی و تعیین تکلیف)
+    // تا زمانی که کاربر در فهرست روی یک زیرمجموعه کلیک می‌کند، آن بخش در صفحه
+    // اصلی باز شود و زیرمجموعه نمایش داده شود.
+    _expandAnchorIfNeeded(anchorId) {
       if (!anchorId) return;
 
-      // ── پیش‌بالینی: df-node / df-child ──
-      if (anchorId.startsWith("df-node-")) {
-        const nodeId = parseInt(anchorId.replace("df-node-", ""));
-        for (const group of (this.dynamicFields?.dynamic_field_groups || [])) {
+      // پیش‌بالینی: df-node-{id} و df-child-{id}
+      if (anchorId.indexOf("df-node-") === 0 || anchorId.indexOf("df-child-") === 0) {
+        const groups = (this.dynamicFields && this.dynamicFields.dynamic_field_groups) || [];
+        for (const group of groups) {
           for (const node of (group.nodes || [])) {
-            if (node.id === nodeId) { node._open = true; return; }
+            if (("df-node-" + node.id) === anchorId) {
+              node._open = true;
+              return;
+            }
+            for (const child of (node.children || [])) {
+              if (("df-child-" + child.id) === anchorId) {
+                node._open = true;   // باز کردن گره والد تا فرزند دیده شود
+                child._open = true;  // باز کردن خود فرزند
+                return;
+              }
+            }
           }
         }
-        return;
       }
-      if (anchorId.startsWith("df-child-")) {
-        const childId = parseInt(anchorId.replace("df-child-", ""));
-        for (const group of (this.dynamicFields?.dynamic_field_groups || [])) {
-          for (const node of (group.nodes || [])) {
-            const child = (node.children || []).find(c => c.id === childId);
-            if (child) {
-              node._open = true;                       // باز کردن گروه/گره والد
-              if (this.hasChildContent(child)) child._open = true; // باز کردن خود زیرمجموعه
+
+      // تعیین تکلیف اورژانسی: disp-node-{id} و disp-child-{id}
+      if (anchorId.indexOf("disp-node-") === 0 || anchorId.indexOf("disp-child-") === 0) {
+        const nodes = (this.disposition && this.disposition.emergency_disposition && this.disposition.emergency_disposition.nodes) || [];
+        for (const node of nodes) {
+          if (("disp-node-" + node.id) === anchorId) {
+            node._open = true;
+            return;
+          }
+          for (const child of (node.children || [])) {
+            if (("disp-child-" + child.id) === anchorId) {
+              node._open = true;   // باز کردن گره والد
+              child._open = true;  // باز کردن فرزند
               return;
             }
           }
         }
-        return;
-      }
-
-      // ── تعیین تکلیف اورژانسی: disp-node / disp-child ──
-      if (anchorId.startsWith("disp-node-")) {
-        const nodeId = parseInt(anchorId.replace("disp-node-", ""));
-        for (const node of (this.disposition?.emergency_disposition?.nodes || []) ) {
-          if (node.id === nodeId) { node._open = true; return; }
-        }
-        return;
-      }
-      if (anchorId.startsWith("disp-child-")) {
-        const childId = parseInt(anchorId.replace("disp-child-", ""));
-        for (const node of (this.disposition?.emergency_disposition?.nodes || []) ) {
-          const child = (node.children || []).find(c => c.id === childId);
-          if (child) {
-            node._open = true;
-            if (this.hasDispositionChildContent(child)) child._open = true;
-            return;
-          }
-        }
-        return;
       }
     },
 
-    // اسکرول به یک anchor خاص — ابتدا والد(ها) را باز می‌کند، بعد از رندر
-    // Alpine و پایان transition، به‌صورت نرم به عنصر اسکرول می‌کند.
+    // اسکرول به یک anchor خاص
     scrollToAnchor(anchorId) {
-      this.expandToAnchor(anchorId);
-      // CRON-REVIEW-2: update URL hash so the section is shareable / back-button friendly
-      this.updateHash(anchorId);
-      // DJANGO-SYNC-3: update prev/next nav index + record in viewed history
+      // ابتدا سکشن‌های جمع‌شده‌ی مرتبط (پیش‌بالینی/تعیین تکلیف) را باز می‌کنیم
+      // تا زیرمجموعه‌ی مورد نظر در صفحه اصلی نمایش داده شود، سپس اسکرول می‌کنیم.
+      this._expandAnchorIfNeeded(anchorId);
 
       const doScroll = () => {
-        let el = document.getElementById(anchorId);
+        const el = document.getElementById(anchorId);
         if (!el) {
           // fallback: anchor های section-level
           const map = {
             "order-info": "anchor-order-info",
             "order-sections": "anchor-order-sections",
           };
-          if (map[anchorId]) el = document.getElementById(map[anchorId]);
+          if (map[anchorId]) {
+            const fallback = document.getElementById(map[anchorId]);
+            if (fallback) {
+              fallback.scrollIntoView({ behavior: "smooth", block: "start" });
+              this.activeAnchor = anchorId;
+            }
+          }
+          return;
         }
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "start" });
-          this.activeAnchor = anchorId;
-        }
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        this.activeAnchor = anchorId;
       };
 
-      // $nextTick محتوای واکنش‌گرا را به‌روز می‌کند؛ setTimeout کوتاه به transition
-      // های x-transition فرصت می‌دهد تا عنصر را ارتفاع دهد و scrollIntoView درست کار کند.
-      if (this.$nextTick) {
-        this.$nextTick(() => setTimeout(doScroll, 220));
+      // پس از به‌روزرسانی DOM توسط Alpine (رندر شدن محتوای بازشده) اسکرول می‌کنیم.
+      // در صورت نبود $nextTick، با وقفه‌ی کوتاه اسکرول می‌کنیم.
+      if (typeof this.$nextTick === "function") {
+        this.$nextTick(doScroll);
       } else {
-        setTimeout(doScroll, 240);
+        setTimeout(doScroll, 50);
       }
     },
 
@@ -532,8 +455,6 @@ function orderDetailApp() {
       }
       if (current) {
         this.activeAnchor = current.id;
-        // NEW: auto-follow - section فعلی را در سایدبار باز می‌گذارد و لیبل هدر را به‌روز می‌کند
-        this._syncCurrentSection(current.id);
       }
     },
 
@@ -931,9 +852,7 @@ function orderDetailApp() {
     },
 
     theme() {
-      // CRON-REVIEW-2: if user picked a theme via the picker, use it; otherwise fall back to order.color.
-      const raw = this.themeColor || this.order?.color;
-      const c = isValidHexColor(raw) ? raw.trim() : ORDER_DEFAULT_COLOR;
+      const c = isValidHexColor(this.order?.color) ? this.order.color.trim() : ORDER_DEFAULT_COLOR;
       return {
         name: c,
         color: c,
@@ -1261,12 +1180,13 @@ function orderDetailApp() {
     },
 
     showNotesModal() {
-      // order.notes توسط ادمین با CKEditor نوشته می‌شود → باید به‌صورت HTML رندر شود
       this.fieldModal = {
         open: true,
         title: "یادداشت تکمیلی اوردر",
         subtitle: "",
         content: this.order?.notes || "",
+        // notes محتوای HTML تولیدشده توسط CKEditor است؛ با isHtml:true در مودال
+        // با کلاس ck-content رندر می‌شود تا استایل‌های لوکال ckeditor اعمال شوند.
         isHtml: true,
       };
       document.body.classList.add("modal-open");
@@ -1276,266 +1196,6 @@ function orderDetailApp() {
       this.fieldModal.open = false;
       this.fieldModal.isHtml = false;
       document.body.classList.remove("modal-open");
-    },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW (CRON-REVIEW-2): Theme picker override + helpers
-    // ─────────────────────────────────────────────────────────────────────────
-    themeStyle() { return `--theme-c: ${this.theme().color};`; },
-    setTheme(color) {
-        this.themeColor = color;
-        try { localStorage.setItem("drcode_order_theme", color); } catch (e) {}
-        this.showToast("تم تغییر کرد");
-    },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW (DJANGO-SYNC-3): Load persisted theme from localStorage
-    // ─────────────────────────────────────────────────────────────────────────
-    loadTheme() {
-        try {
-            const t = localStorage.getItem("drcode_order_theme");
-            if (t) this.themeColor = t;
-        } catch (e) {}
-    },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW (DJANGO-SYNC-3): Dark mode toggle — persisted via localStorage
-    // ─────────────────────────────────────────────────────────────────────────
-    toggleDarkMode() {
-        this.isDarkMode = !this.isDarkMode;
-        document.documentElement.setAttribute("data-theme", this.isDarkMode ? "dark" : "light");
-        try { localStorage.setItem("drcode_order_dark", this.isDarkMode ? "1" : "0"); } catch (e) {}
-        this.showToast(this.isDarkMode ? "حالت تاریک فعال شد 🌙" : "حالت روشن فعال شد ☀️");
-    },
-    loadDarkMode() {
-        try {
-            const v = localStorage.getItem("drcode_order_dark");
-            this.isDarkMode = v === "1";
-            if (this.isDarkMode) document.documentElement.setAttribute("data-theme", "dark");
-        } catch (e) {}
-    },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW (DJANGO-SYNC-3): Share modal — generates share URL + QR code
-    // ─────────────────────────────────────────────────────────────────────────
-    openShareModal() {
-        this.shareUrl = window.location.origin + window.location.pathname + (window.location.hash || "");
-        this.shareTitle = this.order?.name || "اوردر پزشکی";
-        this.shareModalOpen = true;
-        document.body.classList.add("modal-open");
-        // Generate QR code (using api.qrserver.com — no key needed)
-        this.qrDataUrl = "https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=" + encodeURIComponent(this.shareUrl);
-    },
-    closeShareModal() {
-        this.shareModalOpen = false;
-        document.body.classList.remove("modal-open");
-    },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW (DJANGO-SYNC-3): Reading time estimate (~200 wpm)
-    // ─────────────────────────────────────────────────────────────────────────
-    computeReadingTime() {
-        this.$nextTick(() => {
-            const sec = document.getElementById("order__section");
-            if (!sec) return;
-            const text = sec.innerText || "";
-            const words = text.trim().split(/\s+/).filter(Boolean).length;
-            this.readingTimeMin = Math.max(1, Math.ceil(words / 200));
-        });
-    },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW (CRON-REVIEW-2): Collapsible main sections
-    // ─────────────────────────────────────────────────────────────────────────
-    toggleSectionCollapse(key) { this.collapsedSections[key] = !this.collapsedSections[key]; },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW (CRON-REVIEW-2): Copy deep link to a section
-    // ─────────────────────────────────────────────────────────────────────────
-    copySectionLink(anchorId) {
-      const url = window.location.origin + window.location.pathname + "#" + anchorId;
-      this.copyText(url, "link-" + anchorId);
-    },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW (CRON-REVIEW-2): URL hash deep-linking
-    // ─────────────────────────────────────────────────────────────────────────
-    initHashHandler() {
-      const hash = window.location.hash.replace("#", "");
-      if (hash) { setTimeout(() => { this.scrollToAnchor(hash); }, 600); }
-      window.addEventListener("hashchange", () => {
-        const h = window.location.hash.replace("#", "");
-        if (h) this.scrollToAnchor(h);
-      });
-    },
-    updateHash(anchorId) {
-      if (window.location.hash !== "#" + anchorId) {
-        history.replaceState(null, "", "#" + anchorId);
-      }
-    },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW (CRON-REVIEW-2): Image lightbox — uses the Viewer.js instance created
-    // by the inline script at the bottom of the page (window.myOrderMediaGalleryInstance).
-    // ─────────────────────────────────────────────────────────────────────────
-    openLightbox(idx) {
-      const v = this._viewerInstance || window.myOrderMediaGalleryInstance;
-      if (v) { try { v.view(idx); } catch (e) {} }
-    },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW (CRON-REVIEW-2): Keyboard arrow navigation in the sidebar tree
-    // ─────────────────────────────────────────────────────────────────────────
-    _kbCollectNodes() { return [...document.querySelectorAll(".mp-rail-drawer-body .fp-tree-node")]; },
-    _kbApplyFocus() {
-      const nodes = this._kbCollectNodes();
-      nodes.forEach((n, i) => { n.classList.toggle("is-kb-focus", i === this._kbFocusIndex); });
-      const target = nodes[this._kbFocusIndex];
-      if (target) target.scrollIntoView({ block: "nearest", behavior: "smooth" });
-    },
-    _kbActivate() {
-      const nodes = this._kbCollectNodes();
-      const target = nodes[this._kbFocusIndex];
-      if (target) target.click();
-    },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW: نگاشت anchor → section + لیبل فارسی برای pill هدر + auto-follow
-    // ─────────────────────────────────────────────────────────────────────────
-    _syncCurrentSection(anchorId) {
-      // نگاشت prefix → {section key, label}
-      let sectionKey = null, label = null;
-      if (anchorId.startsWith("df-")) { sectionKey = "preclinical"; label = "پیش‌بالینی"; }
-      else if (anchorId.startsWith("field-") || anchorId === "order-info") { sectionKey = "order"; label = "اطلاعات پایه"; }
-      else if (anchorId.startsWith("section-") || anchorId === "order-sections") {
-        sectionKey = "order";
-        // پیدا کردن عنوان section برای لیبل دقیق‌تر
-        if (anchorId.startsWith("section-")) {
-          const sid = parseInt(anchorId.replace("section-", ""));
-          const s = (this.sidebarTree.orderSections || []).find(x => x.id === sid);
-          label = s ? s.title : "بخش‌ها و دستورات";
-        } else { label = "بخش‌ها و دستورات"; }
-      }
-      else if (anchorId.startsWith("disp-")) { sectionKey = "disposition"; label = this.sidebarTree.disposition?.title || "تعیین تکلیف"; }
-      else if (anchorId.startsWith("media-") || anchorId === "anchor-media") { sectionKey = "media"; label = "رسانه‌ها"; }
-      else if (anchorId === "order-question-section") { sectionKey = null; label = "پرسش سوال"; }
-
-      this.currentSectionLabel = label || "";
-      // DJANGO-SYNC-3: keep prev/next nav in sync with current section
-
-      // auto-follow: اگر سایدبار بسته است، section فعال را عوض می‌کنیم تا دکمه‌ی rail
-      // درست هایلایت شود. اگر سایدبار باز است و کاربر در حال مرور دستی است، مزاحم نمی‌شویم.
-      if (sectionKey && !this.sidebarOpen && this.activeSidebarSection !== sectionKey) {
-        this.activeSidebarSection = sectionKey;
-        this.expandedSidebarSections[sectionKey] = true;
-      }
-
-      // DJANGO-SYNC-5: re-apply focus-mode highlight if active (active section changed)
-      if (this.focusMode) { this._applyFocusHighlight(); }
-    },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW: Bulk expand / collapse for the currently-active section
-    // ─────────────────────────────────────────────────────────────────────────
-    expandAllCurrent() {
-      const sec = this.activeSidebarSection;
-      if (sec === "preclinical") {
-        (this.dynamicFields?.dynamic_field_groups || []).forEach(g => {
-          (g.nodes || []).forEach(n => {
-            n._open = true;
-            (n.children || []).forEach(c => { if (this.hasChildContent(c)) c._open = true; });
-          });
-        });
-      } else if (sec === "disposition") {
-        (this.disposition?.emergency_disposition?.nodes || []).forEach(n => {
-          n._open = true;
-          (n.children || []).forEach(c => { if (this.hasDispositionChildContent(c)) c._open = true; });
-        });
-      }
-      // برای order و media چیززی برای expand نیست (flat lists)
-      this.showToast("همه‌ی زیرمجموعه‌ها باز شدند");
-    },
-    collapseAllCurrent() {
-      const sec = this.activeSidebarSection;
-      if (sec === "preclinical") {
-        (this.dynamicFields?.dynamic_field_groups || []).forEach(g => {
-          (g.nodes || []).forEach(n => {
-            n._open = false;
-            (n.children || []).forEach(c => c._open = false);
-          });
-        });
-      } else if (sec === "disposition") {
-        (this.disposition?.emergency_disposition?.nodes || []).forEach(n => {
-          n._open = false;
-          (n.children || []).forEach(c => c._open = false);
-        });
-      }
-      this.showToast("همه‌ی زیرمجموعه‌ها جمع شدند");
-    },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW: Sidebar search - flat filtered hits across all sections
-    // ─────────────────────────────────────────────────────────────────────────
-    get filteredHits() {
-      const q = (this.sidebarFilter || "").trim().toLowerCase();
-      if (!q) return [];
-      const hits = [];
-      const push = (anchor, title, section, icon, color = "#0ea5e9") => {
-        if ((title || "").toLowerCase().includes(q)) hits.push({ anchor, title: title || "(بدون عنوان)", section, icon, color });
-      };
-      (this.sidebarTree.preclinical || []).forEach(g => {
-        push("df-group-" + g.id, g.title, "پیش‌بالینی", "fa-folder-open");
-        (g.nodes || []).forEach(n => {
-          push("df-node-" + n.id, n.title, "پیش‌بالینی", "fa-circle-nodes");
-          (n.children || []).forEach(c => push("df-child-" + c.id, c.title, "پیش‌بالینی", "fa-circle-dot"));
-        });
-      });
-      (this.sidebarTree.orderFields || []).forEach(f => push("field-" + f.key, f.labelFa, "اطلاعات پایه", "fa-clipboard-list"));
-      (this.sidebarTree.orderSections || []).forEach(s => push("section-" + s.id, s.title, "بخش‌ها", "fa-list-check"));
-      if (this.sidebarTree.disposition) {
-        const d = this.sidebarTree.disposition;
-        const dColor = isValidHexColor(d.color) ? d.color : "#e11d48";
-        (d.nodes || []).forEach(n => {
-          push("disp-node-" + n.id, n.title, d.title || "تعیین تکلیف", "fa-sitemap", dColor);
-          (n.children || []).forEach(c => push("disp-child-" + c.id, c.title, d.title || "تعیین تکلیف", "fa-circle-dot", dColor));
-        });
-      }
-      return hits;
-    },
-    get filteredTreeEmpty() { return this.filteredHits.length === 0; },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW: Copy-to-clipboard + toast
-    // ─────────────────────────────────────────────────────────────────────────
-    copyText(text, key) {
-      if (!text) return;
-      const done = () => {
-        this.copiedKey = key;
-        this.showToast("کپی شد");
-        clearTimeout(this._toastTimer);
-        this._toastTimer = setTimeout(() => { this.copiedKey = null; }, 2000);
-      };
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(String(text)).then(done).catch(() => this._legacyCopy(text, done));
-      } else { this._legacyCopy(text, done); }
-    },
-    _legacyCopy(text, cb) {
-      try {
-        const ta = document.createElement("textarea");
-        ta.value = String(text);
-        ta.style.position = "fixed";
-        ta.style.opacity = "0";
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-        cb();
-      } catch (e) { this.showToast("کپی ناموفق بود"); }
-    },
-    showToast(message) {
-      this.toast = { visible: true, message };
-      clearTimeout(this._toastTimer);
-      this._toastTimer = setTimeout(() => { this.toast = { visible: false, message: "" }; }, 1800);
     },
 
     // ----- Actions -----
@@ -1608,6 +1268,13 @@ function orderDetailApp() {
           timer: 1500,
         });
       });
+    },
+
+    scrollToQuestion() {
+      const questionBox = document.getElementById("order-question-section");
+      if (questionBox) {
+        questionBox.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     },
 
     checkPremiumStatus() {
@@ -1745,325 +1412,111 @@ function orderDetailApp() {
         }
 
         if (e.key === "Escape") {
-          // DJANGO-SYNC-3: share modal closes first
-          if (this.shareModalOpen) {
-            this.closeShareModal();
-          } else if (this.statsOpen) {
-            this.closeStats();
-          } else if (this.activePopup) {
+          if (this.activePopup) {
             this.closePopup();
           } else if (this.fieldModal.open) {
             this.closeFieldModal();
-          } else if (this.helpOpen) {
-            this.closeHelp();
-          } else if (this.focusMode) {
-            this.toggleFocusMode();
           } else if (this.sidebarOpen) {
             this.closeSidebar();
           }
         }
-        // DJANGO-SYNC-5: "F" toggles focus mode (when not typing & no popup open)
-        if (e.key.toLowerCase() === "f" && !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName) && !this.activePopup && !this.fieldModal.open && !this.shareModalOpen && !this.statsOpen && !this.helpOpen) {
-          e.preventDefault();
-          this.toggleFocusMode();
-        }
-        // DJANGO-SYNC-5: "S" opens content stats
-        if (e.key.toLowerCase() === "s" && !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName) && !this.activePopup && !this.fieldModal.open && !this.shareModalOpen && !this.statsOpen && !this.helpOpen && !this.sidebarFilter) {
-          e.preventDefault();
-          this.openStats();
-        }
-
-        // NEW: "/" focuses the sidebar search (when sidebar open & not typing in an input)
-        if (e.key === "/" && this.sidebarOpen && !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) {
-          e.preventDefault();
-          const inp = document.querySelector(".mp-search-input");
-          if (inp) inp.focus();
-        }
-
-        // CRON-REVIEW-2: Arrow keys navigate sidebar tree (only when sidebar open,
-        // not typing in an input, and not actively searching — search has its own keyboard model)
-        if (this.sidebarOpen && !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName) && !this.sidebarFilter) {
-          if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-            e.preventDefault();
-            const nodes = this._kbCollectNodes();
-            if (nodes.length === 0) return;
-            if (e.key === "ArrowDown") this._kbFocusIndex = Math.min(nodes.length - 1, this._kbFocusIndex + 1);
-            else this._kbFocusIndex = Math.max(-1, this._kbFocusIndex - 1);
-            this._kbApplyFocus();
-          }
-          if (e.key === "Enter" && this._kbFocusIndex >= 0) {
-            e.preventDefault();
-            this._kbActivate();
-          }
-        }
-
-        // DJANGO-SYNC-4: "?" opens help overlay (when not typing & no popup open)
-        if (e.key === "?" && !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName) && !this.activePopup && !this.fieldModal.open && !this.shareModalOpen) {
-          e.preventDefault();
-          if (this.helpOpen) { this.closeHelp(); } else { this.openHelp(); }
-        }
-        // DJANGO-SYNC-4: Ctrl+D toggles dark mode
-        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d" && !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) {
-          e.preventDefault();
-          this.toggleDarkMode();
-        }
-        // DJANGO-SYNC-4: Ctrl++ (or Ctrl+=) increases font size
-        if ((e.ctrlKey || e.metaKey) && (e.key === "+" || e.key === "=") && !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) {
-          e.preventDefault();
-          this.increaseFont();
-        }
-        // DJANGO-SYNC-4: Ctrl+- decreases font size
-        if ((e.ctrlKey || e.metaKey) && e.key === "-" && !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) {
-          e.preventDefault();
-          this.decreaseFont();
-        }
       });
-    },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW (DJANGO-SYNC-4): Keyboard shortcuts help overlay (?)
-    // ─────────────────────────────────────────────────────────────────────────
-    openHelp() { this.helpOpen = true; document.body.classList.add("modal-open"); },
-    closeHelp() { this.helpOpen = false; document.body.classList.remove("modal-open"); },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW (DJANGO-SYNC-4): Font size control (A-/A+ accessibility)
-    // ─────────────────────────────────────────────────────────────────────────
-    get fontSizeLabel() { return this.fontLabels[this.fontSizeIdx] || "متوسط"; },
-    increaseFont() { if (this.fontSizeIdx < 3) { this.fontSizeIdx++; this.applyFontSize(); } },
-    decreaseFont() { if (this.fontSizeIdx > 0) { this.fontSizeIdx--; this.applyFontSize(); } },
-    applyFontSize() { document.documentElement.setAttribute("data-font-size", this.fontSizes[this.fontSizeIdx]); try { localStorage.setItem("drcode_order_fontsize", String(this.fontSizeIdx)); } catch (e) {} },
-    loadFontSize() { try { const v = localStorage.getItem("drcode_order_fontsize"); if (v !== null) { this.fontSizeIdx = parseInt(v) || 1; } } catch (e) {} this.applyFontSize(); },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW (DJANGO-SYNC-4): Bookmarks / favorites
-    // ─────────────────────────────────────────────────────────────────────────
-    isBookmarked(anchorId) { return this.bookmarks.some(b => b.anchor === anchorId); },
-    toggleBookmark(anchorId, label) {
-      const idx = this.bookmarks.findIndex(b => b.anchor === anchorId);
-      if (idx >= 0) { this.bookmarks.splice(idx, 1); this.showToast("نشان حذف شد"); }
-      else { this.bookmarks.push({ anchor: anchorId, label: label }); this.showToast("نشان‌گذاری شد ⭐"); }
-      this.saveBookmarks();
-    },
-    clearBookmarks() { this.bookmarks = []; this.saveBookmarks(); this.showToast("نشان‌ها پاک شدند"); },
-    saveBookmarks() { try { localStorage.setItem("drcode_order_bookmarks", JSON.stringify(this.bookmarks)); } catch (e) {} },
-    loadBookmarks() { try { const b = localStorage.getItem("drcode_order_bookmarks"); if (b) this.bookmarks = JSON.parse(b) || []; } catch (e) {} },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW (DJANGO-SYNC-4): TOC mini-map (visual section overview)
-    // ─────────────────────────────────────────────────────────────────────────
-    buildMinimap() {
-      this.$nextTick(() => {
-        const list = this.sectionNavList.map(s => {
-          const el = document.getElementById(s.anchor);
-          return { anchor: s.anchor, label: s.label, height: el ? el.offsetHeight : 40, prefix: this._prefixFor(s.anchor) };
-        });
-        this.minimapSegments = list;
-      });
-    },
-    _prefixFor(anchorId) {
-      if (anchorId === "anchor-preclinical") return "df-";
-      if (anchorId === "anchor-order-info") return "field-";
-      if (anchorId === "anchor-order-sections") return "section-";
-      if (anchorId === "anchor-disposition") return "disp-";
-      if (anchorId === "anchor-media") return "media-";
-      return "";
-    },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW (DJANGO-SYNC-5): Print-to-PDF (premium) — bypasses @media print protection
-    // ─────────────────────────────────────────────────────────────────────────
-    printToPdf() {
-      if (!this.isPremiumUser) { this.showToast("چاپ ویژه کاربران Premium است"); return; }
-      this.showToast("در حال آماده‌سازی برای چاپ...");
-      this.$nextTick(() => {
-        document.body.classList.add("mp-print-mode");
-        setTimeout(() => {
-          window.print();
-          // Cleanup after print dialog closes
-          setTimeout(() => { document.body.classList.remove("mp-print-mode"); }, 500);
-        }, 300);
-      });
-    },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW (DJANGO-SYNC-5): Export order content to Markdown file
-    // ─────────────────────────────────────────────────────────────────────────
-    exportMarkdown() {
-      let md = "# " + (this.order?.name || "اوردر") + "\n\n";
-      if (this.order?.notes) { md += "> " + this.order.notes.replace(/<[^>]+>/g, "").slice(0, 200) + "\n\n"; }
-      md += "**دسته:** " + (this.order?.category?.title || "-") + "  \n";
-      md += "**زمان مطالعه:** " + this.readingTimeMin + " دقیقه  \n\n";
-      // Preclinical
-      if (this.dynamicFields?.dynamic_field_groups?.length) {
-        md += "## پیش‌بالینی\n\n";
-        this.dynamicFields.dynamic_field_groups.forEach(g => {
-          md += "### " + g.title + "\n\n";
-          (g.nodes || []).forEach(n => {
-            md += "- **" + n.title + "**\n";
-            if (n.content) { md += "  " + n.content.replace(/<[^>]+>/g, "").slice(0, 150) + "\n"; }
-            (n.children || []).forEach(c => { md += "  - " + c.title + "\n"; });
-          });
-          md += "\n";
-        });
-      }
-      // Base info
-      md += "## اطلاعات پایه\n\n";
-      this.infoFields().forEach(f => { md += "- **" + f.labelFa + ":** " + (f.value || "-") + "\n"; });
-      md += "\n";
-      // Sections
-      if (this.sections?.sections?.length) {
-        md += "## بخش‌ها و دستورات\n\n";
-        this.sections.sections.forEach(s => {
-          md += "### " + s.title + "\n\n";
-          (s.items || []).forEach(it => { md += "- " + (it.text || "") + "\n"; });
-          md += "\n";
-        });
-      }
-      // Disposition
-      if (this.disposition?.emergency_disposition) {
-        const d = this.disposition.emergency_disposition;
-        md += "## " + d.title + "\n\n";
-        (d.nodes || []).forEach(n => {
-          md += "### " + n.title + "\n\n";
-          (n.children || []).forEach(c => { md += "- " + c.title + "\n"; });
-          md += "\n";
-        });
-      }
-      // Download
-      const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = (this.order?.name || "order").replace(/[^a-zA-Z0-9آ-ی]/g, "_") + ".md";
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      this.showToast("فایل Markdown دانلود شد 📥");
-    },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW (DJANGO-SYNC-5): Content stats modal
-    // ─────────────────────────────────────────────────────────────────────────
-    openStats() { this.computeContentStats(); this.statsOpen = true; document.body.classList.add("modal-open"); },
-    closeStats() { this.statsOpen = false; document.body.classList.remove("modal-open"); },
-    computeContentStats() {
-      this.$nextTick(() => {
-        const sections = this.sectionNavList.map(s => {
-          const el = document.getElementById(s.anchor);
-          const text = el ? el.innerText : "";
-          const words = text.trim().split(/\s+/).filter(Boolean).length;
-          return { anchor: s.anchor, label: s.label, words };
-        });
-        const totalWords = sections.reduce((sum, s) => sum + s.words, 0);
-        const maxWords = Math.max(...sections.map(s => s.words), 1);
-        sections.forEach(s => { s.percent = Math.round((s.words / maxWords) * 100); });
-        this.contentStats = { totalWords, totalSections: sections.length, sectionStats: sections };
-      });
-    },
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // NEW (DJANGO-SYNC-5): Focus mode — dims other sections, highlights active
-    // ─────────────────────────────────────────────────────────────────────────
-    toggleFocusMode() {
-      this.focusMode = !this.focusMode;
-      if (this.focusMode) {
-        document.body.classList.add("mp-focus-mode");
-        this._applyFocusHighlight();
-        this.showToast("حالت تمرکز فعال شد — Esc برای خروج");
-      } else {
-        document.body.classList.remove("mp-focus-mode");
-        this._clearFocusHighlight();
-        this.showToast("حالت تمرکز غیرفعال شد");
-      }
-    },
-    _applyFocusHighlight() {
-      const sections = document.querySelectorAll("#order__section > .main-section, #order__section > section.main-section, #order__section section[id^='anchor-']");
-      // Also include the question section
-      const all = [...sections, document.getElementById("order-question-section")].filter(Boolean);
-      all.forEach(sec => sec.classList.remove("mp-focused"));
-      // Find the currently active section
-      if (this.activeAnchor) {
-        const activeSec = this._findSectionForAnchor(this.activeAnchor);
-        if (activeSec) activeSec.classList.add("mp-focused");
-      }
-    },
-    _clearFocusHighlight() {
-      document.querySelectorAll(".mp-focused").forEach(el => el.classList.remove("mp-focused"));
-    },
-    _findSectionForAnchor(anchorId) {
-      // Map anchor to its parent section element
-      const map = {
-        "df-": "anchor-preclinical",
-        "field-": "anchor-order-info",
-        "order-info": "anchor-order-info",
-        "section-": "anchor-order-sections",
-        "order-sections": "anchor-order-sections",
-        "disp-": "anchor-disposition",
-        "media-": "anchor-media",
-        "anchor-media": "anchor-media",
-        "order-question-section": "order-question-section",
-      };
-      for (const prefix in map) {
-        if (anchorId.startsWith(prefix) || anchorId === map[prefix]) {
-          return document.getElementById(map[prefix]);
-        }
-      }
-      return null;
     },
   };
 }
 
 // =============================================================================
 // Watermark Protection
+// -----------------------------------------------------------------------------
+// واترمارک از ابتدای اوردر (هدر شامل نام و توضیحات تکمیلی) تا «قبل از بخش
+// گالری/رسانه‌ها» امتداد دارد. بخش سوالات متداول (FAQ) شامل واترمارک نمی‌شود.
+// با باز/بسته شدن سکشن‌ها (پیش‌بالینی، تعیین تکلیف و ...) محدوده به‌صورت
+// دینامیک بازمحاسبه می‌شود تا واترمارک همیشه کل طول را بپوشاند و روی یک
+// بخش ثابت متوقف نشود.
 // =============================================================================
 function createOrderProtectedWatermark() {
-  // ـــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــ
-  // واترمارک — نسخهٔ ۲٫۰
-  // از یک SVG tile با متن چرخیده استفاده میکند و آن را بهصورت background-image
-  // تکرارپذیر روی کل ارتفاع #order__section میچیند. این‌طوری:
-  //   ① واترمارک کل اوردر (پیش‌بالینی، اطلاعات پایه، بخش‌ها، تعیین تکلیف) را می‌پوشاند
-  //   ② وقتی یک node باز/بسته می‌شود و ارتفاع section تغییر میکند، تایل‌ها بهصورت
-  //      خودکار کل سطح جدید را پر میکنند — بدون نیاز به recompute و بدون پرش
-  //   ③ واترمارک روی هیچ بخشی «متوقف» نمی‌شود و از روی اطلاعات پایه هم برداشته نمی‌شود
-  // ــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــــ
-  function buildWatermarkSvgDataUri(text, fontSize, tileW, tileH) {
-    const safe = String(text || "drcode-med.ir")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
+  const WATERMARK_ID = "order-protected-watermark";
+  let lastSignature = null;
+  let rebuildTimer = null;
 
-    const cx1 = tileW / 2;
-    const cy1 = tileH / 2;
-    const cx2 = tileW / 2;
-    const cy2 = tileH / 2 + tileH; // ردیف دوم — انتهای tile (با شروع tile بعدی تراز می‌شود)
-
-    const svg =
-      '<svg xmlns="http://www.w3.org/2000/svg" width="' + tileW + '" height="' + tileH + '">' +
-        '<g fill="rgba(15,23,42,0.06)" font-family="Arial, Helvetica, sans-serif" font-size="' + fontSize + '" font-weight="700">' +
-          '<text x="' + cx1 + '" y="' + cy1 + '" text-anchor="middle" dominant-baseline="middle" transform="rotate(-45 ' + cx1 + ' ' + cy1 + ')">' + safe + '</text>' +
-          '<text x="' + cx2 + '" y="' + cy2 + '" text-anchor="middle" dominant-baseline="middle" transform="rotate(-45 ' + cx2 + ' ' + cy2 + ')">' + safe + '</text>' +
-        '</g>' +
-      '</svg>';
-
-    return 'data:image/svg+xml;charset=utf8,' + encodeURIComponent(svg);
+  // کانتینر والدِ واترمارک — ریشه‌ی صفحه (.order-page-bg) که هم هدر و هم
+  // main را در بر می‌گیرد تا واترمارک بتواند از هدر تا قبل از گالری بکشد.
+  function getContainer() {
+    return (
+      document.querySelector(".order-page-bg") ||
+      document.getElementById("order__section") ||
+      document.body
+    );
   }
 
-  function addWatermark() {
-    const targetSection = document.getElementById("order__section");
-    if (!targetSection) return;
+  // محاسبه‌ی محدوده‌ی واترمارک: از بالای هدر تا بالای گالری (رسانه‌ها).
+  // اگر گالری وجود نداشت، تا بالای بخش سوالات متداول.
+  function getRange() {
+    const container = getContainer();
+    if (!container) return null;
 
-    const style = getComputedStyle(targetSection);
-    if (style.display === "none" || style.visibility === "hidden" || targetSection.offsetHeight === 0) return;
+    // نقطه شروع: هدر اوردر (شامل نام و یادداشت تکمیلی) — در نبود، main.
+    const startEl =
+      document.querySelector("header.order-header") ||
+      document.getElementById("order__section");
+    if (!startEl) return null;
 
-    if (targetSection.querySelector("#order-protected-watermark")) return;
+    // نقطه پایان: شروع بخش گالری (رسانه‌ها) — واترمارک تا قبل از اینجا می‌رسد.
+    // در نبود گالری (اوردر بدون رسانه)، تا قبل از بخش سوالات متداول ادامه می‌یابد
+    // تا سوالات متداول هرگز شامل واترمارک نشود.
+    const endEl =
+      document.getElementById("anchor-media") ||
+      document.getElementById("order-question-section");
 
-    const computedStyle = getComputedStyle(targetSection);
-    if (computedStyle.position === "static") {
-      targetSection.style.position = "relative";
+    // مطمئن می‌شویم کانتینر relative است تا موقعیت absolute درست بنشیند.
+    const cs = getComputedStyle(container);
+    if (cs.position === "static") container.style.position = "relative";
+
+    const containerRect = container.getBoundingClientRect();
+    const startRect = startEl.getBoundingClientRect();
+
+    let top, height;
+    if (endEl && container.contains(endEl)) {
+      const endRect = endEl.getBoundingClientRect();
+      top = startRect.top - containerRect.top;
+      height = endRect.top - startRect.top;
+    } else {
+      // fallback: تا انتهای main
+      const mainEl = document.getElementById("order__section");
+      if (!mainEl) return null;
+      const mainRect = mainEl.getBoundingClientRect();
+      top = startRect.top - containerRect.top;
+      height = mainRect.top + mainRect.height - startRect.top;
     }
 
+    if (!isFinite(top) || !isFinite(height) || height <= 0) return null;
+    return { container, top, height, width: containerRect.width };
+  }
+
+  function addWatermark(range) {
+    if (!range) return;
+    const { container, top, height, width } = range;
+
+    // حذف واترمارک قبلی (در صورت وجود)
+    const existing = document.getElementById(WATERMARK_ID);
+    if (existing) existing.remove();
+
+    const isMobile = window.innerWidth < 768;
+
+    const watermark = document.createElement("div");
+    watermark.id = WATERMARK_ID;
+    watermark.style.cssText = `
+      position: absolute;
+      top: ${top}px;
+      left: 0;
+      width: 100%;
+      height: ${height}px;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    `;
+
+    // خواندن کد پزشکی کاربر از localStorage (همان منطق قبلی)
     let medi, mediObject;
     try {
       medi = localStorage.getItem("drcode_user_profile");
@@ -2073,48 +1526,63 @@ function createOrderProtectedWatermark() {
     }
     const text = (medi && mediObject?.medical_code) ? mediObject.medical_code : "drcode-med.ir";
 
-    const isMobile = window.innerWidth < 768;
-    const fontSize = isMobile ? 22 : 28;
-    const tileW = isMobile ? 220 : 280;
-    const tileH = isMobile ? 180 : 220;
+    // شبکه‌ی متنی پویا: تعداد ردیف‌ها بر اساس ارتفاع محاسبه می‌شود تا کل
+    // محدوده (از هدر تا قبل از گالری) به‌طور یکنواخت پوشش داده شود و با
+    // بزرگ/کوچک شدن محتوا، واترمارک کش بیاید.
+    const cols = 5;
+    const rowGap = isMobile ? 120 : 140;
+    const rows = Math.max(6, Math.ceil(height / rowGap));
+    const colSpacing = width / (cols + 1);
+    const rowSpacing = height / (rows + 1);
 
-    const bgUrl = buildWatermarkSvgDataUri(text, fontSize, tileW, tileH);
+    const inner = document.createElement("div");
+    inner.style.cssText = "position: relative; width: 100%; height: 100%;";
 
-    const watermark = document.createElement("div");
-    watermark.id = "order-protected-watermark";
-    // height:100% → با رشد محتوای #order__section بزرگ می‌شود؛ background-repeat:repeat
-    // بهصورت خودکار کل سطح (حتی قسمت‌های جدید) را تایل میکند.
-    watermark.style.cssText =
-      "position: absolute; top: 0; left: 0; width: 100%; height: 100%;" +
-      "pointer-events: none; z-index: 1; overflow: hidden;" +
-      "background-image: url(\"" + bgUrl + "\");" +
-      "background-repeat: repeat;" +
-      "background-position: 0 0;" +
-      "background-size: " + tileW + "px " + tileH + "px;";
-
-    targetSection.insertBefore(watermark, targetSection.firstChild);
-  }
-
-  function rebuildWatermark() {
-    const targetSection = document.getElementById("order__section");
-    if (!targetSection) return;
-    const existing = targetSection.querySelector("#order-protected-watermark");
-    if (existing) existing.remove();
-    addWatermark();
-  }
-
-  function keepTrying() {
-    const targetSection = document.getElementById("order__section");
-    if (!targetSection) return;
-    const style = getComputedStyle(targetSection);
-    if (style.display !== "none" && style.visibility !== "hidden" && targetSection.offsetHeight > 0) {
-      if (!targetSection.querySelector("#order-protected-watermark")) addWatermark();
+    for (let row = 1; row <= rows; row++) {
+      for (let col = 1; col <= cols; col++) {
+        const textEl = document.createElement("div");
+        textEl.textContent = text;
+        textEl.style.cssText = `
+          position: absolute;
+          top: ${row * rowSpacing}px;
+          left: ${col * colSpacing}px;
+          transform: translate(-50%, -50%) rotate(-45deg);
+          font-size: ${isMobile ? "22px" : "28px"};
+          font-weight: 700;
+          color: rgba(15, 23, 42, 0.06);
+          white-space: nowrap;
+          user-select: none;
+          font-family: Arial, sans-serif;
+        `;
+        inner.appendChild(textEl);
+      }
     }
+
+    watermark.appendChild(inner);
+    container.insertBefore(watermark, container.firstChild);
   }
 
-  [100, 300, 500, 800, 1000, 1500, 2000].forEach((t) => setTimeout(keepTrying, t));
+  // بازسازی فقط زمانی که محدوده تغییر کرده باشد (جلوگیری از لرزش و کار اضافه).
+  function rebuildIfNeeded() {
+    const range = getRange();
+    if (!range) return;
+    const signature = `${range.top}|${range.height}|${range.width}`;
+    if (signature === lastSignature) return;
+    lastSignature = signature;
+    addWatermark(range);
+  }
 
-  const bodyObserver = new MutationObserver(() => keepTrying());
+  function scheduleRebuild() {
+    clearTimeout(rebuildTimer);
+    rebuildTimer = setTimeout(rebuildIfNeeded, 80);
+  }
+
+  // تلاش‌های اولیه پس از لود
+  [100, 300, 500, 800, 1000, 1500, 2000, 3000].forEach((t) => setTimeout(rebuildIfNeeded, t));
+
+  // Observer روی body — هر تغییر DOM (باز/بسته شدن سکشن، لود داده‌ها،
+  // تغییر x-show/style/class) بازمحاسبه را زمان‌بندی می‌کند.
+  const bodyObserver = new MutationObserver(() => scheduleRebuild());
   bodyObserver.observe(document.body, {
     childList: true,
     subtree: true,
@@ -2122,44 +1590,51 @@ function createOrderProtectedWatermark() {
     attributeFilter: ["style", "x-show", "class"],
   });
 
+  // اگر واترمارک به هر دلیلی حذف شد، بازمحاسبه
   const sectionObserver = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       mutation.removedNodes.forEach((node) => {
-        if (node.id === "order-protected-watermark") setTimeout(addWatermark, 50);
+        if (node.id === WATERMARK_ID) scheduleRebuild();
       });
     });
   });
 
   let observerStarted = false;
   const startSectionObserver = setInterval(() => {
-    const targetSection = document.getElementById("order__section");
-    if (targetSection && !observerStarted) {
-      sectionObserver.observe(targetSection, { childList: true, subtree: true });
+    const container = getContainer();
+    if (container && !observerStarted) {
+      sectionObserver.observe(container, { childList: true, subtree: true });
       observerStarted = true;
-      keepTrying();
+      rebuildIfNeeded();
     }
   }, 50);
   setTimeout(() => clearInterval(startSectionObserver), 5000);
 
+  // resize — ابعاد تغییر کرده، امضای قبلی نامعتبر است
   let resizeTimeout;
   window.addEventListener("resize", () => {
     clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(rebuildWatermark, 300);
+    resizeTimeout = setTimeout(() => {
+      lastSignature = null;
+      rebuildIfNeeded();
+    }, 300);
   });
 
-  setInterval(keepTrying, 2000);
+  // بررسی دوره‌ای برای تغییراتی که ممکن است observer از دست بدهد
+  setInterval(rebuildIfNeeded, 2000);
 
   document.addEventListener("alpine:initialized", () => {
-    setTimeout(keepTrying, 200);
-    setTimeout(keepTrying, 500);
+    setTimeout(rebuildIfNeeded, 200);
+    setTimeout(rebuildIfNeeded, 500);
   });
 
+  // scroll — برای تغییرات صفحه‌شکنی که پس از اسکرول رخ می‌دهد
   let scrollTimeout;
   window.addEventListener(
     "scroll",
     () => {
       clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(keepTrying, 100);
+      scrollTimeout = setTimeout(rebuildIfNeeded, 200);
     },
     { passive: true }
   );
