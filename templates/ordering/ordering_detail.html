@@ -4,6 +4,11 @@
 {% block title %}جزئیات اوردر{% endblock %}
 
 {% block content %}
+<!-- CRON-REVIEW-2: Viewer.js (image lightbox) — the inline script at the bottom of the page
+     relies on window.Viewer being available. base.html does not include it, so we load it here. -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/viewerjs@1.11.7/dist/viewer.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/viewerjs@1.11.7/dist/viewer.min.js"></script>
+
 <style>
 [x-cloak] { display: none !important; }
 
@@ -109,6 +114,96 @@ body.modal-open {
     background: linear-gradient(90deg, color-mix(in srgb, var(--theme-c, #0ea5e9) 80%, black), var(--theme-c, #0ea5e9));
     transition: transform 0.15s linear;
     box-shadow: 0 0 12px color-mix(in srgb, var(--theme-c, #0ea5e9) 60%, transparent);
+}
+
+/* ============================================================
+   🎨 CRON-REVIEW-2: Theme picker dots in header
+   ============================================================ */
+.mp-theme-picker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.35rem;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.04);
+    border: 1px solid var(--mp-border);
+}
+.mp-theme-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.18s var(--mp-ease);
+}
+.mp-theme-dot:hover { transform: scale(1.15); }
+.mp-theme-dot.is-active {
+    border-color: #fff;
+    box-shadow: 0 0 0 2px var(--theme-c, #0ea5e9), 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ============================================================
+   📦 CRON-REVIEW-2: Collapsible main sections (chevron toggle)
+   ============================================================ */
+.main-section { transition: opacity 0.25s var(--mp-ease); }
+.main-section.is-collapsed .main-section-body { display: none; }
+.main-section.is-collapsed { opacity: 0.72; }
+.mp-collapse-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.05);
+    border: 1px solid var(--mp-border);
+    color: var(--mp-ink-500);
+    cursor: pointer;
+    transition: all 0.18s var(--mp-ease);
+    flex-shrink: 0;
+}
+.mp-collapse-btn:hover {
+    background: color-mix(in srgb, var(--theme-c, #0ea5e9) 12%, white);
+    color: color-mix(in srgb, var(--theme-c, #0ea5e9) 80%, black);
+}
+.mp-collapse-btn .fa-chevron-down { transition: transform 0.25s var(--mp-ease); }
+.main-section.is-collapsed .mp-collapse-btn .fa-chevron-down { transform: rotate(-90deg); }
+
+/* ============================================================
+   🔗 CRON-REVIEW-2: Copy-link button (deep link to a section)
+   ============================================================ */
+.mp-link-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--mp-ink-400);
+    cursor: pointer;
+    transition: all 0.18s var(--mp-ease);
+    flex-shrink: 0;
+    font-size: 0.7rem;
+}
+.mp-link-btn:hover {
+    background: color-mix(in srgb, var(--theme-c, #0ea5e9) 10%, white);
+    color: color-mix(in srgb, var(--theme-c, #0ea5e9) 80%, black);
+    border-color: color-mix(in srgb, var(--theme-c, #0ea5e9) 22%, white);
+}
+.mp-link-btn.copied {
+    color: #10b981;
+    background: color-mix(in srgb, #10b981 12%, white);
+}
+
+/* ============================================================
+   ⌨️ CRON-REVIEW-2: Keyboard nav focus ring in sidebar tree
+   ============================================================ */
+.fp-tree-node.is-kb-focus {
+    outline: 2px solid var(--theme-c, #0ea5e9);
+    outline-offset: -2px;
+    background: color-mix(in srgb, var(--theme-c, #0ea5e9) 8%, white) !important;
 }
 
 /* ============================================================
@@ -1353,6 +1448,191 @@ body.modal-open {
 }
 .mp-rail-drawer-body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); }
 
+/* ---- Sidebar search input (NEW) ---- */
+.mp-search-wrap {
+    position: relative;
+    padding: 0.55rem 0.7rem 0.35rem;
+}
+.mp-search-input {
+    width: 100%;
+    padding: 0.5rem 0.8rem 0.5rem 2rem;
+    border: 1px solid var(--mp-border-strong);
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-family: var(--mp-font);
+    background: #fff;
+    color: var(--mp-ink-900);
+    outline: none;
+    transition: border-color 0.18s var(--mp-ease), box-shadow 0.18s var(--mp-ease);
+}
+.mp-search-input:focus {
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18);
+}
+.mp-search-input::placeholder { color: var(--mp-ink-300); }
+.mp-search-icon {
+    position: absolute;
+    right: 1.35rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--mp-ink-300);
+    font-size: 0.75rem;
+    pointer-events: none;
+}
+.mp-search-clear {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px; height: 22px;
+    border-radius: 999px;
+    border: none;
+    background: rgba(15, 23, 42, 0.06);
+    color: var(--mp-ink-500);
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+}
+.mp-search-clear.is-visible { display: flex; }
+
+/* ---- Bulk expand/collapse row (NEW) ---- */
+.mp-bulk-row {
+    display: flex;
+    gap: 0.4rem;
+    padding: 0.2rem 0.7rem 0.5rem;
+}
+.mp-bulk-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: 9px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--mp-ink-500);
+    background: rgba(15, 23, 42, 0.04);
+    border: 1px solid var(--mp-border);
+    cursor: pointer;
+    transition: all 0.18s var(--mp-ease);
+}
+.mp-bulk-btn:hover {
+    background: color-mix(in srgb, #0ea5e9 10%, white);
+    color: color-mix(in srgb, #0ea5e9 80%, black);
+    border-color: color-mix(in srgb, #0ea5e9 30%, white);
+}
+.mp-bulk-btn:active { transform: scale(0.97); }
+.mp-bulk-btn.is-disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ---- Empty search result (NEW) ---- */
+.mp-search-empty {
+    padding: 1.5rem 1rem;
+    text-align: center;
+    color: var(--mp-ink-300);
+    font-size: 0.8rem;
+}
+.mp-search-empty i {
+    font-size: 1.4rem;
+    display: block;
+    margin-bottom: 0.4rem;
+    opacity: 0.6;
+}
+
+/* ---- Current-section pill in header (NEW) ---- */
+.mp-current-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.32rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: color-mix(in srgb, #0ea5e9 10%, white);
+    color: color-mix(in srgb, #0ea5e9 82%, black);
+    border: 1px solid color-mix(in srgb, #0ea5e9 22%, white);
+    transition: all 0.25s var(--mp-ease);
+}
+.mp-current-pill .mp-current-dot {
+    width: 6px; height: 6px;
+    border-radius: 999px;
+    background: #0ea5e9;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18);
+    animation: mpPulse 1.8s ease-in-out infinite;
+}
+@keyframes mpPulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+/* ---- Copy-to-clipboard chip (NEW) ---- */
+.copy-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.55rem;
+    border-radius: 8px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--mp-ink-400);
+    background: rgba(15, 23, 42, 0.04);
+    border: 1px solid var(--mp-border);
+    cursor: pointer;
+    transition: all 0.18s var(--mp-ease);
+}
+.copy-chip:hover {
+    background: color-mix(in srgb, #0ea5e9 10%, white);
+    color: color-mix(in srgb, #0ea5e9 80%, black);
+    border-color: color-mix(in srgb, #0ea5e9 26%, white);
+}
+.copy-chip.copied {
+    background: color-mix(in srgb, #10b981 14%, white);
+    color: #047857;
+    border-color: color-mix(in srgb, #10b981 32%, white);
+}
+
+/* ---- Keyboard focus outlines (a11y) (NEW) ---- */
+button:focus-visible,
+a:focus-visible,
+.info-trigger:focus-visible,
+.mp-rail-btn:focus-visible,
+.fp-tree-node:focus-visible,
+.mp-search-input:focus-visible,
+.mp-bulk-btn:focus-visible,
+.copy-chip:focus-visible {
+    outline: 2px solid #0ea5e9;
+    outline-offset: 2px;
+    border-radius: 8px;
+}
+
+/* ---- Toast notification (NEW) ---- */
+.mp-toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    z-index: 99999;
+    background: #0b1220;
+    color: #fff;
+    padding: 0.6rem 1.1rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s var(--mp-ease);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.mp-toast.is-visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
 /* Section group inside drawer */
 .fp-tree-section {
     margin-bottom: 0.25rem;
@@ -1624,13 +1904,165 @@ body.modal-open {
 .ddf-node-border  { border-color:     color-mix(in srgb, var(--df-c) 26%, white); }
 .ddf-child-border { border-color:     color-mix(in srgb, var(--df-c) 34%, white); }
 
-/* CKEditor HTML content */
-.ck-content table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; }
-.ck-content table td, .ck-content table th { border: 1px solid #d1d5db; padding: 6px 10px; font-size: 0.875rem; }
-.ck-content blockquote { border-right: 4px solid #e5e7eb; padding: 0.5rem 1rem; color: #6b7280; margin: 0.5rem 0; }
-.ck-content h2 { font-size: 1.25rem; font-weight: 700; margin: 0.75rem 0 0.25rem; }
-.ck-content ol, .ck-content ul { padding-right: 1.25rem; margin: 0.5rem 0; }
-.ck-content li { margin-bottom: 0.25rem; font-size: 0.9rem; }
+/* ============================================================
+   📝 CKEditor HTML content — local styles (complete)
+   تمام بخش‌های notes توسط ادمین با CKEditor نوشته می‌شوند، پس هر
+   جایی که .ck-content استفاده شده این استایل‌ها اعمال می‌شوند:
+   - پاپ‌آپ مرکزی (popup-body.ck-content)
+   - مدال فیلد/یادداشت (fieldModal isHtml)
+   - محتوای inline هر node/child در پیش‌بالینی و تعیین تکلیف
+   - کارت یادداشت تکمیلی اوردر (order.notes)
+   ============================================================ */
+.ck-content {
+    color: #1e293b;
+    font-size: 0.9375rem;
+    line-height: 2;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+.ck-content > *:first-child { margin-top: 0; }
+.ck-content > *:last-child { margin-bottom: 0; }
+
+/* Headings */
+.ck-content h1, .ck-content h2, .ck-content h3,
+.ck-content h4, .ck-content h5, .ck-content h6 {
+    color: #0b1220;
+    font-weight: 800;
+    line-height: 1.35;
+    letter-spacing: -0.015em;
+    margin: 1.1rem 0 0.55rem;
+}
+.ck-content h1 { font-size: 1.5rem; }
+.ck-content h2 { font-size: 1.3rem; font-weight: 700; margin: 0.9rem 0 0.4rem; }
+.ck-content h3 { font-size: 1.15rem; }
+.ck-content h4 { font-size: 1.02rem; }
+.ck-content h5 { font-size: 0.95rem; }
+.ck-content h6 { font-size: 0.9rem; color: #475569; }
+
+/* Paragraphs & text */
+.ck-content p { margin: 0.5rem 0; }
+.ck-content a { color: #0ea5e9; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; transition: color 0.15s ease; }
+.ck-content a:hover { color: #0284c7; }
+.ck-content strong, .ck-content b { font-weight: 800; color: #0b1220; }
+.ck-content em, .ck-content i { font-style: italic; }
+.ck-content u { text-decoration: underline; text-underline-offset: 2px; }
+.ck-content s, .ck-content strike, .ck-content del { text-decoration: line-through; color: #64748b; }
+.ck-content code {
+    font-family: "JetBrains Mono", "SF Mono", "Courier New", monospace;
+    font-size: 0.85em;
+    background: rgba(15, 23, 42, 0.06);
+    color: #c2410c;
+    padding: 0.12em 0.4em;
+    border-radius: 6px;
+    direction: ltr;
+    unicode-bidi: embed;
+}
+.ck-content pre {
+    background: #0b1220;
+    color: #e2e8f0;
+    padding: 0.9rem 1.1rem;
+    border-radius: 12px;
+    overflow-x: auto;
+    font-family: "JetBrains Mono", "SF Mono", "Courier New", monospace;
+    font-size: 0.85rem;
+    line-height: 1.7;
+    margin: 0.7rem 0;
+    direction: ltr;
+}
+.ck-content pre code { background: transparent; color: inherit; padding: 0; border-radius: 0; }
+
+/* Lists */
+.ck-content ul, .ck-content ol { padding-right: 1.4rem; margin: 0.55rem 0; }
+.ck-content ul { list-style: disc; }
+.ck-content ol { list-style: decimal; }
+.ck-content ul ul { list-style: circle; }
+.ck-content ul ul ul { list-style: square; }
+.ck-content ol ol { list-style: lower-alpha; }
+.ck-content li { margin-bottom: 0.3rem; font-size: 0.92rem; line-height: 1.85; }
+.ck-content li > ul, .ck-content li > ol { margin: 0.2rem 0; }
+.ck-content li::marker { color: #0ea5e9; font-weight: 700; }
+
+/* Blockquote */
+.ck-content blockquote {
+    border-right: 4px solid #0ea5e9;
+    background: color-mix(in srgb, #0ea5e9 6%, white);
+    padding: 0.7rem 1.1rem;
+    color: #334155;
+    margin: 0.7rem 0;
+    border-radius: 0 10px 10px 0;
+    font-style: italic;
+}
+.ck-content blockquote p { margin: 0.25rem 0; }
+
+/* Horizontal rule */
+.ck-content hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(15,23,42,0.16), transparent);
+    margin: 1.1rem 0;
+}
+
+/* Tables */
+.ck-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.8rem 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 0.875rem;
+}
+.ck-content table td, .ck-content table th {
+    border: 1px solid #e2e8f0;
+    padding: 8px 12px;
+    vertical-align: top;
+}
+.ck-content table th {
+    background: color-mix(in srgb, #0ea5e9 10%, white);
+    color: #0b1220;
+    font-weight: 800;
+    text-align: right;
+}
+.ck-content table tr:nth-child(even) td { background: #f8fafc; }
+
+/* Images & media */
+.ck-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    margin: 0.6rem 0;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+}
+.ck-content figure { margin: 0.8rem 0; text-align: center; }
+.ck-content figcaption {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin-top: 0.4rem;
+    font-style: italic;
+}
+
+/* Alignment (CKEditor outputs text-align on blocks) */
+.ck-content [style*="text-align: left"] { text-align: left; }
+.ck-content [style*="text-align: right"] { text-align: right; }
+.ck-content [style*="text-align: center"] { text-align: center; }
+.ck-content [style*="text-align: justify"] { text-align: justify; }
+
+/* Definition lists */
+.ck-content dl { margin: 0.6rem 0; }
+.ck-content dt { font-weight: 800; color: #0b1220; margin-top: 0.35rem; }
+.ck-content dd { margin: 0 1.2rem 0.4rem 0; }
+
+/* Nested popups */
+.ck-content .ck-content { font-size: inherit; }
+
+/* Inline notes inside the order description card — clipped CKEditor block */
+.order-notes-inline { font-size: 0.9375rem; line-height: 2; color: #1e293b; }
+.order-notes-inline.line-clamp-\[10\] {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 10;
+    overflow: hidden;
+}
 
 /* Smooth native-app scroll */
 html { scroll-behavior: smooth; }
@@ -1660,11 +2092,411 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
         bottom: max(1.5rem, env(safe-area-inset-bottom)) !important;
     }
 }
+
+/* ============================================================
+   🌙 DJANGO-SYNC-3: Dark mode — CSS variables swapped via [data-theme="dark"] on <html>
+   ============================================================ */
+html[data-theme="dark"] {
+    --mp-bg: #0b1220;
+    --mp-surface: #1e293b;
+    --mp-surface-2: #172033;
+    --mp-border: rgba(255, 255, 255, 0.08);
+    --mp-border-strong: rgba(255, 255, 255, 0.14);
+    --mp-ink-900: #f1f5f9;
+    --mp-ink-700: #e2e8f0;
+    --mp-ink-500: #94a3b8;
+    --mp-ink-400: #64748b;
+    --mp-ink-300: #475569;
+    --mp-ink-200: #334155;
+}
+html[data-theme="dark"] .order-page-bg {
+    background:
+        radial-gradient(900px 480px at 100% -5%, color-mix(in srgb, var(--theme-c, #0ea5e9) 10%, transparent), transparent 60%),
+        radial-gradient(900px 480px at -5% 105%, color-mix(in srgb, var(--theme-c, #0ea5e9) 6%, transparent), transparent 60%),
+        linear-gradient(180deg, #0b1220 0%, #0f172a 100%);
+}
+html[data-theme="dark"] .order-header { background: rgba(15, 23, 42, 0.82); border-bottom-color: rgba(255, 255, 255, 0.08); }
+html[data-theme="dark"] .main-section { background: #1e293b; border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 2px 8px rgba(0,0,0,.2); }
+html[data-theme="dark"] .field-row { background: #1e293b; border-color: rgba(255, 255, 255, 0.08); }
+html[data-theme="dark"] .field-row-label-en,
+html[data-theme="dark"] .field-row-label-fa,
+html[data-theme="dark"] .field-row-value { color: var(--mp-ink-700); }
+html[data-theme="dark"] .section-block { background: #1e293b; border-color: rgba(255, 255, 255, 0.08); }
+html[data-theme="dark"] .section-block-body { background: rgba(255, 255, 255, 0.03); }
+html[data-theme="dark"] .tree-card { background: #1e293b; border-color: rgba(255, 255, 255, 0.1); }
+html[data-theme="dark"] .tree-node-btn { background: rgba(255, 255, 255, 0.03); }
+html[data-theme="dark"] .tree-node-btn:hover { background: rgba(255, 255, 255, 0.06); }
+html[data-theme="dark"] .tree-child-card { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.08); }
+html[data-theme="dark"] .item-card { background: #1e293b; border-color: rgba(255, 255, 255, 0.08); }
+html[data-theme="dark"] .item-card p { color: var(--mp-ink-700); }
+html[data-theme="dark"] .popup-center { background: #1e293b; border-color: rgba(255, 255, 255, 0.1); }
+html[data-theme="dark"] .popup-header { background: rgba(255, 255, 255, 0.04); }
+html[data-theme="dark"] .popup-body { color: var(--mp-ink-700); }
+html[data-theme="dark"] .ck-content { color: var(--mp-ink-700); }
+html[data-theme="dark"] .ck-content h1,
+html[data-theme="dark"] .ck-content h2,
+html[data-theme="dark"] .ck-content h3,
+html[data-theme="dark"] .ck-content h4,
+html[data-theme="dark"] .ck-content h5,
+html[data-theme="dark"] .ck-content h6 { color: var(--mp-ink-900); }
+html[data-theme="dark"] .ck-content strong,
+html[data-theme="dark"] .ck-content b { color: var(--mp-ink-900); }
+html[data-theme="dark"] .question-textarea { background: #0f172a; border-color: rgba(255, 255, 255, 0.1); color: var(--mp-ink-900); }
+html[data-theme="dark"] .mp-rail-drawer { background: rgba(15, 23, 42, 0.97); border-color: rgba(255, 255, 255, 0.1); }
+html[data-theme="dark"] .mp-rail-drawer-header { background: rgba(255, 255, 255, 0.04); }
+html[data-theme="dark"] .mp-search-input { background: #0f172a; border-color: rgba(255, 255, 255, 0.14); color: var(--mp-ink-900); }
+html[data-theme="dark"] .mp-theme-picker { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.1); }
+html[data-theme="dark"] .mp-bulk-btn { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); color: var(--mp-ink-500); }
+html[data-theme="dark"] .mp-collapse-btn { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
+html[data-theme="dark"] .mp-link-btn { color: var(--mp-ink-400); }
+html[data-theme="dark"] .copy-chip { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); color: var(--mp-ink-400); }
+html[data-theme="dark"] .back-to-top-btn { background: #1e293b; border-color: rgba(255, 255, 255, 0.1); color: var(--mp-ink-400); }
+html[data-theme="dark"] .media-card { background: #1e293b; border-color: rgba(255, 255, 255, 0.08); }
+html[data-theme="dark"] .media-card .caption-bar { background: #172033; border-color: rgba(255, 255, 255, 0.06); color: var(--mp-ink-500); }
+html[data-theme="dark"] .warning-box { background: linear-gradient(135deg, #450a0a, #7f1d1d); border-color: #991b1b; }
+html[data-theme="dark"] .warning-box h3 { color: #fca5a5; }
+html[data-theme="dark"] .warning-box p { color: #fecaca; }
+html[data-theme="dark"] .order-description-card {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--theme-c) 12%, #1e293b), color-mix(in srgb, var(--theme-c) 4%, #1e293b));
+    border-color: color-mix(in srgb, var(--theme-c) 30%, #1e293b);
+}
+
+/* Dark mode toggle button */
+.mp-dark-toggle {
+    width: 34px; height: 34px;
+    border-radius: 999px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(15, 23, 42, 0.05);
+    border: 1px solid var(--mp-border);
+    color: var(--mp-ink-500);
+    cursor: pointer;
+    transition: all 0.2s var(--mp-ease);
+    flex-shrink: 0;
+}
+.mp-dark-toggle:hover {
+    background: color-mix(in srgb, var(--theme-c, #0ea5e9) 12%, white);
+    color: color-mix(in srgb, var(--theme-c, #0ea5e9) 80%, black);
+}
+html[data-theme="dark"] .mp-dark-toggle { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.1); color: #fbbf24; }
+html[data-theme="dark"] .mp-dark-toggle:hover { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+
+/* ============================================================
+   📤 DJANGO-SYNC-3: Share modal
+   ============================================================ */
+.mp-share-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 0.7rem; margin-bottom: 1rem; }
+.mp-share-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+    padding: 0.85rem 0.5rem;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.04);
+    border: 1px solid var(--mp-border);
+    cursor: pointer;
+    transition: all 0.18s var(--mp-ease);
+    text-decoration: none;
+    color: var(--mp-ink-700);
+}
+.mp-share-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--mp-shadow-sm);
+    border-color: color-mix(in srgb, var(--theme-c, #0ea5e9) 30%, white);
+}
+.mp-share-btn .mp-share-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 1rem;
+}
+.mp-share-btn .mp-share-label { font-size: 0.72rem; font-weight: 700; }
+.mp-share-link-row {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--mp-border);
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.03);
+}
+.mp-share-link-row input {
+    flex: 1; border: none; background: transparent;
+    font-size: 0.8rem; color: var(--mp-ink-700);
+    outline: none; font-family: var(--mp-mono);
+}
+.mp-qr-wrap { display: flex; justify-content: center; padding: 0.75rem; background: white; border-radius: 10px; margin-top: 0.75rem; }
+.mp-qr-wrap img { width: 140px; height: 140px; }
+
+/* ============================================================
+   ⏱️ DJANGO-SYNC-3: Reading time badge
+   ============================================================ */
+.mp-reading-time {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.7rem; font-weight: 700;
+    background: rgba(15, 23, 42, 0.05);
+    color: var(--mp-ink-500);
+    border: 1px solid var(--mp-border);
+}
+html[data-theme="dark"] .mp-reading-time {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--mp-ink-400);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================================
+   ◀▶ DJANGO-SYNC-3: Prev/Next section floating nav
+   ============================================================ */
+.mp-prevnext {
+    position: fixed;
+    left: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.mp-prevnext-btn {
+    width: 42px; height: 42px;
+    border-radius: 999px;
+    background: white;
+    border: 1px solid var(--mp-border);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.1);
+    color: var(--mp-ink-500);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s var(--mp-ease);
+    position: relative;
+}
+.mp-prevnext-btn:hover {
+    background: color-mix(in srgb, var(--theme-c, #0ea5e9) 10%, white);
+    color: color-mix(in srgb, var(--theme-c, #0ea5e9) 80%, black);
+    transform: scale(1.06);
+}
+.mp-prevnext-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+.mp-prevnext-btn:disabled:hover { background: white; color: var(--mp-ink-500); }
+html[data-theme="dark"] .mp-prevnext-btn { background: #1e293b; border-color: rgba(255, 255, 255, 0.1); color: var(--mp-ink-400); }
+html[data-theme="dark"] .mp-prevnext-btn:disabled:hover { background: #1e293b; color: var(--mp-ink-400); }
+.mp-prevnext-label {
+    position: absolute;
+    left: 52px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(11, 18, 32, 0.94);
+    color: white;
+    font-size: 0.68rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 8px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s;
+}
+.mp-prevnext-btn:hover .mp-prevnext-label { opacity: 1; }
+@media (max-width: 768px) { .mp-prevnext { display: none; } }
+
+/* ============================================================
+   🕘 DJANGO-SYNC-3: Recently viewed sections (sidebar panel)
+   ============================================================ */
+.mp-history-panel { padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--mp-border); }
+.mp-history-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem; }
+.mp-history-title {
+    font-size: 0.68rem; font-weight: 800;
+    color: var(--mp-ink-400);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex; align-items: center; gap: 0.3rem;
+}
+.mp-history-clear {
+    font-size: 0.62rem;
+    color: var(--mp-ink-400);
+    background: none; border: none;
+    cursor: pointer;
+    padding: 0.15rem 0.35rem;
+    border-radius: 6px;
+}
+.mp-history-clear:hover { background: rgba(15, 23, 42, 0.06); color: var(--mp-ink-700); }
+.mp-history-list { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.mp-history-chip {
+    display: inline-flex; align-items: center; gap: 0.25rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.68rem; font-weight: 600;
+    background: color-mix(in srgb, var(--theme-c, #0ea5e9) 8%, white);
+    color: color-mix(in srgb, var(--theme-c, #0ea5e9) 80%, black);
+    border: 1px solid color-mix(in srgb, var(--theme-c, #0ea5e9) 18%, white);
+    cursor: pointer;
+    transition: all 0.15s;
+    max-width: 140px;
+}
+.mp-history-chip:hover { background: color-mix(in srgb, var(--theme-c, #0ea5e9) 14%, white); }
+.mp-history-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mp-history-empty { font-size: 0.68rem; color: var(--mp-ink-300); padding: 0.3rem 0; font-style: italic; }
+
+/* ============================================================
+   ⌨️ Keyboard shortcuts help overlay (?) — DJANGO-SYNC-4
+   ============================================================ */
+.mp-help-overlay { position: fixed; inset: 0; z-index: 9998; background: rgba(11,18,32,.55); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .25s var(--mp-ease); }
+.mp-help-overlay.is-visible { opacity: 1; pointer-events: auto; }
+.mp-help-card { background: #fff; border-radius: 18px; box-shadow: 0 24px 80px rgba(0,0,0,.3); width: min(520px, calc(100vw - 32px)); max-height: 80vh; overflow: hidden; display: flex; flex-direction: column; }
+html[data-theme="dark"] .mp-help-card { background: #1e293b; border: 1px solid rgba(255,255,255,.1); }
+.mp-help-head { display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 1.4rem; border-bottom: 1px solid var(--mp-border); background: color-mix(in srgb, var(--theme-c, #0ea5e9) 5%, #fff); }
+html[data-theme="dark"] .mp-help-head { background: rgba(255,255,255,.04); }
+.mp-help-title { font-weight: 800; font-size: 1rem; color: var(--mp-ink-900); display: flex; align-items: center; gap: .5rem; }
+.mp-help-body { padding: 1rem 1.4rem; overflow-y: auto; flex: 1; }
+.mp-help-body::-webkit-scrollbar { width: 6px; }
+.mp-help-body::-webkit-scrollbar-thumb { background: rgba(15,23,42,.16); border-radius: 999px; }
+.mp-shortcut-row { display: flex; align-items: center; justify-content: space-between; padding: .5rem 0; border-bottom: 1px dashed var(--mp-border); }
+.mp-shortcut-row:last-child { border-bottom: none; }
+.mp-shortcut-label { font-size: .82rem; color: var(--mp-ink-700); font-weight: 600; }
+.mp-shortcut-keys { display: flex; align-items: center; gap: .25rem; }
+.mp-key { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 28px; padding: 0 .4rem; border-radius: 6px; background: rgba(15,23,42,.06); border: 1px solid var(--mp-border); font-family: var(--mp-mono); font-size: .7rem; font-weight: 700; color: var(--mp-ink-700); }
+html[data-theme="dark"] .mp-key { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.12); color: var(--mp-ink-700); }
+
+/* ============================================================
+   ⭐ Bookmarks / favorites — DJANGO-SYNC-4
+   ============================================================ */
+.mp-star-btn { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: transparent; border: 1px solid transparent; color: var(--mp-ink-300); cursor: pointer; transition: all .18s var(--mp-ease); flex-shrink: 0; font-size: .75rem; }
+.mp-star-btn:hover { background: color-mix(in srgb, #f59e0b 12%, #fff); color: #f59e0b; border-color: color-mix(in srgb, #f59e0b 22%, #fff); }
+.mp-star-btn.is-bookmarked { color: #f59e0b; background: color-mix(in srgb, #f59e0b 10%, #fff); border-color: color-mix(in srgb, #f59e0b 22%, #fff); }
+.mp-bookmarks-panel { padding: .5rem .7rem; border-bottom: 1px solid var(--mp-border); }
+.mp-bookmarks-list { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .4rem; }
+.mp-bookmark-chip { display: inline-flex; align-items: center; gap: .25rem; padding: .2rem .5rem; border-radius: 999px; font-size: .68rem; font-weight: 600; background: color-mix(in srgb, #f59e0b 10%, #fff); color: #b45309; border: 1px solid color-mix(in srgb, #f59e0b 22%, #fff); cursor: pointer; transition: all .15s; max-width: 140px; }
+.mp-bookmark-chip:hover { background: color-mix(in srgb, #f59e0b 16%, #fff); }
+.mp-bookmark-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mp-bookmark-chip .mp-bm-remove { margin-left: .2rem; opacity: .6; font-size: .6rem; }
+.mp-bookmark-chip .mp-bm-remove:hover { opacity: 1; }
+
+/* ============================================================
+   📊 TOC mini-map (visual section overview) — DJANGO-SYNC-4
+   ============================================================ */
+.mp-minimap { position: fixed; right: 1.5rem; bottom: 5rem; z-index: 38; width: 36px; display: flex; flex-direction: column; gap: 3px; opacity: .55; transition: opacity .2s var(--mp-ease); }
+.mp-minimap:hover { opacity: 1; }
+.mp-minimap-seg { width: 100%; border-radius: 3px; background: var(--mp-ink-200); cursor: pointer; transition: all .15s var(--mp-ease); min-height: 6px; position: relative; }
+.mp-minimap-seg:hover { background: var(--mp-ink-300); transform: scaleX(1.15); }
+.mp-minimap-seg.is-active { background: var(--theme-c, #0ea5e9); box-shadow: 0 0 8px color-mix(in srgb, var(--theme-c, #0ea5e9) 50%, transparent); }
+.mp-minimap-seg.is-bookmarked::after { content: ""; position: absolute; right: -4px; top: 50%; transform: translateY(-50%); width: 4px; height: 4px; border-radius: 999px; background: #f59e0b; }
+@media (max-width: 1024px) { .mp-minimap { display: none; } }
+
+/* ============================================================
+   🎓 Onboarding tour — DJANGO-SYNC-4
+   ============================================================ */
+.mp-tour-mask { position: fixed; inset: 0; z-index: 9997; pointer-events: none; }
+.mp-tour-mask::before { content: ""; position: absolute; inset: 0; box-shadow: 0 0 0 9999px rgba(11,18,32,.6); border-radius: 12px; transition: all .3s var(--mp-ease); }
+.mp-tour-spotlight { position: absolute; border: 3px solid var(--theme-c, #0ea5e9); border-radius: 12px; box-shadow: 0 0 0 4px color-mix(in srgb, var(--theme-c, #0ea5e9) 22%, transparent), 0 0 20px color-mix(in srgb, var(--theme-c, #0ea5e9) 40%, transparent); transition: all .3s var(--mp-ease); pointer-events: none; }
+.mp-tour-card { position: fixed; z-index: 9999; background: #fff; border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.25); padding: 1.1rem 1.25rem; width: min(320px, calc(100vw - 32px)); transition: all .3s var(--mp-ease); }
+html[data-theme="dark"] .mp-tour-card { background: #1e293b; border: 1px solid rgba(255,255,255,.1); }
+.mp-tour-step { font-size: .68rem; font-weight: 700; color: color-mix(in srgb, var(--theme-c, #0ea5e9) 80%, #000); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .3rem; }
+.mp-tour-title { font-weight: 800; font-size: .95rem; color: var(--mp-ink-900); margin-bottom: .4rem; }
+.mp-tour-desc { font-size: .8rem; color: var(--mp-ink-500); line-height: 1.6; margin-bottom: .9rem; }
+.mp-tour-actions { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.mp-tour-progress { font-size: .68rem; color: var(--mp-ink-400); }
+.mp-tour-btns { display: flex; gap: .4rem; }
+.mp-tour-btn { padding: .4rem .8rem; border-radius: 8px; font-size: .78rem; font-weight: 700; cursor: pointer; border: none; transition: all .15s; }
+.mp-tour-btn-primary { background: var(--theme-c, #0ea5e9); color: #fff; }
+.mp-tour-btn-primary:hover { filter: brightness(1.1); }
+.mp-tour-btn-skip { background: transparent; color: var(--mp-ink-400); }
+.mp-tour-btn-skip:hover { color: var(--mp-ink-700); }
+
+/* ============================================================
+   🔤 Font size control (A-/A+ accessibility) — DJANGO-SYNC-4
+   ============================================================ */
+.mp-font-control { display: inline-flex; align-items: center; gap: .2rem; padding: .15rem .35rem; border-radius: 999px; background: rgba(15,23,42,.04); border: 1px solid var(--mp-border); }
+html[data-theme="dark"] .mp-font-control { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.1); }
+.mp-font-btn { width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--mp-ink-500); cursor: pointer; transition: all .15s; font-size: .75rem; font-weight: 700; }
+.mp-font-btn:hover { background: color-mix(in srgb, var(--theme-c, #0ea5e9) 10%, #fff); color: color-mix(in srgb, var(--theme-c, #0ea5e9) 80%, #000); }
+.mp-font-btn:disabled { opacity: .35; cursor: not-allowed; }
+.mp-font-label { font-size: .68rem; color: var(--mp-ink-400); font-weight: 700; min-width: 28px; text-align: center; }
+html[data-font-size="sm"] { font-size: 14px; }
+html[data-font-size="md"] { font-size: 16px; }
+html[data-font-size="lg"] { font-size: 18px; }
+html[data-font-size="xl"] { font-size: 20px; }
+
+
+/* ============================================================
+   🖨️ DJANGO-SYNC-5: Print-to-PDF (premium) — bypasses @media print protection
+   The original @media print block at line 18 hides ALL printing.
+   This second @media print block (later in cascade) overrides it
+   for body.mp-print-mode (added by printToPdf() at runtime).
+   ============================================================ */
+body.mp-print-mode #order-protected-watermark { display: none !important; }
+body.mp-print-mode .order-header,
+body.mp-print-mode .mp-rail,
+body.mp-print-mode .mp-prevnext,
+body.mp-print-mode .mp-minimap,
+body.mp-print-mode .floating-q-btn,
+body.mp-print-mode .back-to-top-btn,
+body.mp-print-mode .mp-mobile-fab,
+body.mp-print-mode .mp-mobile-backdrop { display: none !important; }
+body.mp-print-mode .order-page-bg { background: #fff !important; }
+body.mp-print-mode .main-section { box-shadow: none !important; border: 1px solid #ccc !important; break-inside: avoid; page-break-inside: avoid; }
+body.mp-print-mode .section-block-body,
+body.mp-print-mode .tree-card,
+body.mp-print-mode .field-row { background: #fff !important; }
+body.mp-print-mode * { color: #000 !important; }
+body.mp-print-mode .ck-content { color: #000 !important; }
+@media print {
+  body:not(.mp-print-mode) { display: none !important; }
+  body:not(.mp-print-mode)::before { content: "چاپ این محتوا مجاز نیست"; display: block; text-align: center; font-size: 24px; padding: 50px; }
+  body.mp-print-mode { display: block !important; }
+}
+.mp-print-btn { width: 34px; height: 34px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: rgba(15,23,42,.05); border: 1px solid var(--mp-border); color: var(--mp-ink-500); cursor: pointer; transition: all .2s var(--mp-ease); flex-shrink: 0; }
+.mp-print-btn:hover { background: color-mix(in srgb, var(--theme-c,#0ea5e9) 12%, #fff); color: color-mix(in srgb, var(--theme-c,#0ea5e9) 80%, #000); }
+.mp-print-btn:disabled { opacity: .35; cursor: not-allowed; }
+html[data-theme="dark"] .mp-print-btn { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.1); }
+
+/* ============================================================
+   📊 DJANGO-SYNC-5: Content stats modal
+   ============================================================ */
+.mp-stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .75rem; margin-bottom: 1rem; }
+.mp-stat-card { background: rgba(15,23,42,.04); border: 1px solid var(--mp-border); border-radius: 12px; padding: .85rem; text-align: center; }
+html[data-theme="dark"] .mp-stat-card { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.1); }
+.mp-stat-value { font-size: 1.6rem; font-weight: 900; color: var(--mp-ink-900); line-height: 1; }
+html[data-theme="dark"] .mp-stat-value { color: var(--mp-ink-900); }
+.mp-stat-label { font-size: .68rem; color: var(--mp-ink-400); font-weight: 600; margin-top: .3rem; }
+.mp-stat-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin: 0 auto .4rem; color: #fff; font-size: .8rem; }
+.mp-stats-section { margin-top: .75rem; }
+.mp-stats-section-title { font-size: .78rem; font-weight: 800; color: var(--mp-ink-700); margin-bottom: .5rem; padding-bottom: .3rem; border-bottom: 1px solid var(--mp-border); }
+.mp-stats-row { display: flex; align-items: center; justify-content: space-between; padding: .35rem 0; font-size: .78rem; }
+.mp-stats-row-label { color: var(--mp-ink-500); display: flex; align-items: center; gap: .4rem; }
+.mp-stats-row-value { font-weight: 700; color: var(--mp-ink-900); font-family: var(--mp-mono); }
+.mp-stats-bar { height: 4px; border-radius: 999px; background: rgba(15,23,42,.06); overflow: hidden; margin-top: .2rem; }
+html[data-theme="dark"] .mp-stats-bar { background: rgba(255,255,255,.08); }
+.mp-stats-bar-fill { height: 100%; border-radius: 999px; background: var(--theme-c,#0ea5e9); transition: width .5s var(--mp-ease); }
+
+/* ============================================================
+   🎯 DJANGO-SYNC-5: Focus mode — dims other sections, highlights the active one
+   ============================================================ */
+body.mp-focus-mode .main-section { opacity: .25; filter: grayscale(.6); transition: opacity .3s var(--mp-ease), filter .3s var(--mp-ease); }
+body.mp-focus-mode .main-section.mp-focused { opacity: 1; filter: none; box-shadow: 0 0 0 3px var(--theme-c,#0ea5e9), 0 12px 40px rgba(0,0,0,.15); }
+.mp-focus-btn { width: 34px; height: 34px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: rgba(15,23,42,.05); border: 1px solid var(--mp-border); color: var(--mp-ink-500); cursor: pointer; transition: all .2s var(--mp-ease); flex-shrink: 0; }
+.mp-focus-btn:hover { background: color-mix(in srgb, var(--theme-c,#0ea5e9) 12%, #fff); color: color-mix(in srgb, var(--theme-c,#0ea5e9) 80%, #000); }
+.mp-focus-btn.is-active { background: var(--theme-c,#0ea5e9); color: #fff; border-color: transparent; }
+html[data-theme="dark"] .mp-focus-btn { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.1); }
+.mp-focus-exit { position: fixed; top: 1rem; left: 50%; transform: translateX(-50%); z-index: 45; background: #0b1220; color: #fff; padding: .5rem 1.2rem; border-radius: 999px; font-size: .78rem; font-weight: 700; box-shadow: 0 8px 24px rgba(0,0,0,.25); display: none; align-items: center; gap: .5rem; cursor: pointer; border: none; }
+body.mp-focus-mode .mp-focus-exit { display: flex; }
+
+/* ============================================================
+   💀 DJANGO-SYNC-5: Skeleton loading states (shimmer placeholders)
+   ============================================================ */
+.mp-skeleton { background: linear-gradient(90deg, rgba(15,23,42,.06) 25%, rgba(15,23,42,.12) 50%, rgba(15,23,42,.06) 75%); background-size: 200% 100%; animation: mpShimmer 1.4s linear infinite; border-radius: 8px; }
+html[data-theme="dark"] .mp-skeleton { background: linear-gradient(90deg, rgba(255,255,255,.05) 25%, rgba(255,255,255,.1) 50%, rgba(255,255,255,.05) 75%); background-size: 200% 100%; }
+@keyframes mpShimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
+.mp-skel-header { height: 24px; width: 60%; margin-bottom: 1rem; }
+.mp-skel-card { height: 80px; margin-bottom: .75rem; }
+.mp-skel-row { height: 20px; margin-bottom: .5rem; }
+.mp-skel-row:last-child { width: 70%; }
+.mp-skeleton-wrap { padding: 1rem; }
+
+/* ============================================================
+   📥 DJANGO-SYNC-5: Export to Markdown — download button
+   ============================================================ */
+.mp-export-btn { width: 34px; height: 34px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: rgba(15,23,42,.05); border: 1px solid var(--mp-border); color: var(--mp-ink-500); cursor: pointer; transition: all .2s var(--mp-ease); flex-shrink: 0; }
+.mp-export-btn:hover { background: color-mix(in srgb, var(--theme-c,#0ea5e9) 12%, #fff); color: color-mix(in srgb, var(--theme-c,#0ea5e9) 80%, #000); }
+html[data-theme="dark"] .mp-export-btn { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.1); }
+
 </style>
 
 <div x-data="orderDetailApp()" x-init="init()"
      class="order-page-bg min-h-screen"
-     :style="theme().style"
+     :style="themeStyle()"
      @scroll.window.throttle.150ms="mpProgress = Math.min(1, $event.target.scrollingElement.scrollTop / ($event.target.scrollingElement.scrollHeight - window.innerHeight))">
 
     <!-- Reading progress (top) -->
@@ -1714,9 +2546,9 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                                         <span>یادداشت تکمیلی اوردر</span>
                                     </div>
                                     <div class="order-description-body">
-                                        <p class="whitespace-pre-wrap"
+                                        <div class="ck-content order-notes-inline"
                                            :class="isLong(order.notes, 600) ? 'line-clamp-[10]' : ''"
-                                           x-text="order.notes"></p>
+                                           x-html="order.notes"></div>
                                         <template x-if="isLong(order.notes, 600)">
                                             <button @click="showNotesModal()"
                                                     class="mt-3 text-xs font-bold inline-flex items-center gap-1 px-3 py-1.5 rounded-lg transition-all"
@@ -1731,37 +2563,8 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                         </div>
                     </div>
                 </div>
-
-                <div class="flex flex-wrap gap-2.5">
-                    <button @click="shareLink()" class="btn-action btn-outline">
-                        <i class="fas fa-share-alt text-xs"></i>
-                        <span>اشتراک‌گذاری</span>
-                    </button>
-
-                    <!-- <button @click="toggleSave()" class="btn-action btn-save"
-                            :class="isSaved ? 'saved' : ''">
-                        <i class="fas text-xs" :class="isSaved ? 'fa-bookmark' : 'fa-bookmark'"></i>
-                        <span x-text="isSaved ? 'ذخیره شده' : 'ذخیره اوردر'"></span>
-                    </button> -->
-
-                    <button @click="scrollToQuestion()" class="btn-action btn-primary-cta" :class="theme().gradient">
-                        <i class="fas fa-question-circle text-xs"></i>
-                        <span>پرسش سوال</span>
-                    </button>
-                </div>
             </div>
         </header>
-
-        <!-- Floating Question Button (Premium) -->
-        <div class="fixed bottom-6 left-6 z-40" x-show="isPremiumUser">
-            <button @click="scrollToQuestion()"
-                class="floating-q-btn group text-white font-bold px-5 py-3 rounded-full flex items-center gap-2"
-                :class="theme().gradient">
-                <i class="fas fa-comment-medical"></i>
-                <span class="hidden sm:inline text-sm">پرسش سوال</span>
-                <i class="fas fa-arrow-down text-xs"></i>
-            </button>
-        </div>
 
         <!-- Back-to-Top Button -->
         <div class="fixed bottom-6 right-6 z-40" x-show="!loading"
@@ -1776,6 +2579,24 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                 title="بازگشت به بالا">
                 <i class="fas fa-arrow-up text-sm"></i>
             </button>
+        </div>
+
+        <!-- DJANGO-SYNC-5: Focus mode exit bar -->
+        <button class="mp-focus-exit" @click="toggleFocusMode()">
+            <i class="fas fa-times"></i>
+            <span>خروج از حالت تمرکز</span>
+            <kbd style="background:rgba(255,255,255,.15);padding:.1rem .35rem;border-radius:4px;font-size:.65rem;font-family:monospace">Esc</kbd>
+        </button>
+
+        <!-- DJANGO-SYNC-4: TOC mini-map (visual section overview) -->
+        <div class="mp-minimap" x-show="!loading" x-cloak>
+            <template x-for="seg in minimapSegments" :key="seg.anchor">
+                <div class="mp-minimap-seg"
+                     :class="[(activeAnchor && (activeAnchor.startsWith(seg.prefix) || activeAnchor===seg.anchor))?'is-active':'', isBookmarked(seg.anchor)?'is-bookmarked':''].join(' ')"
+                     :style="`height:${Math.max(6, Math.min(40, seg.height/20))}px`"
+                     :title="seg.label"
+                     @click="scrollToAnchor(seg.anchor)"></div>
+            </template>
         </div>
 
         <!-- ===== NEW SIDEBAR (Desktop rail + Mobile bottom sheet) ===== -->
@@ -1809,7 +2630,73 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                         <i class="fas fa-times text-xs"></i>
                     </button>
                 </div>
+
+                <!-- DJANGO-SYNC-4: Bookmarks / favorites -->
+                <div class="mp-bookmarks-panel" x-show="bookmarks.length>0" x-collapse>
+                    <div class="mp-history-head">
+                        <span class="mp-history-title"><i class="fas fa-star text-[10px]" style="color:#f59e0b"></i>نشان‌گذاری‌ها</span>
+                        <button class="mp-history-clear" @click="clearBookmarks()" title="پاک کردن همه"><i class="fas fa-times text-[9px]"></i></button>
+                    </div>
+                    <div class="mp-bookmarks-list">
+                        <template x-for="bm in bookmarks" :key="bm.anchor">
+                            <span class="mp-bookmark-chip" @click="scrollToAnchor(bm.anchor)">
+                                <i class="fas fa-star text-[8px]"></i>
+                                <span x-text="bm.label"></span>
+                                <button class="mp-bm-remove" @click.stop="toggleBookmark(bm.anchor, bm.label)" title="حذف"><i class="fas fa-times"></i></button>
+                            </span>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- DJANGO-SYNC-3: Recently viewed sections -->
+                <div class="mp-history-panel" x-show="viewedHistory.length>0" x-collapse>
+                    <div class="mp-history-head">
+                        <span class="mp-history-title"><i class="fas fa-history text-[10px]"></i>بازدیدهای اخیر</span>
+                        <button class="mp-history-clear" @click="clearHistory()" title="پاک کردن"><i class="fas fa-times text-[9px]"></i></button>
+                    </div>
+                    <div class="mp-history-list">
+                        <template x-for="item in viewedHistory" :key="item.anchor">
+                            <span class="mp-history-chip" @click="scrollToAnchor(item.anchor)">
+                                <i class="fas fa-circle-dot text-[8px]"></i>
+                                <span x-text="item.label"></span>
+                            </span>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- NEW: Sidebar search input -->
+                <div class="mp-search-wrap">
+                    <i class="fas fa-search mp-search-icon"></i>
+                    <input type="text" class="mp-search-input" placeholder="جستجو در فهرست..." x-model="sidebarFilter" @keydown.escape.stop="sidebarFilter=''" />
+                    <button class="mp-search-clear" :class="sidebarFilter?'is-visible':''" @click="sidebarFilter=''" title="پاک کردن"><i class="fas fa-times"></i></button>
+                </div>
+
                 <div class="mp-rail-drawer-body" dir="rtl">
+                    <!-- NEW: Search empty state -->
+                    <template x-if="sidebarFilter && filteredTreeEmpty">
+                        <div class="mp-search-empty">
+                            <i class="fas fa-magnifying-glass"></i>
+                            <p>نتیجه‌ای برای «<strong x-text="sidebarFilter"></strong>» یافت نشد.</p>
+                        </div>
+                    </template>
+
+                    <!-- NEW: Search mode (flat filtered hits across all sections) -->
+                    <template x-if="sidebarFilter && !filteredTreeEmpty">
+                        <div class="fp-tree-children">
+                            <template x-for="hit in filteredHits" :key="hit.anchor">
+                                <div class="fp-tree-node" :class="activeAnchor===hit.anchor?'is-active':''" @click="scrollToAnchor(hit.anchor)">
+                                    <i class="fas text-[10px]" :class="hit.icon" :style="`color:${hit.color}`"></i>
+                                    <span class="fp-tree-node-dot"></span>
+                                    <span class="fp-tree-node-text" x-text="hit.title"></span>
+                                    <span class="text-[10px] text-gray-400 mr-auto" x-text="hit.section"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
+                    <!-- NORMAL MODE (no filter) -->
+                    <template x-if="!sidebarFilter">
+                        <div>
                     <!-- ۱. پیش‌بالینی -->
                     <template x-if="sidebarTree.preclinical && sidebarTree.preclinical.length > 0">
                         <div class="fp-tree-section" :style="`--sec-c: ${theme().color};`">
@@ -2041,6 +2928,8 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                             </template>
                         </div>
                     </template>
+                        </div>
+                    </template>
                 </div>
             </div>
 
@@ -2136,9 +3025,10 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
 
             <!-- ===== ① پیش‌بالینی (Dynamic Field Groups) ===== -->
             <template x-if="dynamicFields && dynamicFields.dynamic_field_groups && dynamicFields.dynamic_field_groups.length > 0">
-                <section class="main-section p-4 sm:p-5" id="anchor-preclinical">
+                <section class="main-section p-4 sm:p-5" id="anchor-preclinical"
+                         :class="collapsedSections.preclinical ? 'is-collapsed' : ''">
 
-                    <div class="mb-4">
+                    <div class="mb-4 flex items-center justify-between gap-3">
                         <div class="section-title">
                             <div class="section-title-icon" :class="theme().iconBg">
                                 <i class="fas fa-stethoscope" :class="theme().iconText"></i>
@@ -2148,9 +3038,21 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                                 <p class="section-subtitle">اطلاعات و ارزیابی‌های پیش از شروع اوردر</p>
                             </div>
                         </div>
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            <button type="button" class="mp-star-btn" :class="isBookmarked('anchor-preclinical')?'is-bookmarked':''" @click="toggleBookmark('anchor-preclinical','پیش‌بالینی')" title="نشان‌گذاری">
+                                <i class="fas fa-star"></i>
+                            </button>
+                            <button type="button" class="mp-link-btn" @click="copySectionLink('anchor-preclinical')"
+                                    :class="copiedKey === 'link-anchor-preclinical' ? 'copied' : ''" title="کپی لینک این بخش">
+                                <i class="fas" :class="copiedKey === 'link-anchor-preclinical' ? 'fa-check' : 'fa-link'"></i>
+                            </button>
+                            <button type="button" class="mp-collapse-btn" @click="toggleSectionCollapse('preclinical')" title="جمع/باز کردن">
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="space-y-3">
+                    <div class="space-y-3 main-section-body" x-show="!collapsedSections.preclinical" x-collapse>
                         <template x-for="group in dynamicFields.dynamic_field_groups" :key="group.id">
                             <div class="section-block"
                                  :id="'df-group-' + group.id"
@@ -2281,8 +3183,9 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
             </template>
 
             <!-- ===== ② INFO CARDS (اطلاعات پایه) ===== -->
-            <section class="main-section p-4 sm:p-5" id="anchor-order-info">
-                <div class="mb-4">
+            <section class="main-section p-4 sm:p-5" id="anchor-order-info"
+                     :class="collapsedSections.orderinfo ? 'is-collapsed' : ''">
+                <div class="mb-4 flex items-center justify-between gap-3">
                     <div class="section-title">
                         <div class="section-title-icon" :class="theme().iconBg">
                             <i class="fas fa-clipboard-list" :class="theme().iconText"></i>
@@ -2292,9 +3195,22 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                             <p class="section-subtitle">پیش از اجرای اوردر از انطباق تشخیص و اقدامات با شرایط بالینی بیمار اطمینان حاصل کنید.</p>
                         </div>
                     </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <button type="button" class="mp-star-btn" :class="isBookmarked('anchor-order-info')?'is-bookmarked':''" @click="toggleBookmark('anchor-order-info','اطلاعات پایه')" title="نشان‌گذاری">
+                            <i class="fas fa-star"></i>
+                        </button>
+                        <button type="button" class="mp-link-btn" @click="copySectionLink('anchor-order-info')"
+                                :class="copiedKey === 'link-anchor-order-info' ? 'copied' : ''" title="کپی لینک این بخش">
+                            <i class="fas" :class="copiedKey === 'link-anchor-order-info' ? 'fa-check' : 'fa-link'"></i>
+                        </button>
+                        <button type="button" class="mp-collapse-btn" @click="toggleSectionCollapse('orderinfo')" title="جمع/باز کردن">
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                    </div>
                 </div>
 
-                <div class="fields-group" :class="theme().softBorder" dir="ltr">
+                <div class="fields-group main-section-body" :class="theme().softBorder" dir="ltr"
+                     x-show="!collapsedSections.orderinfo" x-collapse>
                     <template x-for="field in infoFields()" :key="field.key">
                         <div class="field-row"
                             :id="'field-' + field.key"
@@ -2330,9 +3246,22 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                                 </template>
                             </div>
 
-                            <div dir="ltr" class="field-row-value pl-12"
-                                 :class="[field.key === 'imp' ? 'is-primary' : '', isLong(field.value) ? 'line-clamp-3' : '']"
-                                 x-text="field.value || '—'"></div>
+                            <div dir="ltr" class="field-row-value pl-12 flex items-start gap-2"
+                                 :class="field.key === 'imp' ? 'is-primary' : ''">
+                                <span class="flex-1 min-w-0"
+                                      :class="isLong(field.value) ? 'line-clamp-3' : ''"
+                                      x-text="field.value || '—'"></span>
+                                <template x-if="field.value">
+                                    <button type="button"
+                                            class="copy-chip flex-shrink-0 mt-0.5"
+                                            :class="copiedKey === 'field-' + field.key ? 'copied' : ''"
+                                            @click="copyText(field.value, 'field-' + field.key)"
+                                            :title="copiedKey === 'field-' + field.key ? 'کپی شد' : 'کپی مقدار'">
+                                        <i class="fas" :class="copiedKey === 'field-' + field.key ? 'fa-check' : 'fa-copy'"></i>
+                                        <span x-text="copiedKey === 'field-' + field.key ? 'کپی شد' : 'کپی'"></span>
+                                    </button>
+                                </template>
+                            </div>
 
                             <template x-if="isLong(field.value)">
                                 <button @click="showFieldModal(field)"
@@ -2349,8 +3278,9 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
 
             <!-- ===== ③ SECTIONS & ITEMS (بخش‌ها و دستورات) ===== -->
             <template x-if="sections && sections.sections && sections.sections.length > 0">
-                <section class="main-section p-4 sm:p-5" id="anchor-order-sections">
-                    <div class="mb-4">
+                <section class="main-section p-4 sm:p-5" id="anchor-order-sections"
+                         :class="collapsedSections.sections ? 'is-collapsed' : ''">
+                    <div class="mb-4 flex items-center justify-between gap-3">
                         <div class="section-title">
                             <div class="section-title-icon" :class="theme().iconBg">
                                 <i class="fas fa-list-check" :class="theme().iconText"></i>
@@ -2360,9 +3290,22 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                                 <p class="section-subtitle">آیتم‌های هر بخش را مرور و مطابق شرایط بیمار اعمال کنید.</p>
                             </div>
                         </div>
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            <button type="button" class="mp-star-btn" :class="isBookmarked('anchor-order-sections')?'is-bookmarked':''" @click="toggleBookmark('anchor-order-sections','بخش‌ها و دستورات')" title="نشان‌گذاری">
+                                <i class="fas fa-star"></i>
+                            </button>
+                            <button type="button" class="mp-link-btn" @click="copySectionLink('anchor-order-sections')"
+                                    :class="copiedKey === 'link-anchor-order-sections' ? 'copied' : ''" title="کپی لینک این بخش">
+                                <i class="fas" :class="copiedKey === 'link-anchor-order-sections' ? 'fa-check' : 'fa-link'"></i>
+                            </button>
+                            <button type="button" class="mp-collapse-btn" @click="toggleSectionCollapse('sections')" title="جمع/باز کردن">
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="space-y-3" dir="ltr">
+                    <div class="space-y-3 main-section-body" dir="ltr"
+                         x-show="!collapsedSections.sections" x-collapse>
                         <template x-for="section in sections.sections" :key="section.id">
                             <div class="section-block"
                                  :id="'section-' + section.id"
@@ -2610,9 +3553,10 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
             <!-- ===== ④-bis MEDIA SECTION (Images & Videos) ===== -->
             <template x-if="hasMedia()">
                 <section class="main-section p-4 sm:p-5" id="anchor-media"
-                         :style="theme().style">
+                         :style="theme().style"
+                         :class="collapsedSections.media ? 'is-collapsed' : ''">
 
-                    <div class="mb-4">
+                    <div class="mb-4 flex items-center justify-between gap-3">
                         <div class="section-title">
                             <div class="section-title-icon" :class="theme().iconBg">
                                 <i class="fas fa-photo-film" :class="theme().iconText"></i>
@@ -2627,7 +3571,22 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                                       x-text="(sortedImages().length + sortedVideos().length) + ' مورد'"></span>
                             </div>
                         </div>
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            <button type="button" class="mp-star-btn" :class="isBookmarked('anchor-media')?'is-bookmarked':''" @click="toggleBookmark('anchor-media','رسانه‌ها')" title="نشان‌گذاری">
+                                <i class="fas fa-star"></i>
+                            </button>
+                            <button type="button" class="mp-link-btn" @click="copySectionLink('anchor-media')"
+                                    :class="copiedKey === 'link-anchor-media' ? 'copied' : ''" title="کپی لینک این بخش">
+                                <i class="fas" :class="copiedKey === 'link-anchor-media' ? 'fa-check' : 'fa-link'"></i>
+                            </button>
+                            <button type="button" class="mp-collapse-btn" @click="toggleSectionCollapse('media')" title="جمع/باز کردن">
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                        </div>
                     </div>
+
+                    <!-- CRON-REVIEW-2: wrap tabs + image panel + video panel in a collapsible .main-section-body -->
+                    <div class="main-section-body" x-show="!collapsedSections.media" x-collapse>
 
                     <!-- تب‌های سوییچ بین تصاویر و ویدیوها -->
                     <div class="media-tabs" :style="theme().style">
@@ -2749,6 +3708,8 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                             </div>
                         </template>
                     </div>
+
+                    </div><!-- /main-section-body (media) -->
 
                 </section>
             </template>
@@ -2918,7 +3879,83 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
             </div>
         </template>
 
-    </div>
+        <!-- DJANGO-SYNC-3: Share Modal -->
+        <template x-if="shareModalOpen">
+            <div>
+                <div class="popup-overlay"
+                     @click="closeShareModal()"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0"
+                     x-transition:enter-end="opacity-100"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100"
+                     x-transition:leave-end="opacity-0"></div>
+
+                <div class="popup-center"
+                     :style="theme().style"
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 scale-90 translate-y-4"
+                     x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-200"
+                     x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                     x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                     dir="rtl"
+                     @click.self="closeShareModal()">
+                    <div class="popup-header">
+                        <span class="popup-header-title">
+                            <span class="popup-header-icon">
+                                <i class="fas fa-share-alt text-sm"></i>
+                            </span>
+                            <span>اشتراک‌گذاری اوردر</span>
+                        </span>
+                        <button @click="closeShareModal()" class="popup-close" title="بستن">
+                            <i class="fas fa-times text-sm"></i>
+                        </button>
+                    </div>
+                    <div class="popup-body">
+                        <p class="text-sm text-gray-600 mb-3">این اوردر را از طریق شبکه‌های اجتماعی به همکاران خود ارسال کنید:</p>
+                        <div class="mp-share-grid">
+                            <a :href="'https://t.me/share/url?url='+encodeURIComponent(shareUrl)+'&text='+encodeURIComponent(shareTitle)" target="_blank" rel="noopener noreferrer" class="mp-share-btn">
+                                <span class="mp-share-icon" style="background:#0088cc"><i class="fab fa-telegram"></i></span>
+                                <span class="mp-share-label">تلگرام</span>
+                            </a>
+                            <a :href="'https://wa.me/?text='+encodeURIComponent(shareTitle+' '+shareUrl)" target="_blank" rel="noopener noreferrer" class="mp-share-btn">
+                                <span class="mp-share-icon" style="background:#25d366"><i class="fab fa-whatsapp"></i></span>
+                                <span class="mp-share-label">واتساپ</span>
+                            </a>
+                            <a :href="'https://twitter.com/intent/tweet?url='+encodeURIComponent(shareUrl)+'&text='+encodeURIComponent(shareTitle)" target="_blank" rel="noopener noreferrer" class="mp-share-btn">
+                                <span class="mp-share-icon" style="background:#1da1f2"><i class="fab fa-twitter"></i></span>
+                                <span class="mp-share-label">توییتر</span>
+                            </a>
+                            <a :href="'https://www.linkedin.com/sharing/share-offsite/?url='+encodeURIComponent(shareUrl)" target="_blank" rel="noopener noreferrer" class="mp-share-btn">
+                                <span class="mp-share-icon" style="background:#0a66c2"><i class="fab fa-linkedin-in"></i></span>
+                                <span class="mp-share-label">لینکدین</span>
+                            </a>
+                            <a :href="'mailto:?subject='+encodeURIComponent(shareTitle)+'&body='+encodeURIComponent(shareUrl)" class="mp-share-btn">
+                                <span class="mp-share-icon" style="background:#64748b"><i class="fas fa-envelope"></i></span>
+                                <span class="mp-share-label">ایمیل</span>
+                            </a>
+                            <button class="mp-share-btn" @click="copyText(shareUrl,'share-link')">
+                                <span class="mp-share-icon" :style="`background:${copiedKey==='share-link'?'#10b981':'var(--theme-c,#0ea5e9)'}`"><i class="fas" :class="copiedKey==='share-link'?'fa-check':'fa-link'"></i></span>
+                                <span class="mp-share-label" x-text="copiedKey==='share-link'?'کپی شد':'کپی لینک'"></span>
+                            </button>
+                        </div>
+                        <div class="mp-share-link-row">
+                            <i class="fas fa-link text-gray-400 text-xs"></i>
+                            <input type="text" :value="shareUrl" readonly @click="$event.target.select()" />
+                            <button class="copy-chip" @click="copyText(shareUrl,'share-link')" :class="copiedKey==='share-link'?'copied':''">
+                                <i class="fas" :class="copiedKey==='share-link'?'fa-check':'fa-copy'"></i>
+                                <span x-text="copiedKey==='share-link'?'کپی شد':'کپی'"></span>
+                            </button>
+                        </div>
+                        <div class="mp-qr-wrap" x-show="qrDataUrl" x-transition>
+                            <img :src="qrDataUrl" alt="QR Code" x-show="qrDataUrl" />
+                        </div>
+                        <p class="text-xs text-gray-400 text-center mt-2">کد QR را برای اشتراک‌گذاری سریع اسکن کنید</p>
+                    </div>
+                </div>
+            </div>
+        </template>
 </div>
 
 <script src="{% static 'js/ordering_detail.js' %}"></script>

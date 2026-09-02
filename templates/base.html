@@ -711,7 +711,7 @@
         </footer>
 
     <!-- Search Modal -->
-    <div x-show="searchOpen" 
+    <div x-show="searchOpen"
         x-cloak
         @click.away="searchOpen = false"
         @keydown.escape.window="searchOpen = false"
@@ -722,21 +722,137 @@
         x-transition:leave="transition ease-in duration-200"
         x-transition:leave-start="opacity-100 translate-y-0"
         x-transition:leave-end="opacity-0 translate-y-4">
-        
+
         <div class="container mx-auto px-4 lg:px-8 py-6">
             <div x-data="searchComponent()" class="max-w-4xl mx-auto">
+
+                <!-- Header: title + close -->
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="flex items-center gap-2 text-base font-bold text-gray-800">
+                        <span class="w-8 h-8 rounded-lg bg-c1/10 text-c1 flex items-center justify-center">
+                            <i class="fas fa-search text-sm"></i>
+                        </span>
+                        جستجوی پیشرفته
+                    </h2>
+                    <button @click="searchOpen = false"
+                        class="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-50 border border-gray-100 text-gray-400 hover:text-gray-800 hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all duration-300"
+                        aria-label="بستن جستجو">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
                 <!-- Search Input -->
-                <div class="relative mb-6">
-                    <span class="absolute inset-y-0 right-4 flex items-center text-gray-400">
+                <div class="relative mb-4">
+                    <span class="absolute inset-y-0 right-4 flex items-center text-gray-400 pointer-events-none">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </span>
-                    <input type="text" 
-                        x-model="query" 
-                        @input.debounce.500ms="search" 
-                        placeholder="جستجو در اوردرها و نسخه‌ها..."
-                        class="w-full pl-4 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-lg font-medium text-gray-800 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-c1 focus:ring-4 focus:ring-c1/10 transition-all duration-300">
+                    <input type="text"
+                        x-model="query"
+                        @input.debounce.500ms="search()"
+                        placeholder="جستجو در نام‌ها و اسامی جایگزین..."
+                        class="w-full pl-12 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-base sm:text-lg font-medium text-gray-800 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-c1 focus:ring-4 focus:ring-c1/10 transition-all duration-300">
+                    <button x-show="query.length > 0" @click="clearQuery()"
+                        class="absolute inset-y-0 left-4 flex items-center text-gray-400 hover:text-gray-700 transition-colors"
+                        aria-label="پاک کردن عبارت">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Controls row: result type dropdown + advanced toggle -->
+                <div class="flex flex-col sm:flex-row gap-3 mb-4">
+                    <!-- Result type dropdown -->
+                    <div class="relative flex-1">
+                        <select x-model="resultType" @change="search()"
+                            class="w-full appearance-none bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 pl-10 text-sm font-bold text-gray-700 focus:outline-none focus:bg-white focus:border-c1 focus:ring-4 focus:ring-c1/10 transition-all cursor-pointer">
+                            <option value="all">همه نتایج</option>
+                            <option value="orders">اوردرها</option>
+                            <option value="prescriptions">نسخه‌ها</option>
+                        </select>
+                        <span class="absolute inset-y-0 left-3 flex items-center text-gray-400 pointer-events-none">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </span>
+                    </div>
+
+                    <!-- Advanced filters toggle -->
+                    <button @click="showAdvanced = !showAdvanced"
+                        class="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border text-sm font-bold transition-all duration-300"
+                        :class="(showAdvanced || hasActiveFilters) ? 'bg-c1/10 text-c1 border-c1/30' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'">
+                        <i class="fas fa-sliders-h text-xs"></i>
+                        <span>فیلتر پیشرفته</span>
+                        <span x-show="hasActiveFilters" class="w-2 h-2 rounded-full bg-c1"></span>
+                    </button>
+                </div>
+
+                <!-- Advanced filters (collapsible) -->
+                <div x-show="showAdvanced" x-collapse x-cloak class="mb-4">
+                    <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-4">
+
+                        <!-- Category filter -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2">دسته‌بندی</label>
+                            <div class="relative">
+                                <select x-model="categoryFilter" @change="search()"
+                                    class="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2.5 pl-10 text-sm text-gray-700 focus:outline-none focus:border-c1 focus:ring-4 focus:ring-c1/10 transition-all cursor-pointer">
+                                    <option value="">همه دسته‌بندی‌ها</option>
+                                    <template x-for="cat in categories" :key="cat.id">
+                                        <option :value="cat.id" x-text="cat.title"></option>
+                                    </template>
+                                </select>
+                                <span class="absolute inset-y-0 left-3 flex items-center text-gray-400 pointer-events-none">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Order access level -->
+                        <div x-show="resultType === 'all' || resultType === 'orders'">
+                            <label class="block text-xs font-bold text-gray-600 mb-2">نوع اوردر</label>
+                            <div class="flex flex-wrap gap-2">
+                                <template x-for="opt in accessOptions" :key="'o-' + opt.value">
+                                    <button @click="orderAccess = opt.value; search()"
+                                        type="button"
+                                        class="px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300"
+                                        :class="orderAccess === opt.value ? 'bg-c1 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:border-c1/40'">
+                                        <span x-text="opt.label"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Prescription access level -->
+                        <div x-show="resultType === 'all' || resultType === 'prescriptions'">
+                            <label class="block text-xs font-bold text-gray-600 mb-2">نوع نسخه</label>
+                            <div class="flex flex-wrap gap-2">
+                                <template x-for="opt in accessOptions" :key="'p-' + opt.value">
+                                    <button @click="prescriptionAccess = opt.value; search()"
+                                        type="button"
+                                        class="px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300"
+                                        :class="prescriptionAccess === opt.value ? 'bg-emerald-500 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:border-emerald-300/50'">
+                                        <span x-text="opt.label"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Clear filters -->
+                        <div x-show="hasActiveFilters" class="pt-1">
+                            <button @click="clearFilters()" type="button"
+                                class="inline-flex items-center gap-1.5 text-xs font-bold text-c1 hover:text-c1/80 transition-colors">
+                                <i class="fas fa-times-circle text-[10px]"></i>
+                                حذف همه فیلترها
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Loading -->
@@ -745,21 +861,30 @@
                     <p class="mt-3 text-sm text-gray-500">در حال جستجو...</p>
                 </div>
 
+                <!-- Initial hint (before any search) -->
+                <div x-show="!loading && !searched" class="text-center py-12">
+                    <div class="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 border border-gray-100 mx-auto mb-4">
+                        <i class="fas fa-magnifying-glass text-2xl text-gray-300"></i>
+                    </div>
+                    <p class="text-gray-700 font-bold">جستجوی هوشمند</p>
+                    <p class="text-xs text-gray-400 mt-2">عبارتی وارد کنید یا از فیلترهای پیشرفته استفاده کنید</p>
+                </div>
+
                 <!-- No Results -->
-                <div x-show="!loading && searched && orders.length === 0 && prescriptions.length === 0" 
+                <div x-show="!loading && searched && hasNoResults"
                     class="text-center py-16">
                     <div class="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 border border-gray-100 mx-auto mb-4">
                         <i class="fas fa-search text-2xl text-gray-300"></i>
                     </div>
                     <p class="text-gray-700 font-bold">نتیجه‌ای یافت نشد</p>
-                    <p class="text-xs text-gray-400 mt-2">عبارت دیگری را امتحان کنید</p>
+                    <p class="text-xs text-gray-400 mt-2">عبارت یا فیلتر دیگری را امتحان کنید</p>
                 </div>
 
                 <!-- Results -->
-                <div x-show="!loading && (orders.length > 0 || prescriptions.length > 0)" class="space-y-8">
-                    
+                <div x-show="!loading && (showOrders || showPrescriptions)" class="space-y-8">
+
                     <!-- Orders Results -->
-                    <div x-show="orders.length > 0">
+                    <div x-show="showOrders" x-cloak>
                         <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                             <span class="w-8 h-8 rounded-lg bg-c1/10 text-c1 flex items-center justify-center">
                                 <i class="fas fa-file-prescription text-sm"></i>
@@ -769,16 +894,25 @@
                         </h3>
                         <div class="grid gap-3">
                             <template x-for="order in orders" :key="order.id">
-                                <a :href="'/ordering/' + order.slug + '/'" 
+                                <a :href="'/ordering/' + order.slug + '/'"
                                 class="group bg-white border border-gray-100 rounded-xl p-4 hover:border-c1/30 hover:shadow-sm transition-all duration-300">
-                                    <div class="flex justify-between items-start gap-4">
+                                    <div class="flex justify-between items-start gap-3">
                                         <div class="flex-1 min-w-0">
                                             <h4 class="font-bold text-gray-800 group-hover:text-c1 transition-colors line-clamp-1" x-text="order.name"></h4>
                                             <p class="text-xs text-gray-500 mt-1 line-clamp-1" x-text="order.imp"></p>
                                         </div>
-                                        <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-gray-50 text-gray-500 border border-gray-100" x-text="order.category_name"></span>
+                                        <div class="flex flex-col items-end gap-1.5 shrink-0">
+                                            <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-gray-50 text-gray-600 border border-gray-100 inline-flex items-center gap-1">
+                                                <span x-show="order.category_color" class="w-2 h-2 rounded-full" :style="'background-color:' + (order.category_color || '#ccc')"></span>
+                                                <span x-text="order.category_name"></span>
+                                            </span>
+                                            <span x-show="order.access_level_display"
+                                                class="text-[10px] font-bold px-2 py-1 rounded-full"
+                                                :class="order.access_level === 'premium' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'"
+                                                x-text="order.access_level_display"></span>
+                                        </div>
                                     </div>
-                                    <div class="flex flex-wrap gap-1.5 mt-3">
+                                    <div class="flex flex-wrap gap-1.5 mt-3" x-show="order.aliases && order.aliases.length > 0">
                                         <template x-for="alias in order.aliases" :key="alias">
                                             <span class="text-[10px] bg-gray-50 text-gray-500 px-2 py-0.5 rounded border border-gray-100" x-text="alias"></span>
                                         </template>
@@ -789,7 +923,7 @@
                     </div>
 
                     <!-- Prescriptions Results -->
-                    <div x-show="prescriptions.length > 0">
+                    <div x-show="showPrescriptions" x-cloak>
                         <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                             <span class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
                                 <i class="fas fa-pills text-sm"></i>
@@ -799,16 +933,25 @@
                         </h3>
                         <div class="grid gap-3">
                             <template x-for="prescription in prescriptions" :key="prescription.id">
-                                <a :href="'/prescriptions/' + prescription.slug + '/'" 
+                                <a :href="'/prescriptions/' + prescription.slug + '/'"
                                 class="group bg-white border border-gray-100 rounded-xl p-4 hover:border-emerald-300/40 hover:shadow-sm transition-all duration-300">
-                                    <div class="flex justify-between items-start gap-4">
+                                    <div class="flex justify-between items-start gap-3">
                                         <div class="flex-1 min-w-0">
                                             <h4 class="font-bold text-gray-800 group-hover:text-emerald-600 transition-colors line-clamp-1" x-text="prescription.title"></h4>
                                             <p class="text-xs text-gray-500 mt-1 line-clamp-1" x-text="prescription.category_name"></p>
                                         </div>
-                                        <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-gray-50 text-gray-500 border border-gray-100" x-text="prescription.access_level"></span>
+                                        <div class="flex flex-col items-end gap-1.5 shrink-0">
+                                            <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-gray-50 text-gray-600 border border-gray-100 inline-flex items-center gap-1">
+                                                <span x-show="prescription.category_color" class="w-2 h-2 rounded-full" :style="'background-color:' + (prescription.category_color || '#ccc')"></span>
+                                                <span x-text="prescription.category_name"></span>
+                                            </span>
+                                            <span x-show="prescription.access_level_display"
+                                                class="text-[10px] font-bold px-2 py-1 rounded-full"
+                                                :class="prescription.access_level === 'premium' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'"
+                                                x-text="prescription.access_level_display"></span>
+                                        </div>
                                     </div>
-                                    <div class="flex flex-wrap gap-1.5 mt-3">
+                                    <div class="flex flex-wrap gap-1.5 mt-3" x-show="prescription.aliases && prescription.aliases.length > 0">
                                         <template x-for="alias in prescription.aliases" :key="alias">
                                             <span class="text-[10px] bg-gray-50 text-gray-500 px-2 py-0.5 rounded border border-gray-100" x-text="alias"></span>
                                         </template>
@@ -1254,29 +1397,98 @@ document.getElementById('forgot-password-modal')?.addEventListener('click', func
 <script>
     function searchComponent() {
         return {
+            // ───────── state ─────────
             query: '',
+            resultType: 'all',              // all | orders | prescriptions
+            showAdvanced: false,
+            categoryFilter: '',             // category id (string) or ''
+            orderAccess: 'all',             // all | free | premium
+            prescriptionAccess: 'all',      // all | free | premium
+
             orders: [],
             prescriptions: [],
+            categories: [],
+
             loading: false,
             searched: false,
             searchUrl: "{% url 'api:v1:home:search' %}",
 
+            accessOptions: [
+                { value: 'all', label: 'همه' },
+                { value: 'free', label: 'رایگان' },
+                { value: 'premium', label: 'ویژه' },
+            ],
+
+            // ───────── lifecycle ─────────
+            init() {
+                this.fetchCategories();
+            },
+
+            // ───────── getters ─────────
+            get hasActiveFilters() {
+                return !!this.categoryFilter
+                    || this.orderAccess !== 'all'
+                    || this.prescriptionAccess !== 'all';
+            },
+
+            get showOrders() {
+                return !this.loading
+                    && this.orders.length > 0
+                    && (this.resultType === 'all' || this.resultType === 'orders');
+            },
+
+            get showPrescriptions() {
+                return !this.loading
+                    && this.prescriptions.length > 0
+                    && (this.resultType === 'all' || this.resultType === 'prescriptions');
+            },
+
+            get hasNoResults() {
+                if (this.loading || !this.searched) return false;
+                if (this.resultType === 'orders') return this.orders.length === 0;
+                if (this.resultType === 'prescriptions') return this.prescriptions.length === 0;
+                return this.orders.length === 0 && this.prescriptions.length === 0;
+            },
+
+            // ───────── actions ─────────
+            async fetchCategories() {
+                try {
+                    const response = await axios.get(this.searchUrl, { params: { meta: '1' } });
+                    this.categories = response.data.categories || [];
+                } catch (e) {
+                    console.error('Fetch categories error:', e);
+                    this.categories = [];
+                }
+            },
+
             async search() {
                 this.searched = true;
                 const q = this.query.trim();
-                if (q.length === 0) {
+
+                // بدون عبارت و بدون فیلتر → نمایش راهنمای اولیه (نه «نتیجه‌ای یافت نشد»)
+                if (q.length === 0 && !this.hasActiveFilters) {
                     this.orders = [];
                     this.prescriptions = [];
+                    this.searched = false;
+                    this.loading = false;
                     return;
                 }
 
                 this.loading = true;
                 try {
-                    const response = await axios.get(this.searchUrl, {
-                        params: { q: q }
-                    });
+                    const params = { q: q };
+                    if (this.resultType !== 'all') params.type = this.resultType;
+                    if (this.categoryFilter) params.category = this.categoryFilter;
+                    if (this.orderAccess !== 'all') params.order_access = this.orderAccess;
+                    if (this.prescriptionAccess !== 'all') params.prescription_access = this.prescriptionAccess;
+
+                    const response = await axios.get(this.searchUrl, { params });
                     this.orders = response.data.orders || [];
                     this.prescriptions = response.data.prescriptions || [];
+                    // همگام‌سازی لیست دسته‌بندی‌ها در صورت تغییر
+                    if (response.data.categories) {
+                        this.categories = response.data.categories;
+                    }
                 } catch (error) {
                     console.error('Search error:', error);
                     this.orders = [];
@@ -1284,7 +1496,19 @@ document.getElementById('forgot-password-modal')?.addEventListener('click', func
                 } finally {
                     this.loading = false;
                 }
-            }
+            },
+
+            clearQuery() {
+                this.query = '';
+                this.search();
+            },
+
+            clearFilters() {
+                this.categoryFilter = '';
+                this.orderAccess = 'all';
+                this.prescriptionAccess = 'all';
+                this.search();
+            },
         }
     }
 </script>
