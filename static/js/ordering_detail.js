@@ -24,6 +24,7 @@ function orderDetailApp() {
     // ----- State -----
     order: null,
     loading: true,
+    mpProgress: 0,
     isSaved: false,
     isPremiumUser: false,
     userProfile: null,
@@ -44,6 +45,7 @@ function orderDetailApp() {
     dynamicFields: null,
     media: null,
     sections: null,
+    mpProgress: 0,
 
     // پاپ‌آپ مرکزی (جایگزین popover)
     activePopup: null,
