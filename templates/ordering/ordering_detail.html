@@ -1847,9 +1847,9 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                                                                 <div class="fp-tree-sub">
                                                                     <template x-for="child in node.children" :key="'pc-c-' + child.id">
                                                                         <div class="fp-tree-node"
-                                                                             :class="activeAnchor === 'df-child-' + child.id ? 'is-active' : ''"
-                                                                             :style="hasChildContent(child) ? '' : 'opacity: 0.5; cursor: default;'"
-                                                                             @click="hasChildContent(child) ? scrollToAnchor('df-child-' + child.id) : scrollToAnchor('df-node-' + node.id)">
+                                                                            :class="activeAnchor === 'df-child-' + child.id ? 'is-active' : ''"
+                                                                            :style="child.hasContent ? '' : 'opacity: 0.5; cursor: default;'"
+                                                                            @click="child.hasContent ? scrollToAnchor('df-child-' + child.id) : scrollToAnchor('df-node-' + node.id)">
                                                                             <span class="fp-tree-node-dot"></span>
                                                                             <span class="fp-tree-node-text" x-text="child.title || '(بدون عنوان)'"></span>
                                                                         </div>
@@ -1954,12 +1954,12 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                                                 <div class="fp-tree-sub">
                                                     <template x-for="child in node.children" :key="'dp-c-' + child.id">
                                                         <div class="fp-tree-node"
-                                                                             :class="activeAnchor === 'disp-child-' + child.id ? 'is-active' : ''"
-                                                                             :style="hasDispositionChildContent(child) ? '' : 'opacity: 0.5; cursor: default;'"
-                                                                             @click="hasDispositionChildContent(child) ? scrollToAnchor('disp-child-' + child.id) : scrollToAnchor('disp-node-' + node.id)">
-                                                                            <span class="fp-tree-node-dot"></span>
-                                                                            <span class="fp-tree-node-text" x-text="child.title || '(بدون عنوان)'"></span>
-                                                                        </div>
+                                                            :class="activeAnchor === 'disp-child-' + child.id ? 'is-active' : ''"
+                                                            :style="child.hasContent ? '' : 'opacity: 0.5; cursor: default;'"
+                                                            @click="child.hasContent ? scrollToAnchor('disp-child-' + child.id) : scrollToAnchor('disp-node-' + node.id)">
+                                                            <span class="fp-tree-node-dot"></span>
+                                                            <span class="fp-tree-node-text" x-text="child.title || '(بدون عنوان)'"></span>
+                                                        </div>
                                                     </template>
                                                 </div>
                                             </template>
@@ -2230,12 +2230,12 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                                                         <div class="p-3 space-y-2.5 border-t" :class="dfTheme(node.color).childBorder">
                                                             <template x-for="child in node.children" :key="child.id">
                                                                 <div class="tree-child-card"
-                                                                     :id="hasNodeContent(child) ? 'df-child-' + child.id : ''"
+                                                                     :id="hasChildContent(child) ? 'df-child-' + child.id : ''"
                                                                      :style="dfTheme(child.color).style"
                                                                      :class="dfTheme(child.color).childBorder">
 
                                                                     <div class="tree-child-row"
-                                                                         @click="hasNodeContent(child) ? (child._open = !child._open) : null">
+                                                                         @click="hasChildContent(child) ? (child._open = !child._open) : null">
                                                                         <div class="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
                                                                              :class="dfTheme(child.color).iconBg">
                                                                             <i class="fas fa-circle-dot text-[9px]" :class="dfTheme(child.color).iconText"></i>
@@ -2252,7 +2252,7 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                                                                         </template>
                                                                     </div>
 
-                                                                    <div x-show="child._open && hasNodeContent(child)"
+                                                                    <div x-show="child._open && hasChildContent(child)"
                                                                          x-transition:enter="transition ease-out duration-200"
                                                                          x-transition:enter-start="opacity-0"
                                                                          x-transition:enter-end="opacity-100"

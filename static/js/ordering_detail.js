@@ -177,6 +177,11 @@ function orderDetailApp() {
     async loadDisposition(slug) {
       try {
         this.disposition = await API.ordering.getDisposition(slug);
+        const nodes = this.disposition?.emergency_disposition?.nodes || [];
+        nodes.forEach(node => {
+          node._open = node._open || false;
+          (node.children || []).forEach(child => child._open = child._open || false);
+        });
       } catch (e) {
         console.error("Error loading disposition tree:", e);
       }
@@ -185,6 +190,12 @@ function orderDetailApp() {
     async loadDynamicFields(slug) {
       try {
         this.dynamicFields = await API.ordering.getDynamicFields(slug);
+        (this.dynamicFields?.dynamic_field_groups || []).forEach(group => {
+          (group.nodes || []).forEach(node => {
+            node._open = node._open || false;
+            (node.children || []).forEach(child => child._open = child._open || false);
+          });
+        });
       } catch (e) {
         console.error("Error loading dynamic fields:", e);
       }
@@ -287,7 +298,11 @@ function orderDetailApp() {
         nodes: (g.nodes || []).map(n => ({
           id: n.id,
           title: n.title,
-          children: (n.children || []).map(c => ({ id: c.id, title: c.title })),
+          children: (n.children || []).map(c => ({
+            id: c.id,
+            title: c.title,
+            hasContent: this.hasChildContent(c),
+          })),
         })),
       }));
 
@@ -311,7 +326,11 @@ function orderDetailApp() {
           nodes: (disp.nodes || []).map(n => ({
             id: n.id,
             title: n.title,
-            children: (n.children || []).map(c => ({ id: c.id, title: c.title })),
+            children: (n.children || []).map(c => ({
+              id: c.id,
+              title: c.title,
+              hasContent: this.hasDispositionChildContent(c),
+            })),
           })),
         };
       }
@@ -343,6 +362,7 @@ function orderDetailApp() {
     // تا زمانی که کاربر در فهرست روی یک زیرمجموعه کلیک می‌کند، آن بخش در صفحه
     // اصلی باز شود و زیرمجموعه نمایش داده شود.
     _expandAnchorIfNeeded(anchorId) {
+      console.log('expandAnchorIfNeeded called with:', anchorId);
       if (!anchorId) return;
 
       // پیش‌بالینی: df-node-{id} و df-child-{id}
@@ -386,37 +406,41 @@ function orderDetailApp() {
 
     // اسکرول به یک anchor خاص
     scrollToAnchor(anchorId) {
-      // ابتدا سکشن‌های جمع‌شده‌ی مرتبط (پیش‌بالینی/تعیین تکلیف) را باز می‌کنیم
-      // تا زیرمجموعه‌ی مورد نظر در صفحه اصلی نمایش داده شود، سپس اسکرول می‌کنیم.
       this._expandAnchorIfNeeded(anchorId);
 
-      const doScroll = () => {
+      const attemptScroll = (retries = 5) => {
         const el = document.getElementById(anchorId);
-        if (!el) {
-          // fallback: anchor های section-level
-          const map = {
-            "order-info": "anchor-order-info",
-            "order-sections": "anchor-order-sections",
-          };
-          if (map[anchorId]) {
-            const fallback = document.getElementById(map[anchorId]);
-            if (fallback) {
-              fallback.scrollIntoView({ behavior: "smooth", block: "start" });
-              this.activeAnchor = anchorId;
-            }
-          }
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+          this.activeAnchor = anchorId;
           return;
         }
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-        this.activeAnchor = anchorId;
+
+        // fallback های section-level
+        const map = {
+          "order-info": "anchor-order-info",
+          "order-sections": "anchor-order-sections",
+        };
+        if (map[anchorId]) {
+          const fallback = document.getElementById(map[anchorId]);
+          if (fallback) {
+            fallback.scrollIntoView({ behavior: "smooth", block: "start" });
+            this.activeAnchor = anchorId;
+            return;
+          }
+        }
+
+        if (retries > 0) {
+          setTimeout(() => attemptScroll(retries - 1), 100);
+        } else {
+          console.warn(`scrollToAnchor: عنصر با شناسه ${anchorId} یافت نشد.`);
+        }
       };
 
-      // پس از به‌روزرسانی DOM توسط Alpine (رندر شدن محتوای بازشده) اسکرول می‌کنیم.
-      // در صورت نبود $nextTick، با وقفه‌ی کوتاه اسکرول می‌کنیم.
       if (typeof this.$nextTick === "function") {
-        this.$nextTick(doScroll);
+        this.$nextTick(() => attemptScroll());
       } else {
-        setTimeout(doScroll, 50);
+        setTimeout(() => attemptScroll(), 50);
       }
     },
 
