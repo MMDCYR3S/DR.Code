@@ -304,7 +304,16 @@ class SkipEmptyNodeFormSet(BaseInlineFormSet):
     def full_clean(self):
         super().full_clean()
         for form in self.forms:
-            if not form.instance.pk and not form.cleaned_data.get('title'):
+            # نادیده‌گرفتن فرم‌های خالیِ جدید (بدون pk و بدون title)
+            # فرم‌های علامت‌خورده برای حذف (DELETE) نیز نادیده گرفته می‌شوند
+            # تا خطاهای اعتبارسنجی غیرضروری نمایش داده نشود.
+            try:
+                is_new = not form.instance.pk
+                has_title = bool(form.cleaned_data.get('title'))
+                will_delete = bool(form.cleaned_data.get('DELETE'))
+            except (AttributeError, KeyError):
+                continue
+            if is_new and (not has_title or will_delete):
                 form._errors = {}
                 form.cleaned_data = {}
 
@@ -398,7 +407,16 @@ class SkipEmptyNodeFormSet(BaseInlineFormSet):
     def full_clean(self):
         super().full_clean()
         for form in self.forms:
-            if not form.instance.pk and not form.cleaned_data.get('title'):
+            # نادیده‌گرفتن فرم‌های خالیِ جدید (بدون pk و بدون title)
+            # فرم‌های علامت‌خورده برای حذف (DELETE) نیز نادیده گرفته می‌شوند
+            # تا خطاهای اعتبارسنجی غیرضروری نمایش داده نشود.
+            try:
+                is_new = not form.instance.pk
+                has_title = bool(form.cleaned_data.get('title'))
+                will_delete = bool(form.cleaned_data.get('DELETE'))
+            except (AttributeError, KeyError):
+                continue
+            if is_new and (not has_title or will_delete):
                 form._errors = {}
                 form.cleaned_data = {}
 

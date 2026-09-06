@@ -1005,20 +1005,52 @@ class PreClinicalManageView(View):
                 _emit_error_messages(request, all_error_lines, 'ذخیره پیش‌بالینی ناموفق بود — خطاهای زیر را برطرف کنید:')
                 return render(request, self.template_name, ctx)
 
+            # ─── ذخیره گروه‌ها و گره‌ها به همراه order_index صریح ─── #
+            # نکته: order_index به‌صورت صریح از POST خوانده و روی instance
+            # ست می‌شود تا ترتیب drag & drop بدون ابهام ذخیره شود.
             for group, gf in all_group_forms:
-                gf.save()
+                instance = gf.save(commit=False)
+                oi_key = f'group-{group.pk}-order_index'
+                raw_oi = request.POST.get(oi_key)
+                if raw_oi is not None and str(raw_oi) != '':
+                    try:
+                        instance.order_index = int(raw_oi)
+                    except (TypeError, ValueError):
+                        pass
+                instance.save()
+                gf.save_m2m()
 
             for group, node, nf, cf in all_node_data:
-                nf.save()
+                node_instance = nf.save(commit=False)
+                oi_key = f'group-{group.pk}-node-{node.pk}-order_index'
+                raw_oi = request.POST.get(oi_key)
+                if raw_oi is not None and str(raw_oi) != '':
+                    try:
+                        node_instance.order_index = int(raw_oi)
+                    except (TypeError, ValueError):
+                        pass
+                node_instance.save()
+                nf.save_m2m()
+
+                # ─── فرزندان: تغییر یافته، جدید و حذف‌شده ─── #
+                # can_delete=True فعّال است؛ cf.save(commit=False) فقط
+                # changed/new را برمی‌گرداند و order_index از cleaned_data
+                # روی instance ست شده است. برای اطمینان بیشتر، اینجا فقط
+                # parent/group را ست می‌کنیم و ذخیره می‌کنیم.
+
+                # 1) فرزندان تغییر یافته و جدید
                 new_children = cf.save(commit=False)
-                for child in new_children:
+                for idx, child in enumerate(new_children):
                     child.group = group
                     child.parent = node
+                    # اطمینان از مقداردهی order_index (fallback به idx)
+                    if child.order_index is None:
+                        child.order_index = idx
                     child.save()
-                    
+
+                # 2) فرزندان حذف‌شده
                 for obj in cf.deleted_objects:
                     obj.delete()
-                cf.save_m2m()
 
             messages.success(request, 'پیش‌بالینی با موفقیت ذخیره شد.')
             return redirect(redirect_url)
@@ -1211,15 +1243,29 @@ class EmergencyDispositionManageView(View):
                 _emit_error_messages(request, all_error_lines, 'ذخیره تعیین تکلیف ناموفق بود — خطاهای زیر را برطرف کنید:')
                 return render(request, self.template_name, ctx)
 
-            # ذخیره
+            # ─── ذخیره گره‌های ریشه و فرزندان به همراه order_index صریح ─── #
+            # نکته: order_index به‌صورت صریح از POST خوانده و روی instance
+            # ست می‌شود تا ترتیب drag & drop بدون ابهام ذخیره شود.
             for node, nf in all_node_forms:
-                nf.save()
+                node_instance = nf.save(commit=False)
+                oi_key = f'node-{node.pk}-order_index'
+                raw_oi = request.POST.get(oi_key)
+                if raw_oi is not None and str(raw_oi) != '':
+                    try:
+                        node_instance.order_index = int(raw_oi)
+                    except (TypeError, ValueError):
+                        pass
+                node_instance.save()
+                nf.save_m2m()
 
             for node, cf in all_child_formsets:
                 new_children = cf.save(commit=False)
-                for child in new_children:
+                for idx, child in enumerate(new_children):
                     child.disposition = disposition
                     child.parent = node
+                    # اطمینان از مقداردهی order_index (fallback به idx)
+                    if child.order_index is None:
+                        child.order_index = idx
                     child.save()
                 for obj in cf.deleted_objects:
                     obj.delete()

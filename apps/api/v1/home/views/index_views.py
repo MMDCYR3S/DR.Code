@@ -2,8 +2,10 @@ from rest_framework.generics import ListAPIView
 from drf_spectacular.utils import extend_schema_view, extend_schema
 
 from apps.home.models import Tutorial
+from apps.ordering.models.order import Order
 from apps.prescriptions.models import Prescription, AccessChoices
 from ..serializers import (
+    RecentOrderSerializer, 
     RecentPrescriptionSerializer,
     RecentTutorialSerializer
 )
@@ -33,4 +35,19 @@ class RecentTutorialAPIView(ListAPIView):
     serializer_class = RecentTutorialSerializer
     permission_classes = []
     queryset = Tutorial.objects.all().order_by("-created_at")[:4]
+
+# ========= RECENT ORDER VIEW  ========= #
+@extend_schema_view(
+    get=extend_schema(tags=['Home'], summary='نمایش ۴ اوردر اخیر (رایگان)')
+)
+class RecentOrdersAPIView(ListAPIView):
+    """
+    نمایش ۴ اوردر رایگان اخیر برای صفحه اصلی
+    """
+    serializer_class = RecentOrderSerializer
+    permission_classes = []  # عمومی
+    queryset = Order.objects.filter(
+        is_active=True,
+        access_level=AccessChoices.free.value
+    ).order_by('-created_at')[:4]
     

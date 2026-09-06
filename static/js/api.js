@@ -255,7 +255,7 @@ API.prescriptions = {
             const response = await axios.get(url);
             return response.data;
         } catch (error) {
-            console.error('Error fetching prescriptions:', error);
+            console.error('Error fetching prescriptions/recent/:', error);
             throw error;
         }
     },
@@ -1029,6 +1029,20 @@ async function testUserQuestionsAPI() {
 // رو عوض نکردم که با اون تداخل پیدا نکنه.
 // ============================================================================
 API.ordering = {
+    async getRecent() {
+        try {
+            const response = await axios.get(
+                `${API.BASE_URL}api/v1/home/orders/recent/`,
+                { headers: API.getHeaders(false) } // نیازی به احراز هویت نیست
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching recent orders:', error);
+            throw error;
+        }
+    },
+
+
     // اطلاعات پایه اوردر (نام، تشخیص، وضعیت، رژیم، اقدام، پوزیشن، دسته‌بندی، رنگ)
     async getBase(slug) {
         try {
