@@ -7,7 +7,7 @@
 {% block extra_css %}
 {{ child_form.media }}
 {% endblock extra_css %}
-    
+
 {% block content %}
 
 <style>
@@ -29,8 +29,26 @@
   .btn-delete-child.active {
     background: #ef4444; color: #fff; border-color: #ef4444;
   }
+  /* دکمه حذف گره ریشه — برای گره‌های موجود (deferred) و گره‌های جدید (remove) */
+  .btn-delete-root {
+    display: flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 6px;
+    border: 1px solid #fecaca; background: #fff5f5;
+    color: #ef4444; font-size: 0.72rem; cursor: pointer;
+    transition: all .15s; white-space: nowrap;
+  }
+  .btn-delete-root:hover, .btn-delete-root.active {
+    background: #ef4444; color: #fff; border-color: #ef4444;
+  }
   /* CKEditor داخل فرم‌ها */
   .ck-editor__editable { min-height: 120px !important; }
+  /* نشانگر بصری گره جدید (ساخته‌شده در JS، هنوز ذخیره‌نشده) */
+  .node-item[data-new-root] { box-shadow: 0 0 0 2px rgba(99,102,241,.35); }
+  .badge-new {
+    font-size: .65rem; color: #4f46e5; background: #eef2ff;
+    border: 1px solid #c7d2fe; padding: 1px 6px; border-radius: 9999px;
+    white-space: nowrap;
+  }
 </style>
 
 <div class="container mx-auto px-4 py-6 max-w-8xl">
@@ -43,6 +61,7 @@
     </h1>
   </div>
 
+  {# ── ذخیره اطلاعات کلی (دست‌نخورده — خارج از اسکوپِ گره) ── #}
   <form method="post"
         class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 mb-6">
     {% csrf_token %}
@@ -88,97 +107,83 @@
     </div>
   </form>
 
+  {# ── دکمه «گره جدید» (ساخت در JS — بدون رفرش) ── #}
   <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-    <h2 class="text-sm font-semibold text-gray-700 mb-3">افزودن گره ریشه</h2>
-    <form method="post" class="flex flex-wrap gap-3 items-end">
-      {% csrf_token %}
-      <input type="hidden" name="action" value="add_root_node">
-      <div class="flex-1 min-w-40">
-        <label class="block text-xs font-medium text-gray-600 mb-1">
-          عنوان گره جدید
-        </label>
-        <input type="text" name="new_root-title"
-          class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg
-                 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          placeholder="مثال: STEMI">
-      </div>
-      <div class="w-36">
-        <label class="block text-xs font-medium text-gray-600 mb-1">رنگ</label>
-        <select name="new_root-color"
-          class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg">
-          {% for val, label in color_choices %}
-            <option value="{{ val }}">{{ label }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <button type="submit"
+    <div class="flex flex-wrap gap-3 items-center justify-between">
+      <p class="text-xs text-gray-500">
+        <i class="fas fa-circle-info text-blue-400 ml-1"></i>
+        گره جدید با دکمهٔ زیر ساخته می‌شود؛ فرزندانش را اضافه کنید و در پایان «ذخیره همه» را بزنید.
+      </p>
+      <button type="button"
         class="px-4 py-2 bg-blue-600 text-white rounded-lg
-               hover:bg-blue-700 text-sm font-medium whitespace-nowrap">
+               hover:bg-blue-700 text-sm font-medium whitespace-nowrap"
+        data-add-root>
         <i class="fas fa-plus ml-1"></i>گره جدید
       </button>
-    </form>
+    </div>
   </div>
-
-
-  {% for item in nested %}
-  <form method="post"
-        id="delete-node-form-{{ item.node.pk }}"
-        onsubmit="return confirm('این گره و تمام فرزندانش حذف شوند؟')">
-    {% csrf_token %}
-    <input type="hidden" name="action" value="delete_node">
-    <input type="hidden" name="node_pk" value="{{ item.node.pk }}">
-  </form>
-  {% endfor %}
 
 
   <form method="post" id="save-all-form">
     {% csrf_token %}
     <input type="hidden" name="action" value="save_all">
 
-    {# دیو nodes-wrapper برای کنترل Sortable روی ریشه‌ها اضافه شد #}
     <div id="nodes-wrapper" class="space-y-5">
-      {% for item in nested %}
-      <div class="node-item rounded-xl border border-gray-200 shadow-sm overflow-hidden bg-white" data-root-node>
+      {% for ne in nested %}
+      <div class="node-item rounded-xl border border-gray-200 shadow-sm overflow-hidden bg-white"
+           data-root-node {% if ne.is_new %}data-new-root data-temp="{{ ne.node_id }}"{% endif %}>
 
         {# ── هدر گره ریشه ── #}
         <div class="flex justify-between items-center px-4 py-2.5 bg-gradient-to-l from-gray-50 to-blue-50 border-b border-gray-200">
           <div class="flex items-center gap-3 flex-1">
             <span class="drag-handle node-handle text-gray-400 hover:text-gray-600 cursor-move text-lg leading-none" title="برای جابجایی بکشید">⠿</span>
             <div class="flex gap-3 flex-1 items-center">
-              <div class="flex-1">
-                {{ item.node_form.title }}
-                {% if item.node_form.title.errors %}
-                  <p class="text-xs text-red-500">{{ item.node_form.title.errors|join:", " }}</p>
+              <div class="flex-1 flex items-center gap-2">
+                {{ ne.node_form.title }}
+                {% if ne.is_new %}<span class="badge-new">جدید</span>{% endif %}
+                {% if ne.node_form.title.errors %}
+                  <p class="text-xs text-red-500">{{ ne.node_form.title.errors|join:", " }}</p>
                 {% endif %}
               </div>
               <div class="w-32">
-                {{ item.node_form.color }}
-                {% if item.node_form.color.errors %}
-                  <p class="text-xs text-red-500 mt-1">{{ item.node_form.color.errors|join:", " }}</p>
+                {{ ne.node_form.color }}
+                {% if ne.node_form.color.errors %}
+                  <p class="text-xs text-red-500 mt-1">{{ ne.node_form.color.errors|join:", " }}</p>
                 {% endif %}
               </div>
             </div>
-            {# فیلدهای hidden فرم گره ریشه #}
-            {{ item.node_form.order_index }}
-            {% for h in item.node_form.hidden_fields %}{{ h }}{% endfor %}
+            {# order_index توسط hidden_fields رندر می‌شود (render یکبار، نه دوبار) #}
+            {% for h in ne.node_form.hidden_fields %}{{ h }}{% endfor %}
           </div>
-          <button type="submit" form="delete-node-form-{{ item.node.pk }}" class="mr-3 flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 text-xs transition-all">
+
+          {% if ne.is_new %}
+          {# گره جدید (ذخیره‌نشده): حذف از DOM #}
+          <button type="button" class="btn-delete-root mr-3" data-remove-root>
             <i class="fas fa-trash-alt"></i><span>حذف گره</span>
           </button>
+          {% else %}
+          {# گره موجود: حذف deferred (چک‌باکس DELETE، اعمال در save_all) #}
+          <input type="checkbox" name="node-{{ ne.node_id }}-DELETE"
+            class="hidden" {% if ne.delete_flag %}checked{% endif %}>
+          <button type="button" class="btn-delete-root mr-3 {% if ne.delete_flag %}active{% endif %}"
+            onclick="toggleRootDelete(this, 'node-{{ ne.node_id }}-DELETE')">
+            <i class="fas fa-trash-alt"></i><span>حذف گره</span>
+          </button>
+          {% endif %}
         </div>
 
         {# ── فرزندان ── #}
         <div class="p-3">
-          {{ item.child_fs.management_form }}
+          {{ ne.child_fs.management_form }}
 
-          <div id="children-container-{{ item.node.pk }}" class="space-y-2">
-            {% for child_form in item.child_fs %}
+          <div id="children-container-{{ ne.node_id }}" class="space-y-2">
+            {% for child_form in ne.child_fs %}
             <div class="node-card rounded-lg bg-slate-50 border border-gray-100" data-child>
-              {# هدر فرزند #}
               <div class="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
                 <span class="drag-handle text-gray-400 hover:text-gray-600 cursor-move text-lg leading-none" title="جابجایی">⠿</span>
-                <div class="flex-1">
+                <div class="flex-1 flex items-center gap-2">
                   {{ child_form.title }}
+                  {% if not child_form.instance.pk %}<span class="badge-new">جدید</span>{% endif %}
                   {% if child_form.title.errors %}
                     <p class="text-xs text-red-500">{{ child_form.title.errors|join:", " }}</p>
                   {% endif %}
@@ -189,7 +194,6 @@
                 <span class="hidden">{{ child_form.DELETE }}</span>
               </div>
 
-              {# بدنه فرزند #}
               <div class="p-3 space-y-2">
                 <div>
                   <label class="text-xs text-gray-500 block mb-1">محتوا</label>
@@ -205,7 +209,7 @@
                     <p class="text-xs text-red-500 mt-1">{{ child_form.color.errors|join:", " }}</p>
                   {% endif %}
                 </div>
-                {{ child_form.order_index }}
+                {# order_index توسط hidden_fields رندر می‌شود (render یکبار، نه دوبار) #}
                 {% for h in child_form.hidden_fields %}{{ h }}{% endfor %}
               </div>
             </div>
@@ -214,13 +218,14 @@
             {% endfor %}
           </div>
 
-          <button type="button" class="mt-2 text-xs text-blue-500 hover:text-blue-700 flex items-center gap-1 px-1" data-add-child data-nid="{{ item.node.pk }}" data-prefix="node-{{ item.node.pk }}-children">
+          <button type="button" class="mt-2 text-xs text-blue-500 hover:text-blue-700 flex items-center gap-1 px-1"
+            data-add-child data-nid="{{ ne.node_id }}">
             <i class="fas fa-plus"></i> فرزند جدید
           </button>
         </div>
       </div>
       {% empty %}
-      <div class="text-center py-10 text-gray-400 text-sm">هنوز گره‌ای اضافه نشده. از بخش بالا یک گره ریشه اضافه کنید.</div>
+      <div class="text-center py-10 text-gray-400 text-sm">هنوز گره‌ای اضافه نشده. از دکمهٔ «گره جدید» استفاده کنید.</div>
       {% endfor %}
     </div>
 
@@ -238,25 +243,77 @@
 </div>{# /container #}
 
 
+{# ── Template خالی گره ریشه (ساخت در JS) ── #}
+<template id="empty-root-template">
+  <div class="node-item rounded-xl border border-gray-200 shadow-sm overflow-hidden bg-white"
+       data-root-node data-new-root data-temp="__NID__">
+
+    <div class="flex justify-between items-center px-4 py-2.5 bg-gradient-to-l from-gray-50 to-blue-50 border-b border-gray-200">
+      <div class="flex items-center gap-3 flex-1">
+        <span class="drag-handle node-handle text-gray-400 hover:text-gray-600 cursor-move text-lg leading-none" title="برای جابجایی بکشید">⠿</span>
+        <div class="flex gap-3 flex-1 items-center">
+          <div class="flex-1 flex items-center gap-2">
+            <input type="text" name="node-__NID__-title"
+              class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+              placeholder="مثال: STEMI">
+            <span class="badge-new">جدید</span>
+          </div>
+          <div class="w-36">
+            <select name="node-__NID__-color"
+              class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg">
+              {% for val, label in color_choices %}
+                <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <input type="hidden" name="node-__NID__-order_index" value="0">
+      </div>
+      <button type="button" class="btn-delete-root mr-3" data-remove-root>
+        <i class="fas fa-trash-alt"></i><span>حذف گره</span>
+      </button>
+    </div>
+
+    <div class="p-3">
+      {# فرم مدیریت فرزندان برای گره جدید (INITIAL_FORMS=0) #}
+      <input type="hidden" name="node-__NID__-children-TOTAL_FORMS" value="0">
+      <input type="hidden" name="node-__NID__-children-INITIAL_FORMS" value="0">
+
+      <div id="children-container-__NID__" class="space-y-2">
+        <p class="text-xs text-gray-400 py-2 text-center">هنوز فرزندی اضافه نشده.</p>
+      </div>
+
+      <button type="button" class="mt-2 text-xs text-blue-500 hover:text-blue-700 flex items-center gap-1 px-1"
+        data-add-child data-nid="__NID__">
+        <i class="fas fa-plus"></i> فرزند جدید
+      </button>
+    </div>
+  </div>
+</template>
+
+{# ── Template خالی فرزند (دکمه حذف اضافه شد) ── #}
 <template id="empty-child-template">
   <div class="node-card rounded-lg bg-slate-50 border border-gray-100" data-child>
     <div class="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
       <span class="drag-handle text-gray-400 hover:text-gray-600 cursor-move text-lg leading-none" title="جابجایی">⠿</span>
-      <div class="flex-1">
+      <div class="flex-1 flex items-center gap-2">
         <input type="text"
-          name="node-__nid__-children-__prefix__-title"
-          id="id_node-__nid__-children-__prefix__-title"
+          name="node-__NID__-children-__IDX__-title"
+          id="id_node-__NID__-children-__IDX__-title"
           class="w-full text-sm px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
           placeholder="عنوان فرزند...">
+        <span class="badge-new">جدید</span>
       </div>
-      <span class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">جدید</span>
+      <button type="button" class="btn-delete-child" data-remove-child>
+        <i class="fas fa-trash-alt"></i><span>حذف</span>
+      </button>
     </div>
     <div class="p-3 space-y-2">
       <div>
         <label class="text-xs text-gray-500 block mb-1">محتوا</label>
         <textarea
-          name="node-__nid__-children-__prefix__-content"
-          id="id_node-__nid__-children-__prefix__-content"
+          name="node-__NID__-children-__IDX__-content"
+          id="id_node-__NID__-children-__IDX__-content"
           class="w-full border border-gray-300 rounded-lg p-2 text-sm"
           rows="4"
           placeholder="محتوا..."
@@ -265,16 +322,16 @@
       <div class="w-36">
         <label class="text-xs text-gray-500 block mb-1">رنگ</label>
         <select
-          name="node-__nid__-children-__prefix__-color"
-          id="id_node-__nid__-children-__prefix__-color"
+          name="node-__NID__-children-__IDX__-color"
+          id="id_node-__NID__-children-__IDX__-color"
           class="w-full text-sm px-2 py-1.5 border border-gray-300 rounded-lg">
           {% for val, label in color_choices %}
             <option value="{{ val }}">{{ label }}</option>
           {% endfor %}
         </select>
       </div>
-      <input type="hidden" name="node-__nid__-children-__prefix__-order_index" value="0">
-      <input type="hidden" name="node-__nid__-children-__prefix__-id">
+      <input type="hidden" name="node-__NID__-children-__IDX__-order_index" value="0">
+      <input type="hidden" name="node-__NID__-children-__IDX__-id">
     </div>
   </div>
 </template>
@@ -285,10 +342,8 @@
 
 {% block extra_js %}
 <script>
-// ── حذف فرزند (toggle DELETE checkbox) ──
+// ── حذف فرزند موجود (toggle DELETE checkbox) ──
 function toggleDelete(btn, fieldName) {
-  // جستجوی کادر DELETE داخل همان فرزند (data-child) برای دقت بیشتر
-  // (از document.querySelector جهانی استفاده نمی‌کنیم چون در چند‌فرزندی ممکن است کادر اشتباه را پیدا کند)
   const childCard = btn.closest('[data-child]');
   const cb = (childCard || document).querySelector(`[name="${fieldName}"]`);
   if (!cb) return;
@@ -298,12 +353,23 @@ function toggleDelete(btn, fieldName) {
   childCard?.style.setProperty('opacity', isMarked ? '0.4' : '1');
 }
 
+// ── حذف گره ریشه موجود (toggle DELETE checkbox، اعمال در save_all) ──
+function toggleRootDelete(btn, fieldName) {
+  const nodeCard = btn.closest('[data-root-node]');
+  const cb = (nodeCard || document).querySelector(`[name="${fieldName}"]`);
+  if (!cb) return;
+  cb.checked = !cb.checked;
+  const isMarked = cb.checked;
+  btn.classList.toggle('active', isMarked);
+  nodeCard?.style.setProperty('opacity', isMarked ? '0.4' : '1');
+}
+
 // ── بروزرسانی یکپارچه همه ایندکس‌ها ──
 function updateAllIndexes() {
   document.querySelectorAll('#nodes-wrapper > [data-root-node]').forEach((node, idx) => {
     const inp = node.querySelector(`input[name^="node-"][name$="-order_index"]:not([name*="-children-"])`);
     if (inp) inp.value = idx;
-    
+
     const childrenContainer = node.querySelector('[id^="children-container-"]');
     if (childrenContainer) {
       childrenContainer.querySelectorAll(':scope > [data-child]').forEach((child, cIdx) => {
@@ -314,11 +380,11 @@ function updateAllIndexes() {
   });
 }
 
-// ── استخراج دقیق کانفیگ CKEditor (دقیقاً مشابه Preclinical) ──
+// ── استخراج دقیق کانفیگ CKEditor ──
 let cachedCKConfig = null;
 function getCKConfig() {
   if (cachedCKConfig) return cachedCKConfig;
-  
+
   const scriptTag = document.getElementById('ckeditor-5-configs') || document.querySelector('script[type="application/json"][id*="ckeditor"]');
   if (scriptTag) {
     try {
@@ -328,7 +394,7 @@ function getCKConfig() {
       return cachedCKConfig;
     } catch(e) { console.warn("Failed to parse CK config", e); }
   }
-  
+
   return {
     toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', 'insertTable', 'undo', 'redo'],
     language: 'fa',
@@ -338,18 +404,15 @@ function getCKConfig() {
 
 function initCKEditor(textarea) {
   if (!textarea || textarea.dataset.ckInitialized) return;
-  // جلوگیری از مقداردهیِ دوباره: textareaهایی که کلاس django_ckeditor_5 دارند
-  // توسط پکیج جنگو خودکار مقداردهی می‌شوند و نباید دوباره توسط JS لود شوند
-  // (در غیر این صورت CKEditor دوبل نمایش داده می‌شود).
   if (textarea.classList && textarea.classList.contains('django_ckeditor_5')) {
     return;
   }
   const Editor = window.ClassicEditor ?? window.CKEDITOR?.ClassicEditor;
   if (!Editor) { setTimeout(() => initCKEditor(textarea), 300); return; }
-  
+
   textarea.dataset.ckInitialized = '1';
-  const cfg = getCKConfig(); 
-  
+  const cfg = getCKConfig();
+
   Editor.create(textarea, cfg)
     .then(ed => {
       ed.model.document.on('change:data', () => { textarea.value = ed.getData(); });
@@ -358,20 +421,17 @@ function initCKEditor(textarea) {
     .catch(e => console.error('CKEditor:', e));
 }
 
-// ── توابع کمکی برای Drag & Drop ادیتورها ──
+// ── تخریب ایمن CKEditor داخل یک عنصر (قبل از حذف DOM) ──
 function destroyEditorsIn(container) {
+  if (!container) return;
   container.querySelectorAll('textarea[data-ck-initialized]').forEach(ta => {
     if (ta._ckEditor) {
-      ta.value = ta._ckEditor.getData();
+      try { ta.value = ta._ckEditor.getData(); } catch(e) {}
       ta._ckEditor.destroy().catch(console.error);
       delete ta._ckEditor;
     }
     delete ta.dataset.ckInitialized;
   });
-}
-
-function initEditorsIn(container) {
-  container.querySelectorAll('textarea').forEach(initCKEditor);
 }
 
 // ── پیاده‌سازی Sortable.js ──
@@ -383,7 +443,7 @@ function initAllSortables() {
         animation: 150,
         onStart: (evt) => destroyEditorsIn(evt.item),
         onEnd: (evt) => {
-            initEditorsIn(evt.item);
+            initCKEditor(evt.item.querySelector('textarea'));
             updateAllIndexes();
         },
       });
@@ -399,7 +459,7 @@ function initAllSortables() {
       draggable: '[data-root-node]',
       onStart: (evt) => destroyEditorsIn(evt.item),
       onEnd: (evt) => {
-          initEditorsIn(evt.item);
+          evt.item.querySelectorAll('textarea').forEach(initCKEditor);
           updateAllIndexes();
       },
     });
@@ -407,21 +467,76 @@ function initAllSortables() {
   }
 }
 
-// ── مدیریت افزودن فرزند جدید ──
+// ── افزودن گره ریشه جدید (JS — بدون رفرش) ──
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('[data-add-root]');
+  if (!btn) return;
+
+  const nodesWrapper = document.getElementById('nodes-wrapper');
+  if (!nodesWrapper) return;
+
+  // تعیین temp-id بعدی (جلوگیری از تداخل با گره‌های جدیدِ موجود در DOM)
+  const nums = [...nodesWrapper.querySelectorAll('[data-new-root][data-temp]')]
+    .map(el => el.dataset.temp)
+    .map(t => (t.match(/(\d+)$/) || [,'0'])[1])
+    .map(Number);
+  const nextNum = (nums.length ? Math.max(...nums) : 0) + 1;
+  const tempId = `new${nextNum}`;
+
+  const tmpl = document.getElementById('empty-root-template');
+  const html = tmpl.innerHTML
+    .replaceAll('__NID__', tempId);
+
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = html;
+  const newEl = wrapper.firstElementChild;
+
+  nodesWrapper.querySelector('.text-center')?.remove();
+  nodesWrapper.appendChild(newEl);
+
+  updateAllIndexes();
+  initAllSortables();
+});
+
+// ── حذف گره ریشه جدید (از DOM — هنوز ذخیره نشده) ──
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('[data-remove-root]');
+  if (!btn) return;
+  const node = btn.closest('[data-root-node]');
+  if (!node) return;
+  if (confirm('این گره جدید و فرزندانش حذف شوند؟ (هنوز ذخیره نشده)')) {
+    destroyEditorsIn(node);
+    node.remove();
+    updateAllIndexes();
+  }
+});
+
+// ── حذف فرزند جدید (از DOM — هنوز ذخیره نشده) ──
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('[data-remove-child]');
+  if (!btn) return;
+  const child = btn.closest('[data-child]');
+  if (!child) return;
+  destroyEditorsIn(child);
+  child.remove();
+  updateAllIndexes();
+});
+
+// ── مدیریت افزودن فرزند جدید (موجود و جدید) ──
 document.addEventListener('click', function(e) {
   const btn = e.target.closest('[data-add-child]');
   if (!btn) return;
 
   const nid = btn.dataset.nid;
-  const prefix = btn.dataset.prefix;
+  const prefix = `node-${nid}-children`;
   const mgmt = document.querySelector(`[name="${prefix}-TOTAL_FORMS"]`);
   if (!mgmt) return;
 
   const idx = parseInt(mgmt.value);
   const tmpl = document.getElementById('empty-child-template');
   const html = tmpl.innerHTML
-    .replaceAll('__nid__', nid)
-    .replaceAll('__prefix__', idx);
+    .replaceAll('__NID__', nid)
+    .replaceAll('__IDX__', idx);
 
   const wrapper = document.createElement('div');
   wrapper.innerHTML = html;
@@ -432,9 +547,9 @@ document.addEventListener('click', function(e) {
   container.appendChild(newEl);
 
   mgmt.value = idx + 1;
-  
+
   updateAllIndexes();
-  
+
   // لود ادیتور برای فرزند جدید
   const ta = newEl.querySelector('textarea');
   if (ta) initCKEditor(ta);
