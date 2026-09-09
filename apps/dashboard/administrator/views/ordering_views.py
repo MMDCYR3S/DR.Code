@@ -837,24 +837,47 @@ class PreClinicalManageView(View):
 
     نکته معماری (تغییر این بخش):
     --------------------------------
-    ایجاد گره ریشه دیگر به‌صورت یک ریکوئست جداگانه و رفرش صفحه انجام نمی‌شود.
-    گره‌های ریشه جدید (و فرزندانشان) در سمت کلاینت (JS) ساخته می‌شوند و تنها
-    با زدن دکمهٔ «ذخیره همه» در دیتابیس persist می‌گردند.
+    ایجاد گروه، گره ریشه و فرزند دیگر به‌صورت یک ریکوئست جداگانه و رفرش
+    صفحه انجام نمی‌شود. تمام آیتم‌های جدید (گروه، گره، فرزند) در سمت کلاینت
+    (JS) ساخته می‌شوند و تنها با زدن دکمهٔ «ذخیره همه» در دیتابیس persist
+    می‌گردند.
 
-    • گره‌های موجود: همانند قبل با فرم اختصاصی + فرم‌ست فرزندان رندر می‌شوند،
-      با این تفاوت که حذف آن‌ها به‌جای POST جداگانه، با یک چک‌باکس DELETE
-      (deferred) انجام می‌شود و در زمان save_all اعمال می‌گردد.
-    • گره‌های جدید: با پیشوند موقت (مثل new1, new2) در POST ارسال می‌شوند،
-      در save_all اعتبارسنجی و سپس ایجاد می‌گردند و فرزندانشان پس از ساخت
-      گره ریشه، به آن متصل می‌شوند.
+    • گروه‌های موجود: همانند قبل با فرم اختصاصی رندر می‌شوند، با این تفاوت که
+      حذف آن‌ها به‌جای POST جداگانه، با یک چک‌باکس DELETE (deferred) انجام
+      می‌شود و در زمان save_all اعمال می‌گردد.
+    • گروه‌های جدید: با پیشوند موقت (مثل new1, new2) در POST ارسال می‌شوند،
+      در save_all اعتبارسنجی و سپس ایجاد می‌گردند و گره‌هایشان پس از ساخت
+      گروه، به آن متصل می‌شوند.
+    • گره‌های موجود: حذف با چک‌باکس DELETE (deferred)، اعمال در save_all.
+    • گره‌های جدید: با پیشوند موقت در POST، در save_all ایجاد و فرزندانشان
+      به آن‌ها متصل می‌شوند.
 
-    تنها منطقِ بخش «گره» تغییر کرده است؛ بخش‌های گروه (افزودن/حذف گروه) و
-    سایر ویوها دست‌نخورده باقی مانده‌اند.
+    منطق ایجاد/ویرایش/حذف گروه دقیقاً مشابه گره و فرزند است (بدون رفرش).
     """
     template_name = 'dashboard/ordering/preclinical_form.html'
 
     def get_order(self, order_pk):
         return get_object_or_404(Order, pk=order_pk)
+
+    @staticmethod
+    def _extract_new_group_temp_ids(post_data):
+        """
+        شناسه‌های موقتِ گروه‌های جدید را از POST استخراج می‌کند.
+        گروه‌های موجود پیشوندشان عددی (pk) است؛ گروه‌های جدید رشته‌ای مثل new1.
+        کلیدهای گره‌ها (...-node-...) نادیده گرفته می‌شوند.
+        ترتیب ظاهر در POST حفظ می‌شود (برای نمایش پایدار).
+        """
+        pat = re.compile(r'^group-(?!.*-node-)(.+?)-title$')
+        ids = []
+        seen = set()
+        for key in post_data.keys():
+            m = pat.match(key)
+            if m:
+                tid = m.group(1)
+                if not tid.isdigit() and tid not in seen:
+                    seen.add(tid)
+                    ids.append(tid)
+        return ids
 
     @staticmethod
     def _extract_new_root_temp_ids(post_data, group_pk):
@@ -863,6 +886,7 @@ class PreClinicalManageView(View):
         گره‌های موجود پیشوندشان عددی (pk) است؛ گره‌های جدید رشته‌ای مثل new1.
         کلیدهای فرزندان (...-children-...) نادیده گرفته می‌شوند.
         ترتیب ظاهر در POST حفظ می‌شود (برای نمایش پایدار).
+        group_pk می‌تواند عدد (گروه موجود) یا رشتهٔ موقت (گروه جدید) باشد.
         """
         pat = re.compile(rf'^group-{group_pk}-node-(?!.*-children-)(.+?)-title$')
         ids = []
@@ -877,9 +901,14 @@ class PreClinicalManageView(View):
         return ids
 
     def _build_nested(self, order, post_data=None):
-        groups = DynamicFieldGroup.objects.filter(order=order).order_by('order_index')
         nested = []
+
+        # ── گروه‌های موجود ── #
+        groups = DynamicFieldGroup.objects.filter(order=order).order_by('order_index')
         for group in groups:
+            group_pk_str = str(group.pk)
+            delete_flag = bool(post_data) and bool(post_data.get(f'group-{group_pk_str}-DELETE'))
+
             root_nodes = DynamicFieldNode.objects.filter(
                 group=group, parent=None
             ).prefetch_related('children').order_by('order_index')
@@ -888,7 +917,7 @@ class PreClinicalManageView(View):
             # ── گره‌های ریشه موجود ── #
             for node in root_nodes:
                 prefix = f'group-{group.pk}-node-{node.pk}'
-                delete_flag = bool(post_data) and bool(post_data.get(f'{prefix}-DELETE'))
+                node_delete = bool(post_data) and bool(post_data.get(f'{prefix}-DELETE'))
                 node_entries.append({
                     'node': node,
                     'node_id': str(node.pk),
@@ -900,7 +929,7 @@ class PreClinicalManageView(View):
                         post_data or None, instance=node,
                         prefix=f'{prefix}-children',
                     ),
-                    'delete_flag': delete_flag,
+                    'delete_flag': node_delete,
                 })
 
             # ── گره‌های ریشه جدید (تنها در حالت POST) ── #
@@ -923,18 +952,51 @@ class PreClinicalManageView(View):
 
             nested.append({
                 'group': group,
+                'group_id': group_pk_str,
+                'is_new': False,
+                'delete_flag': delete_flag,
                 'group_form': DynamicFieldGroupForm(
                     post_data or None, instance=group, prefix=f'group-{group.pk}',
                 ),
                 'node_entries': node_entries,
             })
+
+        # ── گروه‌های جدید (تنها در حالت POST) ── #
+        if post_data:
+            for g_temp_id in self._extract_new_group_temp_ids(post_data):
+                node_entries = []
+                # گره‌های ریشه جدید داخل گروه جدید
+                for temp_id in self._extract_new_root_temp_ids(post_data, g_temp_id):
+                    prefix = f'group-{g_temp_id}-node-{temp_id}'
+                    temp_instance = DynamicFieldNode()
+                    node_entries.append({
+                        'node': None,
+                        'node_id': temp_id,
+                        'is_new': True,
+                        'node_form': DynamicFieldRootNodeForm(post_data, prefix=prefix),
+                        'child_fs': DynamicFieldChildNodeFormSet(
+                            post_data, instance=temp_instance,
+                            prefix=f'{prefix}-children',
+                            queryset=DynamicFieldNode.objects.none(),
+                        ),
+                        'delete_flag': False,
+                    })
+
+                nested.append({
+                    'group': None,
+                    'group_id': g_temp_id,
+                    'is_new': True,
+                    'delete_flag': False,
+                    'group_form': DynamicFieldGroupForm(post_data, prefix=f'group-{g_temp_id}'),
+                    'node_entries': node_entries,
+                })
+
         return nested
 
     def _base_context(self, order, post_data=None):
         return {
             'order': order,
             'nested': self._build_nested(order, post_data),
-            'new_group_form': DynamicFieldGroupForm(prefix='new_group'),
             'child_form': DynamicFieldChildNodeForm(),
             'color_choices': TailwindColor.choices,
             'active_tab': 'preclinical',
@@ -954,61 +1016,42 @@ class PreClinicalManageView(View):
         action = request.POST.get('action', '')
         redirect_url = reverse('dashboard:ordering:preclinical', kwargs={'order_pk': order_pk})
 
-        # ===== افزودن گروه ===== #
-        # (دست‌نخورده — خارج از اسکوپِ گره)
-        if action == 'add_group':
-            title = request.POST.get('new_group-title', '').strip()
-            color = request.POST.get('new_group-color', '')
-            if title:
-                max_idx = DynamicFieldGroup.objects.filter(order=order).aggregate(
-                    m=Max('order_index'))['m'] or 0
-                DynamicFieldGroup.objects.create(
-                    order=order, title=title, color=color, order_index=max_idx + 1
-                )
-                messages.success(request, f'گروه «{title}» اضافه شد.')
-            else:
-                messages.error(request, 'عنوان گروه نمی‌تواند خالی باشد.')
-            return redirect(redirect_url)
-
-        # ===== حذف گروه ===== #
-        # (دست‌نخورده — خارج از اسکوپِ گره)
-        if action == 'delete_group':
-            deleted, _ = DynamicFieldGroup.objects.filter(
-                pk=request.POST.get('group_pk'), order=order
-            ).delete()
-            if deleted:
-                messages.success(request, 'گروه حذف شد.')
-            return redirect(redirect_url)
-
-        # ===== ذخیره همه (شامل گره‌های موجود + جدید) ===== #
+        # ===== ذخیره همه (شامل گروه‌های موجود + جدید و گره‌های موجود + جدید) ===== #
+        # ایجاد/ویرایش/حذف گروه دقیقاً مشابه گره و فرزند، بدون رفرش صفحه،
+        # تنها با زدن دکمهٔ «ذخیره همه» در دیتابیس persist می‌شود.
         if action == 'save_all':
             groups = DynamicFieldGroup.objects.filter(order=order)
             all_valid = True
-            all_group_forms = []
-            existing_node_data = []   # (group, node, nf, cf, delete_flag)
-            new_node_data = []        # (group, temp_id, nf, cf)
+            all_group_data = []     # (group_or_None, gf, delete_flag, is_new, id_str)
+            existing_node_data = []  # (group, node, nf, cf, delete_flag)
+            new_node_data = []       # (group_ref, node_temp_id, nf, cf, in_new_group)
+                                     # group_ref: group instance (موجود) یا g_temp_id (جدید)
 
+            # ── گروه‌های موجود ── #
             for group in groups:
-                gf = DynamicFieldGroupForm(request.POST, instance=group, prefix=f'group-{group.pk}')
-                if not gf.is_valid():
-                    all_valid = False
-                all_group_forms.append((group, gf))
+                g_prefix = f'group-{group.pk}'
+                delete_flag = bool(request.POST.get(f'{g_prefix}-DELETE'))
+                gf = DynamicFieldGroupForm(request.POST, instance=group, prefix=g_prefix)
+                if not delete_flag:
+                    if not gf.is_valid():
+                        all_valid = False
+                all_group_data.append((group, gf, delete_flag, False, str(group.pk)))
 
-                # ── گره‌های موجود ── #
+                # ── گره‌های موجود در گروه موجود ── #
                 for node in DynamicFieldNode.objects.filter(group=group, parent=None):
                     prefix = f'group-{group.pk}-node-{node.pk}'
-                    delete_flag = bool(request.POST.get(f'{prefix}-DELETE'))
+                    node_delete = bool(request.POST.get(f'{prefix}-DELETE'))
                     nf = DynamicFieldRootNodeForm(request.POST, instance=node, prefix=prefix)
                     cf = DynamicFieldChildNodeFormSet(
                         request.POST, instance=node, prefix=f'{prefix}-children'
                     )
-                    # اگر گره برای حذف علامت خورده، اعتبارسنجی فرزندان لازم نیست
-                    if not delete_flag:
+                    # اگر گروه یا گره برای حذف علامت خورده، اعتبارسنجی لازم نیست
+                    if not delete_flag and not node_delete:
                         if not nf.is_valid() or not cf.is_valid():
                             all_valid = False
-                    existing_node_data.append((group, node, nf, cf, delete_flag))
+                    existing_node_data.append((group, node, nf, cf, node_delete))
 
-                # ── گره‌های جدید (ساخته‌شده در JS) ── #
+                # ── گره‌های جدید در گروه موجود ── #
                 for temp_id in self._extract_new_root_temp_ids(request.POST, group.pk):
                     prefix = f'group-{group.pk}-node-{temp_id}'
                     nf = DynamicFieldRootNodeForm(request.POST, prefix=prefix)
@@ -1018,41 +1061,103 @@ class PreClinicalManageView(View):
                         prefix=f'{prefix}-children',
                         queryset=DynamicFieldNode.objects.none(),
                     )
+                    # اگر گروه برای حذف علامت خورده، اعتبارسنجی گره جدید لازم نیست
+                    if not delete_flag:
+                        if not nf.is_valid() or not cf.is_valid():
+                            all_valid = False
+                    new_node_data.append((group, temp_id, nf, cf, False))
+
+            # ── گروه‌های جدید ── #
+            for g_temp_id in self._extract_new_group_temp_ids(request.POST):
+                g_prefix = f'group-{g_temp_id}'
+                gf = DynamicFieldGroupForm(request.POST, prefix=g_prefix)
+                if not gf.is_valid():
+                    all_valid = False
+                all_group_data.append((None, gf, False, True, g_temp_id))
+
+                # ── گره‌های جدید داخل گروه جدید ── #
+                for temp_id in self._extract_new_root_temp_ids(request.POST, g_temp_id):
+                    prefix = f'group-{g_temp_id}-node-{temp_id}'
+                    nf = DynamicFieldRootNodeForm(request.POST, prefix=prefix)
+                    temp_instance = DynamicFieldNode()
+                    cf = DynamicFieldChildNodeFormSet(
+                        request.POST, instance=temp_instance,
+                        prefix=f'{prefix}-children',
+                        queryset=DynamicFieldNode.objects.none(),
+                    )
                     if not nf.is_valid() or not cf.is_valid():
                         all_valid = False
-                    new_node_data.append((group, temp_id, nf, cf))
+                    new_node_data.append((g_temp_id, temp_id, nf, cf, True))
 
-            # ── در صورت خطا: رندر مجدد با حفظ داده‌های گره‌های جدید ── #
+            # مجموعهٔ pk گروه‌هایی که برای حذف علامت خورده‌اند
+            # (برای نادیده گرفتن گره‌هایشان در اعتبارسنجی/خطا و ذخیره)
+            deleted_group_pks = {
+                group.pk for group, gf, delete_flag, is_new, id_str
+                in all_group_data if not is_new and delete_flag
+            }
+
+            # ── در صورت خطا: رندر مجدد با حفظ داده‌های آیتم‌های جدید ── #
             if not all_valid:
                 nested = []
-                for group, gf in all_group_forms:
+                # گروه‌های موجود
+                for group, gf, delete_flag, is_new, id_str in all_group_data:
+                    if is_new:
+                        continue
                     node_entries = []
-                    for g, node, nf, cf, delete_flag in existing_node_data:
+                    for g, node, nf, cf, df in existing_node_data:
                         if g.pk == group.pk:
                             node_entries.append({
                                 'node': node, 'node_id': str(node.pk),
                                 'is_new': False, 'node_form': nf,
-                                'child_fs': cf, 'delete_flag': delete_flag,
+                                'child_fs': cf, 'delete_flag': df,
                             })
-                    for g, temp_id, nf, cf in new_node_data:
-                        if g.pk == group.pk:
+                    for g, tid, nf, cf, in_new in new_node_data:
+                        if not in_new and g.pk == group.pk:
                             node_entries.append({
-                                'node': None, 'node_id': temp_id,
+                                'node': None, 'node_id': tid,
                                 'is_new': True, 'node_form': nf,
                                 'child_fs': cf, 'delete_flag': False,
                             })
-                    nested.append({'group': group, 'group_form': gf, 'node_entries': node_entries})
+                    nested.append({
+                        'group': group, 'group_id': id_str,
+                        'is_new': False, 'delete_flag': delete_flag,
+                        'group_form': gf, 'node_entries': node_entries,
+                    })
+                # گروه‌های جدید
+                for group, gf, delete_flag, is_new, id_str in all_group_data:
+                    if not is_new:
+                        continue
+                    node_entries = []
+                    for g, tid, nf, cf, in_new in new_node_data:
+                        if in_new and g == id_str:
+                            node_entries.append({
+                                'node': None, 'node_id': tid,
+                                'is_new': True, 'node_form': nf,
+                                'child_fs': cf, 'delete_flag': False,
+                            })
+                    nested.append({
+                        'group': None, 'group_id': id_str,
+                        'is_new': True, 'delete_flag': False,
+                        'group_form': gf, 'node_entries': node_entries,
+                    })
+
                 ctx = self._base_context(order)
                 ctx['nested'] = nested
 
                 all_error_lines = []
-                for group, gf in all_group_forms:
+                for group, gf, delete_flag, is_new, id_str in all_group_data:
+                    if delete_flag:
+                        continue
+                    if is_new:
+                        label = f"گروه جدید ({id_str})"
+                    else:
+                        label = f"گروه «{group.title or id_str}»"
                     if gf.errors:
-                        group_label = group.title or f"گروه {group.pk}"
-                        all_error_lines.extend(_collect_form_errors(gf, f"گروه «{group_label}»"))
+                        all_error_lines.extend(_collect_form_errors(gf, label))
 
                 for group, node, nf, cf, delete_flag in existing_node_data:
-                    if delete_flag:
+                    # گره‌های موجود در گروه‌های حذف‌شده نادیده گرفته می‌شوند
+                    if group.pk in deleted_group_pks or delete_flag:
                         continue
                     group_label = group.title or f"گروه {group.pk}"
                     node_label = node.title or f"گره {node.pk}"
@@ -1069,8 +1174,14 @@ class PreClinicalManageView(View):
                             )
                         )
 
-                for group, temp_id, nf, cf in new_node_data:
-                    group_label = group.title or f"گروه {group.pk}"
+                for group_ref, temp_id, nf, cf, in_new in new_node_data:
+                    # گره‌های جدید در گروه‌های حذف‌شده نادیده گرفته می‌شوند
+                    if not in_new and group_ref.pk in deleted_group_pks:
+                        continue
+                    if in_new:
+                        group_label = f"گروه جدید ({group_ref})"
+                    else:
+                        group_label = group_ref.title or f"گروه {group_ref.pk}"
                     label = f"گروه «{group_label}» / گره جدید ({temp_id})"
                     if nf.errors:
                         all_error_lines.extend(_collect_form_errors(nf, label))
@@ -1087,63 +1198,108 @@ class PreClinicalManageView(View):
                 return render(request, self.template_name, ctx)
 
             # ── ذخیره نهایی ── #
-            for group, gf in all_group_forms:
+            # ۱) گروه‌های موجود: حذف (cascade) یا ذخیرهٔ ویرایش
+            for group, gf, delete_flag, is_new, id_str in all_group_data:
+                if is_new:
+                    continue
+                if delete_flag:
+                    # حذف گروه + گره‌ها و فرزندان (cascade)
+                    deleted_group_pks.add(group.pk)
+                    group.delete()
+                    continue
                 gf.save()
 
+            # ۲) گره‌های موجود: حذف یا ذخیره + فرزندان
             for group, node, nf, cf, delete_flag in existing_node_data:
+                if group.pk in deleted_group_pks:
+                    continue
                 if delete_flag:
-                    # حذف گره + فرزندان (cascade)
                     node.delete()
                     continue
                 nf.save()
 
-                new_children = cf.save(commit=False)
-                for child in new_children:
-                    child.group = group
-                    child.parent = node
-                    child.save()
-
-                for obj in cf.deleted_objects:
-                    obj.delete()
-
+                # ذخیره فرزندان موجود
+                cf.is_valid()  # اعتبارسنجی کامل فرم‌ست
                 for form in cf.forms:
-                    try:
-                        will_delete = bool(form.cleaned_data.get('DELETE'))
-                    except (AttributeError, KeyError):
-                        will_delete = False
-                    if form.instance.pk and will_delete:
-                        try:
-                            still_exists = type(form.instance).objects.filter(
-                                pk=form.instance.pk).exists()
-                            if still_exists:
-                                form.instance.delete()
-                        except Exception:
-                            pass
+                    if not form.is_valid():
+                        continue
+                    if form.cleaned_data.get('DELETE', False):
+                        if form.instance.pk:
+                            form.instance.delete()
+                        continue
+                    if form.has_changed() or form.instance.pk is None:
+                        child = form.save(commit=False)
+                        child.group = group
+                        child.parent = node
+                        child.save()
 
-            # ─ـ گره‌های جدید: ابتدا ریشه را بساز، سپس فرزندانش را ── #
-            for group, temp_id, nf, cf in new_node_data:
+            # ۳) گروه‌های جدید: ایجاد، سپس گره‌های جدید داخلشان
+            for group, gf, delete_flag, is_new, id_str in all_group_data:
+                if not is_new:
+                    continue
+                new_group = gf.save(commit=False)
+                new_group.order = order
+                new_group.save()
+
+                for group_ref, temp_id, nf, cf, in_new in new_node_data:
+                    if not in_new or group_ref != id_str:
+                        continue
+                    new_node = nf.save(commit=False)
+                    new_node.group = new_group
+                    new_node.parent = None
+                    new_node.save()
+
+                    children_prefix = f'group-{id_str}-node-{temp_id}-children'
+                    cf2 = DynamicFieldChildNodeFormSet(
+                        request.POST, instance=new_node,
+                        prefix=children_prefix,
+                        queryset=DynamicFieldNode.objects.none(),
+                    )
+                    cf2.is_valid()
+                    for form in cf2.forms:
+                        if not form.is_valid():
+                            continue
+                        if form.cleaned_data.get('DELETE', False):
+                            continue
+                        if form.has_changed() or form.instance.pk is None:
+                            child = form.save(commit=False)
+                            child.group = new_group
+                            child.parent = new_node
+                            child.save()
+
+            # ۴) گره‌های جدید در گروه‌های موجود
+            for group_ref, temp_id, nf, cf, in_new in new_node_data:
+                if in_new:
+                    continue
+                if group_ref.pk in deleted_group_pks:
+                    continue
                 new_node = nf.save(commit=False)
-                new_node.group = group
+                new_node.group = group_ref
                 new_node.parent = None
                 new_node.save()
 
-                children_prefix = f'group-{group.pk}-node-{temp_id}-children'
+                children_prefix = f'group-{group_ref.pk}-node-{temp_id}-children'
                 cf2 = DynamicFieldChildNodeFormSet(
                     request.POST, instance=new_node,
                     prefix=children_prefix,
                     queryset=DynamicFieldNode.objects.none(),
                 )
-                new_children = cf.save(commit=False)
-                for child in new_children:
-                    child.group = group
-                    child.parent = new_node
-                    child.save()
+                cf2.is_valid()
+                for form in cf2.forms:
+                    if not form.is_valid():
+                        continue
+                    if form.cleaned_data.get('DELETE', False):
+                        continue
+                    if form.has_changed() or form.instance.pk is None:
+                        child = form.save(commit=False)
+                        child.group = group_ref
+                        child.parent = new_node
+                        child.save()
 
             messages.success(request, 'پیش‌بالینی با موفقیت ذخیره شد.')
             return redirect(redirect_url)
 
         return redirect(redirect_url)
-
 
 # ======================================================== #
 # ==================== Emergency View ==================== #
@@ -1383,28 +1539,19 @@ class EmergencyDispositionManageView(View):
                     continue
                 nf.save()
 
-                new_children = cf.save(commit=False)
-                for child in new_children:
-                    child.disposition = disposition
-                    child.parent = node
-                    child.save()
-
-                for obj in cf.deleted_objects:
-                    obj.delete()
-
+                cf.is_valid()
                 for form in cf.forms:
-                    try:
-                        will_delete = bool(form.cleaned_data.get('DELETE'))
-                    except (AttributeError, KeyError):
-                        will_delete = False
-                    if form.instance.pk and will_delete:
-                        try:
-                            still_exists = type(form.instance).objects.filter(
-                                pk=form.instance.pk).exists()
-                            if still_exists:
-                                form.instance.delete()
-                        except Exception:
-                            pass
+                    if not form.is_valid():
+                        continue
+                    if form.cleaned_data.get('DELETE', False):
+                        if form.instance.pk:
+                            form.instance.delete()
+                        continue
+                    if form.has_changed() or form.instance.pk is None:
+                        child = form.save(commit=False)
+                        child.disposition = disposition
+                        child.parent = node
+                        child.save()
 
             # ─ـ گره‌های جدید: ابتدا ریشه را بساز، سپس فرزندانش را ── #
             for temp_id, nf, cf in new_node_data:
@@ -1419,11 +1566,17 @@ class EmergencyDispositionManageView(View):
                     prefix=children_prefix,
                     queryset=EmergencyNode.objects.none(),
                 )
-                new_children = cf.save(commit=False)
-                for child in new_children:
-                    child.disposition = disposition
-                    child.parent = new_node
-                    child.save()
+                cf2.is_valid()
+                for form in cf2.forms:
+                    if not form.is_valid():
+                        continue
+                    if form.cleaned_data.get('DELETE', False):
+                        continue
+                    if form.has_changed() or form.instance.pk is None:
+                        child = form.save(commit=False)
+                        child.disposition = disposition
+                        child.parent = new_node
+                        child.save()
 
             messages.success(request, 'تعیین تکلیف با موفقیت ذخیره شد.')
             return redirect(redirect_url)

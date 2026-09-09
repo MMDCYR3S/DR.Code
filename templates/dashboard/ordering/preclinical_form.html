@@ -35,9 +35,22 @@
   .btn-delete-root:hover, .btn-delete-root.active {
     background: #ef4444; color: #fff; border-color: #ef4444;
   }
+  /* دکمه حذف گروه — برای گروه‌های موجود (deferred) و گروه‌های جدید (remove) */
+  .btn-delete-group {
+    display: flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 6px;
+    border: 1px solid #fecaca; background: #fff5f5;
+    color: #ef4444; font-size: 0.72rem; cursor: pointer;
+    transition: all .15s; white-space: nowrap;
+  }
+  .btn-delete-group:hover, .btn-delete-group.active {
+    background: #ef4444; color: #fff; border-color: #ef4444;
+  }
   .ck-editor__editable { min-height: 120px !important; }
   /* نشانگر بصری گره جدید (ساخته‌شده در JS، هنوز ذخیره‌نشده) */
   .node-item[data-new-root] { box-shadow: 0 0 0 2px rgba(99,102,241,.35); }
+  /* نشانگر بصری گروه جدید (ساخته‌شده در JS، هنوز ذخیره‌نشده) */
+  .group-item[data-new-group] { box-shadow: 0 0 0 2px rgba(99,102,241,.35); }
   .badge-new {
     font-size: .65rem; color: #4f46e5; background: #eef2ff;
     border: 1px solid #c7d2fe; padding: 1px 6px; border-radius: 9999px;
@@ -56,35 +69,20 @@
       </h1>
   </div>
 
-  {# ── افزودن گروه (دست‌نخورده — خارج از اسکوپِ گره) ── #}
+  {# ── افزودن گروه (ساخت در JS — بدون رفرش) ── #}
   <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-6">
-    <form method="post" class="flex flex-wrap gap-3 items-end">
-      {% csrf_token %}
-      <input type="hidden" name="action" value="add_group">
-      <div class="flex-1 min-w-40">
-        <label class="block text-xs font-medium text-gray-600 mb-1">{{ new_group_form.title.label }}</label>
-        {{ new_group_form.title }}
-      </div>
-      <div class="w-36">
-        <label class="block text-xs font-medium text-gray-600 mb-1">{{ new_group_form.color.label }}</label>
-        {{ new_group_form.color }}
-      </div>
-      <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium whitespace-nowrap">
+    <div class="flex flex-wrap gap-3 items-center justify-between">
+      <p class="text-xs text-gray-500">
+        <i class="fas fa-circle-info text-indigo-400 ml-1"></i>
+        گروه جدید با دکمهٔ زیر ساخته می‌شود؛ گره‌ها و فرزندانش را اضافه کنید و در پایان «ذخیره همه» را بزنید.
+      </p>
+      <button type="button" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium whitespace-nowrap" data-add-group>
         <i class="fas fa-plus ml-1"></i>گروه جدید
       </button>
-    </form>
+    </div>
   </div>
 
-  {# ── فرم‌های حذف گروه (جداگانه، دست‌نخورده) ── #}
-  {% for item in nested %}
-  <form method="post" id="delete-group-form-{{ item.group.pk }}" onsubmit="return confirm('این گروه و تمام گره‌هایش حذف شوند؟')">
-    {% csrf_token %}
-    <input type="hidden" name="action" value="delete_group">
-    <input type="hidden" name="group_pk" value="{{ item.group.pk }}">
-  </form>
-  {% endfor %}
-
-  {# ── فرم اصلی ذخیره (شامل گره‌های موجود و جدید) ── #}
+  {# ── فرم اصلی ذخیره (شامل گروه‌های موجود و جدید) ── #}
 <form method="post" id="save-all-form">
   {% csrf_token %}
   <input type="hidden" name="action" value="save_all">
@@ -92,15 +90,17 @@
   <div id="groups-wrapper">
     {% for item in nested %}
     <!-- کلاس group-item اضافه شد -->
-    <div class="group-item mb-6 rounded-xl border border-gray-200 shadow-sm overflow-hidden bg-white">
+    <div class="group-item mb-6 rounded-xl border border-gray-200 shadow-sm overflow-hidden bg-white"
+         {% if item.is_new %}data-new-group data-temp="{{ item.group_id }}"{% endif %}>
 
       {# هدر گروه #}
       <div class="flex justify-between items-center px-4 py-2.5 bg-gradient-to-l from-gray-50 to-indigo-50 border-b border-gray-200">
         <div class="flex items-center gap-3 flex-1">
           <span class="drag-handle group-handle text-gray-400 hover:text-gray-600 cursor-move text-lg leading-none" title="برای جابجایی گروه بکشید">⠿</span>
           <div class="flex gap-3 flex-1 items-center">
-            <div class="flex-1">
+            <div class="flex-1 flex items-center gap-2">
               {{ item.group_form.title }}
+              {% if item.is_new %}<span class="badge-new">جدید</span>{% endif %}
               {% if item.group_form.title.errors %}
                 <p class="text-xs text-red-500 mt-1">{{ item.group_form.title.errors|join:", " }}</p>
               {% endif %}
@@ -115,9 +115,21 @@
           {# order_index توسط hidden_fields رندر می‌شود (render یکبار، نه دوبار) #}
           {% for h in item.group_form.hidden_fields %}{{ h }}{% endfor %}
         </div>
-        <button type="submit" form="delete-group-form-{{ item.group.pk }}" class="mr-3 flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 text-xs transition-all">
+
+        {% if item.is_new %}
+        {# گروه جدید (ذخیره‌نشده): حذف از DOM #}
+        <button type="button" class="btn-delete-group mr-3" data-remove-group>
           <i class="fas fa-trash-alt"></i><span>حذف گروه</span>
         </button>
+        {% else %}
+        {# گروه موجود: حذف deferred (چک‌باکس DELETE، اعمال در save_all) #}
+        <input type="checkbox" name="group-{{ item.group_id }}-DELETE"
+          class="hidden" {% if item.delete_flag %}checked{% endif %}>
+        <button type="button" class="btn-delete-group mr-3 {% if item.delete_flag %}active{% endif %}"
+          onclick="toggleGroupDelete(this, 'group-{{ item.group_id }}-DELETE')">
+          <i class="fas fa-trash-alt"></i><span>حذف گروه</span>
+        </button>
+        {% endif %}
       </div>
 
       <div class="p-3 space-y-4">
@@ -129,14 +141,14 @@
               <i class="fas fa-circle-info text-blue-400 ml-1"></i>
               گره جدید با دکمهٔ زیر ساخته می‌شود؛ فرزندانش را اضافه کنید و در پایان «ذخیره همه» را بزنید.
             </p>
-            <button type="button" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-medium whitespace-nowrap" data-add-root data-gid="{{ item.group.pk }}">
+            <button type="button" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-medium whitespace-nowrap" data-add-root data-gid="{{ item.group_id }}">
               <i class="fas fa-plus ml-1"></i>گره جدید
             </button>
           </div>
         </div>
 
         {# گره‌های ریشه (موجود + جدید) #}
-        <div class="nodes-wrapper space-y-4" id="nodes-wrapper-{{ item.group.pk }}">
+        <div class="nodes-wrapper space-y-4" id="nodes-wrapper-{{ item.group_id }}">
           {% for ne in item.node_entries %}
           <div class="node-item rounded-xl border border-gray-200 shadow-sm overflow-hidden bg-white"
                data-root-node {% if ne.is_new %}data-new-root data-temp="{{ ne.node_id }}"{% endif %}>
@@ -170,10 +182,10 @@
               </button>
               {% else %}
               {# گره موجود: حذف deferred (چک‌باکس DELETE، اعمال در save_all) #}
-              <input type="checkbox" name="group-{{ item.group.pk }}-node-{{ ne.node_id }}-DELETE"
+              <input type="checkbox" name="group-{{ item.group_id }}-node-{{ ne.node_id }}-DELETE"
                 class="hidden" {% if ne.delete_flag %}checked{% endif %}>
               <button type="button" class="btn-delete-root mr-3 {% if ne.delete_flag %}active{% endif %}"
-                onclick="toggleRootDelete(this, 'group-{{ item.group.pk }}-node-{{ ne.node_id }}-DELETE')">
+                onclick="toggleRootDelete(this, 'group-{{ item.group_id }}-node-{{ ne.node_id }}-DELETE')">
                 <i class="fas fa-trash-alt"></i><span>حذف گره</span>
               </button>
               {% endif %}
@@ -227,7 +239,7 @@
               <button type="button"
                 class="mt-2 text-xs text-blue-500 hover:text-blue-700 flex items-center gap-1 px-1"
                 data-add-child
-                data-gid="{{ item.group.pk }}"
+                data-gid="{{ item.group_id }}"
                 data-nid="{{ ne.node_id }}">
                 <i class="fas fa-plus"></i> فرزند جدید
               </button>
@@ -243,22 +255,74 @@
       </div>
     </div>
     {% empty %}
-    <div class="text-center py-10 text-gray-400 text-sm">
-      هنوز گروهی اضافه نشده. از بخش بالا یک گروه اضافه کنید.
+    <div class="text-center py-10 text-gray-400 text-sm" id="empty-groups-msg">
+      هنوز گروهی اضافه نشده. از دکمهٔ «گروه جدید» استفاده کنید.
     </div>
     {% endfor %}
   </div>
 
-  {% if nested %}
+  {# دکمه ذخیره همیشه نمایش داده می‌شود تا پس از افزودن گروه در JS قابل دسترس باشد #}
   <div class="flex justify-end pt-2 pb-4">
     <button type="submit"
       class="px-5 py-2.5 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 text-sm">
       <i class="fas fa-save ml-1"></i>ذخیره همه
     </button>
   </div>
-  {% endif %}
 
 </form>
+
+{# ── Template خالی گروه (ساخت در JS) ── #}
+<template id="empty-group-template">
+  <div class="group-item mb-6 rounded-xl border border-gray-200 shadow-sm overflow-hidden bg-white"
+       data-new-group data-temp="__GID__">
+
+    <div class="flex justify-between items-center px-4 py-2.5 bg-gradient-to-l from-gray-50 to-indigo-50 border-b border-gray-200">
+      <div class="flex items-center gap-3 flex-1">
+        <span class="drag-handle group-handle text-gray-400 hover:text-gray-600 cursor-move text-lg leading-none" title="برای جابجایی گروه بکشید">⠿</span>
+        <div class="flex gap-3 flex-1 items-center">
+          <div class="flex-1 flex items-center gap-2">
+            <input type="text" name="group-__GID__-title"
+              class="w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition text-right"
+              placeholder="عنوان گروه...">
+            <span class="badge-new">جدید</span>
+          </div>
+          <div class="w-32">
+            <select name="group-__GID__-color"
+              class="w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition text-left">
+              {% for val, label in color_choices %}
+                <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <input type="hidden" name="group-__GID__-order_index" value="0">
+      </div>
+      <button type="button" class="btn-delete-group mr-3" data-remove-group>
+        <i class="fas fa-trash-alt"></i><span>حذف گروه</span>
+      </button>
+    </div>
+
+    <div class="p-3 space-y-4">
+      {# ── دکمه «گره جدید» (ساخت در JS — بدون رفرش) ── #}
+      <div class="bg-blue-50 border border-blue-100 rounded-lg p-3">
+        <div class="flex flex-wrap gap-3 items-center justify-between">
+          <p class="text-xs text-gray-500">
+            <i class="fas fa-circle-info text-blue-400 ml-1"></i>
+            گره جدید با دکمهٔ زیر ساخته می‌شود؛ فرزندانش را اضافه کنید و در پایان «ذخیره همه» را بزنید.
+          </p>
+          <button type="button" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-medium whitespace-nowrap" data-add-root data-gid="__GID__">
+            <i class="fas fa-plus ml-1"></i>گره جدید
+          </button>
+        </div>
+      </div>
+
+      {# گره‌های ریشه #}
+      <div class="nodes-wrapper space-y-4" id="nodes-wrapper-__GID__">
+        <p class="text-xs text-gray-400 py-2 text-center">هنوز گره‌ای برای این گروه اضافه نشده. از دکمهٔ «گره جدید» استفاده کنید.</p>
+      </div>
+    </div>
+  </div>
+</template>
 
 {# ── Template خالی گره ریشه (ساخت در JS) ── #}
 <template id="empty-root-template">
@@ -372,6 +436,17 @@
     const isMarked = cb.checked;
     btn.classList.toggle('active', isMarked);
     nodeCard?.style.setProperty('opacity', isMarked ? '0.4' : '1');
+  }
+
+  // ── حذف گروه موجود (toggle DELETE checkbox، اعمال در save_all) ──
+  function toggleGroupDelete(btn, fieldName) {
+    const groupCard = btn.closest('.group-item');
+    const cb = (groupCard || document).querySelector(`[name="${fieldName}"]`);
+    if (!cb) return;
+    cb.checked = !cb.checked;
+    const isMarked = cb.checked;
+    btn.classList.toggle('active', isMarked);
+    groupCard?.style.setProperty('opacity', isMarked ? '0.4' : '1');
   }
 
   // === سیستم بروزرسانی ایندکسِ تمام درخت ===
@@ -503,6 +578,49 @@
         ta.value = ta._ckEditor.getData();
       }
     });
+  });
+
+  // ── افزودن گروه جدید (JS — بدون رفرش) ──
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-add-group]');
+    if (!btn) return;
+
+    const groupsWrapper = document.getElementById('groups-wrapper');
+    if (!groupsWrapper) return;
+
+    // تعیین temp-id بعدی (جلوگیری از تداخل با گروه‌های جدیدِ موجود در DOM)
+    const nums = [...groupsWrapper.querySelectorAll('[data-new-group][data-temp]')]
+      .map(el => el.dataset.temp)
+      .map(t => (t.match(/(\d+)$/) || [,'0'])[1])
+      .map(Number);
+    const nextNum = (nums.length ? Math.max(...nums) : 0) + 1;
+    const tempId = `new${nextNum}`;
+
+    const tmpl = document.getElementById('empty-group-template');
+    const html = tmpl.innerHTML.replaceAll('__GID__', tempId);
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = html;
+    const newEl = wrapper.firstElementChild;
+
+    groupsWrapper.querySelector('#empty-groups-msg')?.remove();
+    groupsWrapper.appendChild(newEl);
+
+    updateAllIndexes();
+    initAllSortables();
+  });
+
+  // ── حذف گروه جدید (از DOM — هنوز ذخیره نشده) ──
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-remove-group]');
+    if (!btn) return;
+    const group = btn.closest('.group-item');
+    if (!group) return;
+    if (confirm('این گروه جدید و تمام گره‌هایش حذف شوند؟ (هنوز ذخیره نشده)')) {
+      destroyEditorsIn(group);
+      group.remove();
+      updateAllIndexes();
+    }
   });
 
   // ── افزودن گره ریشه جدید (JS — بدون رفرش) ──
