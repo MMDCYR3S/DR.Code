@@ -1,3 +1,4 @@
+from django.db.models import ProtectedError, RestrictedError
 from django.views.generic import ListView, DetailView, View
 from django.urls import reverse_lazy
 from django.http import JsonResponse
@@ -166,6 +167,7 @@ class MembershipDetailView(LoginRequiredMixin, DetailView):
         context['all_features'] = Feature.objects.all().order_by('feature_type', 'name')
         context['feature_types'] = FeatureType.choices
         context['plan_tags'] = PlanTag.choices
+        context['memberships'] = Membership.objects.all().order_by('title')
 
         return context
 
@@ -203,20 +205,55 @@ class MembershipUpdateView(LoginRequiredMixin, View):
     def post(self, request, pk, *args, **kwargs):
         try:
             membership = get_object_or_404(Membership, pk=pk)
-            data = json.loads(request.body.decode('utf-8'))
+
+            if request.content_type == 'application/json':
+                data = json.loads(request.body.decode('utf-8'))
+                is_json = True
+                raw_active = data.get('is_active', True)
+            else:
+                data = {
+                    'title': request.POST.get('title', ''),
+                    'description': request.POST.get('description', ''),
+                    'features': request.POST.getlist('features'),
+                }
+                is_json = False
+                raw_active = request.POST.get('is_active', '0')
+
+            # ── تبدیل صریح is_active به boolean ──
+            if isinstance(raw_active, bool):
+                is_active_value = raw_active
+            else:
+                is_active_value = str(raw_active).lower() in ('1', 'true', 'on', 'yes')
+
+            data['is_active'] = is_active_value
+
             form = MembershipForm(data, instance=membership)
             if form.is_valid():
-                form.save()
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Membership با موفقیت بروزرسانی شد.'
-                })
+                obj = form.save(commit=False)
+                obj.is_active = is_active_value
+                obj.save()
+                form.save_m2m()
+
+                print(f"✅ SAVED: is_active={obj.is_active}")
+
+                if is_json:
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Membership با موفقیت بروزرسانی شد.'
+                    })
+                messages.success(request, 'Membership با موفقیت بروزرسانی شد.')
+                return redirect('dashboard:plans:membership_detail', pk=pk)
             else:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'لطفا خطاهای فرم را برطرف کنید.',
-                    'errors': form.errors
-                })
+                print("❌ FORM ERRORS:", form.errors)
+                if is_json:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'لطفا خطاهای فرم را برطرف کنید.',
+                        'errors': form.errors
+                    })
+                messages.error(request, f'خطا در بروزرسانی: {form.errors}')
+                return redirect('dashboard:plans:membership_detail', pk=pk)
+
         except json.JSONDecodeError:
             return JsonResponse({
                 'success': False,
@@ -228,20 +265,69 @@ class MembershipUpdateView(LoginRequiredMixin, View):
                 'message': f'خطا در بروزرسانی membership: {str(e)}'
             }, status=500)
 
-
 class MembershipDeleteView(LoginRequiredMixin, View):
     def post(self, request, pk, *args, **kwargs):
         try:
             membership = get_object_or_404(Membership, pk=pk)
+            title = membership.title
+
+            # چک پیش از حذف: آیا وابستگی محافظت‌شده وجود دارد؟
+            plans_count = membership.plans.count()
+            # اگر مدل Subscription داری، اینجا هم چک کن
+            from apps.subscriptions.models import Subscription  # ← اگر مسیرش فرق داره اصلاح کن
+            subscriptions_count = Subscription.objects.filter(plan__membership=membership).count()
+
+            if plans_count > 0 or subscriptions_count > 0:
+                return JsonResponse({
+                    'success': False,
+                    'message': (
+                        f'این Membership قابل حذف نیست چون '
+                        f'{plans_count} پلن و {subscriptions_count} اشتراک فعال به آن وابسته‌اند. '
+                        f'ابتدا پلن‌ها و اشتراک‌های مرتبط را حذف یا منتقل کنید.'
+                    ),
+                    'code': 'protected',
+                    'details': {
+                        'plans_count': plans_count,
+                        'subscriptions_count': subscriptions_count,
+                    }
+                }, status=400)
+
             membership.delete()
             return JsonResponse({
                 'success': True,
-                'message': 'Membership با موفقیت حذف شد.'
+                'message': f'Membership «{title}» با موفقیت حذف شد.'
             })
+
+        except ProtectedError as e:
+            # اگر با وجود چک بالا، باز هم محافظت‌شده بود
+            protected_objects = list(e.protected_objects)
+            return JsonResponse({
+                'success': False,
+                'message': (
+                    f'این Membership قابل حذف نیست چون '
+                    f'{len(protected_objects)} رکورد وابسته به آن وجود دارد. '
+                    f'ابتدا آن‌ها را حذف یا منتقل کنید.'
+                ),
+                'code': 'protected',
+                'details': {
+                    'protected_count': len(protected_objects),
+                    'protected_models': list({
+                        obj.__class__.__name__ for obj in protected_objects
+                    }),
+                }
+            }, status=400)
+
+        except RestrictedError as e:
+            return JsonResponse({
+                'success': False,
+                'message': 'این Membership به دلیل وابستگی‌های محافظت‌شده قابل حذف نیست.',
+                'code': 'restricted'
+            }, status=400)
+
         except Exception as e:
             return JsonResponse({
                 'success': False,
-                'message': f'خطا در حذف membership: {str(e)}'
+                'message': f'خطا در حذف Membership: {str(e)}'
             }, status=500)
 
 

@@ -23,7 +23,14 @@ document.addEventListener('alpine:init', () => {
         openAddPlanModal() {
             this.isEditMode = false;
             this.editingId = null;
-            this.planForm = { membership: '{{ membership.id }}', name: '', tag: '', duration_days: '', price: '', is_active: true };
+            this.planForm = { 
+                membership: config.membershipId,
+                name: '', 
+                tag: '', 
+                duration_days: '', 
+                price: '', 
+                is_active: true 
+            };
             this.isPlanModalOpen = true;
         },
 
@@ -137,8 +144,8 @@ document.addEventListener('alpine:init', () => {
         // ===== Delete Membership =====
         deleteMembership() {
             this.deleteType = 'membership';
-            this.deleteId = '{{ membership.id }}';
-            this.deleteTitle = '{{ membership.title|escapejs }}';
+            this.deleteId = config.membershipId;
+            this.deleteTitle = config.membershipTitle;
             this.showDelete = true;
         },
 
@@ -168,7 +175,7 @@ document.addEventListener('alpine:init', () => {
                 if (data.success) {
                     this.showNotification('success', data.message);
                     if (this.deleteType === 'membership') {
-                        window.location.href = '{% url "dashboard:plans:plan_list" %}';
+                        window.location.href = config.planListUrl;
                     } else {
                         setTimeout(() => window.location.reload(), 1000);
                     }

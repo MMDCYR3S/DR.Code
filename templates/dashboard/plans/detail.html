@@ -6,12 +6,15 @@
 {% block content %}
 <div class="container mx-auto"
      x-data="membershipDetailManager({
+        membershipId: {{ membership.id }},
+        membershipTitle: '{{ membership.title|escapejs }}',
         membershipUpdateUrl: '{% url 'dashboard:plans:membership_update' membership.pk %}',
         membershipDeleteUrl: '{% url 'dashboard:plans:membership_delete' membership.pk %}',
         planCreateUrl: '{% url 'dashboard:plans:plan_create' %}',
         planDetailUrlTpl: '{% url 'dashboard:plans:plan_detail' 0 %}',
         planUpdateUrlTpl: '{% url 'dashboard:plans:plan_update' 0 %}',
-        planDeleteUrlTpl: '{% url 'dashboard:plans:plan_delete' 0 %}'
+        planDeleteUrlTpl: '{% url 'dashboard:plans:plan_delete' 0 %}',
+        planListUrl: '{% url 'dashboard:plans:plan_list' %}'
      })">
 
     {# ===== سربرگ صفحه ===== #}
