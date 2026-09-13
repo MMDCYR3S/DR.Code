@@ -379,20 +379,28 @@ class ParspalVerifyView(APIView):
                         # 9️⃣ بروزرسانی پروفایل بر اساس «دورترین» انقضای فعال
                         max_end = Subscription.objects.filter(
                             user=payment.user,
-                            status=SubscriptionStatusChoicesModel.active,
+                            status=SubscriptionStatusChoicesModel.active.value,   # ← .value
                             end_date__gt=now,
                         ).aggregate(m=Max('end_date'))['m']
 
                         profile = payment.user.profile
                         if profile.role != "admin":
-                            profile.role = 'premium'
-                        if max_end:
-                            profile.subscription_end_date = max_end
-                        profile.save(update_fields=['role', 'subscription_end_date'])
-                        logger.info(f"[PARSPAL_VERIFY] Profile updated: ID={profile.id}, SubEnd={max_end}")
+                            if max_end:
+                                profile.role = 'premium'
+                                profile.subscription_end_date = max_end
+                            else:
+                                profile.role = 'regular'
+                                profile.subscription_end_date = None
+                            profile.save(update_fields=['role', 'subscription_end_date'])
+                        logger.info(f"[PARSPAL_VERIFY] Profile updated: ID={profile.id}, role={profile.role}, SubEnd={max_end}")
 
                     # 🔟 پاک کردن کش
                     cache.delete(cache_key)
+
+                    # ⚠️ از مقادیر مدل استفاده می‌کنیم چون در هر دو برنچ
+                    # (تمدید یا ایجاد) این مقادیر روی payment.subscription ثبت شده‌اند
+                    final_start = payment.subscription.start_date
+                    final_end = payment.subscription.end_date
 
                     return Response({
                         "success": True,
@@ -403,8 +411,8 @@ class ParspalVerifyView(APIView):
                             "reference_number": data.get("reference_number"),
                             "transaction_id": data.get("transaction_id"),
                             "order_id": order_id,
-                            "subscription_start": new_start.isoformat(),
-                            "subscription_end": new_end.isoformat(),
+                            "subscription_start": final_start.isoformat() if final_start else None,
+                            "subscription_end": final_end.isoformat() if final_end else None,
                             "already_verified": False
                         }
                     }, status=status.HTTP_200_OK)
@@ -453,7 +461,7 @@ class ParspalVerifyView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"[PARSPAL_VERIFY] Error in verification: {e}")
+            logger.error(f"[PARSPAL_VERIFY] Error in verification: {e}", exc_info=True)
             payment.status = PaymentStatus.FAILED
             payment.save(update_fields=['status'])
 

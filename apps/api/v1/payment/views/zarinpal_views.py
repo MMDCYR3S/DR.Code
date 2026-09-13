@@ -1,4 +1,5 @@
 from datetime import timedelta
+from django.db.models.aggregates import Max
 from rest_framework.generics import CreateAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -201,7 +202,7 @@ class PaymentVerifyView(APIView):
                             .select_for_update()
                             .filter(
                                 user=payment.user,
-                                status=SubscriptionStatusChoicesModel.active,
+                                status=SubscriptionStatusChoicesModel.active.value,
                                 end_date__gt=now,
                                 plan__membership_id=membership_id,
                             )
@@ -232,7 +233,7 @@ class PaymentVerifyView(APIView):
                     raise ValueError(verify_result.get('error', 'تراکنش ناموفق بود'))
 
         except Exception as e:
-            logger.error(f"Payment Verify Error: {str(e)}")
+            logger.error(f"Payment Verify Error: {str(e)}", exc_info=True)
             context_data['errorMessage'] = str(e)
             
             if is_api_request:
@@ -302,22 +303,36 @@ class PaymentVerifyView(APIView):
 
     def _update_user_profile(self, user):
         """
-        پروفایل باید بر اساس «دورترین» انقضای اشتراک‌های فعال آپدیت بشه،
-        نه فقط یک اشتراک.
+        پروفایل باید بر اساس «دورترین» انقضای اشتراک‌های فعال آپدیت بشه.
+        - اگر حداقل یک اشتراک فعال هست → premium
+        - اگر هیچ اشتراک فعالی نیست → regular و پاک کردن تاریخ انقضا
         """
         try:
             profile = user.profile
-            if profile.role != "admin":
-                profile.role = 'premium'
 
+            # ادمین همیشه ادمین می‌مونه
+            if profile.role == 'admin':
+                return
+
+            now = timezone.now()
             max_end = Subscription.objects.filter(
                 user=user,
-                status=SubscriptionStatusChoicesModel.active,
-                end_date__gt=timezone.now(),
+                status=SubscriptionStatusChoicesModel.active.value,
+                end_date__gt=now,
             ).aggregate(m=Max('end_date'))['m']
 
             if max_end:
+                profile.role = 'premium'
                 profile.subscription_end_date = max_end
+            else:
+                profile.role = 'regular'
+                profile.subscription_end_date = None
+
             profile.save(update_fields=['role', 'subscription_end_date'])
+            logger.info(
+                f"Profile synced for user {user.id}: "
+                f"role={profile.role}, end={profile.subscription_end_date}"
+            )
         except Exception as e:
-            logger.error(f"Error updating profile for user {user.id}: {e}")
+            # ⚠️ exc_info=True تا traceback کامل لاگ بشه — دفعه بعد راحت‌تر پیداش می‌کنی
+            logger.error(f"Error updating profile for user {user.id}: {e}", exc_info=True)
