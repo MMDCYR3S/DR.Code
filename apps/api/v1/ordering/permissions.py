@@ -14,39 +14,36 @@ class IsOrderAccessible(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         user = request.user
 
-        # ادمین‌های سیستم همیشه دسترسی دارند
+        # ادمینهای سیستمی همیشه دسترسی دارند
         if user.is_authenticated and (user.is_staff or user.is_superuser):
             return True
 
-        # احراز هویت اجباری است
+        # ─── FREE: برای همه (حتی ناشناس) آزاده ────────────────────
+        if obj.access_level == AccessChoices.free:
+            return True
+
+        # ─── از اینجا به بعد فقط PREMIUM ──────────────────────────
+
+        # احراز هویت اجباری
         if not user.is_authenticated:
             self.message = "برای دسترسی به این محتوا باید وارد حساب کاربری خود شوید."
             return False
 
-        # بررسی تایید پروفایل
-        profile_approved = (
-            hasattr(user, 'profile') and
-            user.profile.auth_status == AuthStatusChoices.APPROVED.value
-        )
-        if not profile_approved:
+        # تایید پروفایل
+        if not (hasattr(user, 'profile') and
+                user.profile.auth_status == AuthStatusChoices.APPROVED.value):
             self.message = "حساب کاربری شما هنوز تایید نشده است. لطفا منتظر بمانید."
             return False
 
-        # ادمین‌های نقش‌محور دسترسی کامل دارند
         if user.profile.role == "admin":
             return True
 
-        # ─── اوردر رایگان: کاربر تأییدشده کافی است ───────────────────
-        if obj.access_level == AccessChoices.free:
-            return True
-
-        # ─── اوردر ویژه (PREMIUM): بررسی‌های اشتراک ──────────────────
         if user.profile.role == "regular":
             self.message = "برای دسترسی به این اوردر ویژه باید اشتراک تهیه کنید."
             return False
 
         if user.profile.role == "visitor":
-            self.message = "برای دسترسی به اوردر ویژه ابتدا ثبت‌نام کرده و اشتراک خریداری کنید."
+            self.message = "برای دسترسی به اوردر ویژه ابتدا ثبتنام کرده و اشتراک خریداری کنید."
             return False
 
         if not user.has_active_membership():
@@ -55,7 +52,7 @@ class IsOrderAccessible(permissions.BasePermission):
 
         from apps.subscriptions.models import FeatureType
         if not user.has_feature_access(FeatureType.ORDERING):
-            self.message = "برای دسترسی به سیستم سفارش‌گذاری نیاز به خرید اشتراک مناسب دارید."
+            self.message = "برای دسترسی به سیستم سفارشگذاری نیاز به خرید اشتراک مناسب دارید."
             return False
 
         return True
