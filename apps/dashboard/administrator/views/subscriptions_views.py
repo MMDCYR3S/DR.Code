@@ -5,76 +5,70 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.utils import timezone
 from django.db import transaction
+from django.db.models import Max
 from datetime import timedelta
 
 from apps.accounts.permissions import IsTokenJtiActive, HasAdminAccessPermission
 from apps.subscriptions.models import Subscription, Plan, SubscriptionStatusChoicesModel
+from apps.subscriptions.services import sync_user_profile
 
 User = get_user_model()
-
 
 # ================================================== #
 # ========= SUBSCRIPTION CREATE VIEW ========= #
 # ================================================== #
 class SubscriptionCreateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPermission, View):
     """
-    ویو برای ایجاد اشتراک جدید برای کاربر.
-    فقط برای کاربرانی که اشتراک فعال ندارند.
+    ایجاد اشتراک جدید برای کاربر.
+    اگر برای همان membership یک اشتراک فعال وجود داشته باشد، اجازه نمی‌دهد
+    و ادمین باید از تمدید استفاده کند.
     """
-    
+
     def post(self, request, *args, **kwargs):
         user_id = request.POST.get('user_id')
         plan_id = request.POST.get('plan_id')
         payment_amount = request.POST.get('payment_amount')
-        
-        # اعتبارسنجی ورودی‌ها
+
         if not all([user_id, plan_id, payment_amount]):
             return JsonResponse({
                 'success': False,
                 'message': 'تمام فیلدها الزامی هستند.'
             }, status=400)
-        
+
         try:
             user = get_object_or_404(User, pk=user_id)
             plan = get_object_or_404(Plan, pk=plan_id)
-            
-            # بررسی اینکه کاربر اشتراک فعال ندارد
-            has_active = Subscription.objects.filter(
+
+            # فقط چک می‌کنیم برای همون membership اشتراک فعال نباشه
+            has_active_same_membership = Subscription.objects.filter(
                 user=user,
                 status=SubscriptionStatusChoicesModel.active.value,
-                end_date__gte=timezone.now()
+                end_date__gt=timezone.now(),
+                plan__membership_id=plan.membership_id,
             ).exists()
-            
-            if has_active:
+
+            if has_active_same_membership:
                 return JsonResponse({
                     'success': False,
-                    'message': 'این کاربر در حال حاضر یک اشتراک فعال دارد.'
+                    'message': f'کاربر در حال حاضر یک اشتراک فعال برای «{plan.membership.title}» دارد. لطفاً از گزینه تمدید استفاده کنید.'
                 }, status=400)
-            
-            # محاسبه تاریخ انقضا
+
             start_date = timezone.now()
             end_date = start_date + timedelta(days=plan.duration_days)
-            
-            # ایجاد اشتراک جدید
+
             with transaction.atomic():
                 subscription = Subscription.objects.create(
                     user=user,
                     plan=plan,
                     payment_amount=payment_amount,
                     status=SubscriptionStatusChoicesModel.active.value,
-                    end_date=end_date
+                    end_date=end_date,
                 )
-                
-                # بروزرسانی نقش کاربر به premium
-                profile = user.profile
-                profile.subscription_end_date = end_date
-                if not profile.role == 'admin':
-                    profile.role = 'premium'
-                profile.save()
-            
+                sync_user_profile(user)
+
             return JsonResponse({
                 'success': True,
-                'message': f'اشتراک برای کاربر {user.full_name} با موفقیت ایجاد شد.',
+                'message': f'اشتراک «{plan.membership.title}» برای {user.full_name} با موفقیت ایجاد شد.',
                 'subscription': {
                     'id': subscription.id,
                     'plan_name': subscription.plan.name,
@@ -84,22 +78,7 @@ class SubscriptionCreateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
                     'days_remaining': subscription.days_remaining
                 }
             }, status=201)
-            
-        except User.DoesNotExist:
-            return JsonResponse({
-                'success': False,
-                'message': 'کاربر مورد نظر یافت نشد.'
-            }, status=404)
-        except Plan.DoesNotExist:
-            return JsonResponse({
-                'success': False,
-                'message': 'پلن مورد نظر یافت نشد.'
-            }, status=404)
-        except ValueError:
-            return JsonResponse({
-                'success': False,
-                'message': 'مبلغ وارد شده معتبر نیست.'
-            }, status=400)
+
         except Exception as e:
             return JsonResponse({
                 'success': False,
@@ -242,43 +221,25 @@ class SubscriptionUpdateView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
 # ========= SUBSCRIPTION DELETE VIEW ========= #
 # ================================================== #
 class SubscriptionDeleteView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPermission, View):
-    """
-    ویو برای حذف اشتراک کاربر.
-    """
-    
+
     def post(self, request, pk, *args, **kwargs):
-        """حذف اشتراک"""
         try:
             subscription = get_object_or_404(
                 Subscription.objects.select_related('user'),
                 pk=pk
             )
-            
-            user_name = subscription.user.full_name
-            user_profile = subscription.user.profile
-            
+            user = subscription.user
+            user_name = user.full_name
+
             with transaction.atomic():
-                # حذف اشتراک
                 subscription.delete()
-                
-                # بررسی اینکه آیا کاربر اشتراک فعال دیگری دارد یا نه
-                has_other_active = Subscription.objects.filter(
-                    user=subscription.user,
-                    status=SubscriptionStatusChoicesModel.active.value,
-                    end_date__gte=timezone.now()
-                ).exists()
-                
-                # اگر اشتراک فعال دیگری ندارد، نقش را به regular تغییر بده
-                if not has_other_active:
-                    user_profile.role = 'regular'
-                    user_profile.subscription_end_date = None
-                    user_profile.save()
-            
+                sync_user_profile(user)
+
             return JsonResponse({
                 'success': True,
-                'message': f'اشتراک کاربر {user_name} با موفقیت حذف شد.'
+                'message': f'اشتراک {user_name} با موفقیت حذف شد.'
             })
-            
+
         except Subscription.DoesNotExist:
             return JsonResponse({
                 'success': False,
@@ -295,39 +256,37 @@ class SubscriptionDeleteView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
 # ========= USER SUBSCRIPTION DETAIL VIEW ========= #
 # ================================================== #
 class UserSubscriptionDetailView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPermission, View):
-    """
-    ویو برای دریافت اطلاعات اشتراک‌های یک کاربر خاص.
-    """
-    
+
     def get(self, request, user_id, *args, **kwargs):
-        """دریافت لیست اشتراک‌های کاربر"""
         try:
             user = get_object_or_404(User, pk=user_id)
-            
+            now = timezone.now()
+
             subscriptions = Subscription.objects.filter(
                 user=user
-            ).select_related('plan').order_by('-start_date')
-            
+            ).select_related('plan', 'plan__membership').order_by('-end_date')
+
             subscriptions_data = []
+            active_subscriptions = []
+
             for sub in subscriptions:
-                subscriptions_data.append({
+                item = {
                     'id': sub.id,
                     'plan_name': sub.plan.name,
+                    'membership_id': sub.plan.membership_id,
+                    'membership_title': sub.plan.membership.title,
                     'payment_amount': str(sub.payment_amount),
                     'status': sub.status,
                     'status_display': sub.get_status_display(),
                     'start_date': sub.shamsi_start_date,
                     'end_date': sub.shamsi_end_date,
                     'days_remaining': sub.days_remaining,
-                    'is_active': sub.is_active
-                })
-            
-            # یافتن اشتراک فعال فعلی
-            active_subscription = subscriptions.filter(
-                status=SubscriptionStatusChoicesModel.active.value,
-                end_date__gte=timezone.now()
-            ).first()
-            
+                    'is_active': sub.is_active,
+                }
+                subscriptions_data.append(item)
+                if sub.is_active:
+                    active_subscriptions.append(item)
+
             return JsonResponse({
                 'success': True,
                 'user': {
@@ -335,17 +294,13 @@ class UserSubscriptionDetailView(LoginRequiredMixin, IsTokenJtiActive, HasAdminA
                     'full_name': user.full_name,
                     'role': user.profile.get_role_display()
                 },
-                'has_active_subscription': active_subscription is not None,
-                'active_subscription': {
-                    'id': active_subscription.id,
-                    'plan_name': active_subscription.plan.name,
-                    'end_date': active_subscription.shamsi_end_date,
-                    'days_remaining': active_subscription.days_remaining
-                } if active_subscription else None,
+                'active_count': len(active_subscriptions),
+                'has_active_subscription': len(active_subscriptions) > 0,
+                'active_subscriptions': active_subscriptions,
                 'subscriptions': subscriptions_data,
-                'total_count': subscriptions.count()
+                'total_count': len(subscriptions_data)
             })
-            
+
         except User.DoesNotExist:
             return JsonResponse({
                 'success': False,
@@ -400,26 +355,21 @@ class GetAvailablePlansView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccess
 # ========= SUBSCRIPTION EXTEND VIEW ========= #
 # ================================================== #
 class SubscriptionExtendView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAccessPermission, View):
-    """
-    ویو برای تمدید اشتراک (اضافه کردن روز به اشتراک فعلی).
-    """
-    
+
     def post(self, request, pk, *args, **kwargs):
-        """تمدید اشتراک با اضافه کردن روز"""
         try:
             subscription = get_object_or_404(
                 Subscription.objects.select_related('user'),
                 pk=pk
             )
-            
+
             days_to_add = request.POST.get('days_to_add')
-            
             if not days_to_add:
                 return JsonResponse({
                     'success': False,
                     'message': 'تعداد روز برای تمدید مشخص نشده است.'
                 }, status=400)
-            
+
             try:
                 days = int(days_to_add)
                 if days <= 0:
@@ -429,34 +379,29 @@ class SubscriptionExtendView(LoginRequiredMixin, IsTokenJtiActive, HasAdminAcces
                     'success': False,
                     'message': f'تعداد روز معتبر نیست: {str(e)}'
                 }, status=400)
-            
-            # تمدید اشتراک
-            subscription.end_date = subscription.end_date + timedelta(days=days)
-            profile = subscription.user.profile
-            profile.subscription_end_date = subscription.end_date
-            profile.save()
-            
-            # اگر اشتراک منقضی شده بود، فعال کن
-            if subscription.status == SubscriptionStatusChoicesModel.expired.value:
+
+            with transaction.atomic():
+                # اگر اشتراک قبلاً منقضی شده، از الان شروع کن
+                if subscription.end_date < timezone.now():
+                    subscription.start_date = timezone.now()
+                    subscription.end_date = timezone.now() + timedelta(days=days)
+                else:
+                    subscription.end_date = subscription.end_date + timedelta(days=days)
+
                 subscription.status = SubscriptionStatusChoicesModel.active.value
-                profile = subscription.user.profile
-                profile.subscription_end_date = subscription.end_date
-                if not profile.role == 'admin':
-                    profile.role = 'premium'
-                profile.save()
-            
-            subscription.save()
-            
+                subscription.save()
+                sync_user_profile(subscription.user)
+
             return JsonResponse({
                 'success': True,
-                'message': f'اشتراک کاربر {subscription.user.full_name} با موفقیت {days} روز تمدید شد.',
+                'message': f'اشتراک {subscription.user.full_name} با موفقیت {days} روز تمدید شد.',
                 'subscription': {
                     'id': subscription.id,
                     'end_date': subscription.shamsi_end_date,
                     'days_remaining': subscription.days_remaining
                 }
             })
-            
+
         except Subscription.DoesNotExist:
             return JsonResponse({
                 'success': False,

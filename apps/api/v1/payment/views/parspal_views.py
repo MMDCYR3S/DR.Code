@@ -1,6 +1,8 @@
 import uuid
 import json
 import logging
+from django.db import transaction
+from django.db.models.aggregates import Max
 import requests
 import random
 
@@ -341,37 +343,53 @@ class ParspalVerifyView(APIView):
 
                     plan = payment.subscription.plan
 
-                    # 8️⃣ بررسی اشتراک فعلی
-                    active_sub = Subscription.objects.filter(
-                        user=payment.user,
-                        status=SubscriptionStatusChoicesModel.active,
-                        end_date__gt=timezone.now()
-                    ).order_by('-end_date').first()
-                    
-                    
-                    if active_sub:
-                        new_start = active_sub.end_date
-                        new_end = new_start + timezone.timedelta(days=plan.duration_days)
-                        logger.info(f"[PARSPAL_VERIFY] Extending subscription. New end date: {new_end}")
-                    else:
-                        new_start = timezone.now()
-                        new_end = new_start + timezone.timedelta(days=plan.duration_days)
-                        logger.info(f"[PARSPAL_VERIFY] Creating new subscription. End date: {new_end}")
+                    with transaction.atomic():
+                        plan = payment.subscription.plan
+                        membership_id = plan.membership_id
+                        now = timezone.now()
 
+                        # 8️⃣ قفل کردن اشتراک فعال هم‌نوع (برای جلوگیری از race condition)
+                        active_sub = Subscription.objects.select_for_update().filter(
+                            user=payment.user,
+                            status=SubscriptionStatusChoicesModel.active,
+                            end_date__gt=now,
+                            plan__membership_id=membership_id,
+                        ).exclude(id=payment.subscription.id).order_by('-end_date').first()
 
-                    # 9️⃣ بروزرسانی اشتراک
-                    payment.subscription.status = SubscriptionStatusChoicesModel.active
-                    payment.subscription.start_date = new_start
-                    payment.subscription.end_date = new_end
-                    payment.subscription.save(update_fields=['status', 'start_date', 'end_date'])
-                        
-                    profile = payment.user.profile
-                    if profile.role == "admin":
-                        pass
-                    profile.role = 'premium'
-                    profile.subscription_end_date = new_end
-                    profile.save(update_fields=['role', 'subscription_end_date'])
-                    logger.info(f"[PARSPAL_VERIFY] User profile updated: ID={profile.id}, Role=premium, SubEnd={new_end}")
+                        if active_sub:
+                            # تمدید اشتراک هم‌نوع (فقط end_date رو زیاد می‌کنیم)
+                            new_end = active_sub.end_date + timezone.timedelta(days=plan.duration_days)
+                            active_sub.end_date = new_end
+                            active_sub.save(update_fields=['end_date'])
+
+                            # placeholder رو به expired می‌بریم (فقط رکورد تراکنشه)
+                            payment.subscription.status = SubscriptionStatusChoicesModel.expired
+                            payment.subscription.start_date = active_sub.start_date
+                            payment.subscription.end_date = new_end
+                            payment.subscription.save(update_fields=['status', 'start_date', 'end_date'])
+                        else:
+                            # اولین اشتراک برای این membership → فعال‌سازی
+                            new_start = now
+                            new_end = new_start + timezone.timedelta(days=plan.duration_days)
+                            payment.subscription.status = SubscriptionStatusChoicesModel.active
+                            payment.subscription.start_date = new_start
+                            payment.subscription.end_date = new_end
+                            payment.subscription.save(update_fields=['status', 'start_date', 'end_date'])
+
+                        # 9️⃣ بروزرسانی پروفایل بر اساس «دورترین» انقضای فعال
+                        max_end = Subscription.objects.filter(
+                            user=payment.user,
+                            status=SubscriptionStatusChoicesModel.active,
+                            end_date__gt=now,
+                        ).aggregate(m=Max('end_date'))['m']
+
+                        profile = payment.user.profile
+                        if profile.role != "admin":
+                            profile.role = 'premium'
+                        if max_end:
+                            profile.subscription_end_date = max_end
+                        profile.save(update_fields=['role', 'subscription_end_date'])
+                        logger.info(f"[PARSPAL_VERIFY] Profile updated: ID={profile.id}, SubEnd={max_end}")
 
                     # 🔟 پاک کردن کش
                     cache.delete(cache_key)

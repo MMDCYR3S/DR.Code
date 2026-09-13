@@ -7,7 +7,7 @@ document.addEventListener('alpine:init', () => {
         editing: openEdit,
         isProcessing: false,
 
-        // --- مودال‌ها ---
+        // --- مودال‌های کاربر ---
         approveModalOpen: false,
         rejectModalOpen: false,
         deleteModalOpen: false,
@@ -21,14 +21,14 @@ document.addEventListener('alpine:init', () => {
         deleteSubscriptionModalOpen: false,
 
         // --- داده اشتراک ---
-        hasActiveSubscription: false,
-        activeSubscription: null,
+        activeSubscriptions: [],       // ← آرایه، نه مفرد
         allSubscriptions: [],
         availablePlans: [],
         selectedPlanInfo: null,
+        selectedSubscription: null,    // ← اشتراکی که در حال ویرایش/تمدید/حذفش هستیم
 
         subscriptionForm: { user_id: userId, plan_id: '', payment_amount: '' },
-        editForm: { subscription_id: '', plan_id: '', payment_amount: '', status: 'active' },
+        editForm: { subscription_id: '', plan_id: '', payment_amount: '', status: 'ACTIVE' },
         extendForm: { days_to_add: 30 },
 
         // --- راه‌اندازی ---
@@ -57,9 +57,8 @@ document.addEventListener('alpine:init', () => {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    this.hasActiveSubscription = data.has_active_subscription;
-                    this.activeSubscription = data.active_subscription;
-                    this.allSubscriptions = data.subscriptions;
+                    this.activeSubscriptions = data.active_subscriptions || [];
+                    this.allSubscriptions = data.subscriptions || [];
                 }
             } catch (error) {
                 console.error('Error loading subscription data:', error);
@@ -123,10 +122,21 @@ document.addEventListener('alpine:init', () => {
         },
 
         // ===== ویرایش اشتراک =====
-        async openEditSubscriptionModal() {
-            if (!this.activeSubscription) return;
+        async openEditSubscriptionModal(sub) {
+            // اگر sub داده نشد، از selectedSubscription یا اولین اشتراک فعال استفاده کن
+            if (!sub) {
+                if (this.selectedSubscription) sub = this.selectedSubscription;
+                else if (this.activeSubscriptions.length > 0) sub = this.activeSubscriptions[0];
+            }
+            if (!sub || !sub.id) {
+                this.notify('اشتراکی برای ویرایش یافت نشد', 'error');
+                return;
+            }
+
+            this.selectedSubscription = sub;
+
             try {
-                const res = await fetch(`/dashboard/admin/subscriptions/${this.activeSubscription.id}/edit/`, {
+                const res = await fetch(`/dashboard/admin/subscriptions/${sub.id}/edit/`, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
                 const data = await res.json();
@@ -138,6 +148,8 @@ document.addEventListener('alpine:init', () => {
                         status: data.subscription.status
                     };
                     this.editSubscriptionModalOpen = true;
+                } else {
+                    this.notify(data.message || 'خطا در بارگذاری اطلاعات', 'error');
                 }
             } catch (error) {
                 console.error('Error loading subscription:', error);
@@ -180,20 +192,32 @@ document.addEventListener('alpine:init', () => {
         },
 
         // ===== تمدید اشتراک =====
-        openExtendSubscriptionModal() {
+        openExtendSubscriptionModal(sub) {
+            if (!sub) {
+                if (this.selectedSubscription) sub = this.selectedSubscription;
+                else if (this.activeSubscriptions.length > 0) sub = this.activeSubscriptions[0];
+            }
+            if (!sub || !sub.id) {
+                this.notify('اشتراکی برای تمدید یافت نشد', 'error');
+                return;
+            }
+            this.selectedSubscription = sub;
             this.extendForm.days_to_add = 30;
             this.extendSubscriptionModalOpen = true;
         },
 
         async extendSubscription() {
-            if (!this.activeSubscription) return;
+            if (!this.selectedSubscription) {
+                this.notify('اشتراکی انتخاب نشده است', 'error');
+                return;
+            }
             this.isProcessing = true;
             try {
                 const formData = new FormData();
                 formData.append('days_to_add', this.extendForm.days_to_add);
                 formData.append('csrfmiddlewaretoken', this.getCSRF());
 
-                const res = await fetch(`/dashboard/admin/subscriptions/${this.activeSubscription.id}/extend/`, {
+                const res = await fetch(`/dashboard/admin/subscriptions/${this.selectedSubscription.id}/extend/`, {
                     method: 'POST', body: formData,
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
@@ -214,19 +238,31 @@ document.addEventListener('alpine:init', () => {
         },
 
         // ===== حذف اشتراک =====
-        openDeleteSubscriptionModal() {
+        openDeleteSubscriptionModal(sub) {
+            if (!sub) {
+                if (this.selectedSubscription) sub = this.selectedSubscription;
+                else if (this.activeSubscriptions.length > 0) sub = this.activeSubscriptions[0];
+            }
+            if (!sub || !sub.id) {
+                this.notify('اشتراکی برای حذف یافت نشد', 'error');
+                return;
+            }
+            this.selectedSubscription = sub;
             this.editSubscriptionModalOpen = false;
             this.deleteSubscriptionModalOpen = true;
         },
 
         async confirmDeleteSubscription() {
-            if (!this.activeSubscription) return;
+            if (!this.selectedSubscription) {
+                this.notify('اشتراکی انتخاب نشده است', 'error');
+                return;
+            }
             this.isProcessing = true;
             try {
                 const formData = new FormData();
                 formData.append('csrfmiddlewaretoken', this.getCSRF());
 
-                const res = await fetch(`/dashboard/admin/subscriptions/${this.activeSubscription.id}/delete/`, {
+                const res = await fetch(`/dashboard/admin/subscriptions/${this.selectedSubscription.id}/delete/`, {
                     method: 'POST', body: formData,
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });

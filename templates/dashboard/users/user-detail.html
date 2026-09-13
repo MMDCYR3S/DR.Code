@@ -66,66 +66,81 @@
                 {% endif %}
 
                 <!-- بخش مدیریت اشتراک -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border-2" :class="hasActiveSubscription ? 'border-green-300' : 'border-slate-200'">
+                <div class="bg-white p-6 rounded-xl shadow-sm border-2"
+                    :class="activeSubscriptions.length > 0 ? 'border-green-300' : 'border-slate-200'">
+
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-slate-700">مدیریت اشتراک</h3>
-                        <span x-show="hasActiveSubscription" class="px-3 py-1 text-xs font-semibold text-green-800 bg-green-200 rounded-full">
-                            اشتراک فعال
+                        <h3 class="text-lg font-semibold text-slate-700">مدیریت اشتراک‌ها</h3>
+                        <span x-show="activeSubscriptions.length > 0"
+                            class="px-3 py-1 text-xs font-semibold text-green-800 bg-green-200 rounded-full">
+                            <span x-text="activeSubscriptions.length"></span> اشتراک فعال
                         </span>
                     </div>
-                    
-                    <!-- اطلاعات اشتراک فعال -->
-                    <div x-show="hasActiveSubscription && activeSubscription" class="space-y-3 mb-4">
-                        <div class="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border border-green-200">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                                <div class="flex flex-col">
-                                    <span class="text-slate-500 text-xs">نام پلن:</span>
-                                    <span class="font-semibold mt-1" x-text="activeSubscription?.plan_name"></span>
+
+                    <!-- دکمه افزودن اشتراک جدید (همیشه قابل مشاهده) -->
+                    <div class="mb-4">
+                        <button @click="openCreateSubscriptionModal()"
+                                class="w-full py-3 px-5 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 transition flex items-center justify-center">
+                            <i class="fa-solid fa-plus ml-2"></i>
+                            افزودن اشتراک جدید
+                        </button>
+                    </div>
+
+                    <!-- لیست اشتراک‌های فعال -->
+                    <div class="space-y-3 mb-4">
+                        <template x-for="sub in activeSubscriptions" :key="sub.id">
+                            <div class="bg-gradient-to-l from-green-50 to-blue-50 p-4 rounded-lg border border-green-200">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div>
+                                        <div class="text-xs text-slate-500 mb-1">نوع عضویت</div>
+                                        <div class="font-bold text-slate-800" x-text="sub.membership_title"></div>
+                                        <div class="text-xs text-slate-500 mt-1" x-text="sub.plan_name"></div>
+                                    </div>
+                                    <span class="px-2 py-1 text-xs font-semibold bg-green-200 text-green-800 rounded-full">
+                                        فعال
+                                    </span>
                                 </div>
-                                <div class="flex flex-col">
-                                    <span class="text-slate-500 text-xs">تاریخ انقضا:</span>
-                                    <span class="font-semibold mt-1" x-text="activeSubscription?.end_date"></span>
+
+                                <div class="grid grid-cols-2 gap-3 text-sm mb-3">
+                                    <div>
+                                        <span class="text-slate-500 text-xs block">تاریخ انقضا:</span>
+                                        <span class="font-semibold" x-text="sub.end_date"></span>
+                                    </div>
+                                    <div>
+                                        <span class="text-slate-500 text-xs block">روزهای باقیمانده:</span>
+                                        <span class="font-semibold"
+                                            :class="sub.days_remaining < 7 ? 'text-red-600' : 'text-green-600'"
+                                            x-text="sub.days_remaining + ' روز'"></span>
+                                    </div>
                                 </div>
-                                <div class="flex flex-col">
-                                    <span class="text-slate-500 text-xs">روزهای باقیمانده:</span>
-                                    <span class="font-semibold mt-1" :class="activeSubscription?.days_remaining < 7 ? 'text-red-600' : 'text-green-600'" x-text="activeSubscription?.days_remaining + ' روز'"></span>
-                                </div>
-                                <div class="flex flex-col">
-                                    <span class="text-slate-500 text-xs">وضعیت:</span>
-                                    <span class="font-semibold mt-1 text-green-600" x-text="activeSubscription?.status_display"></span>
+
+                                <div class="flex gap-2">
+                                    <button @click="openEditSubscriptionModal(sub)"
+                                            class="flex-1 py-2 px-3 text-xs font-semibold bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition">
+                                        <i class="fa-solid fa-pen-to-square ml-1"></i>
+                                        ویرایش
+                                    </button>
+                                    <button @click="openExtendSubscriptionModal(sub)"
+                                            class="flex-1 py-2 px-3 text-xs font-semibold bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition">
+                                        <i class="fa-solid fa-clock-rotate-left ml-1"></i>
+                                        تمدید
+                                    </button>
+                                    <button @click="openDeleteSubscriptionModal(sub)"
+                                            class="flex-1 py-2 px-3 text-xs font-semibold bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+                                        <i class="fa-solid fa-trash ml-1"></i>
+                                        حذف
+                                    </button>
                                 </div>
                             </div>
+                        </template>
+
+                        <div x-show="activeSubscriptions.length === 0"
+                            class="text-center py-6 text-slate-500 text-sm bg-slate-50 rounded-lg border border-dashed border-slate-300">
+                            هیچ اشتراک فعالی برای این کاربر وجود ندارد.
                         </div>
                     </div>
 
-                    <!-- دکمه‌های عملیات -->
-                    <div class="flex flex-col sm:flex-row gap-3">
-                        <button 
-                            x-show="!hasActiveSubscription" 
-                            @click="openCreateSubscriptionModal()" 
-                            class="flex-1 py-3 px-5 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 transition flex items-center justify-center">
-                            <i class="fa-solid fa-plus ml-2"></i>
-                            افزودن اشتراک
-                        </button>
-                        
-                        <button 
-                            x-show="hasActiveSubscription" 
-                            @click="openEditSubscriptionModal()" 
-                            class="flex-1 py-3 px-5 bg-amber-500 text-white font-bold rounded-lg hover:bg-amber-600 transition flex items-center justify-center">
-                            <i class="fa-solid fa-pen-to-square ml-2"></i>
-                            ویرایش اشتراک
-                        </button>
-                        
-                        <button 
-                            x-show="hasActiveSubscription" 
-                            @click="openExtendSubscriptionModal()" 
-                            class="flex-1 py-3 px-5 bg-purple-500 text-white font-bold rounded-lg hover:bg-purple-600 transition flex items-center justify-center">
-                            <i class="fa-solid fa-clock-rotate-left ml-2"></i>
-                            تمدید اشتراک
-                        </button>
-                    </div>
-
-                    <!-- لیست تمام اشتراک‌های کاربر -->
+                    <!-- تاریخچه همه اشتراک‌ها -->
                     <div x-show="allSubscriptions.length > 0" class="mt-6 border-t pt-4">
                         <h4 class="text-sm font-semibold text-slate-600 mb-3">تاریخچه اشتراک‌ها</h4>
                         <div class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
@@ -133,22 +148,21 @@
                                 <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs">
                                     <div class="flex justify-between items-start">
                                         <div class="space-y-1">
-                                            <div class="font-semibold" x-text="sub.plan_name"></div>
+                                            <div class="font-semibold" x-text="sub.membership_title + ' — ' + sub.plan_name"></div>
                                             <div class="text-slate-500">
                                                 <span x-text="sub.start_date"></span>
                                                 <span class="mx-1">تا</span>
                                                 <span x-text="sub.end_date"></span>
                                             </div>
                                         </div>
-                                        <span 
-                                            class="px-2 py-1 text-xs font-semibold rounded-full"
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full"
                                             :class="{
-                                                'bg-green-200 text-green-800': sub.status === 'active',
-                                                'bg-red-200 text-red-800': sub.status === 'expired',
-                                                'bg-gray-200 text-gray-800': sub.status === 'canceled'
+                                                'bg-green-200 text-green-800': sub.status === 'ACTIVE',
+                                                'bg-red-200 text-red-800': sub.status === 'EXPIRED',
+                                                'bg-gray-200 text-gray-800': sub.status === 'CANCELED',
+                                                'bg-yellow-200 text-yellow-800': sub.status === 'PENDING'
                                             }"
-                                            x-text="sub.status_display">
-                                        </span>
+                                            x-text="sub.status_display"></span>
                                     </div>
                                 </div>
                             </template>
@@ -303,14 +317,6 @@
                     </div>
 
                     <div class="flex justify-between items-center pt-4 border-t">
-                        <button 
-                            type="button"
-                            @click="openDeleteSubscriptionModal()"
-                            class="py-2 px-4 text-sm font-semibold bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition flex items-center">
-                            <i class="fa-solid fa-trash ml-2"></i>
-                            حذف اشتراک
-                        </button>
-                        
                         <div class="flex space-x-2 space-x-reverse">
                             <button 
                                 type="button" 
@@ -346,8 +352,9 @@
                 
                 <form @submit.prevent="extendSubscription()" class="space-y-4">
                     <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                        <p class="text-xs text-slate-500 mb-1" x-text="selectedSubscription?.membership_title"></p>
                         <p class="text-sm text-slate-600 mb-2">تاریخ انقضای فعلی:</p>
-                        <p class="font-semibold text-slate-800" x-text="activeSubscription?.end_date"></p>
+                        <p class="font-semibold text-slate-800" x-text="selectedSubscription?.end_date"></p>
                     </div>
 
                     <div>
@@ -398,7 +405,11 @@
                 </div>
                 <h3 class="text-lg font-bold text-center text-slate-800 mb-2">حذف اشتراک</h3>
                 <p class="text-sm text-slate-600 text-center mb-6">
-                    آیا مطمئن هستید که می‌خواهید اشتراک این کاربر را حذف کنید؟
+                    آیا مطمئن هستید که می‌خواهید اشتراک
+                    <strong class="text-slate-800" x-text="selectedSubscription?.membership_title"></strong>
+                    — 
+                    <span x-text="selectedSubscription?.plan_name"></span>
+                    را حذف کنید؟
                     <br>
                     <span class="text-red-600 font-semibold">این عملیات قابل بازگشت نیست!</span>
                 </p>
@@ -565,68 +576,68 @@
 <script>
 document.addEventListener('alpine:init', () => {
     Alpine.data('userDetailComponent', (userId, userName) => ({
-        // --- State Variables ---
+        // --- User State ---
+        userId: userId,
+        userName: userName,
+        medicalCode: '',
+        isProcessing: false,
+
+        // --- User Modals ---
         rejectModalOpen: false,
         approveModalOpen: false,
         imageViewerOpen: false,
         imageUrl: '',
         editModalOpen: false,
         deleteModalOpen: false,
-        userId: userId,
-        userName: userName,
-        medicalCode: '',
-        isProcessing: false,
 
-        // Subscription related states
+        // --- Subscription State ---
+        activeSubscriptions: [],
+        allSubscriptions: [],
+        availablePlans: [],
+        selectedPlanInfo: null,
+
+        // اشتراکی که در حال ویرایش/تمدید/حذف آن هستیم
+        selectedSubscription: null,
+
+        // --- Subscription Modals ---
         createSubscriptionModalOpen: false,
         editSubscriptionModalOpen: false,
         extendSubscriptionModalOpen: false,
         deleteSubscriptionModalOpen: false,
-        hasActiveSubscription: false,
-        activeSubscription: null,
-        allSubscriptions: [],
-        availablePlans: [],
-        
+
+        // --- Forms ---
         subscriptionForm: {
             user_id: userId,
             plan_id: '',
             payment_amount: ''
         },
-        
         editForm: {
             subscription_id: '',
             plan_id: '',
             payment_amount: '',
             status: 'active'
         },
-        
         extendForm: {
             days_to_add: 30
         },
 
-        selectedPlanInfo: null,
-
-        // --- Init Method ---
         init() {
             this.loadSubscriptionData();
             this.loadAvailablePlans();
         },
 
-        // --- Subscription Functions ---
+        // =============================================
+        // Data Loading
+        // =============================================
         async loadSubscriptionData() {
             try {
-                const response = await fetch(`/dashboard/admin/subscriptions/user/${this.userId}/`, {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                const res = await fetch(`/dashboard/admin/subscriptions/user/${this.userId}/`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
-                
-                const data = await response.json();
-                
+                const data = await res.json();
                 if (data.success) {
-                    this.hasActiveSubscription = data.has_active_subscription;
-                    this.activeSubscription = data.active_subscription;
-                    this.allSubscriptions = data.subscriptions;
+                    this.activeSubscriptions = data.active_subscriptions || [];
+                    this.allSubscriptions = data.subscriptions || [];
                 }
             } catch (error) {
                 console.error('Error loading subscription data:', error);
@@ -635,22 +646,40 @@ document.addEventListener('alpine:init', () => {
 
         async loadAvailablePlans() {
             try {
-                const response = await fetch('/dashboard/admin/subscriptions/plans/', {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                const res = await fetch('/dashboard/admin/subscriptions/plans/', {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    this.availablePlans = data.plans;
-                }
+                const data = await res.json();
+                if (data.success) this.availablePlans = data.plans;
             } catch (error) {
                 console.error('Error loading plans:', error);
             }
         },
 
+        // =============================================
+        // Helpers
+        // =============================================
+        getCSRF() {
+            return document.querySelector('[name=csrfmiddlewaretoken]')?.value ?? '';
+        },
+
+        formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        },
+
+        showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 left-4 right-4 p-4 rounded-lg text-white z-[100] ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            }`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        },
+
+        // =============================================
+        // Create Subscription
+        // =============================================
         openCreateSubscriptionModal() {
             this.subscriptionForm = {
                 user_id: this.userId,
@@ -662,33 +691,27 @@ document.addEventListener('alpine:init', () => {
         },
 
         updatePlanPrice() {
-            const selectedPlan = this.availablePlans.find(p => p.id == this.subscriptionForm.plan_id);
-            if (selectedPlan) {
-                this.subscriptionForm.payment_amount = this.formatNumber(selectedPlan.price);
-                this.selectedPlanInfo = selectedPlan;
+            const plan = this.availablePlans.find(p => p.id == this.subscriptionForm.plan_id);
+            if (plan) {
+                this.subscriptionForm.payment_amount = this.formatNumber(plan.price);
+                this.selectedPlanInfo = plan;
             }
         },
 
         async createSubscription() {
             this.isProcessing = true;
-            
             try {
                 const formData = new FormData();
                 formData.append('user_id', this.subscriptionForm.user_id);
                 formData.append('plan_id', this.subscriptionForm.plan_id);
                 formData.append('payment_amount', this.subscriptionForm.payment_amount.replace(/,/g, ''));
-                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-                
-                const response = await fetch('/dashboard/admin/subscriptions/create/', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                formData.append('csrfmiddlewaretoken', this.getCSRF());
+
+                const res = await fetch('/dashboard/admin/subscriptions/create/', {
+                    method: 'POST', body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
-                
-                const data = await response.json();
-                
+                const data = await res.json();
                 if (data.success) {
                     this.showNotification(data.message, 'success');
                     this.createSubscriptionModalOpen = false;
@@ -697,25 +720,24 @@ document.addEventListener('alpine:init', () => {
                     this.showNotification(data.message, 'error');
                 }
             } catch (error) {
-                console.error('Error creating subscription:', error);
+                console.error(error);
                 this.showNotification('خطا در ایجاد اشتراک', 'error');
             } finally {
                 this.isProcessing = false;
             }
         },
 
-        async openEditSubscriptionModal() {
-            if (!this.activeSubscription) return;
-            
+        // =============================================
+        // Edit Subscription
+        // =============================================
+        async openEditSubscriptionModal(sub) {
+            if (!sub) return;
+            this.selectedSubscription = sub;
             try {
-                const response = await fetch(`/dashboard/admin/subscriptions/${this.activeSubscription.id}/edit/`, {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                const res = await fetch(`/dashboard/admin/subscriptions/${sub.id}/edit/`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
-                
-                const data = await response.json();
-                
+                const data = await res.json();
                 if (data.success) {
                     this.editForm = {
                         subscription_id: data.subscription.id,
@@ -726,38 +748,30 @@ document.addEventListener('alpine:init', () => {
                     this.editSubscriptionModalOpen = true;
                 }
             } catch (error) {
-                console.error('Error loading subscription:', error);
+                console.error(error);
                 this.showNotification('خطا در بارگذاری اطلاعات', 'error');
             }
         },
 
         updateEditPlanPrice() {
-            const selectedPlan = this.availablePlans.find(p => p.id == this.editForm.plan_id);
-            if (selectedPlan) {
-                this.editForm.payment_amount = this.formatNumber(selectedPlan.price);
-            }
+            const plan = this.availablePlans.find(p => p.id == this.editForm.plan_id);
+            if (plan) this.editForm.payment_amount = this.formatNumber(plan.price);
         },
 
         async updateSubscription() {
             this.isProcessing = true;
-            
             try {
                 const formData = new FormData();
                 formData.append('plan_id', this.editForm.plan_id);
                 formData.append('payment_amount', this.editForm.payment_amount.replace(/,/g, ''));
                 formData.append('status', this.editForm.status);
-                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-                
-                const response = await fetch(`/dashboard/admin/subscriptions/${this.editForm.subscription_id}/edit/`, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                formData.append('csrfmiddlewaretoken', this.getCSRF());
+
+                const res = await fetch(`/dashboard/admin/subscriptions/${this.editForm.subscription_id}/edit/`, {
+                    method: 'POST', body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
-                
-                const data = await response.json();
-                
+                const data = await res.json();
                 if (data.success) {
                     this.showNotification(data.message, 'success');
                     this.editSubscriptionModalOpen = false;
@@ -766,38 +780,36 @@ document.addEventListener('alpine:init', () => {
                     this.showNotification(data.message, 'error');
                 }
             } catch (error) {
-                console.error('Error updating subscription:', error);
+                console.error(error);
                 this.showNotification('خطا در بروزرسانی اشتراک', 'error');
             } finally {
                 this.isProcessing = false;
             }
         },
 
-        openExtendSubscriptionModal() {
+        // =============================================
+        // Extend Subscription
+        // =============================================
+        openExtendSubscriptionModal(sub) {
+            if (!sub) return;
+            this.selectedSubscription = sub;
             this.extendForm.days_to_add = 30;
             this.extendSubscriptionModalOpen = true;
         },
 
         async extendSubscription() {
-            if (!this.activeSubscription) return;
-            
+            if (!this.selectedSubscription) return;
             this.isProcessing = true;
-            
             try {
                 const formData = new FormData();
                 formData.append('days_to_add', this.extendForm.days_to_add);
-                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-                
-                const response = await fetch(`/dashboard/admin/subscriptions/${this.activeSubscription.id}/extend/`, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                formData.append('csrfmiddlewaretoken', this.getCSRF());
+
+                const res = await fetch(`/dashboard/admin/subscriptions/${this.selectedSubscription.id}/extend/`, {
+                    method: 'POST', body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
-                
-                const data = await response.json();
-                
+                const data = await res.json();
                 if (data.success) {
                     this.showNotification(data.message, 'success');
                     this.extendSubscriptionModalOpen = false;
@@ -806,37 +818,35 @@ document.addEventListener('alpine:init', () => {
                     this.showNotification(data.message, 'error');
                 }
             } catch (error) {
-                console.error('Error extending subscription:', error);
+                console.error(error);
                 this.showNotification('خطا در تمدید اشتراک', 'error');
             } finally {
                 this.isProcessing = false;
             }
         },
 
-        openDeleteSubscriptionModal() {
+        // =============================================
+        // Delete Subscription
+        // =============================================
+        openDeleteSubscriptionModal(sub) {
+            if (!sub) return;
+            this.selectedSubscription = sub;
             this.editSubscriptionModalOpen = false;
             this.deleteSubscriptionModalOpen = true;
         },
 
         async confirmDeleteSubscription() {
-            if (!this.activeSubscription) return;
-            
+            if (!this.selectedSubscription) return;
             this.isProcessing = true;
-            
             try {
                 const formData = new FormData();
-                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-                
-                const response = await fetch(`/dashboard/admin/subscriptions/${this.activeSubscription.id}/delete/`, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                formData.append('csrfmiddlewaretoken', this.getCSRF());
+
+                const res = await fetch(`/dashboard/admin/subscriptions/${this.selectedSubscription.id}/delete/`, {
+                    method: 'POST', body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
-                
-                const data = await response.json();
-                
+                const data = await res.json();
                 if (data.success) {
                     this.showNotification(data.message, 'success');
                     this.deleteSubscriptionModalOpen = false;
@@ -845,79 +855,53 @@ document.addEventListener('alpine:init', () => {
                     this.showNotification(data.message, 'error');
                 }
             } catch (error) {
-                console.error('Error deleting subscription:', error);
+                console.error(error);
                 this.showNotification('خطا در حذف اشتراک', 'error');
             } finally {
                 this.isProcessing = false;
             }
         },
 
-        formatNumber(num) {
-            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        },
-
-        // --- User Functions ---
+        // =============================================
+        // User Actions (بدون تغییر)
+        // =============================================
         confirmApprove() {
             if (!this.medicalCode || this.medicalCode.trim() === '') {
                 this.showNotification('لطفاً کد نظام پزشکی را وارد کنید', 'error');
                 return;
             }
-            
             if (this.medicalCode.length < 5) {
                 this.showNotification('کد نظام پزشکی باید حداقل ۵ رقم باشد', 'error');
                 return;
             }
-            
             this.isProcessing = true;
-            
+
             const formData = new FormData();
             formData.append('action', 'approve');
             formData.append('medical_code', this.medicalCode);
-            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-            
+            formData.append('csrfmiddlewaretoken', this.getCSRF());
+
             fetch(window.location.href, {
                 method: 'POST',
                 body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
-            .then(response => response.json())
+            .then(r => r.json())
             .then(data => {
                 if (data.success) {
                     this.showNotification(data.message, 'success');
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
+                    setTimeout(() => window.location.reload(), 1500);
                 } else {
                     this.showNotification(data.message || 'خطا در پردازش درخواست', 'error');
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
-                this.showNotification('خطا در ارتباط با سرور', 'error');
-            })
-            .finally(() => {
-                this.isProcessing = false;
-            });
-        },
-
-        showNotification(message, type) {
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 left-4 right-4 p-4 rounded-lg text-white z-50 ${
-                type === 'success' ? 'bg-green-500' : 'bg-red-500'
-            }`;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
+            .catch(() => this.showNotification('خطا در ارتباط با سرور', 'error'))
+            .finally(() => { this.isProcessing = false; });
         },
 
         openEditModal() {
             fetch(`/dashboard/admin/users/${this.userId}/edit/`)
-                .then(response => response.json())
+                .then(r => r.json())
                 .then(data => {
                     const formBody = `
                         <div>
@@ -967,13 +951,10 @@ document.addEventListener('alpine:init', () => {
         },
 
         confirmDelete() {
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const csrfToken = this.getCSRF();
             fetch(`/dashboard/admin/users/${this.userId}/delete/`, {
                 method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken,
-                    'Content-Type': 'application/json',
-                }
+                headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' }
             })
             .then(response => {
                 if (response.ok) {

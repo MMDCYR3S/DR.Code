@@ -175,50 +175,93 @@
                 </div>
             </div>
 
-            {# مدیریت اشتراک (سمت کلاینت با API) #}
-            <div class="bg-white p-6 rounded-xl shadow-sm border-2" :class="hasActiveSubscription ? 'border-green-300' : 'border-slate-200'">
+            {# مدیریت اشتراک‌ها (چند اشتراک موازی) #}
+            <div class="bg-white p-6 rounded-xl shadow-sm border-2"
+                :class="activeSubscriptions.length > 0 ? 'border-green-300' : 'border-slate-200'">
+
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-slate-700">مدیریت اشتراک</h3>
-                    <span x-show="hasActiveSubscription" x-cloak
-                          class="px-3 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">اشتراک فعال</span>
+                    <h3 class="text-lg font-semibold text-slate-700">مدیریت اشتراک‌ها</h3>
+                    <span x-show="activeSubscriptions.length > 0" x-cloak
+                        class="px-3 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
+                        <span x-text="activeSubscriptions.length"></span> اشتراک فعال
+                    </span>
                 </div>
 
-                <div x-show="hasActiveSubscription && activeSubscription" x-cloak class="mb-4">
-                    <div class="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border border-green-200 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                        <div class="flex flex-col"><span class="text-slate-500 text-xs">نام پلن:</span><span class="font-semibold mt-1" x-text="activeSubscription?.plan_name"></span></div>
-                        <div class="flex flex-col"><span class="text-slate-500 text-xs">تاریخ انقضا:</span><span class="font-semibold mt-1" x-text="activeSubscription?.end_date"></span></div>
-                        <div class="flex flex-col"><span class="text-slate-500 text-xs">روزهای باقیمانده:</span><span class="font-semibold mt-1" :class="activeSubscription?.days_remaining < 7 ? 'text-red-600' : 'text-green-600'" x-text="activeSubscription?.days_remaining + ' روز'"></span></div>
-                        <div class="flex flex-col"><span class="text-slate-500 text-xs">وضعیت:</span><span class="font-semibold mt-1 text-green-600" x-text="activeSubscription?.status_display"></span></div>
+                {# دکمه افزودن اشتراک جدید (همیشه قابل مشاهده) #}
+                <div class="mb-4">
+                    <button @click="openCreateSubscriptionModal()"
+                            class="w-full py-2.5 px-4 bg-c1 text-white font-semibold rounded-lg hover:bg-c2 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus"></i> افزودن اشتراک جدید
+                    </button>
+                </div>
+
+                {# لیست اشتراک‌های فعال — هر کدوم یک کارت مستقل با دکمه‌های ویرایش/تمدید/حذف #}
+                <div class="space-y-3 mb-4">
+                    <template x-for="sub in activeSubscriptions" :key="sub.id">
+                        <div class="bg-gradient-to-l from-green-50 to-blue-50 p-4 rounded-lg border border-green-200">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <div class="text-xs text-slate-500 mb-1">نوع عضویت</div>
+                                    <div class="font-bold text-slate-800" x-text="sub.membership_title"></div>
+                                    <div class="text-xs text-slate-500 mt-1" x-text="sub.plan_name"></div>
+                                </div>
+                                <span class="px-2 py-1 text-xs font-semibold bg-green-200 text-green-800 rounded-full">فعال</span>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3 text-sm mb-3">
+                                <div>
+                                    <span class="text-slate-500 text-xs block">تاریخ انقضا:</span>
+                                    <span class="font-semibold" x-text="sub.end_date"></span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-500 text-xs block">روزهای باقیمانده:</span>
+                                    <span class="font-semibold"
+                                        :class="sub.days_remaining < 7 ? 'text-red-600' : 'text-green-600'"
+                                        x-text="sub.days_remaining + ' روز'"></span>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-2">
+                                <button @click="openEditSubscriptionModal(sub)"
+                                        class="flex-1 py-2 px-3 text-xs font-semibold bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition">
+                                    <i class="fa-solid fa-pen-to-square ml-1"></i> ویرایش
+                                </button>
+                                <button @click="openExtendSubscriptionModal(sub)"
+                                        class="flex-1 py-2 px-3 text-xs font-semibold bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition">
+                                    <i class="fa-solid fa-clock-rotate-left ml-1"></i> تمدید
+                                </button>
+                                <button @click="openDeleteSubscriptionModal(sub)"
+                                        class="flex-1 py-2 px-3 text-xs font-semibold bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+                                    <i class="fa-solid fa-trash ml-1"></i> حذف
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div x-show="activeSubscriptions.length === 0" x-cloak
+                        class="text-center py-6 text-slate-500 text-sm bg-slate-50 rounded-lg border border-dashed border-slate-300">
+                        هیچ اشتراک فعالی برای این کاربر وجود ندارد.
                     </div>
                 </div>
 
-                <div class="flex flex-col sm:flex-row gap-3">
-                    <button x-show="!hasActiveSubscription" @click="openCreateSubscriptionModal()"
-                            class="flex-1 py-2.5 px-4 bg-c1 text-white font-semibold rounded-lg hover:bg-c2 transition flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-plus"></i> افزودن اشتراک
-                    </button>
-                    <button x-show="hasActiveSubscription" x-cloak @click="openEditSubscriptionModal()"
-                            class="flex-1 py-2.5 px-4 bg-amber-500 text-white font-semibold rounded-lg hover:bg-amber-600 transition flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-pen-to-square"></i> ویرایش اشتراک
-                    </button>
-                    <button x-show="hasActiveSubscription" x-cloak @click="openExtendSubscriptionModal()"
-                            class="flex-1 py-2.5 px-4 bg-purple-500 text-white font-semibold rounded-lg hover:bg-purple-600 transition flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-clock-rotate-left"></i> تمدید اشتراک
-                    </button>
-                </div>
-
+                {# تاریخچه همه اشتراک‌ها #}
                 <div x-show="allSubscriptions.length > 0" x-cloak class="mt-6 border-t pt-4">
                     <h4 class="text-sm font-semibold text-slate-600 mb-3">تاریخچه اشتراک‌ها</h4>
                     <div class="space-y-2 max-h-60 overflow-y-auto">
                         <template x-for="sub in allSubscriptions" :key="sub.id">
                             <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs flex justify-between items-start">
                                 <div class="space-y-1">
-                                    <div class="font-semibold" x-text="sub.plan_name"></div>
+                                    <div class="font-semibold" x-text="sub.membership_title + ' — ' + sub.plan_name"></div>
                                     <div class="text-slate-500"><span x-text="sub.start_date"></span> تا <span x-text="sub.end_date"></span></div>
                                 </div>
                                 <span class="px-2 py-1 text-xs font-semibold rounded-full"
-                                      :class="{ 'bg-green-200 text-green-800': sub.status === 'active', 'bg-red-200 text-red-800': sub.status === 'expired', 'bg-gray-200 text-gray-800': sub.status === 'canceled' }"
-                                      x-text="sub.status_display"></span>
+                                    :class="{
+                                        'bg-green-200 text-green-800': sub.status === 'ACTIVE',
+                                        'bg-red-200 text-red-800': sub.status === 'EXPIRED',
+                                        'bg-gray-200 text-gray-800': sub.status === 'CANCELED',
+                                        'bg-yellow-200 text-yellow-800': sub.status === 'PENDING'
+                                    }"
+                                    x-text="sub.status_display"></span>
                             </div>
                         </template>
                     </div>

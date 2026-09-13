@@ -192,16 +192,31 @@ class PaymentVerifyView(APIView):
                     # فعال‌سازی اشتراک
                     if payment.subscription:
                         sub = payment.subscription
-                        # اینجا چون request.user ممکن است به خاطر سشن ست نشده باشد از payment.user استفاده میکنیم
-                        active_subscription = self._get_active_subscription(payment.user)
-                        
-                        if active_subscription and active_subscription.id != sub.id:
-                            self._extend_subscription(active_subscription, sub, payment)
+                        membership_id = sub.plan.membership_id
+                        now = timezone.now()
+
+                        # ⬅️ قفل کردن اشتراک فعال هم‌نوع برای جلوگیری از race condition
+                        active_subscription = (
+                            Subscription.objects
+                            .select_for_update()
+                            .filter(
+                                user=payment.user,
+                                status=SubscriptionStatusChoicesModel.active,
+                                end_date__gt=now,
+                                plan__membership_id=membership_id,
+                            )
+                            .exclude(id=sub.id)
+                            .order_by('-end_date')
+                            .first()
+                        )
+
+                        if active_subscription:
+                            self._extend_subscription(active_subscription, sub)
                         else:
                             self._activate_subscription(sub)
-                        
-                        self._update_user_profile(payment.user, active_subscription or sub, payment)
 
+                        self._update_user_profile(payment.user)
+                        
                     context_data.update({
                         'success': True,
                         'refId': str(verify_result['ref_id']), # تبدیل به رشته برای اطمینان
@@ -247,30 +262,62 @@ class PaymentVerifyView(APIView):
             status=SubscriptionStatusChoicesModel.active,
             end_date__gt=now
         ).order_by('-end_date').first()
+
+    def _get_active_subscription_for_membership(self, user, membership_id):
+        """
+        اشتراک فعال کاربر مخصوص یک membership مشخص.
+        این کلید اصلی حل مشکل است.
+        """
+        now = timezone.now()
+        return Subscription.objects.filter(
+            user=user,
+            status=SubscriptionStatusChoicesModel.active,
+            end_date__gt=now,
+            plan__membership_id=membership_id,
+        ).order_by('-end_date').first()
     
-    def _extend_subscription(self, active_subscription, new_subscription, payment):
+    def _extend_subscription(self, active_subscription, new_subscription):
+        """
+        فقط اشتراک فعال همون membership رو تمدید می‌کنه.
+        اشتراک جدید (placeholder) رو به حالت expired می‌بره چون فقط برای ثبت تراکنش ساخته شده.
+        """
         additional_days = new_subscription.plan.duration_days
-        active_subscription.end_date = active_subscription.end_date + timedelta(days=additional_days)
-        active_subscription.save()
-        
+        new_end = active_subscription.end_date + timedelta(days=additional_days)
+
+        active_subscription.end_date = new_end
+        active_subscription.save(update_fields=['end_date'])
+
+        # placeholder جدید رو می‌بندیم، ولی به عنوان رکورد تراکنش باقی می‌مونه
         new_subscription.status = SubscriptionStatusChoicesModel.expired
-        new_subscription.start_date = timezone.now()
-        new_subscription.end_date = active_subscription.end_date
-        new_subscription.save()
+        new_subscription.start_date = active_subscription.start_date
+        new_subscription.end_date = new_end
+        new_subscription.save(update_fields=['status', 'start_date', 'end_date'])
         
     def _activate_subscription(self, subscription):
         now = timezone.now()
         subscription.status = SubscriptionStatusChoicesModel.active
         subscription.start_date = now
         subscription.end_date = now + timedelta(days=subscription.plan.duration_days)
-        subscription.save()
+        subscription.save(update_fields=['status', 'start_date', 'end_date'])
 
-    def _update_user_profile(self, user, subscription, payment):
+    def _update_user_profile(self, user):
+        """
+        پروفایل باید بر اساس «دورترین» انقضای اشتراک‌های فعال آپدیت بشه،
+        نه فقط یک اشتراک.
+        """
         try:
             profile = user.profile
             if profile.role != "admin":
                 profile.role = 'premium'
-            profile.subscription_end_date = subscription.end_date
-            profile.save()
+
+            max_end = Subscription.objects.filter(
+                user=user,
+                status=SubscriptionStatusChoicesModel.active,
+                end_date__gt=timezone.now(),
+            ).aggregate(m=Max('end_date'))['m']
+
+            if max_end:
+                profile.subscription_end_date = max_end
+            profile.save(update_fields=['role', 'subscription_end_date'])
         except Exception as e:
             logger.error(f"Error updating profile for user {user.id}: {e}")
