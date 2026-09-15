@@ -269,7 +269,7 @@
         </template>
     </section>
 
-    <!-- بخش سوم: جدول مقایسه -->
+    <!-- بخش سوم: جدول مقایسه (اصلاح شده بر اساس تصویر) -->
     <section class="mb-20 fade-in-up" style="animation-delay: 0.4s;">
         <h2 class="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-12">
             چرا ارتقا به نسخه ویژه ارزشمند است؟
@@ -280,67 +280,70 @@
             <table class="hidden md:table w-full">
                 <thead class="bg-gradient-to-r from-c1 to-c2 text-white">
                     <tr>
-                        <th class="py-4 px-6 text-right text-lg font-bold">امکانات</th>
-                        <th class="py-4 px-6 text-center text-lg font-bold">کاربر عادی</th>
-                        <th class="py-4 px-6 text-center text-lg font-bold">کاربر ویژه</th>
+                        <th class="py-4 px-6 text-right text-lg font-bold">امکانات و دسترسی‌ها</th>
+                        <th class="py-4 px-6 text-center text-lg font-bold">کاربر عادی (رایگان)</th>
+                        <th class="py-4 px-6 text-center text-lg font-bold">کاربر ویژه (اشتراک فعال)</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
+                    <!-- ردیف ۱: بانک جامع نسخه‌ها -->
                     <tr class="hover:bg-gray-50 transition">
-                        <td class="py-4 px-6 text-gray-700">دسترسی به نسخه‌ها</td>
-                        <td class="py-4 px-6 text-center text-gray-500">فقط رایگان</td>
+                        <td class="py-4 px-6 text-gray-700">بانک جامع نسخه‌های طب عمومی</td>
+                        <td class="py-4 px-6 text-center text-gray-500">فقط موارد محدود نمونه</td>
                         <td class="py-4 px-6 text-center">
                             <i class="fas fa-check-circle feature-check"></i>
-                            <span class="text-gray-700 mr-2">همه نسخه‌ها</span>
+                            <span class="text-gray-700 mr-2">دسترسی نامحدود به بیش از  نسخه</span>
                         </td>
                     </tr>
+                    <!-- ردیف ۲: اوردرهای اورژانس -->
                     <tr class="hover:bg-gray-50 transition">
-                        <td class="py-4 px-6 text-gray-700">
-                            دسترسی به اوردرهای پزشکی
-                        </td>
-                        <td class="py-4 px-6 text-center">
-                            <span class="py-4 px-6 text-center text-gray-500">فقط اوردرهای رایگان</span>
-                        </td>
+                        <td class="py-4 px-6 text-gray-700">اوردرهای اورژانس (Rosen & Tintinalli)</td>
+                        <td class="py-4 px-6 text-center text-gray-500">چند اوردر پایه و محدود</td>
                         <td class="py-4 px-6 text-center">
                             <i class="fas fa-check-circle feature-check"></i>
-                            <span class="text-gray-700 mr-2">تمامی اوردرهای پزشکی</span>
+                            <span class="text-gray-700 mr-2">دسترسی کامل به بیش از ۵۰ اوردر تخصصی</span>
                         </td>
                     </tr>
+                    <!-- ردیف ۳: جست‌وجوی سریع -->
                     <tr class="hover:bg-gray-50 transition">
-                        <td class="py-4 px-6 text-gray-700">مشاهده جزئیات کامل نسخه</td>
+                        <td class="py-4 px-6 text-gray-700">جست‌وجوی سریع و هوشمند بین تمام محتواها</td>
+                        <td class="py-4 px-6 text-center text-gray-500">فقط در موارد رایگان</td>
                         <td class="py-4 px-6 text-center">
                             <i class="fas fa-check-circle feature-check"></i>
-                        </td>
-                        <td class="py-4 px-6 text-center">
-                            <i class="fas fa-check-circle feature-check"></i>
+                            <span class="text-gray-700 mr-2">سرچ آنی در کل بانک نسخه و اوردر</span>
                         </td>
                     </tr>
+                    <!-- ردیف ۴: درخواست افزودن نسخه -->
                     <tr class="hover:bg-gray-50 transition">
-                        <td class="py-4 px-6 text-gray-700">پرسش و پاسخ با تیم علمی</td>
+                        <td class="py-4 px-6 text-gray-700">درخواست افزودن نسخه/اوردر جدید مدنظر شما</td>
                         <td class="py-4 px-6 text-center">
                             <i class="fas fa-times-circle feature-cross"></i>
                         </td>
                         <td class="py-4 px-6 text-center">
                             <i class="fas fa-check-circle feature-check"></i>
-                            <span class="text-gray-700 mr-2">پشتیبانی مستقیم</span>
+                            <span class="text-gray-700 mr-2">امکان ثبت درخواست و تدوین توسط تیم</span>
                         </td>
                     </tr>
+                    <!-- ردیف ۵: پشتیبانی علمی -->
                     <tr class="hover:bg-gray-50 transition">
-                        <td class="py-4 px-6 text-gray-700">مشاهده ویدیوهای آموزشی</td>
+                        <td class="py-4 px-6 text-gray-700">پشتیبانی علمی و پاسخ به سوالات بالینی</td>
                         <td class="py-4 px-6 text-center">
-                            <i class="fas fa-check-circle feature-check"></i>
+                            <i class="fas fa-times-circle feature-cross"></i>
                         </td>
                         <td class="py-4 px-6 text-center">
                             <i class="fas fa-check-circle feature-check"></i>
+                            <span class="text-gray-700 mr-2">پشتیبانی مستقیم و مستمر تیم علمی</span>
                         </td>
                     </tr>
+                    <!-- ردیف ۶: دسترسی فوری به آپدیت‌ها -->
                     <tr class="hover:bg-gray-50 transition">
-                        <td class="py-4 px-6 text-gray-700">محدودیت نشست همزمان</td>
+                        <td class="py-4 px-6 text-gray-700">دسترسی فوری به آپدیت‌ها و پروتکل‌های جدید</td>
                         <td class="py-4 px-6 text-center">
-                            <i class="fas fa-check-circle feature-check"></i>
+                            <i class="fas fa-times-circle feature-cross"></i>
                         </td>
                         <td class="py-4 px-6 text-center">
                             <i class="fas fa-check-circle feature-check"></i>
+                            <span class="text-gray-700 mr-2">دسترسی آنی به محض انتشار تغییرات</span>
                         </td>
                     </tr>
                 </tbody>
@@ -348,57 +351,63 @@
 
             <!-- Mobile Cards -->
             <div class="md:hidden divide-y divide-gray-200">
+                <!-- موبایل ردیف ۱ -->
                 <div class="p-6 bg-gray-50">
-                    <h3 class="font-bold text-lg mb-4 text-gray-800">دسترسی به نسخه‌ها</h3>
+                    <h3 class="font-bold text-lg mb-4 text-gray-800">بانک جامع نسخه‌های طب عمومی</h3>
                     <div class="space-y-3">
                         <div class="flex justify-between items-center">
                             <span class="text-gray-600">کاربر عادی:</span>
-                            <span class="text-gray-500">فقط رایگان</span>
+                            <span class="text-gray-500">فقط موارد محدود نمونه</span>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-gray-600">کاربر ویژه:</span>
                             <span class="flex items-center gap-2">
                                 <i class="fas fa-check-circle feature-check"></i>
-                                <span>همه نسخه‌ها</span>
+                                <span>دسترسی نامحدود به ۱۰۰٪ نسخه‌ها</span>
                             </span>
                         </div>
                     </div>
                 </div>
 
-                <div class="p-6 bg-gray-50">
-                    <h3 class="font-bold text-lg mb-1 text-gray-800">دسترسی به اوردرهای پزشکی</h3>
-                    <p class="text-xs text-gray-400 mb-4">نسخه‌های استاندارد بر اساس گایدلاین‌های روز</p>
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">کاربر عادی:</span>
-                            <span class="text-gray-500">فقط اوردرهای رایگان</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">کاربر ویژه:</span>
-                            <span class="flex items-center gap-2">
-                                <i class="fas fa-check-circle feature-check"></i>
-                                <span>تمامی اوردرهای پزشکی</span>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
+                <!-- موبایل ردیف ۲ -->
                 <div class="p-6">
-                    <h3 class="font-bold text-lg mb-4 text-gray-800">مشاهده جزئیات کامل نسخه</h3>
+                    <h3 class="font-bold text-lg mb-4 text-gray-800">اوردرهای اورژانس (Rosen & Tintinalli)</h3>
                     <div class="space-y-3">
                         <div class="flex justify-between items-center">
                             <span class="text-gray-600">کاربر عادی:</span>
-                            <i class="fas fa-check-circle feature-check"></i>
+                            <span class="text-gray-500">چند اوردر پایه و محدود</span>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-gray-600">کاربر ویژه:</span>
-                            <i class="fas fa-check-circle feature-check"></i>
+                            <span class="flex items-center gap-2">
+                                <i class="fas fa-check-circle feature-check"></i>
+                                <span>دسترسی کامل به بیش از ۵۰ اوردر تخصصی</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- موبایل ردیف ۳ -->
+                <div class="p-6 bg-gray-50">
+                    <h3 class="font-bold text-lg mb-4 text-gray-800">جست‌وجوی سریع و هوشمند بین تمام محتواها</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">کاربر عادی:</span>
+                            <span class="text-gray-500">فقط در موارد رایگان</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">کاربر ویژه:</span>
+                            <span class="flex items-center gap-2">
+                                <i class="fas fa-check-circle feature-check"></i>
+                                <span>سرچ آنی در کل بانک نسخه و اوردر</span>
+                            </span>
                         </div>
                     </div>
                 </div>
                 
-                <div class="p-6 bg-gray-50">
-                    <h3 class="font-bold text-lg mb-4 text-gray-800">پرسش و پاسخ با تیم علمی</h3>
+                <!-- موبایل ردیف ۴ -->
+                <div class="p-6">
+                    <h3 class="font-bold text-lg mb-4 text-gray-800">درخواست افزودن نسخه/اوردر جدید مدنظر شما</h3>
                     <div class="space-y-3">
                         <div class="flex justify-between items-center">
                             <span class="text-gray-600">کاربر عادی:</span>
@@ -408,36 +417,46 @@
                             <span class="text-gray-600">کاربر ویژه:</span>
                             <span class="flex items-center gap-2">
                                 <i class="fas fa-check-circle feature-check"></i>
-                                <span>پشتیبانی مستقیم</span>
+                                <span>امکان ثبت درخواست و تدوین توسط تیم</span>
                             </span>
                         </div>
                     </div>
                 </div>
                 
-                <div class="p-6">
-                    <h3 class="font-bold text-lg mb-4 text-gray-800">مشاهده ویدیوهای آموزشی</h3>
+                <!-- موبایل ردیف ۵ -->
+                <div class="p-6 bg-gray-50">
+                    <h3 class="font-bold text-lg mb-4 text-gray-800">پشتیبانی علمی و پاسخ به سوالات بالینی</h3>
                     <div class="space-y-3">
                         <div class="flex justify-between items-center">
                             <span class="text-gray-600">کاربر عادی:</span>
-                            <i class="fas fa-check-circle feature-check"></i>
+                            <i class="fas fa-times-circle feature-cross"></i>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-gray-600">کاربر ویژه:</span>
-                            <i class="fas fa-check-circle feature-check"></i>
+                            <span class="flex items-center gap-2">
+                                <i class="fas fa-check-circle feature-check"></i>
+                                <span>پشتیبانی مستقیم و مستمر تیم علمی</span>
+                            </span>
                         </div>
                     </div>
                 </div>
                 
-                <div class="p-6 bg-gray-50">
-                    <h3 class="font-bold text-lg mb-4 text-gray-800">محدودیت نشست همزمان</h3>
+                <!-- موبایل ردیف ۶ -->
+                <div class="p-6">
+                    <h3 class="font-bold text-lg mb-4 text-gray-800">دسترسی فوری به آپدیت‌ها و پروتکل‌های جدید</h3>
                     <div class="space-y-3">
                         <div class="flex justify-between items-center">
                             <span class="text-gray-600">کاربر عادی:</span>
-                            <i class="fas fa-check-circle feature-check"></i>
+                            <span class="flex items-center gap-2 text-gray-500">
+                                <i class="fas fa-times-circle feature-cross"></i>
+                            </span>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-gray-600">کاربر ویژه:</span>
-                            <i class="fas fa-check-circle feature-check"></i>
+                            <span class="flex items-center gap-2">
+                                <i class="fas fa-check-circle feature-check"></i>
+                                <span>دسترسی آنی به محض انتشار تغییرات</span>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -648,7 +667,7 @@
             </div>
         </div>
 
-        <!-- FAQ 6 - جدید -->
+        <!-- FAQ 6 -->
         <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden">
             <button 
                 @click="toggleFaq(6)"
@@ -703,7 +722,7 @@
                 آماده برای شروع هستید؟
             </h2>
             <p class="text-white/90 text-lg mb-8">
-                به خانواده پزشکان حرفه‌ای بپیوندید و تجربه نسخه‌نویسی خود را متحول کنید
+                به خانواده پزشکان حرفه‌ای بپیوندید و تجربه نسخه‌نویسی و اوردرهای پزشکی خود را متحول کنید
             </p>
             <button 
                 @click="scrollToPlans"
@@ -725,4 +744,3 @@
 <!-- قسمت js و حتی ایمپورت کردن فایل هات رو اینجا بزار -->
 
 {% endblock extra_js %}
-    
