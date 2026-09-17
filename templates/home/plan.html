@@ -151,7 +151,6 @@
     <div x-show="loading" class="flex justify-center items-center py-20">
         <div class="spinner"></div>
     </div>
-
     <!-- بخش دوم: پلن‌های اشتراک -->
     <section id="plans" x-show="!loading" class="mb-20 fade-in-up" style="animation-delay: 0.2s;">
         <h2 class="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-4">
@@ -161,29 +160,33 @@
 
         <template x-for="group in groupedPlans" :key="group.membership_name">
             <div class="mb-16">
-            <!-- عنوان گروه membership -->
-            <div class="w-full mb-8">
-                <div class="max-w-7xl mx-auto">
-                    <div class="rounded-xl bg-gradient-to-br from-c1 to-c2 px-8 py-4 text-center">
-                        <h3 class="text-xl font-bold text-white text-x1-700" x-text="group.membership_name"></h3>
-                        <p class="text-sm text-white mt-1" x-show="group.membership_description" x-text="group.membership_description"></p>
+                <!-- عنوان گروه membership با گرادیان پویا -->
+                <div class="w-full mb-6 md:mb-8">
+                    <div class="max-w-7xl mx-auto">
+                        <div
+                            class="rounded-xl px-4 py-3 md:px-8 md:py-4 text-center"
+                            :style="`background: ${group.gradient}`"
+                        >
+                            <h3 class="text-base md:text-xl font-bold text-white" x-text="group.membership_name"></h3>
+                            <p class="text-xs md:text-sm text-white/90 mt-1"
+                            x-show="group.membership_description"
+                            x-text="group.membership_description"></p>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-
-
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+                <!-- گرید ۲ ستونه در موبایل، ۳ ستونه در دسکتاپ -->
+                <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-8 max-w-7xl mx-auto">
                     <template x-for="(plan, index) in group.plans" :key="plan.id">
                         <div
-                            class="plan-card bg-white rounded-2xl overflow-hidden shadow-lg relative flex flex-col"
+                            class="plan-card bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-lg relative flex flex-col"
                             :class="{ 'ring-4 ring-orange-400': plan.tag_value === 'popular' || plan.tag_value === 'best_value' }"
                             :style="`animation-delay: ${index * 0.1}s`"
                         >
-                            <!-- Tag Badge (از API) -->
+                            <!-- Tag Badge -->
                             <div
                                 x-show="plan.tag_display"
-                                class="best-value-badge absolute top-4 left-4 px-4 py-2 rounded-full text-white text-sm font-bold z-10"
+                                class="best-value-badge absolute top-2 left-2 md:top-4 md:left-4 px-2 py-1 md:px-4 md:py-2 rounded-full text-white text-[10px] md:text-sm font-bold z-10"
                                 :class="{
                                     'bg-gradient-to-r from-amber-400 to-orange-500': plan.tag_value === 'popular',
                                     'bg-gradient-to-r from-sky-500 to-blue-600': plan.tag_value === 'best_value',
@@ -197,68 +200,75 @@
                                 <span x-text="plan.tag_display"></span>
                             </div>
 
-                            <!-- Card Header -->
-                            <div class="bg-gradient-to-br from-c1 to-c2 text-white p-8" :class="{ 'pt-14': plan.tag_display }">
-                                <h3 class="text-2xl font-bold mb-2" x-text="plan.name"></h3>
-                                <div class="mt-4">
-                                    <span class="text-4xl font-bold" x-text="plan.formatted_price"></span>
+                            <!-- Card Header — استفاده از گرادیان گروه -->
+                            <div
+                                class="text-white p-3 sm:p-4 md:p-8"
+                                :style="`background: ${group.gradient}`"
+                                :class="{ 'pt-10 sm:pt-12 md:pt-14': plan.tag_display }"
+                            >
+                                <h3 class="text-sm sm:text-base md:text-2xl font-bold mb-1 md:mb-2" x-text="plan.name"></h3>
+                                <div class="mt-2 md:mt-4">
+                                    <span class="text-lg sm:text-xl md:text-4xl font-bold" x-text="plan.formatted_price"></span>
                                 </div>
-                                <p class="text-sm text-white/70 mt-2">
+                                <p class="text-[10px] sm:text-xs md:text-sm text-white/70 mt-1 md:mt-2">
                                     <span x-text="plan.duration_months"></span> ماه اشتراک
                                 </p>
                             </div>
 
                             <!-- Card Body -->
-                            <div class="p-8 flex flex-col flex-grow">
-                                <!-- Features از API -->
-                                <ul class="space-y-3 mb-8 flex-grow">
+                            <div class="p-3 sm:p-4 md:p-8 flex flex-col flex-grow">
+                                <ul class="space-y-2 md:space-y-3 mb-3 md:mb-8 flex-grow">
                                     <template x-for="feature in plan.features" :key="feature.name">
-                                        <li class="flex items-start gap-3">
-                                            <i class="fas fa-check-circle feature-check mt-0.5 flex-shrink-0"></i>
+                                        <li class="flex items-start gap-1.5 md:gap-3">
+                                            <i class="fas fa-check-circle feature-check mt-0.5 flex-shrink-0 text-xs md:text-base"></i>
                                             <div>
-                                                <span class="text-gray-700 font-medium" x-text="feature.name"></span>
-                                                <p class="text-xs text-gray-400" x-show="feature.description" x-text="feature.description"></p>
+                                                <span class="text-gray-700 font-medium text-[11px] sm:text-xs md:text-base" x-text="feature.name"></span>
+                                                <p class="text-[10px] md:text-xs text-gray-400 hidden sm:block"
+                                                x-show="feature.description"
+                                                x-text="feature.description"></p>
                                             </div>
                                         </li>
                                     </template>
-                                    <li class="flex items-center gap-3">
-                                        <i class="fas fa-check-circle feature-check flex-shrink-0"></i>
+
+                                    <li class="flex items-start gap-1.5 md:gap-3">
+                                        <i class="fas fa-check-circle feature-check flex-shrink-0 text-xs md:text-base"></i>
                                         <div>
-                                            <span class="text-gray-700">مشاهده جزئیات کامل</span>
-                                            <p class="text-xs text-gray-400">
+                                            <span class="text-gray-700 text-[11px] sm:text-xs md:text-base">مشاهده جزئیات کامل</span>
+                                            <p class="text-[10px] md:text-xs text-gray-400 hidden sm:block">
                                                 مشاهده جزئیات صفحات تخصصی با تمامی اطلاعات
                                             </p>
                                         </div>
                                     </li>
-                                    <li class="flex items-center gap-3">
-                                        <i class="fas fa-check-circle feature-check flex-shrink-0"></i>
+                                    <li class="flex items-start gap-1.5 md:gap-3">
+                                        <i class="fas fa-check-circle feature-check flex-shrink-0 text-xs md:text-base"></i>
                                         <div>
-                                            <span class="text-gray-700">پشتیبانی علمی تخصصی</span>
-                                            <p class="text-xs text-gray-400">
+                                            <span class="text-gray-700 text-[11px] sm:text-xs md:text-base">پشتیبانی علمی تخصصی</span>
+                                            <p class="text-[10px] md:text-xs text-gray-400 hidden sm:block">
                                                 توانایی پرسش‌های تخصصی برای هر قابلیت
                                             </p>
                                         </div>
                                     </li>
-                                    <li class="flex items-center gap-3">
-                                        <i class="fas fa-check-circle feature-check flex-shrink-0"></i>
+                                    <li class="flex items-start gap-1.5 md:gap-3">
+                                        <i class="fas fa-check-circle feature-check flex-shrink-0 text-xs md:text-base"></i>
                                         <div>
-                                            <span class="text-gray-700">محدودیت نشست همزمان</span>
-                                            <p class="text-xs text-gray-400">
+                                            <span class="text-gray-700 text-[11px] sm:text-xs md:text-base">محدودیت نشست همزمان</span>
+                                            <p class="text-[10px] md:text-xs text-gray-400 hidden sm:block">
                                                 محدودیت اتصال فقط با یک دستگاه
                                             </p>
                                         </div>
                                     </li>
-                                    <!-- fallback اگر features خالی بود -->
+
                                     <template x-if="!plan.features || plan.features.length === 0">
-                                        <li class="text-gray-400 text-sm">دسترسی کامل به امکانات اشتراک</li>
+                                        <li class="text-gray-400 text-[10px] md:text-sm">دسترسی کامل به امکانات اشتراک</li>
                                     </template>
                                 </ul>
 
                                 <button
                                     @click="selectPlan(plan)"
-                                    class="w-full bg-gradient-to-r from-c1 to-c2 hover:from-c2 hover:to-c1 text-white font-bold py-4 rounded-xl transition-all duration-300 transform hover:scale-105"
+                                    :style="`background: ${group.gradient}`"
+                                    class="w-full text-white font-bold py-2 sm:py-3 md:py-4 rounded-lg md:rounded-xl text-xs sm:text-sm md:text-base transition-all duration-300 transform hover:scale-105 hover:brightness-110"
                                 >
-                                    <i class="fas fa-shopping-cart ml-2"></i>
+                                    <i class="fas fa-shopping-cart ml-1 md:ml-2"></i>
                                     خرید اشتراک
                                 </button>
                             </div>
@@ -474,7 +484,7 @@
                 </div>
                 <h3 class="text-xl font-bold text-gray-800 mb-4">صرفه‌جویی در زمان</h3>
                 <p class="text-gray-600 leading-relaxed">
-                    فرآیند نسخه‌نویسی را از ۱۰ دقیقه به کمتر از ۱ دقیقه کاهش دهید
+                    فرآیند نسخه‌نویسی و اوردر پزشکی را از ۱۰ دقیقه به کمتر از ۱ دقیقه کاهش دهید
                 </p>
             </div>
 
@@ -742,5 +752,4 @@
 
 {% block extra_js %}
 <!-- قسمت js و حتی ایمپورت کردن فایل هات رو اینجا بزار -->
-
 {% endblock extra_js %}
