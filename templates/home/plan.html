@@ -360,118 +360,137 @@
             </table>
 
             <!-- Mobile Cards -->
-            <div class="md:hidden divide-y divide-gray-200">
-                <!-- موبایل ردیف ۱ -->
-                <div class="p-6 bg-gray-50">
-                    <h3 class="font-bold text-lg mb-4 text-gray-800">بانک جامع نسخه‌های طب عمومی</h3>
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">کاربر عادی:</span>
-                            <span class="text-gray-500">فقط موارد محدود نمونه</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">کاربر ویژه:</span>
-                            <span class="flex items-center gap-2">
-                                <i class="fas fa-check-circle feature-check"></i>
-                                <span>دسترسی نامحدود به ۱۰۰٪ نسخه‌ها</span>
-                            </span>
-                        </div>
-                    </div>
-                </div>
+<div class="md:hidden p-3 sm:p-4 space-y-3">
 
-                <!-- موبایل ردیف ۲ -->
-                <div class="p-6">
-                    <h3 class="font-bold text-lg mb-4 text-gray-800">اوردرهای اورژانس (Rosen & Tintinalli)</h3>
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">کاربر عادی:</span>
-                            <span class="text-gray-500">چند اوردر پایه و محدود</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">کاربر ویژه:</span>
-                            <span class="flex items-center gap-2">
-                                <i class="fas fa-check-circle feature-check"></i>
-                                <span>دسترسی کامل به بیش از ۵۰ اوردر تخصصی</span>
-                            </span>
-                        </div>
-                    </div>
-                </div>
+    <!-- هدر راهنما: عادی vs ویژه -->
+    <div class="grid grid-cols-2 gap-2 sticky top-0 z-10">
+        <div class="bg-gray-100 rounded-xl py-2.5 text-center border border-gray-200">
+            <i class="fas fa-user text-gray-500 ml-1"></i>
+            <span class="text-xs font-bold text-gray-600">کاربر عادی</span>
+            <p class="text-[10px] text-gray-400">رایگان</p>
+        </div>
+        <div class="rounded-xl py-2.5 text-center text-white shadow-md" style="background: linear-gradient(135deg, #0077b6 0%, #00b4d8 100%);">
+            <i class="fas fa-crown text-amber-300 ml-1"></i>
+            <span class="text-xs font-bold">کاربر ویژه</span>
+            <p class="text-[10px] text-white/80">اشتراک فعال</p>
+        </div>
+    </div>
 
-                <!-- موبایل ردیف ۳ -->
-                <div class="p-6 bg-gray-50">
-                    <h3 class="font-bold text-lg mb-4 text-gray-800">جست‌وجوی سریع و هوشمند بین تمام محتواها</h3>
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">کاربر عادی:</span>
-                            <span class="text-gray-500">فقط در موارد رایگان</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">کاربر ویژه:</span>
-                            <span class="flex items-center gap-2">
-                                <i class="fas fa-check-circle feature-check"></i>
-                                <span>سرچ آنی در کل بانک نسخه و اوردر</span>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- موبایل ردیف ۴ -->
-                <div class="p-6">
-                    <h3 class="font-bold text-lg mb-4 text-gray-800">درخواست افزودن نسخه/اوردر جدید مدنظر شما</h3>
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">کاربر عادی:</span>
-                            <i class="fas fa-times-circle feature-cross"></i>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">کاربر ویژه:</span>
-                            <span class="flex items-center gap-2">
-                                <i class="fas fa-check-circle feature-check"></i>
-                                <span>امکان ثبت درخواست و تدوین توسط تیم</span>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- موبایل ردیف ۵ -->
-                <div class="p-6 bg-gray-50">
-                    <h3 class="font-bold text-lg mb-4 text-gray-800">پشتیبانی علمی و پاسخ به سوالات بالینی</h3>
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">کاربر عادی:</span>
-                            <i class="fas fa-times-circle feature-cross"></i>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">کاربر ویژه:</span>
-                            <span class="flex items-center gap-2">
-                                <i class="fas fa-check-circle feature-check"></i>
-                                <span>پشتیبانی مستقیم و مستمر تیم علمی</span>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- موبایل ردیف ۶ -->
-                <div class="p-6">
-                    <h3 class="font-bold text-lg mb-4 text-gray-800">دسترسی فوری به آپدیت‌ها و پروتکل‌های جدید</h3>
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">کاربر عادی:</span>
-                            <span class="flex items-center gap-2 text-gray-500">
-                                <i class="fas fa-times-circle feature-cross"></i>
-                            </span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">کاربر ویژه:</span>
-                            <span class="flex items-center gap-2">
-                                <i class="fas fa-check-circle feature-check"></i>
-                                <span>دسترسی آنی به محض انتشار تغییرات</span>
-                            </span>
-                        </div>
-                    </div>
-                </div>
+    <!-- ردیف ۱: بانک جامع نسخه‌ها -->
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+        <div class="bg-gray-50 px-3 py-2 border-b border-gray-100">
+            <h3 class="font-bold text-xs text-gray-800 flex items-center gap-2">
+                <i class="fas fa-database text-c1"></i>
+                بانک جامع نسخه‌های طب عمومی
+            </h3>
+        </div>
+        <div class="grid grid-cols-2 divide-x divide-gray-100 divide-x-reverse">
+            <div class="p-3 text-center flex items-center justify-center">
+                <span class="text-[11px] text-gray-500">فقط موارد محدود نمونه</span>
+            </div>
+            <div class="p-3 text-center bg-gradient-to-br from-sky-50/60 to-blue-50/60 flex items-center justify-center gap-1">
+                <i class="fas fa-check-circle text-c1 text-sm flex-shrink-0"></i>
+                <span class="text-[11px] text-gray-700 font-medium">دسترسی نامحدود به ۱۰۰٪ نسخه‌ها</span>
             </div>
         </div>
+    </div>
+
+    <!-- ردیف ۲: اوردرهای اورژانس -->
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+        <div class="bg-gray-50 px-3 py-2 border-b border-gray-100">
+            <h3 class="font-bold text-xs text-gray-800 flex items-center gap-2">
+                <i class="fas fa-ambulance text-c1"></i>
+                اوردرهای اورژانس (Rosen & Tintinalli)
+            </h3>
+        </div>
+        <div class="grid grid-cols-2 divide-x divide-gray-100 divide-x-reverse">
+            <div class="p-3 text-center flex items-center justify-center">
+                <span class="text-[11px] text-gray-500">چند اوردر پایه و محدود</span>
+            </div>
+            <div class="p-3 text-center bg-gradient-to-br from-sky-50/60 to-blue-50/60 flex items-center justify-center gap-1">
+                <i class="fas fa-check-circle text-c1 text-sm flex-shrink-0"></i>
+                <span class="text-[11px] text-gray-700 font-medium">دسترسی کامل به +۵۰ اوردر</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ردیف ۳: جست‌وجوی سریع -->
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+        <div class="bg-gray-50 px-3 py-2 border-b border-gray-100">
+            <h3 class="font-bold text-xs text-gray-800 flex items-center gap-2">
+                <i class="fas fa-search text-c1"></i>
+                جست‌وجوی سریع و هوشمند
+            </h3>
+        </div>
+        <div class="grid grid-cols-2 divide-x divide-gray-100 divide-x-reverse">
+            <div class="p-3 text-center flex items-center justify-center">
+                <span class="text-[11px] text-gray-500">فقط در موارد رایگان</span>
+            </div>
+            <div class="p-3 text-center bg-gradient-to-br from-sky-50/60 to-blue-50/60 flex items-center justify-center gap-1">
+                <i class="fas fa-check-circle text-c1 text-sm flex-shrink-0"></i>
+                <span class="text-[11px] text-gray-700 font-medium">سرچ آنی در کل بانک</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ردیف ۴: درخواست افزودن نسخه -->
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+        <div class="bg-gray-50 px-3 py-2 border-b border-gray-100">
+            <h3 class="font-bold text-xs text-gray-800 flex items-center gap-2">
+                <i class="fas fa-plus-circle text-c1"></i>
+                درخواست افزودن نسخه/اوردر جدید
+            </h3>
+        </div>
+        <div class="grid grid-cols-2 divide-x divide-gray-100 divide-x-reverse">
+            <div class="p-3 text-center flex items-center justify-center">
+                <i class="fas fa-times-circle text-red-400 text-lg"></i>
+            </div>
+            <div class="p-3 text-center bg-gradient-to-br from-sky-50/60 to-blue-50/60 flex items-center justify-center gap-1">
+                <i class="fas fa-check-circle text-c1 text-sm flex-shrink-0"></i>
+                <span class="text-[11px] text-gray-700 font-medium">ثبت درخواست و تدوین توسط تیم</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ردیف ۵: پشتیبانی علمی -->
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+        <div class="bg-gray-50 px-3 py-2 border-b border-gray-100">
+            <h3 class="font-bold text-xs text-gray-800 flex items-center gap-2">
+                <i class="fas fa-user-md text-c1"></i>
+                پشتیبانی علمی و پاسخ به سوالات بالینی
+            </h3>
+        </div>
+        <div class="grid grid-cols-2 divide-x divide-gray-100 divide-x-reverse">
+            <div class="p-3 text-center flex items-center justify-center">
+                <i class="fas fa-times-circle text-red-400 text-lg"></i>
+            </div>
+            <div class="p-3 text-center bg-gradient-to-br from-sky-50/60 to-blue-50/60 flex items-center justify-center gap-1">
+                <i class="fas fa-check-circle text-c1 text-sm flex-shrink-0"></i>
+                <span class="text-[11px] text-gray-700 font-medium">پشتیبانی مستقیم و مستمر</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ردیف ۶: دسترسی فوری به آپدیت‌ها -->
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+        <div class="bg-gray-50 px-3 py-2 border-b border-gray-100">
+            <h3 class="font-bold text-xs text-gray-800 flex items-center gap-2">
+                <i class="fas fa-sync-alt text-c1"></i>
+                دسترسی فوری به آپدیت‌ها و پروتکل‌های جدید
+            </h3>
+        </div>
+        <div class="grid grid-cols-2 divide-x divide-gray-100 divide-x-reverse">
+            <div class="p-3 text-center flex items-center justify-center">
+                <i class="fas fa-times-circle text-red-400 text-lg"></i>
+            </div>
+            <div class="p-3 text-center bg-gradient-to-br from-sky-50/60 to-blue-50/60 flex items-center justify-center gap-1">
+                <i class="fas fa-check-circle text-c1 text-sm flex-shrink-0"></i>
+                <span class="text-[11px] text-gray-700 font-medium">دسترسی آنی به محض انتشار</span>
+            </div>
+        </div>
+    </div>
+
+</div>
     </section>
 
     <!-- بخش چهارم: مزایای کلیدی -->
