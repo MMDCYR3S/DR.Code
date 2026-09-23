@@ -88,7 +88,7 @@ const API = {
         }
     },
 
-    // ثبت‌نام کاربر جدید
+    // ==================== API.register ====================
     async register(userData) {
         try {
             const response = await fetch(`${this.BASE_URL}api/v1/accounts/register/`, {
@@ -100,7 +100,10 @@ const API = {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'خطا در ثبت‌نام');
+                const err = new Error(data.message || 'خطا در ثبت‌نام');
+                err.errors = data.errors || {};
+                err.status = response.status;
+                throw err;
             }
 
             return data;
@@ -110,7 +113,7 @@ const API = {
         }
     },
 
-    // ورود کاربر
+    // ==================== API.login ====================
     async login(credentials) {
         try {
             const response = await fetch(`${this.BASE_URL}api/v1/accounts/login/`, {
@@ -121,8 +124,12 @@ const API = {
 
             const data = await response.json();
             console.log('Login response data:', data);
+
             if (!response.ok) {
-                throw new Error(data.message || 'خطا در ورود');
+                const err = new Error(data.message || 'خطا در ورود');
+                err.errors = data.errors || {};
+                err.status = response.status;
+                throw err;
             }
 
             return data;

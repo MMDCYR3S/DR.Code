@@ -104,6 +104,57 @@
             box-sizing: border-box; 
         }
 
+        /* ====== استایل فیلدهای خطادار ====== */
+        .field-error {
+            display: none;
+            font-size: 11px;
+            font-weight: 700;
+            color: #dc2626; /* red-600 */
+            margin-top: 6px;
+            padding-right: 6px;
+            line-height: 1.6;
+            animation: fieldErrorIn 0.25s ease-out;
+        }
+
+        .field-error.show {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .field-error::before {
+            content: "\f06a"; /* fa-exclamation-circle */
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            font-size: 10px;
+            color: #dc2626;
+        }
+
+        @keyframes fieldErrorIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* حاشیه قرمز input در حالت خطا */
+        .input-error {
+            border-color: #f87171 !important; /* red-400 */
+            background-color: #fef2f2 !important; /* red-50 */
+        }
+        .input-error:focus {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.08) !important;
+        }
+
+        /* انیمیشن shake برای مودال هنگام خطا */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97);
+        }
+
         [x-cloak] { display: none !important; }
     </style>
 
@@ -1015,23 +1066,28 @@
                 
                 <div id="auth-message" class="p-4 rounded-2xl text-xs font-bold text-center mb-6 border transition-all duration-300" style="display: none;"></div>
     
-                <form id="login-form" class="auth-form animate-form-fade " onsubmit="return false;">
+                <!-- ==================== فرم ورود ==================== -->
+                <form id="login-form" class="auth-form animate-form-fade" onsubmit="return false;">
                     <div class="text-center mb-8">
                         <h2 class="text-2xl font-black text-slate-800 tracking-tight">خوش برگشتید!</h2>
                         <p class="text-xs text-slate-400 mt-1.5 font-medium">لطفاً اطلاعات حساب خود را وارد کنید</p>
                     </div>
-    
+
+                    <!-- فیلد شماره موبایل -->
                     <div class="space-y-2 mb-5">
                         <label for="login-phone" class="block text-xs font-bold text-slate-600 mr-1">شماره موبایل</label>
                         <div class="relative group">
                             <span class="absolute inset-y-0 right-4 flex items-center text-slate-400 group-focus-within:text-c1 transition-colors duration-300">
                                 <i class="fas fa-phone-alt text-sm"></i>
                             </span>
-                            <input type="tel" id="login-phone" name="phone_number" placeholder="09123456789" required pattern="09[0-9]{9}" title="شماره موبایل باید با 09 شروع شود و 11 رقم باشد"
-                                   class="w-full pl-4 pr-11 py-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-[15px] font-semibold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:bg-white focus:border-c1 focus:ring-4 focus:ring-c1/5 transition-all duration-300">
+                            <input type="tel" id="login-phone" name="phone_number" placeholder="09123456789" required
+                                pattern="09[0-9]{9}" title="شماره موبایل باید با 09 شروع شود و 11 رقم باشد"
+                                class="w-full pl-4 pr-11 py-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-[15px] font-semibold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:bg-white focus:border-c1 focus:ring-4 focus:ring-c1/5 transition-all duration-300">
                         </div>
+                        <p class="field-error" data-error-for="login-phone"></p>
                     </div>
-    
+
+                    <!-- فیلد رمز عبور -->
                     <div class="space-y-2 mb-5">
                         <label for="login-password" class="block text-xs font-bold text-slate-600 mr-1">رمز عبور</label>
                         <div class="relative group">
@@ -1039,13 +1095,14 @@
                                 <i class="fas fa-lock text-sm"></i>
                             </span>
                             <input type="password" id="login-password" name="password" placeholder="رمز عبور خود را وارد کنید" required
-                                   class="w-full pl-12 pr-11 py-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-[15px] font-semibold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:bg-white focus:border-c1 focus:ring-4 focus:ring-c1/5 transition-all duration-300">
+                                class="w-full pl-12 pr-11 py-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-[15px] font-semibold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:bg-white focus:border-c1 focus:ring-4 focus:ring-c1/5 transition-all duration-300">
                             <button type="button" class="absolute inset-y-0 left-3 px-2 flex items-center text-slate-400 hover:text-slate-700 transition-colors" onclick="togglePassword('login-password')">
                                 <i class="fas fa-eye text-sm"></i>
                             </button>
                         </div>
+                        <p class="field-error" data-error-for="login-password"></p>
                     </div>
-    
+
                     <div class="flex items-center justify-between mb-6 px-1">
                         <label class="flex items-center text-xs font-bold text-slate-500 cursor-pointer select-none">
                             <input type="checkbox" name="remember_me" checked class="w-4 h-4 rounded-md border-slate-300 text-c1 focus:ring-c1 ml-2 transition-all">
@@ -1055,43 +1112,52 @@
                             فراموشی رمز عبور؟
                         </button>
                     </div>
-    
+
                     <button type="submit" data-original-text="ورود"
                             class="w-full py-4 bg-gradient-to-r from-slate-900 to-slate-800 text-white font-bold text-sm rounded-2xl shadow-[0_10px_25px_-5px_rgba(15,23,42,0.15)] hover:from-c1 hover:to-c1 hover:shadow-[0_10px_25px_-5px_rgba(var(--c1-rgb,0,102,204),0.25)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300">
                         ورود ایمن به حساب
                     </button>
                 </form>
-    
+
+
+                <!-- ==================== فرم ثبت‌نام ==================== -->
                 <form id="register-form" class="auth-form animate-form-fade hidden" onsubmit="return false;">
                     <div class="text-center mb-6">
                         <h2 class="text-2xl font-black text-slate-800 tracking-tight">عضویت در دکتر کد</h2>
                         <p class="text-xs text-slate-400 mt-1.5 font-medium">به انجمن تخصصی خوش آمدید</p>
                     </div>
-    
+
+                    <!-- نام و نام خانوادگی -->
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <div class="space-y-2">
                             <label for="register-firstname" class="block text-xs font-bold text-slate-600 mr-1">نام</label>
                             <input type="text" id="register-firstname" name="first_name" placeholder="علی" required
-                                   class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-[14px] font-semibold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:bg-white focus:border-c1 focus:ring-4 focus:ring-c1/5 transition-all duration-300">
+                                class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-[14px] font-semibold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:bg-white focus:border-c1 focus:ring-4 focus:ring-c1/5 transition-all duration-300">
+                            <p class="field-error" data-error-for="register-firstname"></p>
                         </div>
                         <div class="space-y-2">
                             <label for="register-lastname" class="block text-xs font-bold text-slate-600 mr-1">نام خانوادگی</label>
                             <input type="text" id="register-lastname" name="last_name" placeholder="محمدی" required
-                                   class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-[14px] font-semibold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:bg-white focus:border-c1 focus:ring-4 focus:ring-c1/5 transition-all duration-300">
+                                class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-[14px] font-semibold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:bg-white focus:border-c1 focus:ring-4 focus:ring-c1/5 transition-all duration-300">
+                            <p class="field-error" data-error-for="register-lastname"></p>
                         </div>
                     </div>
-    
+
+                    <!-- شماره موبایل -->
                     <div class="space-y-2 mb-4">
                         <label for="register-phone" class="block text-xs font-bold text-slate-600 mr-1">شماره موبایل</label>
                         <div class="relative group">
                             <span class="absolute inset-y-0 right-4 flex items-center text-slate-400 group-focus-within:text-c1 transition-colors duration-300">
                                 <i class="fas fa-phone-alt text-sm"></i>
                             </span>
-                            <input type="tel" id="register-phone" name="phone_number" placeholder="09123456789" required pattern="09[0-9]{9}" title="شماره موبایل باید با 09 شروع شود و 11 رقم باشد"
-                                   class="w-full pl-4 pr-11 py-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-[14px] font-semibold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:bg-white focus:border-c1 focus:ring-4 focus:ring-c1/5 transition-all duration-300">
+                            <input type="tel" id="register-phone" name="phone_number" placeholder="09123456789" required
+                                pattern="09[0-9]{9}" title="شماره موبایل باید با 09 شروع شود و 11 رقم باشد"
+                                class="w-full pl-4 pr-11 py-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-[14px] font-semibold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:bg-white focus:border-c1 focus:ring-4 focus:ring-c1/5 transition-all duration-300">
                         </div>
+                        <p class="field-error" data-error-for="register-phone"></p>
                     </div>
-    
+
+                    <!-- ایمیل -->
                     <div class="space-y-2 mb-4">
                         <label for="register-email" class="block text-xs font-bold text-slate-600 mr-1">ایمیل</label>
                         <div class="relative group">
@@ -1099,10 +1165,12 @@
                                 <i class="fas fa-envelope text-sm"></i>
                             </span>
                             <input type="email" id="register-email" name="email" placeholder="info@drcode.com" required
-                                   class="w-full pl-4 pr-11 py-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-[14px] font-semibold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:bg-white focus:border-c1 focus:ring-4 focus:ring-c1/5 transition-all duration-300">
+                                class="w-full pl-4 pr-11 py-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-[14px] font-semibold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:bg-white focus:border-c1 focus:ring-4 focus:ring-c1/5 transition-all duration-300">
                         </div>
+                        <p class="field-error" data-error-for="register-email"></p>
                     </div>
-    
+
+                    <!-- رمز عبور -->
                     <div class="space-y-2 mb-4">
                         <label for="register-password" class="block text-xs font-bold text-slate-600 mr-1">رمز عبور</label>
                         <div class="relative group">
@@ -1110,13 +1178,15 @@
                                 <i class="fas fa-lock text-sm"></i>
                             </span>
                             <input type="password" id="register-password" name="password" placeholder="حداقل ۸ کاراکتر" required minlength="8"
-                                   class="w-full pl-12 pr-11 py-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-[14px] font-semibold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:bg-white focus:border-c1 focus:ring-4 focus:ring-c1/5 transition-all duration-300">
+                                class="w-full pl-12 pr-11 py-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-[14px] font-semibold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:bg-white focus:border-c1 focus:ring-4 focus:ring-c1/5 transition-all duration-300">
                             <button type="button" class="absolute inset-y-0 left-3 px-2 flex items-center text-slate-400 hover:text-slate-700 transition-colors" onclick="togglePassword('register-password')">
                                 <i class="fas fa-eye text-sm"></i>
                             </button>
                         </div>
+                        <p class="field-error" data-error-for="register-password"></p>
                     </div>
-    
+
+                    <!-- تکرار رمز عبور -->
                     <div class="space-y-2 mb-5">
                         <label for="register-password-confirm" class="block text-xs font-bold text-slate-600 mr-1">تکرار رمز عبور</label>
                         <div class="relative group">
@@ -1124,13 +1194,14 @@
                                 <i class="fas fa-shield-alt text-sm"></i>
                             </span>
                             <input type="password" id="register-password-confirm" name="password_confirm" placeholder="تکرار رمز عبور را وارد کنید" required
-                                   class="w-full pl-12 pr-11 py-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-[14px] font-semibold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:bg-white focus:border-c1 focus:ring-4 focus:ring-c1/5 transition-all duration-300">
+                                class="w-full pl-12 pr-11 py-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-[14px] font-semibold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:bg-white focus:border-c1 focus:ring-4 focus:ring-c1/5 transition-all duration-300">
                             <button type="button" class="absolute inset-y-0 left-3 px-2 flex items-center text-slate-400 hover:text-slate-700 transition-colors" onclick="togglePassword('register-password-confirm')">
                                 <i class="fas fa-eye text-sm"></i>
                             </button>
                         </div>
+                        <p class="field-error" data-error-for="register-password-confirm"></p>
                     </div>
-    
+
                     <div class="flex gap-3 bg-slate-50 border border-slate-150/80 rounded-2xl p-4 mb-6">
                         <span class="flex-shrink-0 w-5 h-5 rounded-md bg-c1/10 text-c1 flex items-center justify-center text-xs">
                             <i class="fas fa-info"></i>
@@ -1138,8 +1209,8 @@
                         <p class="text-[11px] text-slate-500 leading-5">
                             کلمه عبور الزاما باید دارای <span class="font-bold text-slate-700">حداقل ۸ کاراکتر</span> و ترکیب <span class="font-bold text-slate-700">حروف انگلیسی</span> و <span class="font-bold text-slate-700">اعداد</span> باشد.
                         </p>
-                    </div>   
-    
+                    </div>
+
                     <button type="submit" data-original-text="ثبت‌نام"
                             class="w-full py-4 bg-gradient-to-r from-slate-900 to-slate-800 text-white font-bold text-sm rounded-2xl shadow-[0_10px_25px_-5px_rgba(15,23,42,0.15)] hover:from-c1 hover:to-c1 hover:shadow-[0_10px_25px_-5px_rgba(var(--c1-rgb,0,102,204),0.25)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300">
                         تکمیل و ساخت حساب کاربری
@@ -1155,6 +1226,8 @@
             if (typeof switchTab === 'function') {
                 switchTab(tab);
             }
+
+            Auth.showMessage('clear');
     
             const loginForm = document.getElementById('login-form');
             const registerForm = document.getElementById('register-form');
@@ -1164,6 +1237,7 @@
     
             if (tab === 'login') {
                 // انیمیشن‌های فرم ورود
+                Auth.clearFieldErrors('register-form');
                 loginForm.classList.remove('hidden');
                 registerForm.classList.add('hidden');
                 
@@ -1175,6 +1249,7 @@
                 indicator.style.transform = "translateX(0)";
             } else {
                 // انیمیشن‌های فرم ثبت‌نام
+                Auth.clearFieldErrors('login-form');
                 registerForm.classList.remove('hidden');
                 loginForm.classList.add('hidden');
                 
@@ -1875,6 +1950,24 @@ document.getElementById('forgot-password-modal')?.addEventListener('click', func
         checkAuthWarning();
          checkPhoneVerification() 
         
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        ['login-form', 'register-form'].forEach(formId => {
+            const form = document.getElementById(formId);
+            if (!form) return;
+
+            form.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', () => {
+                    input.classList.remove('input-error');
+                    const errEl = document.querySelector(`.field-error[data-error-for="${input.id}"]`);
+                    if (errEl) {
+                        errEl.classList.remove('show');
+                        errEl.textContent = '';
+                    }
+                });
+            });
+        });
     });
 </script>
 

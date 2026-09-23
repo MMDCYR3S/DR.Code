@@ -1,16 +1,107 @@
 const Auth = {
     
-// ثبت‌نام کاربر
+    // ============================================================
+    // ============ HELPERS: مدیریت خطای فیلدی ====================
+    // ============================================================
+
+    // پاک کردن تمام خطاهای یک فرم
+    clearFieldErrors(formId) {
+        const form = document.getElementById(formId);
+        if (!form) return;
+
+        form.querySelectorAll('.field-error').forEach(el => {
+            el.textContent = '';
+            el.classList.remove('show');
+        });
+
+        form.querySelectorAll('input, select, textarea').forEach(el => {
+            el.classList.remove('input-error');
+        });
+    },
+
+    // نمایش خطا زیر یک input خاص
+    showFieldError(inputId, message) {
+        const input = document.getElementById(inputId);
+        if (input) input.classList.add('input-error');
+
+        const errorEl = document.querySelector(`.field-error[data-error-for="${inputId}"]`);
+        if (errorEl) {
+            // اگر خطا آرایه بود، اولین پیام رو بگیر
+            if (Array.isArray(message)) message = message[0];
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+        }
+    },
+
+    // نگاشت کلید خطای API به id input در HTML
+    getFieldMap(formType) {
+        if (formType === 'login') {
+            return {
+                phone_number: 'login-phone',
+                password: 'login-password',
+            };
+        }
+        // register
+        return {
+            first_name: 'register-firstname',
+            last_name: 'register-lastname',
+            phone_number: 'register-phone',
+            email: 'register-email',
+            password: 'register-password',
+            password_confirm: 'register-password-confirm',
+        };
+    },
+
+    // مدیریت یکپارچه خطاهای بک‌اند
+    handleAuthErrors(formType, errors = {}, fallbackMessage = null) {
+        const formId = formType === 'login' ? 'login-form' : 'register-form';
+        const map = this.getFieldMap(formType);
+
+        let generalMessage = null;
+
+        Object.keys(errors).forEach(key => {
+            const value = errors[key];
+            const msg = Array.isArray(value) ? value[0] : value;
+
+            if (key === 'non_field_errors' || key === 'detail' || key === 'message') {
+                generalMessage = generalMessage || msg;
+            } else if (map[key]) {
+                this.showFieldError(map[key], msg);
+            } else {
+                // فیلد ناشناخته - به عنوان خطای کلی نمایش بده
+                generalMessage = generalMessage || msg;
+            }
+        });
+
+        // پیام کلی بالای پنل
+        const finalMessage = generalMessage
+            || fallbackMessage
+            || (formType === 'login' ? 'خطا در ورود به حساب کاربری' : 'خطا در ثبت‌نام');
+
+        this.showMessage('error', finalMessage);
+
+        // انیمیشن shake
+        const modalBox = document.querySelector('#auth-modal > div');
+        if (modalBox) {
+            modalBox.classList.add('animate-shake');
+            setTimeout(() => modalBox.classList.remove('animate-shake'), 450);
+        }
+    },
+    
+    // ============================================================
+    // ==================== REGISTER ==============================
+    // ============================================================
     async register(formData) {
+        const formId = 'register-form';
         try {
-            // نمایش وضعیت در حال پردازش
+            // پاک‌سازی خطاهای قبلی + پیام کلی
+            this.clearFieldErrors(formId);
+            this.showMessage('clear');
             this.showLoading(true);
-            
-            // ارسال درخواست ثبت‌نام
+
             const response = await API.register(formData);
-            
+
             if (response.success) {
-                // --- (کدهای موفقیت قبلی شما بدون تغییر) ---
                 if (response.data.access_token) {
                     StorageManager.saveTokens({
                         access_token: response.data.access_token,
@@ -18,17 +109,17 @@ const Auth = {
                         jti: response.data.jti
                     });
                 }
-                
+
                 StorageManager.saveUserData({
                     user_id: response.data.user_id,
                     full_name: response.data.full_name,
                     phone_number: response.data.phone_number
                 });
-                
+
                 StorageManager.saveUserProfile(response.data.profile);
-                
+
                 this.showMessage('success', response.message);
-                
+
                 setTimeout(() => {
                     this.closeAuthModal();
                     this.updateUIForLoggedInUser();
@@ -41,83 +132,56 @@ const Auth = {
                 }, 1500);
 
             } else {
-                // *** تغییرات جدید: مدیریت خطاهای ولیدیشن ***
-                let errorMessage = response.message || 'خطایی رخ داده است';
-
-                // بررسی وجود آبجکت errors در پاسخ سرور
-                if (response.errors) {
-                    const errors = [];
-                    
-                    // بررسی خطای شماره موبایل
-                    if (response.errors.phone_number) {
-                        errors.push('شماره موبایل وارد شده قبلاً ثبت شده است.');
-                    }
-                    
-                    // بررسی خطای ایمیل
-                    if (response.errors.email) {
-                        errors.push('ایمیل وارد شده قبلاً ثبت شده است.');
-                    }
-
-                    // اگر خطای دیگری بود (غیر از موبایل و ایمیل)
-                    // می‌توانیم آن‌ها را هم اضافه کنیم یا فقط همین دو مورد را نمایش دهیم
-                    
-                    if (errors.length > 0) {
-                        // اتصال خطاها با "و" یا نمایش اولین خطا
-                        errorMessage = errors.join(' و ');
-                    }
-                }
-                
-                // پرتاب خطا برای رفتن به catch و نمایش در showMessage
-                throw new Error(errorMessage);
+                // مسیر خطا (اگر API به‌جای throw، success:false برگردونه)
+                this.handleAuthErrors('register', response.errors || {}, response.message);
             }
 
         } catch (error) {
-            // اینجا پیام خطای ساخته شده در بالا نمایش داده می‌شود
-            this.showMessage('error', error.message);
+            console.error('Register error:', error);
+            this.handleAuthErrors('register', error.errors || {}, error.message);
         } finally {
             this.showLoading(false);
         }
     },
 
-    // ورود کاربر
+    // ============================================================
+    // ====================== LOGIN ===============================
+    // ============================================================
     async login(formData) {
+        const formId = 'login-form';
         try {
+            this.clearFieldErrors(formId);
+            this.showMessage('clear');
             this.showLoading(true);
-            
+
             const response = await API.login(formData);
-            
+
             if (response.success) {
-                // ذخیره توکن‌ها
                 StorageManager.saveTokens(response.data.tokens);
-                
-                // ذخیره اطلاعات کاربر
                 StorageManager.saveUserData(response.data.user);
-                
-                
-                // ذخیره پروفایل کاربر
                 StorageManager.saveUserProfile(response.data.profile);
-                
-                // پیام موفقیت
+
                 this.showMessage('success', response.message);
 
-                // بستن مودال و به‌روزرسانی UI
                 setTimeout(() => {
                     this.closeAuthModal();
                     this.updateUIForLoggedInUser();
-                
+
                     if (typeof updateAuthWarningBar === 'function') {
                         updateAuthWarningBar();
                     }
-                
-                    // به Alpine خبر بده که کاربر لاگین شده
+
                     window.dispatchEvent(new CustomEvent('user-logged-in'));
-                    
-                    // رفرش کامل با پاک کردن کش (Ctrl+F5)
                     window.location.reload(true);
                 }, 1500);
+            } else {
+                this.handleAuthErrors('login', response.errors || {}, response.message);
             }
+
         } catch (error) {
-            this.showMessage('error', error.message);
+            console.error('Login error:', error);
+            // error.errors از API.login میاد (بعد از اصلاح قدم ۱)
+            this.handleAuthErrors('login', error.errors || {}, error.message);
         } finally {
             this.showLoading(false);
         }
@@ -244,30 +308,58 @@ async logout() {
         }
     },
 
+    // ============================================================
+    // ============ بستن مودال - پاک کردن خطاها ====================
+    // ============================================================
     closeAuthModal() {
         document.getElementById('auth-modal').style.display = 'none';
-        // پاک کردن پیام‌ها
-        const messageBox = document.getElementById('auth-message');
-        if (messageBox) {
-            messageBox.style.display = 'none';
-        }
+
+        // پاک کردن پیام کلی + خطاهای فیلدی هر دو فرم
+        this.showMessage('clear');
+        this.clearFieldErrors('login-form');
+        this.clearFieldErrors('register-form');
     },
 
-    // نمایش پیام‌ها
+    // ============================================================
+    // =================== showMessage (جدید) =====================
+    // ============================================================
     showMessage(type, message) {
         const messageBox = document.getElementById('auth-message');
-        if (messageBox) {
-            messageBox.className = `message ${type}`;
-            messageBox.textContent = message;
-            messageBox.style.display = 'block';
-            
-            setTimeout(() => {
-                messageBox.style.display = 'none';
-            }, 5000);
+        if (!messageBox) return;
+
+        // حالت پاک کردن
+        if (type === 'clear' || type === null) {
+            messageBox.style.display = 'none';
+            messageBox.innerHTML = '';
+            return;
         }
+
+        const styles = {
+            error:   'bg-red-50 border-red-200 text-red-700',
+            success: 'bg-emerald-50 border-emerald-200 text-emerald-700',
+            warning: 'bg-amber-50 border-amber-200 text-amber-700',
+            info:    'bg-blue-50 border-blue-200 text-blue-700',
+        };
+        const icons = {
+            error:   'fa-exclamation-circle',
+            success: 'fa-check-circle',
+            warning: 'fa-exclamation-triangle',
+            info:    'fa-info-circle',
+        };
+
+        messageBox.className =
+            `p-4 rounded-2xl text-xs font-bold mb-6 border flex items-center justify-center gap-2 ` +
+            `${styles[type] || styles.info}`;
+
+        messageBox.innerHTML =
+            `<i class="fas ${icons[type] || icons.info}"></i><span>${message}</span>`;
+
+        messageBox.style.display = 'flex';
     },
 
-    // نمایش وضعیت در حال پردازش
+    // ============================================================
+    // ======== سایر متدها (بدون تغییر — فقط برای مرجع) ==========
+    // ============================================================
     showLoading(show) {
         const buttons = document.querySelectorAll('#auth-modal button[type="submit"]');
         buttons.forEach(btn => {
@@ -280,25 +372,25 @@ async logout() {
             }
         });
     },
-// نمایش پیام خروج موفق
-showLogoutMessage() {
-    // ایجاد المان پیام
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'logout-message';
-    messageDiv.innerHTML = `
-        <i class="fas fa-check-circle"></i>
-        <span>با موفقیت خارج شدید</span>
-    `;
     
-    // اضافه کردن به body
-    document.body.appendChild(messageDiv);
-    
-    // حذف بعد از 3 ثانیه
-    setTimeout(() => {
-        messageDiv.remove();
-    }, 3000);
-}
-,
+    // نمایش پیام خروج موفق
+    showLogoutMessage() {
+        // ایجاد المان پیام
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'logout-message';
+        messageDiv.innerHTML = `
+            <i class="fas fa-check-circle"></i>
+            <span>با موفقیت خارج شدید</span>
+        `;
+        
+        // اضافه کردن به body
+        document.body.appendChild(messageDiv);
+        
+        // حذف بعد از 3 ثانیه
+        setTimeout(() => {
+            messageDiv.remove();
+        }, 3000);
+    },
     // اولیه‌سازی
     init() {
         // بررسی وضعیت لاگین در بارگذاری صفحه
