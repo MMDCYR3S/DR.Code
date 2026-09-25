@@ -1,5 +1,5 @@
 import re
-
+import random
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
@@ -7,75 +7,88 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 
 User = get_user_model()
 
-# =========== PASSWORD RESET SERIALIZERS =========== #
-class PasswordResetRequestSerializer(serializers.Serializer):
+# =========== PASSWORD RESET BY PHONE - STEP 1 =========== #
+class PasswordResetByPhoneRequestSerializer(serializers.Serializer):
     """
-    سریالایزر برای درخواست بازنشانی رمز عبور.
-    فقط فیلد ایمیل را برای شناسایی کاربر دریافت می‌کند.
+    مرحله اول: دریافت شماره موبایل و ارسال کد پیامکی
     """
-    
-    email = serializers.EmailField(
-        max_length=255,
+    phone_number = serializers.CharField(
+        max_length=15,
+        required=True,
         error_messages={
-            "required": "وارد کردن ایمیل الزامی است.",
-            "blank": "ایمیل نمی‌تواند خالی باشد.",
-            "invalid": "یک ایمیل معتبر وارد کنید.",
+            "required": "وارد کردن شماره موبایل الزامی است.",
+            "blank": "شماره موبایل نمی‌تواند خالی باشد."
         }
     )
-    
-    def validate_email(self, value):
-        """
-        بررسی می‌کند که آیا کاربری با این ایمیل وجود دارد یا خیر.
-        """
-        if not User.objects.filter(email__iexact=value).exists():
-            raise serializers.ValidationError("کاربری با این ایمیل وجود ندارد.")
+
+    def validate_phone_number(self, value):
+        value = re.sub(r'\D', '', value)
+        if not re.match(r'^09\d{9}$', value):
+            raise serializers.ValidationError(
+                "فرمت شماره موبایل صحیح نیست. (مثال: 09123456789)"
+            )
+        if not User.objects.filter(phone_number=value).exists():
+            raise serializers.ValidationError(
+                "کاربری با این شماره موبایل در سیستم ثبت نشده است."
+            )
         return value
 
-# =========== PASSWORD RESET SERIALIZERS =========== #
-class PasswordResetConfirmSerializer(serializers.Serializer):
+
+# =========== PASSWORD RESET BY PHONE - STEP 2 =========== #
+class PasswordResetByPhoneConfirmSerializer(serializers.Serializer):
     """
-    سریالایزر برای تایید بازنشانی رمز عبور و تنظیم رمز جدید.
+    مرحله دوم: دریافت کد پیامکی + رمز جدید + تکرار رمز جدید
     """
-    
-    password = serializers.CharField(
-        write_only=True,
-        required=True,
-        style={'input_type': 'password'},
-        validators=[validate_password],
+    phone_number = serializers.CharField(
+        max_length=15, required=True,
+        error_messages={"required": "شماره موبایل الزامی است."}
+    )
+    code = serializers.CharField(
+        max_length=6, min_length=6, required=True,
         error_messages={
-            "required": "وارد کردن رمز عبور الزامی است.",
+            "required": "کد تایید الزامی است.",
+            "min_length": "کد تایید باید ۶ رقم باشد.",
+            "max_length": "کد تایید باید ۶ رقم باشد.",
+        }
+    )
+    password = serializers.CharField(
+        write_only=True, required=True,
+        style={'input_type': 'password'},
+        error_messages={
+            "required": "وارد کردن رمز عبور جدید الزامی است.",
             "blank": "رمز عبور نمی‌تواند خالی باشد.",
         }
     )
     password_confirm = serializers.CharField(
-        write_only=True,
-        required=True,
+        write_only=True, required=True,
         style={'input_type': 'password'},
         error_messages={
             "required": "وارد کردن تکرار رمز عبور الزامی است.",
             "blank": "تکرار رمز عبور نمی‌تواند خالی باشد.",
         }
     )
-    uidb64 = serializers.CharField(required=True)
-    token = serializers.CharField(required=True)
-    
+
+    def validate_phone_number(self, value):
+        value = re.sub(r'\D', '', value)
+        if not re.match(r'^09\d{9}$', value):
+            raise serializers.ValidationError("فرمت شماره موبایل صحیح نیست.")
+        return value
+
+    def validate_code(self, value):
+        if not value.isdigit():
+            raise serializers.ValidationError("کد تایید باید فقط شامل اعداد باشد.")
+        return value
+
+    def validate_password(self, value):
+        try:
+            validate_password(value)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(list(e.messages))
+        return value
+
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
-            raise serializers.ValidationError({"password_confirm": "رمز عبور و تکرار آن باید یکسان باشند."})
-        return super().validate(attrs)
-        
-# ================================================== #
-# ====== PASSWORD RESET BY PHONE SERIALIZER ====== #
-# ================================================== #
-class PasswordResetByPhoneRequestSerializer(serializers.Serializer):
-    """
-    سریالایزر برای درخواست بازنشانی رمز عبور از طریق پیامک.
-    """
-    phone_number = serializers.CharField(
-        max_length=15,
-        required=True,
-        error_messages={
-            "required": "شماره موبایل الزامی است.",
-            "blank": "شماره موبایل نمی‌تواند خالی باشد."
-        }
-    )
+            raise serializers.ValidationError({
+                'password_confirm': 'رمز عبور و تکرار آن باید یکسان باشند.'
+            })
+        return attrs

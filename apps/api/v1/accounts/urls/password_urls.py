@@ -1,12 +1,11 @@
+# api/v1/accounts/urls/password_reset.py
 from django.urls import path
 from ..views import (
-    PasswordResetRequestAPIView, 
-    PasswordResetConfirmAPIView,
-    PasswordResetByPhoneRequestAPIView
+    PasswordResetByPhoneRequestAPIView,
+    PasswordResetByPhoneConfirmAPIView,
 )
 
 urlpatterns = [
-    path('reset/', PasswordResetRequestAPIView.as_view(), name='password-reset-request'),
-    path('reset/confirm/', PasswordResetConfirmAPIView.as_view(), name='password-reset-confirm'),
-    path('reset/sms/', PasswordResetByPhoneRequestAPIView.as_view(), name='password-reset-request-sms'),
+    path('reset/sms/',         PasswordResetByPhoneRequestAPIView.as_view(),  name='password-reset-sms'),
+    path('reset/sms/confirm/', PasswordResetByPhoneConfirmAPIView.as_view(),  name='password-reset-sms-confirm'),
 ]

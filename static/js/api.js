@@ -453,45 +453,42 @@ API.profile = {
     },
 
     // ========================================== //
-    // ====== PASSWORD RESET REQUEST (SMS) ====== //
+    // == PASSWORD RESET REQUEST (SMS) — Step 1 = //
     // ========================================== //
-    requestPasswordResetBySMS: async (data) => {
-        // data: { phone_number: "..." }
-        const response = await fetch(`${API.BASE_URL}api/v1/accounts/password/reset/sms/`, {
+    requestPasswordResetBySMS: async (phoneNumber) => {
+        const response = await fetch(`${API.BASE_URL}api/v1/accounts/reset/sms/`, {
             method: 'POST',
-            headers: API.getHeaders(true),
-            body: JSON.stringify(data)
+            headers: API.getHeaders(false),
+            body: JSON.stringify({ phone_number: phoneNumber })
         });
-
+        const data = await response.json();
         if (!response.ok) {
-            const error = await response.json();
-            throw error;
+            const err = new Error(data.message || 'خطا در ارسال کد تایید');
+            err.errors = data.errors || {};
+            err.status = response.status;
+            throw err;
         }
-
-        return await response.json();
+        return data;
     },
 
     // ========================================== //
-    // ======== CONFIRM PASSWORD RESET ======== //
+    // == PASSWORD RESET CONFIRM (SMS) — Step 2 = //
     // ========================================== //
-    async confirmPasswordReset(data) {
-        // این متد برای هر دو روش (ایمیل و پیامک) مشترک است
-        const response = await fetch(`${API.BASE_URL}api/v1/accounts/password/reset/confirm/`, {
+    confirmPasswordResetBySMS: async (payload) => {
+        // payload: { phone_number, code, password, password_confirm }
+        const response = await fetch(`${API.BASE_URL}api/v1/accounts/reset/sms/confirm/`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                // اگر CSRF لازم است (معمولاً در API های REST Stateless لازم نیست مگر با Session کار کنید)
-                // 'X-CSRFToken': this.csrfToken 
-            },
-            body: JSON.stringify(data)
+            headers: API.getHeaders(false),
+            body: JSON.stringify(payload)
         });
-
+        const data = await response.json();
         if (!response.ok) {
-            const error = await response.json();
-            throw error;
+            const err = new Error(data.message || 'خطا در تغییر رمز عبور');
+            err.errors = data.errors || {};
+            err.status = response.status;
+            throw err;
         }
-
-        return await response.json();
+        return data;
     }
 };
 // Plans APIs
