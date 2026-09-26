@@ -36,19 +36,16 @@ class PasswordResetByPhoneRequestSerializer(serializers.Serializer):
 
 # =========== PASSWORD RESET BY PHONE - STEP 2 =========== #
 class PasswordResetByPhoneConfirmSerializer(serializers.Serializer):
-    """
-    مرحله دوم: دریافت کد پیامکی + رمز جدید + تکرار رمز جدید
-    """
     phone_number = serializers.CharField(
         max_length=15, required=True,
         error_messages={"required": "شماره موبایل الزامی است."}
     )
     code = serializers.CharField(
-        max_length=6, min_length=6, required=True,
+        max_length=5, min_length=5, required=True,
         error_messages={
             "required": "کد تایید الزامی است.",
-            "min_length": "کد تایید باید ۶ رقم باشد.",
-            "max_length": "کد تایید باید ۶ رقم باشد.",
+            "min_length": "کد تایید باید ۵ رقم باشد.",
+            "max_length": "کد تایید باید ۵ رقم باشد.",
         }
     )
     password = serializers.CharField(

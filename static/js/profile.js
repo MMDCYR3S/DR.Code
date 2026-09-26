@@ -8,9 +8,6 @@ const profileApp = {
     loading: true,
     error: null,
     editMode: false,
-    showPasswordResetModal: false,
-    resetPasswordEmail: '',
-    passwordResetLoading: false,
 
     // --- متغیرهای جدید برای تایید تلفن ---
     showPhoneVerifyModal: false,
@@ -287,62 +284,7 @@ const profileApp = {
                 text: error.message
             });
         }
-    },
-
-    async requestPasswordReset() {
-        try {
-            const email = this.resetPasswordEmail || this.profileUpdateData?.user?.email;
-            
-            if (!email) {
-                throw new Error('ایمیل یافت نشد');
-            }
-
-            // نمایش تایید
-            const result = await Swal.fire({
-                icon: 'question',
-                title: 'تغییر رمز عبور',
-                html: `لینک بازیابی رمز عبور به ایمیل<br/><strong>${email}</strong><br/>ارسال خواهد شد`,
-                showCancelButton: true,
-                confirmButtonText: 'ارسال لینک',
-                cancelButtonText: 'انصراف',
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33'
-            });
-
-            if (!result.isConfirmed) {
-                return;
-            }
-
-            this.passwordResetLoading = true;
-
-            // استفاده از API.profile.requestPasswordReset
-            const data = await API.profile.requestPasswordReset(email);
-
-            // بستن مودال
-            this.showPasswordResetModal = false;
-            
-            // نمایش پیام موفقیت
-            await Swal.fire({
-                icon: 'success',
-                title: 'ارسال شد!',
-                html: `لینک بازیابی رمز عبور به ایمیل <strong>${email}</strong> ارسال شد.<br/><br/>لطفاً ایمیل خود را بررسی کنید.`,
-                confirmButtonText: 'متوجه شدم',
-                confirmButtonColor: '#3085d6'
-            });
-
-        } catch (error) {
-            console.error('❌ Password reset error:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'خطا',
-                text: error.email?.[0] || error.detail || error.message || 'خطا در ارسال لینک بازیابی',
-                confirmButtonText: 'باشه'
-            });
-        } finally {
-            this.passwordResetLoading = false;
-        }
     }
-
 };
 
 // فقط اگه توی صفحه profile هستیم، init کن

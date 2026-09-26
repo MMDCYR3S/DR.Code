@@ -1,4 +1,3 @@
-# api/v1/accounts/urls/password_reset.py
 from django.urls import path
 from ..views import (
     PasswordResetByPhoneRequestAPIView,

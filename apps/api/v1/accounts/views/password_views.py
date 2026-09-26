@@ -1,142 +1,155 @@
-from rest_framework import generics, status
+import random
+import logging
+
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework import status, permissions
+from django.core.cache import cache
+from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema_view, extend_schema
 
-from django.contrib.auth import get_user_model
-
+# ===== Local Services ===== #
+from apps.accounts.services import AmootSMSService
 from ..serializers import (
     PasswordResetByPhoneRequestSerializer,
     PasswordResetByPhoneConfirmSerializer,
 )
-from apps.accounts.services.password_reset_service import (
-    request_password_reset_code,
-    verify_code_and_mark,
-    apply_new_password,
-)
 
+logger = logging.getLogger('user_verification')
 User = get_user_model()
 
 
-# ==================================================== #
-# ====== STEP 1: REQUEST CODE BY PHONE (SMS) ======== #
-# ==================================================== #
+# ================= PASSWORD RESET BY PHONE - STEP 1 (REQUEST) ================= #
 @extend_schema_view(
     post=extend_schema(
-        tags=['Password Reset'],
-        summary='درخواست کد تایید پیامکی برای بازنشانی رمز'
+        tags=['Accounts'],
+        summary='درخواست کد تایید برای بازنشانی رمز عبور (ارسال پیامک)'
     )
 )
-class PasswordResetByPhoneRequestAPIView(generics.GenericAPIView):
-    """
-    مرحله ۱: کاربر شماره موبایل رو می‌ده → کد ۶ رقمی پیامک میشه.
-    """
-    permission_classes = [AllowAny]
+class PasswordResetByPhoneRequestAPIView(GenericAPIView):
+    permission_classes = [permissions.AllowAny]
     serializer_class = PasswordResetByPhoneRequestSerializer
 
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+    # ⚠️ اگر کد پترن مخصوص بازنشانی رمز متفاوت است، این مقدار را عوض کن
+    AMOOT_PATTERN_CODE = "4311"
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
 
         if not serializer.is_valid():
-            return Response({
-                'success': False,
-                'message': 'اطلاعات ارسالی نامعتبر است.',
-                'errors': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         phone_number = serializer.validated_data['phone_number']
+        user = User.objects.filter(phone_number=phone_number).first()
 
+        # کاربر وجود دارد (سریالایزر چک کرده) - ولی محکم‌کاری:
+        if not user:
+            logger.warning(f"Password reset requested but user not found: {phone_number}")
+            return Response(
+                {"message": "کاربری با این شماره موبایل در سیستم ثبت نشده است."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        logger.info(f"Password reset request for User: {phone_number} (ID: {user.id})")
+
+        # ---- ساخت کد ۵ رقمی ----
+        code = str(random.randint(10000, 99999))
+
+        cache_key = f"password_reset_{user.id}"
+        cache.set(cache_key, code, timeout=120)
+
+        logger.info(f"Generated Password-Reset OTP for {phone_number}: {code}")
+
+        # ---- آماده‌سازی مقادیر پترن ----
+        full_name = " ".join(
+            filter(None, [user.first_name, user.last_name])
+        ) or "کاربر"
+
+        pattern_values = [full_name, code]
+
+        # ---- ارسال پیامک ----
         try:
-            request_password_reset_code(phone_number)
-        except PermissionError as e:
-            return Response({
-                'success': False,
-                'message': str(e),
-                'errors': {}
-            }, status=status.HTTP_429_TOO_MANY_REQUESTS)
-        except ConnectionError as e:
-            return Response({
-                'success': False,
-                'message': str(e),
-                'errors': {}
-            }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-        except User.DoesNotExist:
-            return Response({
-                'success': False,
-                'message': 'کاربری با این شماره یافت نشد.',
-                'errors': {'phone_number': ['کاربری با این شماره یافت نشد.']}
-            }, status=status.HTTP_404_NOT_FOUND)
+            service = AmootSMSService()
+            success = service.send_with_pattern(
+                mobile=str(phone_number),
+                pattern_code=self.AMOOT_PATTERN_CODE,
+                values=pattern_values,
+            )
 
-        return Response({
-            'success': True,
-            'message': 'کد تایید به شماره موبایل شما ارسال شد.',
-            'data': {'phone_number': phone_number}
-        }, status=status.HTTP_200_OK)
+            if success:
+                return Response(
+                    {"message": "کد تایید با موفقیت ارسال شد."},
+                    status=status.HTTP_200_OK
+                )
+
+            return Response(
+                {"message": "خطا در ارسال پیامک. لطفاً دقایقی دیگر تلاش کنید."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
+        except Exception as e:
+            logger.error(
+                f"Unexpected Error in PasswordResetRequest: {str(e)}",
+                exc_info=True
+            )
+            return Response(
+                {"message": "خطای داخلی سرور."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
-# ==================================================== #
-# == STEP 2: VERIFY CODE + SET NEW PASSWORD ========= #
-# ==================================================== #
+# ================= PASSWORD RESET BY PHONE - STEP 2 (CONFIRM) ================= #
 @extend_schema_view(
     post=extend_schema(
-        tags=['Password Reset'],
-        summary='تایید کد پیامکی و تنظیم رمز جدید'
+        tags=['Accounts'],
+        summary='تایید کد پیامکی و تغییر رمز عبور'
     )
 )
-class PasswordResetByPhoneConfirmAPIView(generics.GenericAPIView):
-    """
-    مرحله ۲: کاربر کد پیامکی + رمز جدید + تکرارش رو می‌ده.
-    - اگه کد درست باشه و تاییدیه گرفته باشه، رمز عوض میشه.
-    """
-    permission_classes = [AllowAny]
+class PasswordResetByPhoneConfirmAPIView(GenericAPIView):
+    permission_classes = [permissions.AllowAny]
     serializer_class = PasswordResetByPhoneConfirmSerializer
 
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
 
         if not serializer.is_valid():
-            return Response({
-                'success': False,
-                'message': 'اطلاعات ارسالی نامعتبر است.',
-                'errors': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        data = serializer.validated_data
-        phone_number = data['phone_number']
-        code = data['code']
-        new_password = data['password']
+        phone_number = serializer.validated_data['phone_number']
+        input_code = serializer.validated_data['code']
+        new_password = serializer.validated_data['password']
 
-        try:
-            verify_code_and_mark(phone_number, code)
-        except TimeoutError as e:
-            return Response({
-                'success': False,
-                'message': str(e),
-                'errors': {'code': [str(e)]}
-            }, status=status.HTTP_400_BAD_REQUEST)
-        except ValueError as e:
-            return Response({
-                'success': False,
-                'message': str(e),
-                'errors': {'code': [str(e)]}
-            }, status=status.HTTP_400_BAD_REQUEST)
+        user = User.objects.filter(phone_number=phone_number).first()
+        if not user:
+            logger.warning(f"Password reset confirm: user not found for {phone_number}")
+            return Response(
+                {"message": "کاربری با این شماره موبایل یافت نشد."},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-        try:
-            apply_new_password(phone_number, new_password)
-        except PermissionError as e:
-            return Response({
-                'success': False,
-                'message': str(e),
-                'errors': {}
-            }, status=status.HTTP_403_FORBIDDEN)
-        except User.DoesNotExist:
-            return Response({
-                'success': False,
-                'message': 'کاربری با این شماره یافت نشد.',
-                'errors': {}
-            }, status=status.HTTP_404_NOT_FOUND)
+        cache_key = f"password_reset_{user.id}"
+        cached_otp = cache.get(cache_key)
 
-        return Response({
-            'success': True,
-            'message': 'رمز عبور شما با موفقیت تغییر کرد. اکنون می‌توانید وارد شوید.'
-        }, status=status.HTTP_200_OK)
+        if cached_otp and str(cached_otp) == str(input_code):
+            # ---- تغییر رمز عبور ----
+            user.set_password(new_password)
+            user.save(update_fields=['password'])
+
+            # پاک‌کردن کد از کش
+            cache.delete(cache_key)
+
+            logger.info(f"Password reset SUCCESS for user {user.id} ({phone_number})")
+
+            return Response(
+                {"message": "رمز عبور شما با موفقیت تغییر کرد."},
+                status=status.HTTP_200_OK
+            )
+
+        logger.warning(
+            f"Failed password reset attempt for {phone_number}. "
+            f"Input: {input_code}, Cached: {cached_otp}"
+        )
+        return Response(
+            {"message": "کد وارد شده نامعتبر یا منقضی شده است."},
+            status=status.HTTP_400_BAD_REQUEST
+        )

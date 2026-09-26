@@ -1384,7 +1384,7 @@
                                 <i class="fas fa-shield-alt text-sm"></i>
                             </span>
                             <input type="text" id="forgot-code" x-model="code"
-                                placeholder="------" maxlength="6" inputmode="numeric"
+                                placeholder="-----" maxlength="5" inputmode="numeric"
                                 class="w-full pl-4 pr-11 py-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl
                                         text-center text-lg tracking-[0.6em] font-black text-slate-800
                                         placeholder:text-slate-300 placeholder:tracking-normal
@@ -1792,8 +1792,8 @@ function passwordResetFlow() {
 
             // اعتبارسنجی محلی
             let hasError = false;
-            if (!/^\d{6}$/.test(this.code)) {
-                this.showFieldError('forgot-code', 'کد تایید باید ۶ رقم باشد.');
+            if (!/^\d{5}$/.test(this.code)) {
+                this.showFieldError('forgot-code', 'کد تایید باید ۵ رقم باشد.');
                 hasError = true;
             }
             if ((this.newPassword || '').length < 8) {
