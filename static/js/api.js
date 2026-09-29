@@ -456,7 +456,7 @@ API.profile = {
     // == PASSWORD RESET REQUEST (SMS) — Step 1 = //
     // ========================================== //
     requestPasswordResetBySMS: async (phoneNumber) => {
-        const response = await fetch(`${API.BASE_URL}api/v1/accounts/reset/sms/`, {
+        const response = await fetch(`${API.BASE_URL}api/v1/accounts/password/reset/sms/`, {
             method: 'POST',
             headers: API.getHeaders(false),
             body: JSON.stringify({ phone_number: phoneNumber })
@@ -476,7 +476,7 @@ API.profile = {
     // ========================================== //
     confirmPasswordResetBySMS: async (payload) => {
         // payload: { phone_number, code, password, password_confirm }
-        const response = await fetch(`${API.BASE_URL}api/v1/accounts/reset/sms/confirm/`, {
+        const response = await fetch(`${API.BASE_URL}api/v1/accounts//password/reset/sms/confirm/`, {
             method: 'POST',
             headers: API.getHeaders(false),
             body: JSON.stringify(payload)

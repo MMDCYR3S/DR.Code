@@ -145,6 +145,42 @@
             box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.08) !important;
         }
 
+        /* ====== استایل فیلد موفق (تطابق رمز عبور) ====== */
+        .field-success {
+            display: none;
+            font-size: 11px;
+            font-weight: 700;
+            color: #16a34a; /* green-600 */
+            margin-top: 6px;
+            padding-right: 6px;
+            line-height: 1.6;
+            animation: fieldErrorIn 0.25s ease-out;
+        }
+
+        .field-success.show {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .field-success::before {
+            content: "\f00c"; /* fa-check */
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            font-size: 10px;
+            color: #16a34a;
+        }
+
+        /* حاشیه سبز input در حالت تطابق */
+        .input-success {
+            border-color: #4ade80 !important; /* green-400 */
+            background-color: #f0fdf4 !important; /* green-50 */
+        }
+        .input-success:focus {
+            border-color: #22c55e !important;
+            box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.08) !important;
+        }
+
         /* انیمیشن shake برای مودال هنگام خطا */
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
@@ -1200,6 +1236,7 @@
                             </button>
                         </div>
                         <p class="field-error" data-error-for="register-password-confirm"></p>
+                        <p class="field-success" data-success-for="register-password-confirm"></p>
                     </div>
 
                     <div class="flex gap-3 bg-slate-50 border border-slate-150/80 rounded-2xl p-4 mb-6">
@@ -2363,15 +2400,62 @@ function passwordResetFlow() {
 
             form.querySelectorAll('input').forEach(input => {
                 input.addEventListener('input', () => {
-                    input.classList.remove('input-error');
+                    input.classList.remove('input-error', 'input-success');
                     const errEl = document.querySelector(`.field-error[data-error-for="${input.id}"]`);
                     if (errEl) {
                         errEl.classList.remove('show');
                         errEl.textContent = '';
                     }
+                    const okEl = document.querySelector(`.field-success[data-success-for="${input.id}"]`);
+                    if (okEl) {
+                        okEl.classList.remove('show');
+                        okEl.textContent = '';
+                    }
                 });
             });
         });
+
+        // ================= بررسی زندهٔ تطابق رمز عبور و تکرارش =================
+        const passInput    = document.getElementById('register-password');
+        const confirmInput = document.getElementById('register-password-confirm');
+
+        if (passInput && confirmInput) {
+            const confirmErrEl = document.querySelector('.field-error[data-error-for="register-password-confirm"]');
+            const confirmOkEl  = document.querySelector('.field-success[data-success-for="register-password-confirm"]');
+
+            const checkPasswordMatch = () => {
+                const pass    = passInput.value;
+                const confirm = confirmInput.value;
+
+                // پاک‌سازی وضعیت قبلی
+                confirmInput.classList.remove('input-error', 'input-success');
+                if (confirmErrEl) { confirmErrEl.classList.remove('show'); confirmErrEl.textContent = ''; }
+                if (confirmOkEl)  { confirmOkEl.classList.remove('show');  confirmOkEl.textContent  = ''; }
+
+                // اگر تکرار خالی است، چیزی نشان نده (کاربر تازه شروع کرده)
+                if (confirm.length === 0) return;
+
+                if (pass === confirm) {
+                    // ✅ یکسان هستند
+                    confirmInput.classList.add('input-success');
+                    if (confirmOkEl) {
+                        confirmOkEl.textContent = 'رمز عبور و تکرار آن یکسان هستند';
+                        confirmOkEl.classList.add('show');
+                    }
+                } else {
+                    // ❌ یکسان نیستند
+                    confirmInput.classList.add('input-error');
+                    if (confirmErrEl) {
+                        confirmErrEl.textContent = 'رمز عبور و تکرار آن یکسان نیستند';
+                        confirmErrEl.classList.add('show');
+                    }
+                }
+            };
+
+            // بررسی زنده روی هر دو فیلد (اگر رمز اصلی تغییر کند، تکرار هم دوباره ارزیابی می‌شود)
+            passInput.addEventListener('input', checkPasswordMatch);
+            confirmInput.addEventListener('input', checkPasswordMatch);
+        }
     });
 </script>
 

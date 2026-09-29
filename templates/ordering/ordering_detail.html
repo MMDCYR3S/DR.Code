@@ -1624,13 +1624,66 @@ body.modal-open {
 .ddf-node-border  { border-color:     color-mix(in srgb, var(--df-c) 26%, white); }
 .ddf-child-border { border-color:     color-mix(in srgb, var(--df-c) 34%, white); }
 
-/* CKEditor HTML content */
+/* CKEditor HTML content
+   --------------------------------------------------------------
+   .ck-content خودش ظرف اسکرول افقی است؛ به این ترتیب جداول و متن‌های پهن
+   (خروجی CKEditor) در موبایل و تبلت به جای له‌شدن، چپ‌راست اسکرول می‌شوند.
+   این رفتار برای پیش‌بالینی، تعین‌تکلیف اورژانسی، پاپ‌آپ و مودال‌ها برابر است. */
+.ck-content {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(15, 23, 42, 0.22) transparent;
+}
 .ck-content table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; }
 .ck-content table td, .ck-content table th { border: 1px solid #d1d5db; padding: 6px 10px; font-size: 0.875rem; }
 .ck-content blockquote { border-right: 4px solid #e5e7eb; padding: 0.5rem 1rem; color: #6b7280; margin: 0.5rem 0; }
 .ck-content h2 { font-size: 1.25rem; font-weight: 700; margin: 0.75rem 0 0.25rem; }
 .ck-content ol, .ck-content ul { padding-right: 1.25rem; margin: 0.5rem 0; }
 .ck-content li { margin-bottom: 0.25rem; font-size: 0.9rem; }
+
+/* موبایل و تبلت: جداول به جای له‌شدن، عرض طبیعی خود را حفظ می‌کنند
+   و داخل .ck-content به صورت افقی (جهت چپ/راست) اسکرول می‌شوند. */
+@media (max-width: 1024px) {
+    .ck-content table {
+        width: max-content;
+        min-width: 100%;
+    }
+}
+
+/* اسکرول‌بار ظریف داخل محتوای CKEditor برای حس نرم‌افزار بومی */
+.ck-content::-webkit-scrollbar { height: 8px; width: 8px; }
+.ck-content::-webkit-scrollbar-track { background: transparent; }
+.ck-content::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.18);
+    border-radius: 999px;
+}
+.ck-content::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); }
+
+/* نشانگرهای لبه‌ای برای آگاه‌سازی کاربر از قابل‌اسکرول‌بودن محتوا
+   (به صورت رلاتیو روی .child-content و .popup-body اعمال می‌شود تا با طراحی موجود تداخل نداشته باشد). */
+.child-content { position: relative; }
+.popup-body { position: relative; }
+.child-content::after,
+.popup-body::after {
+    content: "";
+    position: absolute;
+    top: 0; bottom: 0; left: 0;
+    width: 18px;
+    pointer-events: none;
+    background: linear-gradient(to right, rgba(15, 23, 42, 0.10), transparent);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 1;
+}
+/* در موبایل/تبلت این سایه به‌صورت دائمی فعال می‌شود تا اشاره‌ای به قابل‌اسکرول‌بودن باشد. */
+@media (max-width: 1024px) {
+    .child-content::after,
+    .popup-body::after {
+        opacity: 1;
+    }
+}
 
 /* Smooth native-app scroll */
 html { scroll-behavior: smooth; }
