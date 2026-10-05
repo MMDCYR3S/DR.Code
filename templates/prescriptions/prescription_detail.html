@@ -335,8 +335,263 @@
         }
     }
 
+    /* ============================================================
+    📱 راهنمای اسکرول جدول — فقط موبایل و تبلت
+    ============================================================ */
+    .table-scroll-hint {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-top: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: linear-gradient(90deg, #fffbeb 0%, #fef3c7 100%);
+        border-right: 4px solid #f59e0b;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.12);
+        animation: hintSlideIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    @keyframes hintSlideIn {
+        from { opacity: 0; transform: translateY(-6px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
 
+    .table-scroll-hint .hint-icon-wrap {
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 11px;
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+    }
+    .table-scroll-hint .hint-icon-wrap i {
+        color: white;
+        font-size: 1rem;
+        animation: hintSwipe 1.8s ease-in-out infinite;
+    }
+    @keyframes hintSwipe {
+        0%, 100% { transform: translateX(0); opacity: 0.7; }
+        50%      { transform: translateX(-4px); opacity: 1; }
+    }
+
+    .table-scroll-hint .hint-text {
+        flex: 1;
+        min-width: 0;
+        text-align: right;
+    }
+    .table-scroll-hint .hint-title {
+        font-size: 0.8125rem;
+        font-weight: 800;
+        color: #92400e;
+        margin-bottom: 0.15rem;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+    .table-scroll-hint .hint-desc {
+        font-size: 0.75rem;
+        line-height: 1.6;
+        color: #78350f;
+    }
+
+    /* در دسکتاپ مخفی باشد */
+    @media (min-width: 1024px) {
+        .table-scroll-hint { display: none !important; }
+    }
         
+    /* ============================================================
+    🎓 Copy Tutorial — Spotlight روی اولین کد دارو
+    ============================================================ */
+
+    /* لایه اصلی — بدون بلاک کردن کلیک‌های بیرونی */
+    .copy-tutorial-root {
+        position: fixed;
+        inset: 0;
+        z-index: 9990;
+        pointer-events: none;
+        font-family: inherit;
+    }
+
+    /* ── Spotlight: خودش شفاف، اما با box-shadow غول‌آسا همه جا را تیره می‌کند ── */
+    .copy-tutorial-spotlight {
+        position: fixed;
+        border-radius: 14px;
+        background: transparent;
+        pointer-events: none;
+        z-index: 9991;
+        transition: top 0.25s var(--mp-ease, ease),
+                    left 0.25s var(--mp-ease, ease),
+                    width 0.25s var(--mp-ease, ease),
+                    height 0.25s var(--mp-ease, ease),
+                    box-shadow 0.35s ease;
+        animation: copySpotPulse 2.2s ease-in-out infinite;
+    }
+    @keyframes copySpotPulse {
+        0%, 100% {
+            box-shadow:
+                0 0 0 2px rgba(251, 191, 36, 0.95),
+                0 0 0 6px rgba(251, 191, 36, 0.28),
+                0 0 0 9999px rgba(15, 23, 42, 0.62);
+        }
+        50% {
+            box-shadow:
+                0 0 0 2.5px rgba(251, 191, 36, 1),
+                0 0 0 12px rgba(251, 191, 36, 0.38),
+                0 0 0 9999px rgba(15, 23, 42, 0.62);
+        }
+    }
+
+    /* ── Tooltip ── */
+    .copy-tutorial-tooltip {
+        position: fixed;
+        background: white;
+        border-radius: 16px;
+        padding: 1rem 1rem 0.85rem;
+        box-shadow:
+            0 24px 60px rgba(15, 23, 42, 0.32),
+            0 0 0 1px rgba(15, 23, 42, 0.06),
+            0 0 0 5px rgba(255, 255, 255, 0.6);
+        pointer-events: auto;
+        z-index: 9992;
+        transition: top 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+                    left 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        animation: cttIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    @keyframes cttIn {
+        from { opacity: 0; transform: translateY(6px) scale(0.98); }
+        to   { opacity: 1; transform: translateY(0)  scale(1); }
+    }
+
+    /* فلش اشاره‌گر tooltip */
+    .ctt-arrow {
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        background: white;
+        transform: rotate(45deg);
+        box-shadow: -2px -2px 4px rgba(15, 23, 42, 0.05);
+        pointer-events: none;
+    }
+    .ctt-arrow-top    { top: -6px; }
+    .ctt-arrow-bottom { bottom: -6px; box-shadow: 2px 2px 4px rgba(15, 23, 42, 0.05); }
+
+    /* Header */
+    .ctt-header {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        margin-bottom: 0.65rem;
+    }
+    .ctt-icon {
+        width: 36px; height: 36px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.95rem;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+    }
+    .ctt-heading { min-width: 0; flex: 1; }
+    .ctt-title {
+        font-size: 0.875rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0;
+        line-height: 1.2;
+        letter-spacing: -0.008em;
+    }
+    .ctt-subtitle {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #94a3b8;
+        margin: 0.15rem 0 0;
+    }
+
+    /* Body text */
+    .ctt-text {
+        font-size: 0.8125rem;
+        line-height: 1.85;
+        color: #334155;
+        margin: 0 0 0.85rem;
+        text-align: right;
+    }
+    .ctt-emph {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.1rem 0.5rem;
+        background: #fef3c7;
+        color: #92400e;
+        font-weight: 800;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        border: 1px solid #fde68a;
+        margin: 0 0.15rem;
+    }
+
+    /* Actions */
+    .ctt-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        padding-top: 0.7rem;
+        border-top: 1px solid #f1f5f9;
+    }
+    .ctt-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: 10px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        cursor: pointer;
+        border: none;
+        font-family: inherit;
+        transition: all 0.18s ease;
+    }
+    .ctt-btn-skip {
+        background: transparent;
+        color: #94a3b8;
+    }
+    .ctt-btn-skip:hover {
+        background: #f1f5f9;
+        color: #475569;
+    }
+    .ctt-btn-ok {
+        color: white;
+        padding: 0.5rem 1rem;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+    }
+    .ctt-btn-ok:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.2);
+    }
+
+    /* ریسپانسیو — در موبایل کوچک‌تر */
+    @media (max-width: 480px) {
+        .copy-tutorial-tooltip {
+            padding: 0.85rem 0.85rem 0.7rem;
+            border-radius: 14px;
+        }
+        .ctt-text { font-size: 0.78rem; }
+        .ctt-btn-ok { padding: 0.45rem 0.8rem; font-size: 0.72rem; }
+        .ctt-btn-skip { padding: 0.4rem 0.7rem; font-size: 0.7rem; }
+    }
+
+    /* احترام به prefers-reduced-motion */
+    @media (prefers-reduced-motion: reduce) {
+        .copy-tutorial-spotlight { animation: none; }
+        .copy-tutorial-tooltip { animation: none; }
+    }
 
 </style>
 
@@ -550,6 +805,22 @@
         <p class="text-sm text-gray-600">
             همکار گرامی؛ مجموعه دکتر کد هیچ‌گونه مسئولیتی در قبال نسخه‌های ثبت‌شده از جانب شما ندارد. پیش از تجویز از انطباق نام و دوز دارو با وضعیت بالینی بیمار اطمینان حاصل کنید.
         </p>
+
+        <!-- 🆕 راهنمای اسکرول جدول — فقط موبایل/تبلت -->
+        <div class="table-scroll-hint">
+            <div class="hint-icon-wrap">
+                <i class="fas fa-arrows-alt-h"></i>
+            </div>
+            <div class="hint-text">
+                <div class="hint-title">
+                    <i class="fas fa-hand-pointer text-[10px]"></i>
+                    <span>راهنمای مشاهده جدول</span>
+                </div>
+                <p class="hint-desc">
+                    برای مشاهده ستون‌های بیشتر (مانند توضیحات)، جدول را به چپ و راست اسکرول کنید.
+                </p>
+            </div>
+        </div>
     </div>
 
     <!-- Loop through grouped drugs -->
@@ -1046,7 +1317,71 @@
 </div>
 
 
+    <!-- ==================== TUTORIAL: SPOTLIGHT روی اولین کد دارو ==================== -->
+    <template x-if="showCopyTutorial && copyTutorialRect">
+        <div class="copy-tutorial-root" dir="rtl" aria-hidden="false">
 
+            <!-- 🎯 Spotlight — دایره‌ی نورانی دور سلول هدف
+                (box-shadow بزرگ پس‌زمینه را تیره می‌کند، خودش شفاف می‌ماند) -->
+            <div class="copy-tutorial-spotlight"
+                :style="`top: ${copyTutorialRect.top - 8}px;
+                        left: ${copyTutorialRect.left - 8}px;
+                        width: ${copyTutorialRect.width + 16}px;
+                        height: ${copyTutorialRect.height + 16}px;`"></div>
+
+            <!-- 💬 Tooltip آموزشی -->
+            <div class="copy-tutorial-tooltip"
+                :style="`top: ${copyTutorialTooltip.top}px;
+                        left: ${copyTutorialTooltip.left}px;
+                        width: ${copyTutorialTooltip.width}px;`"
+                @click.stop>
+
+                <!-- فلش اشاره‌گر -->
+                <div class="ctt-arrow"
+                    :class="copyTutorialTooltip.position === 'below' ? 'ctt-arrow-top' : 'ctt-arrow-bottom'"
+                    :style="`left: ${copyTutorialTooltip.arrowLeft}px;`"></div>
+
+                <!-- Header -->
+                <div class="ctt-header">
+                    <div class="ctt-icon">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <div class="ctt-heading">
+                        <h4 class="ctt-title">آموزش سریع</h4>
+                        <p class="ctt-subtitle">کپی کردن کد دارو</p>
+                    </div>
+                </div>
+
+                <!-- Body -->
+                <p class="ctt-text">
+                    برای کپی کردن کد دارو، روی
+                    <span class="ctt-emph">
+                        <i class="fas fa-copy text-[10px]"></i>
+                        آیکون کپی
+                    </span>
+                    که کنار کد قرار دارد کلیک کنید.
+                </p>
+
+                <!-- Actions -->
+                <div class="ctt-actions">
+                    <button type="button"
+                            @click="closeCopyTutorial(true)"
+                            class="ctt-btn ctt-btn-skip">
+                        <i class="fas fa-eye-slash text-[10px]"></i>
+                        <span>دیگر نمایش نده</span>
+                    </button>
+
+                    <button type="button"
+                            @click="closeCopyTutorial(false)"
+                            :class="prescription?.category?.color_code"
+                            class="ctt-btn ctt-btn-ok">
+                        <i class="fas fa-check text-[11px]"></i>
+                        <span>متوجه شدم</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
 
     <!-- ==================== MODAL: FULL DESCRIPTION ==================== -->
     <template x-if="showDescriptionModal">

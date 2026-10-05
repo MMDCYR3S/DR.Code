@@ -28,6 +28,7 @@ function orderDetailApp() {
     isSaved: false,
     isPremiumUser: false,
     userProfile: null,
+    isMobileViewport: (typeof window !== 'undefined') && window.innerWidth < 1024,
 
     questionText: "",
     questionSubmitting: false,
@@ -97,6 +98,14 @@ function orderDetailApp() {
       this.initSecurityMeasures();
       this.initScrollListener();
       this._setupScrollbarVar();
+
+      let _resizeT;
+      window.addEventListener('resize', () => {
+          clearTimeout(_resizeT);
+          _resizeT = setTimeout(() => {
+              this.isMobileViewport = window.innerWidth < 1024;
+          }, 150);
+      }, { passive: true });
 
       // بارگذاری موازی برای پرفورمنس بهتر
       await Promise.all([
@@ -831,6 +840,12 @@ function orderDetailApp() {
     },
 
     // ----- Derived / Display Helpers -----
+    // آیا HTML شامل جدول هست؟ (تشخیص سریع و سبک)
+    hasTable(html) {
+        if (!html || typeof html !== 'string') return false;
+        return /<table[\s>]/i.test(html);
+    },
+
     infoFields() {
       if (!this.order) return [];
       return [

@@ -9,6 +9,16 @@ function prescriptionDetailApp() {
     isPremiumUser: false,
     userProfile: null,
 
+    // Tutorial state (spotlight)
+    showCopyTutorial: false,
+    copyTutorialDismissed: false,
+    copyTutorialRect: null,
+    copyTutorialTooltip: { top: 0, left: 0, width: 320, position: "below", arrowLeft: 20 },
+    copyTutorialTarget: null,
+    _copyTutorialObserver: null,
+    _copyTutorialShown: false,
+    _copyTutorialScrollHandler: null,
+
     questionText: "",
     questionSubmitting: false,
 
@@ -43,6 +53,7 @@ function prescriptionDetailApp() {
       await this.loadDescription(slug);
 
       this.initSecurityMeasures();
+      this.initCopyTutorial();
     },
 
     getSlugFromURL() {
@@ -542,6 +553,7 @@ function prescriptionDetailApp() {
 
       this.initSecurityMeasures();
       this.initGallery();
+      this.initCopyTutorial();
     },
 
     // Check if user is Premium
@@ -669,6 +681,209 @@ function prescriptionDetailApp() {
       } finally {
         this.questionSubmitting = false;
       }
+    },
+
+    /* ============================================================
+    🎓 Tutorial: Spotlight روی اولین کد دارو
+    ============================================================ */
+    initCopyTutorial() {
+        try {
+            this.copyTutorialDismissed =
+                localStorage.getItem("drcode_copy_tutorial_dismissed") === "1";
+        } catch (e) {
+            this.copyTutorialDismissed = false;
+        }
+
+        if (this.copyTutorialDismissed) {
+            console.log("🎓 Copy tutorial: user already dismissed it.");
+            return;
+        }
+
+        this.$nextTick(() => {
+            setTimeout(() => this._setupCopyTutorialObserver(), 800);
+        });
+    },
+
+    _setupCopyTutorialObserver() {
+        const target = document.getElementById("prescription__section");
+        if (!target) {
+            setTimeout(() => this._setupCopyTutorialObserver(), 500);
+            return;
+        }
+
+        if (this._copyTutorialObserver) {
+            this._copyTutorialObserver.disconnect();
+        }
+
+        this._copyTutorialObserver = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (
+                        entry.isIntersecting &&
+                        entry.intersectionRatio >= 0.4 &&
+                        !this._copyTutorialShown &&
+                        !this.copyTutorialDismissed
+                    ) {
+                        this._copyTutorialShown = true;
+                        setTimeout(() => this._openCopyTutorial(), 450);
+                    }
+                });
+            },
+            {
+                threshold: [0.4, 0.5, 0.6],
+                rootMargin: "-15% 0px -15% 0px",
+            }
+        );
+
+        this._copyTutorialObserver.observe(target);
+        console.log("🎓 Copy tutorial observer started.");
+    },
+
+    _openCopyTutorial() {
+        if (this.copyTutorialDismissed || this.showCopyTutorial) return;
+
+        const target = this._findFirstDrugCodeCell();
+        if (!target) {
+            console.warn("🎓 Copy tutorial: no drug code cell found (yet).");
+            // یک بار دیگر بعد از 800ms تلاش کن (شاید جدول دیرتر رندر شده)
+            setTimeout(() => {
+                const retry = this._findFirstDrugCodeCell();
+                if (retry && !this.copyTutorialDismissed) {
+                    this.copyTutorialTarget = retry;
+                    this._updateCopyTutorialPosition();
+                    this.showCopyTutorial = true;
+                    this._bindCopyTutorialListeners();
+                }
+            }, 800);
+            return;
+        }
+
+        this.copyTutorialTarget = target;
+        this._updateCopyTutorialPosition();
+        this.showCopyTutorial = true;
+        document.body.classList.add("modal-open");
+        this._bindCopyTutorialListeners();
+
+        console.log("🎓 Copy tutorial opened on:", target);
+    },
+
+    _findFirstDrugCodeCell() {
+        // جدول‌های داخل سکشن داروها را می‌گردیم
+        const rows = document.querySelectorAll(
+            "#prescription__section table tbody tr"
+        );
+        for (const row of rows) {
+            const cells = row.querySelectorAll("td");
+            if (cells.length < 3) continue;
+            // ستون سوم (index 2) = کد دارو
+            const codeCell = cells[2];
+            // چک کن که واقعاً کد داره (نه «بدون کد»)
+            const hasCode =
+                codeCell.querySelector("span.font-mono") ||
+                codeCell.querySelector("button[title*='کپی']");
+            if (hasCode) return codeCell;
+        }
+        return null;
+    },
+
+    _updateCopyTutorialPosition() {
+        if (!this.copyTutorialTarget) return;
+        const rect = this.copyTutorialTarget.getBoundingClientRect();
+
+        // اگر هدف از دید خارج شد، آموزش را ببند
+        if (rect.bottom < 0 || rect.top > window.innerHeight) {
+            this.showCopyTutorial = false;
+            return;
+        }
+
+        const pad = 12;
+        const gap = 16;
+        const tooltipW = Math.min(320, window.innerWidth - 32);
+        const tooltipH = 180; // تقریبی برای محاسبه فضا
+
+        // تعیین موقعیت عمودی tooltip
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        let position = "below";
+        let tooltipTop;
+
+        if (spaceBelow >= tooltipH + gap + pad) {
+            position = "below";
+            tooltipTop = rect.bottom + gap;
+        } else if (spaceAbove >= tooltipH + gap + pad) {
+            position = "above";
+            tooltipTop = rect.top - tooltipH - gap;
+        } else {
+            position = "below";
+            tooltipTop = Math.min(
+                window.innerHeight - tooltipH - pad,
+                rect.bottom + gap
+            );
+            tooltipTop = Math.max(pad, tooltipTop);
+        }
+
+        // موقعیت افقی tooltip
+        let tooltipLeft = rect.left + rect.width / 2 - tooltipW / 2;
+        tooltipLeft = Math.max(
+            pad,
+            Math.min(window.innerWidth - tooltipW - pad, tooltipLeft)
+        );
+
+        // موقعیت فلش نسبت به tooltip
+        const targetCenterX = rect.left + rect.width / 2;
+        let arrowLeft = targetCenterX - tooltipLeft - 7;
+        arrowLeft = Math.max(20, Math.min(tooltipW - 34, arrowLeft));
+
+        this.copyTutorialRect = {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+        };
+
+        this.copyTutorialTooltip = {
+            top: tooltipTop,
+            left: tooltipLeft,
+            width: tooltipW,
+            position: position,
+            arrowLeft: arrowLeft,
+        };
+    },
+
+    _bindCopyTutorialListeners() {
+        this._copyTutorialScrollHandler = () => this._updateCopyTutorialPosition();
+        window.addEventListener("scroll", this._copyTutorialScrollHandler, {
+            passive: true,
+        });
+        window.addEventListener("resize", this._copyTutorialScrollHandler, {
+            passive: true,
+        });
+    },
+
+    closeCopyTutorial(dontShowAgain = false) {
+        this.showCopyTutorial = false;
+        this.copyTutorialTarget = null;
+        document.body.classList.remove("modal-open");
+
+        if (this._copyTutorialScrollHandler) {
+            window.removeEventListener("scroll", this._copyTutorialScrollHandler);
+            window.removeEventListener("resize", this._copyTutorialScrollHandler);
+            this._copyTutorialScrollHandler = null;
+        }
+
+        if (dontShowAgain) {
+            this.copyTutorialDismissed = true;
+            try {
+                localStorage.setItem("drcode_copy_tutorial_dismissed", "1");
+            } catch (e) {
+                console.warn("localStorage write failed:", e);
+            }
+        }
+
+        if (this._copyTutorialObserver) {
+            this._copyTutorialObserver.disconnect();
+            this._copyTutorialObserver = null;
+        }
     },
   };
 }
@@ -894,3 +1109,5 @@ if (document.readyState === "loading") {
 } else {
   createProtectedWatermark();
 }
+
+
