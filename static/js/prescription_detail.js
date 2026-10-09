@@ -18,6 +18,7 @@ function prescriptionDetailApp() {
     _copyTutorialObserver: null,
     _copyTutorialShown: false,
     _copyTutorialScrollHandler: null,
+    _copyTutorialTableScroller: null,
 
     questionText: "",
     questionSubmitting: false,
@@ -745,26 +746,37 @@ function prescriptionDetailApp() {
         const target = this._findFirstDrugCodeCell();
         if (!target) {
             console.warn("🎓 Copy tutorial: no drug code cell found (yet).");
-            // یک بار دیگر بعد از 800ms تلاش کن (شاید جدول دیرتر رندر شده)
             setTimeout(() => {
                 const retry = this._findFirstDrugCodeCell();
                 if (retry && !this.copyTutorialDismissed) {
                     this.copyTutorialTarget = retry;
-                    this._updateCopyTutorialPosition();
-                    this.showCopyTutorial = true;
-                    this._bindCopyTutorialListeners();
+                    this._scrollAndShowTutorial(retry);
                 }
             }, 800);
             return;
         }
 
         this.copyTutorialTarget = target;
-        this._updateCopyTutorialPosition();
-        this.showCopyTutorial = true;
-        document.body.classList.add("modal-open");
-        this._bindCopyTutorialListeners();
+        this._scrollAndShowTutorial(target);
+    },
 
-        console.log("🎓 Copy tutorial opened on:", target);
+    _scrollAndShowTutorial(target) {
+        // ۱. اول جدول را افقی اسکرول کن
+        const scrollResult = this._scrollTableToCodeCell(target);
+        this._copyTutorialTableScroller = scrollResult?.scroller || null;
+
+        // ۲. بعد از اسکرول، آموزش را نمایش بده
+        // (اگر اسکرول لازم نبود، فوراً؛ وگرنه کمی صبر کن)
+        const delay = scrollResult?.scrolled ? 700 : 50;
+
+        setTimeout(() => {
+            if (this.copyTutorialDismissed || this.showCopyTutorial) return;
+            this._updateCopyTutorialPosition();
+            this.showCopyTutorial = true;
+            document.body.classList.add("modal-open");
+            this._bindCopyTutorialListeners();
+            console.log("🎓 Copy tutorial opened on code cell");
+        }, delay);
     },
 
     _findFirstDrugCodeCell() {
@@ -786,12 +798,77 @@ function prescriptionDetailApp() {
         return null;
     },
 
+    /* ============================================================
+    📱 اسکرول افقی جدول تا سلول کد دارو در دید قرار بگیرد
+    ============================================================ */
+    _scrollTableToCodeCell(cell) {
+        if (!cell) return null;
+
+        // پیدا کردن نزدیک‌ترین اسکرولر افقی
+        let scroller = cell.closest('.overflow-x-auto');
+        if (!scroller) {
+            let el = cell.parentElement;
+            while (el && el !== document.body) {
+                const style = getComputedStyle(el);
+                if (
+                    (style.overflowX === 'auto' || style.overflowX === 'scroll') &&
+                    el.scrollWidth > el.clientWidth + 2
+                ) {
+                    scroller = el;
+                    break;
+                }
+                el = el.parentElement;
+            }
+        }
+
+        if (!scroller) {
+            console.log("🎓 No horizontal scroller found for tutorial cell");
+            return null;
+        }
+
+        // چک کن آیا سلول در دید افقی هست
+        const cellRect = cell.getBoundingClientRect();
+        const scrollerRect = scroller.getBoundingClientRect();
+        const padding = 20;
+
+        const isFullyVisible =
+            cellRect.left >= scrollerRect.left + padding &&
+            cellRect.right <= scrollerRect.right - padding;
+
+        if (isFullyVisible) {
+            console.log("🎓 Code cell already in horizontal view");
+            return { scroller, scrolled: false };
+        }
+
+        // اسکرول افقی به مرکز
+        // block: 'nearest' → اگر عمودی در دید است، اسکرول عمودی نمی‌کند
+        // inline: 'center' → سلول در مرکز افقی scroller قرار می‌گیرد
+        cell.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'center',
+        });
+
+        console.log("🎓 Scrolling table horizontally to show code cell");
+        return { scroller, scrolled: true };
+    },
+
     _updateCopyTutorialPosition() {
         if (!this.copyTutorialTarget) return;
         const rect = this.copyTutorialTarget.getBoundingClientRect();
 
         // اگر هدف از دید خارج شد، آموزش را ببند
         if (rect.bottom < 0 || rect.top > window.innerHeight) {
+            this.showCopyTutorial = false;
+            return;
+        }
+
+        // 🆕 چک افقی — اگر سلول کاملاً بیرون از viewport رفت
+        const padding = 10;
+        const isHorizontallyVisible =
+            rect.right > padding && rect.left < window.innerWidth - padding;
+
+        if (!isHorizontallyVisible) {
             this.showCopyTutorial = false;
             return;
         }
@@ -851,13 +928,47 @@ function prescriptionDetailApp() {
     },
 
     _bindCopyTutorialListeners() {
+        // پاکسازی listenerهای قبلی
+        this._unbindCopyTutorialListeners();
+
         this._copyTutorialScrollHandler = () => this._updateCopyTutorialPosition();
+
+        // اسکرول عمودی صفحه
         window.addEventListener("scroll", this._copyTutorialScrollHandler, {
             passive: true,
         });
+
+        // resize
         window.addEventListener("resize", this._copyTutorialScrollHandler, {
             passive: true,
         });
+
+        // 🆕 اسکرول افقی جدول — تا اگر کاربر جدول رو خودش اسکرول کرد،
+        // spotlight همراهش حرکت کنه
+        if (this._copyTutorialTableScroller) {
+            this._copyTutorialTableScroller.addEventListener(
+                "scroll",
+                this._copyTutorialScrollHandler,
+                { passive: true }
+            );
+        }
+    },
+
+    _unbindCopyTutorialListeners() {
+        if (!this._copyTutorialScrollHandler) return;
+
+        window.removeEventListener("scroll", this._copyTutorialScrollHandler);
+        window.removeEventListener("resize", this._copyTutorialScrollHandler);
+
+        if (this._copyTutorialTableScroller) {
+            this._copyTutorialTableScroller.removeEventListener(
+                "scroll",
+                this._copyTutorialScrollHandler
+            );
+            this._copyTutorialTableScroller = null;
+        }
+
+        this._copyTutorialScrollHandler = null;
     },
 
     closeCopyTutorial(dontShowAgain = false) {
@@ -865,11 +976,7 @@ function prescriptionDetailApp() {
         this.copyTutorialTarget = null;
         document.body.classList.remove("modal-open");
 
-        if (this._copyTutorialScrollHandler) {
-            window.removeEventListener("scroll", this._copyTutorialScrollHandler);
-            window.removeEventListener("resize", this._copyTutorialScrollHandler);
-            this._copyTutorialScrollHandler = null;
-        }
+        this._unbindCopyTutorialListeners();
 
         if (dontShowAgain) {
             this.copyTutorialDismissed = true;

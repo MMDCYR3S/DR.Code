@@ -358,14 +358,17 @@ function orderDetailApp() {
       };
 
       // انتخاب سکشن اول به‌صورت پیش‌فرض
-      if (this.sidebarTree.preclinical.length > 0) {
+      if (this.hasPreclinicalContent()) {
         this.activeSidebarSection = "preclinical";
       } else if (this.sidebarTree.orderFields.length > 0 || this.sidebarTree.orderSections.length > 0) {
         this.activeSidebarSection = "order";
-      } else if (this.sidebarTree.disposition) {
+      } else if (this.hasDispositionSection()) {
         this.activeSidebarSection = "disposition";
       } else if (this.sidebarTree.media && this.sidebarTree.media.totalCount > 0) {
         this.activeSidebarSection = "media";
+      } else {
+        // fallback: همیشه «اوردر» را انتخاب کن تا FAB موبایل رفتار درستی داشته باشد
+        this.activeSidebarSection = "order";
       }
     },
 
@@ -1154,6 +1157,25 @@ function orderDetailApp() {
         !!this.media &&
         (((this.media.images || []).length > 0) || ((this.media.videos || []).length > 0))
       );
+    },
+
+    /* ============================================================
+    🎯 چک محتوای واقعی — پیش‌بالینی و تعیین‌تکلیف
+    (الگو هم‌راستا با hasMedia)
+    ============================================================ */
+
+    // پیش‌بالینی: آیا حداقل یک گروه با حداقل یک گره وجود دارد؟
+    hasPreclinicalContent() {
+      const groups = this.dynamicFields?.dynamic_field_groups || [];
+      if (groups.length === 0) return false;
+      return groups.some(g => (g.nodes || []).length > 0);
+    },
+
+    // تعیین‌تکلیف اورژانس: آیا حداقل یک گره وجود دارد؟
+    hasDispositionSection() {
+      const disp = this.disposition?.emergency_disposition;
+      if (!disp) return false;
+      return (disp.nodes || []).length > 0;
     },
 
     // تنظیم تب پیش‌فرض وقتی media بارگذاری شد

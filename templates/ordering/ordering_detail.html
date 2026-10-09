@@ -1971,7 +1971,7 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                 </div>
                 <div class="mp-rail-drawer-body" dir="rtl">
                     <!-- ۱. پیش‌بالینی -->
-                    <template x-if="sidebarTree.preclinical && sidebarTree.preclinical.length > 0">
+                    <template x-if="hasPreclinicalContent()">
                         <div class="fp-tree-section" :style="`--sec-c: ${theme().color};`">
                             <div class="fp-tree-section-head"
                                  :class="(expandedSidebarSections.preclinical && activeSidebarSection === 'preclinical') ? 'is-expanded' : ''"
@@ -2088,7 +2088,7 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                     </div>
 
                     <!-- ۳. تعیین تکلیف -->
-                    <template x-if="sidebarTree.disposition">
+                    <template x-if="hasDispositionSection()">
                         <div class="fp-tree-section" :style="`--sec-c: ${sidebarTree.disposition.color || theme().color};`">
                             <div class="fp-tree-section-head"
                                  :class="(activeSidebarSection === 'disposition') ? 'is-expanded' : ''"
@@ -2206,14 +2206,15 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
 
             <!-- Rail (icon column) -->
             <div class="mp-rail-pill my-auto">
-                <button class="mp-rail-btn"
-                        :class="(activeSidebarSection === 'preclinical' && sidebarOpen) ? 'is-active' : ''"
-                        :style="`--btn-c: ${theme().color};`"
-                        data-tip="پیش‌بالینی"
-                        @click="toggleSidebarSection('preclinical', true)"
-                        x-show="sidebarTree.preclinical && sidebarTree.preclinical.length > 0">
-                    <i class="fas fa-stethoscope text-sm"></i>
-                </button>
+                <template x-if="hasPreclinicalContent()">
+                    <button class="mp-rail-btn"
+                            :class="(activeSidebarSection === 'preclinical' && sidebarOpen) ? 'is-active' : ''"
+                            :style="`--btn-c: ${theme().color};`"
+                            data-tip="پیش‌بالینی"
+                            @click="toggleSidebarSection('preclinical', true)">
+                        <i class="fas fa-stethoscope text-sm"></i>
+                    </button>
+                </template>
                 <button class="mp-rail-btn"
                         :class="(activeSidebarSection === 'order' && sidebarOpen) ? 'is-active' : ''"
                         :style="`--btn-c: ${theme().color};`"
@@ -2221,22 +2222,24 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
                         @click="toggleSidebarSection('order', true)">
                     <i class="fas fa-clipboard-list text-sm"></i>
                 </button>
-                <button class="mp-rail-btn"
-                        :class="(activeSidebarSection === 'disposition' && sidebarOpen) ? 'is-active' : ''"
-                        :style="`--btn-c: ${sidebarTree.disposition?.color || theme().color};`"
-                        data-tip="تعیین تکلیف"
-                        @click="toggleSidebarSection('disposition', true)"
-                        x-show="sidebarTree.disposition">
-                    <i class="fas fa-sitemap text-sm"></i>
-                </button>
-                <button class="mp-rail-btn"
-                        :class="(activeSidebarSection === 'media' && sidebarOpen) ? 'is-active' : ''"
-                        :style="`--btn-c: ${theme().color};`"
-                        data-tip="رسانه‌ها"
-                        @click="toggleSidebarSection('media', true)"
-                        x-show="sidebarTree.media && sidebarTree.media.totalCount > 0">
-                    <i class="fas fa-photo-film text-sm"></i>
-                </button>
+                <template x-if="hasDispositionSection()">
+                    <button class="mp-rail-btn"
+                            :class="(activeSidebarSection === 'disposition' && sidebarOpen) ? 'is-active' : ''"
+                            :style="`--btn-c: ${sidebarTree.disposition?.color || theme().color};`"
+                            data-tip="تعیین تکلیف"
+                            @click="toggleSidebarSection('disposition', true)">
+                        <i class="fas fa-sitemap text-sm"></i>
+                    </button>
+                </template>
+                <template x-if="sidebarTree.media && sidebarTree.media.totalCount > 0">
+                    <button class="mp-rail-btn"
+                            :class="(activeSidebarSection === 'media' && sidebarOpen) ? 'is-active' : ''"
+                            :style="`--btn-c: ${theme().color};`"
+                            data-tip="رسانه‌ها"
+                            @click="toggleSidebarSection('media', true)">
+                        <i class="fas fa-photo-film text-sm"></i>
+                    </button>
+                </template>
             </div>
         </div>
 
@@ -2295,7 +2298,7 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
 
 
             <!-- ===== ① پیش‌بالینی (Dynamic Field Groups) ===== -->
-            <template x-if="dynamicFields && dynamicFields.dynamic_field_groups && dynamicFields.dynamic_field_groups.length > 0">
+            <template x-if="hasPreclinicalContent()">
                 <section class="main-section p-4 sm:p-5" id="anchor-preclinical">
 
                     <div class="mb-4">
@@ -2667,7 +2670,7 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); backgr
             </template>
 
             <!-- ===== ④ DISPOSITION ===== -->
-            <template x-if="disposition && disposition.emergency_disposition">
+            <template x-if="hasDispositionSection()">
                 <section class="main-section p-4 sm:p-5"
                          id="anchor-disposition"
                          :style="dfTheme(disposition.emergency_disposition.color).style">
